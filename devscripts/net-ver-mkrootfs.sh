@@ -53,9 +53,18 @@ echo "--> Generating ext2 ramdisk image directly from ${ROOTFS_DIR}..."
 mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
 
-mke2fs -F -b 1024 -d "${ROOTFS_DIR}" images/ramdisk_2.6.16.img 12288
+RD=images/ramdisk_2.6.16.img
+dd if=/dev/zero of=${RD} bs=1k count=12288 >/dev/null 2>&1
+mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
+
+MNT_DIR=/tmp/mnt_rd
+mkdir -p ${MNT_DIR}
+mount -o loop ${RD} ${MNT_DIR}
+cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/
+umount ${MNT_DIR}
+rmdir ${MNT_DIR}
 
 echo "--> Compressing ramdisk image with LZMA..."
-lzma -f -z images/ramdisk_2.6.16.img
+lzma -f -z ${RD}
 
 echo "--> Ramdisk generation complete: images/ramdisk_2.6.16.img.lzma ($(ls -lh images/ramdisk_2.6.16.img.lzma | awk '{print $5}'))"

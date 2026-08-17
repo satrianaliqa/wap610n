@@ -483,6 +483,7 @@ then
 #Jacky.Yang 21-Jul-2008, End automatically to build Web Server
 
  # Create rootfs image
+ mkdir -p ${ROOTDIR}/output ${ROOTDIR}/images
  devscripts/net-ver-mkrootfs.sh $WLAN_ROOTFS_FILE 2>&1 | tee -a $LOGFILE
 
  # Make net_ver images/bootp image

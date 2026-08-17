@@ -3,10 +3,13 @@
 *.ko
 *.cmd
 .tmp_versions
-vmlinux
+/kernel/linux-2.6.16-star/vmlinux
+/kernel/linux-2.6.16-star/System.map
 
-# Preserve toolchain precompiled objects
+# DO NOT ignore prebuilt objects in toolchain and vendor proprietary blobs
 !tools/**
+!apps/WebServer/*.o
+!*.lds*
 
 # Output and Firmware Images
 output/
