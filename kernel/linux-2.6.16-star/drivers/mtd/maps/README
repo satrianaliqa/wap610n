@@ -1,0 +1,5 @@
+The mapping of flash sectors for star platforms goes like this:
+/dev/mtdblock1: BOOT loader, offset 0, size 128K
+/dev/mtdblock2: Linux Kernel and fs compressed, offset 256K
+/dev/mtdblock3: Non-volatile and boot params, offset 128K, size 64K
+/dev/mtdblock4: FS2, volatile params, offset and size are defined by config_offset boot parameter and the WINDOW_SIZE

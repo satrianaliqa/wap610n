@@ -1,0 +1,95 @@
+=========================================================
+ * Copyright (c) GoAhead Software Inc., 1995-2000. All Rights Reserved.
+ *
+ * See the file "license.txt" for usage and redistribution license requirements
+=========================================================
+file :
+	asp.c 	
+	balloc.c 	
+	base64.c 	
+	cgi.c 	
+	default.c 	
+	ej.h
+	ejlex.c 	
+	ejparse.c 	
+	emfdb.c 	
+	emfdb.h
+	form.c 	
+	handler.c 	
+	h.c 	
+	LINUX/main.c 	
+	mime.c 	
+	misc.c 	
+	page.c 	
+	ringq.c 	
+	rom.c 	
+	security.c 	
+	sock.c 	
+	sockGen.c
+	sym.c 	
+	uemf.c 	
+	uemf.h 	
+	uemf.h
+	um.c
+	um.h
+	umui.c 	
+	url.c 	
+	value.c 	
+	webcomp.c 	
+	webrom.c 	
+	webs.c 	
+	websda.c 	
+	websda.h
+	webs.h
+	websSSL.c 	
+	websSSL.h
+	websuemf.c 	
+	wsIntrn.h
+
+=========================================================
+MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
+Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
+rights reserved.
+
+License to copy and use this software is granted provided that it
+is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+Algorithm" in all material mentioning or referencing this software
+or this function.
+
+License is also granted to make and use derivative works provided
+that such works are identified as "derived from the RSA Data
+Security, Inc. MD5 Message-Digest Algorithm" in all material
+mentioning or referencing the derived work.
+
+RSA Data Security, Inc. makes no representations concerning either
+the merchantability of this software or the suitability of this
+software for any particular purpose. It is provided "as is"
+without express or implied warranty of any kind.
+
+These notices must be retained in any copies of any part of this
+documentation and/or software.
+=========================================================
+file :
+	md5c.c
+	md5.h
+	websda.c
+	
+=========================================================
+ Copyright (C) 2006-2009 Metalink Ltd.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+=========================================================
+file :
+	mt_api.o
+	mt_task.o
+	mt_validation.o

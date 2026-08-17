@@ -1,0 +1,92 @@
+E_TOPDIR ?=$(PWD)/../
+TOPDIR=$(E_TOPDIR)
+include Makefile.MTLK.vars
+include Makefile.MTLK.files
+include $(TOPDIR)/.config
+
+###### Directories definitions. #######
+
+export 
+
+
+.PHONY: subdirs $(MTLK_APPS)
+
+subdirs: $(MTLK_APPS)
+
+all:   $(MTLK_APPS)
+
+clean: 
+	for dir in $(MTLK_APPS); do \
+        $(MAKE) -f Makefile.MTLK CLEAN -C $(TOPDIR)/$$dir; \
+        done
+	# Clean   should clean up rootfs too
+	sudo rm -rf $(E_DEST)/*
+
+comp: 
+	for dir in $(MTLK_APPS); do \
+        $(MAKE) -f Makefile.MTLK COMP -C $(TOPDIR)/$$dir; \
+        done
+
+config: 
+	for dir in $(MTLK_APPS); do \
+        $(MAKE) -f Makefile.MTLK CONF -C $(TOPDIR)/$$dir; \
+        done
+strip: 
+	for dir in $(MTLK_APPS); do \
+        $(MAKE) -f Makefile.MTLK STRIP -C $(TOPDIR)/$$dir; \
+        done
+
+$(MTLK_APPS):
+	$(MAKE) -f Makefile.MTLK CLEAN CONF COMP -C $@
+
+link:
+	TOPDIR=$(E_TOPDIR) ./dolink.sh
+
+install_:
+	@sudo rm -fr $(E_DEST)
+	@install -m 755 -d $(E_DEST)
+	cp -a $(E_SRC)/. $(E_DEST)/
+	for dir in $(MTLK_APPS); do \
+        $(MAKE) -f Makefile.MTLK INSTALL -C $(TOPDIR)/$$dir; \
+	$(E_STRIP) $(E_DEST)/$$f ; \
+        done
+	cp -a $(E_TOPDIR)/scripts/devel.sh $(E_DEST)/bin/
+
+svnclean: 
+	find $(E_DEST) -iname "*.svn" | xargs rm -fr
+
+# Remove files that were received as binary-only from STAR, and not used by any platform in our toolchain:
+#  TODO: Consider deleting them from svn, and then remove this step of the build process
+unused_remove:	
+	for f in $(FILES_UNUSED); do \
+	sudo rm -fr $(E_DEST)/$$f; \
+	done
+
+debugfs:
+	make -f Makefile.MTLK -C $(E_TOPDIR)/../debugfs/apps all
+#	make -f Makefile -C $(E_KERNEL) modules
+
+clean_debugfs:
+	make -f Makefile.MTLK -C $(E_TOPDIR)/../debugfs/apps clean
+
+install_debugfs:
+	make -f Makefile.MTLK -C $(E_TOPDIR)/../debugfs/apps install
+	install -D -m 755 $(E_KERNEL)/fs/lockd/lockd.ko $(E_DEBUGFS)
+	install -D -m 755 $(E_KERNEL)/fs/nfs/nfs.ko $(E_DEBUGFS)
+	install -D -m 755 $(E_KERNEL)/net/sunrpc/sunrpc.ko $(E_DEBUGFS)
+	mkdir -p $(E_DEBUGFS)/lib
+	cp -af $(E_CROSS)/lib/* $(E_DEBUGFS)/lib
+
+install: install_ svnclean unused_remove
+
+# This variable defined in ../.config 
+customize: forced
+	${BOARD_CUSTOMIZE}
+
+forced:
+
+#### Directories dependencies ######
+
+$(HOSTAPD_DIR): $(OPENSSL_DIR)
+
+$(WPA_DIR): $(OPENSSL_DIR) 

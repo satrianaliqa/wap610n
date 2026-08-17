@@ -1,0 +1,38 @@
+######### Metalink (c) #####################
+######### Standard header begin ############
+
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######### Standard header end ##############
+
+#STAGING_DIR=/opt/star/tools/arm-uclibc-3.4.6
+#PATH=$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
+ARCH=arm
+CC=$(E_CC)
+#CFLAGS += "-DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -Os -DSTRIP_UNUSED"
+PATH=$(E_CROSS)/bin:/bin:/sbin:/usr/bin:/usr/sbin
+export PATH ARCH CC CFLAGS
+
+CONF:
+	./configure --host=arm-linux
+
+COMP:
+	make CC=$(CC) -f Makefile -C expat buildlib
+
+CLEAN:
+	./configure --host=arm-linux
+	make -f Makefile -C expat distclean
+
+INSTALL: FORCE
+	install -m 777 -d  $(E_DEST)/lib/
+	install -m 755 libexpat.so* $(E_DEST)/lib/
+
+STRIP:
+	$(E_STRIP) $(E_DEST)/lib/libexpat.so
+	$(E_STRIP) $(E_DEST)/lib/libexpat.so.0.*
+
+FORCE:

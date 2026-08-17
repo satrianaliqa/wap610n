@@ -1,0 +1,33 @@
+# --------------------------------------------------------------------
+# 
+# Basic Makefile to build the WET610N Video Bridge
+# 
+# --------------------------------------------------------------------
+# 
+# Copyright 2008 Metalink Ltd.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# http://www.gnu.org/licenses/gpl.txt
+# --------------------------------------------------------------------
+
+
+
+
+all: configure build
+
+configure:
+	./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
+
+build:
+	./make_nv.sh build wlan.tar.gz WAP610N
+
+clean:
+	./make_nv.sh clean WAP610N

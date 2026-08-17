@@ -1,0 +1,45 @@
+# TODO: Where is this definition used?? Can it be removed??
+FILES_DEBUG= /usr/bin/gdbserver \
+
+# Files that were received as binary-only from STAR, and not used by any platform in our toolchain:
+#  TODO: Consider deleting them from svn, and then remove this step of the build process.
+FILES_UNUSED= \
+/sbin/ldconfig \
+/usr/bin/iostat \
+/usr/bin/lessecho \
+/usr/bin/lesskey \
+/usr/bin/pgrep \
+/usr/bin/pwdx \
+/usr/bin/skill \
+/usr/bin/slabtop \
+/usr/bin/snice \
+/usr/bin/sstrip \
+/usr/bin/tload \
+/usr/bin/ttcp \
+/usr/bin/w \
+/sbin/tcpdump \
+/usr/bin/watch \
+/usr/sbin/ftl_check \
+/usr/sbin/ftl_format 
+
+# Files that are deleted in the 4MB version:
+FILES_UNUSED_IN_MINIMAL= \
+/lib/iptables \
+/lib/modules/2.6.16-star/net/str9100_shnat.ko \
+/sbin/iptables \
+/usr/bin/gdbserver \
+/root/mtlk/images \
+/root/mtlk/driver/mtlk.ko \
+/bin/iperf \
+/root/mtlk/bcl/BclSockServer \
+/root/mtlk/web \
+/root/mtlk/saved_configs \
+/lib/libcrypto.so \
+/lib/libssl.so \
+/lib/libstdc++.so.6.0.3 \
+/lib/libstdc++.so.6 \
+/lib/libstdc++.so \
+/bin/lsof \
+/usr/bin/ldd \
+/usr/bin/pmap \
+/bin/DEBUG

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# This script implements the config_mount.sh/config_umount.sh/config_save.sh command on the dongle.
+# That means it does nothing. It is just a placeholder to allow running
+# init script written for STAR, without modification.
+

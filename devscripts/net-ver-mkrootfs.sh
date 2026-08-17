@@ -1,0 +1,61 @@
+#!/bin/bash
+# Create an LZMA compressed ext2 ramdisk rootfs file system, containing all files in rootfs.
+ROOTFS_DIR=rootfs
+
+echo "--> Preparing rootfs files and version..."
+mkdir -p ${ROOTFS_DIR}/root/mtlk
+mkdir -p ${ROOTFS_DIR}/etc
+
+# Create version file
+echo -n "SVN Revision $(svnversion .. 2>/dev/null || echo 1)  " > ${ROOTFS_DIR}/etc/version
+date >> ${ROOTFS_DIR}/etc/version
+
+# Extract WLAN files directly into rootfs/root/mtlk/
+if [ -n "$1" ]; then
+	if [ -d "$1" ]; then
+		echo "Copying WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
+		cp -rf "$1"/* "${ROOTFS_DIR}/root/mtlk/"
+	elif [ -f "$1" ]; then
+		echo "Extracting WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
+		tar -xzf "$1" -C "${ROOTFS_DIR}/root/mtlk/"
+	fi
+	chmod 777 -R "${ROOTFS_DIR}/root/mtlk/"
+
+	# Save only needed Progmodels and delete the rest
+	if [ -f ./apps/.config ]; then
+		grep HWTYPE ./apps/.config > "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh" || true
+		if [ -f "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh" ]; then
+			. "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh"
+			if [ -n "$HWTYPE" ] && [ -d "${ROOTFS_DIR}/root/mtlk/images" ]; then
+				echo "Cleaning unused Progmodels for $HWTYPE..."
+				pushd "${ROOTFS_DIR}/root/mtlk/images" >/dev/null
+				ls ProgModel* 2>/dev/null | egrep -v "$HWTYPE|CB.bin" | xargs rm -f 2>/dev/null || true
+				popd >/dev/null
+			fi
+		fi
+	fi
+fi
+
+# Ensure device nodes and symlinks are present in rootfs
+mkdir -p ${ROOTFS_DIR}/dev
+[ -e ${ROOTFS_DIR}/dev/console ] || mknod ${ROOTFS_DIR}/dev/console c 5 1 2>/dev/null || true
+[ -e ${ROOTFS_DIR}/dev/null ] || mknod ${ROOTFS_DIR}/dev/null c 1 3 2>/dev/null || true
+[ -e ${ROOTFS_DIR}/dev/ttyS0 ] || mknod ${ROOTFS_DIR}/dev/ttyS0 c 4 64 2>/dev/null || true
+[ -e ${ROOTFS_DIR}/dev/ram0 ] || mknod ${ROOTFS_DIR}/dev/ram0 b 1 0 2>/dev/null || true
+
+# Ensure init symlinks
+ln -sf bin/busybox ${ROOTFS_DIR}/init 2>/dev/null || true
+ln -sf ../bin/busybox ${ROOTFS_DIR}/sbin/init 2>/dev/null || true
+ln -sf bin/busybox ${ROOTFS_DIR}/linuxrc 2>/dev/null || true
+ln -sf busybox ${ROOTFS_DIR}/bin/sh 2>/dev/null || true
+
+echo "--> Generating ext2 ramdisk image directly from ${ROOTFS_DIR}..."
+mkdir -p images
+rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
+
+mke2fs -F -b 1024 -d "${ROOTFS_DIR}" images/ramdisk_2.6.16.img 12288
+
+echo "--> Compressing ramdisk image with LZMA..."
+lzma -f -z images/ramdisk_2.6.16.img
+
+echo "--> Ramdisk generation complete: images/ramdisk_2.6.16.img.lzma ($(ls -lh images/ramdisk_2.6.16.img.lzma | awk '{print $5}'))"

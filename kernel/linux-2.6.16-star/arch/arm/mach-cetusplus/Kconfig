@@ -1,0 +1,98 @@
+if ARCH_CETUSPLUS
+
+menu "CETUSPLUS Options"
+
+config CONSOLE_BAUD_RATE
+	int "Console Baud Rate"
+	default 38400
+	help
+	  set the console baudrate
+
+config VIC_INTERRUPT
+	bool "Enable Vector Interrupt Controller"
+	default y
+	help
+	  enable the vector interrupt controller
+
+choice
+	prompt "DRAM SIZE"
+	default CETUSPLUS_DRAM_16M
+
+config CETUSPLUS_DRAM_16M
+	bool "16MBytes"
+
+config CETUSPLUS_DRAM_32M
+	bool "32MBytes"
+
+config CETUSPLUS_DRAM_64M
+	bool "64MBytes"
+
+endchoice
+
+if PCI
+choice
+	prompt "PCI Frequency"
+	default CETUSPLUS_PCI33M
+
+config CETUSPLUS_PCI33M
+	bool "PCI_33Mhz"
+
+config CETUSPLUS_PCI66M
+	bool "PCI_66Mhz"
+
+endchoice
+endif
+
+config CETUSPLUS_DMA
+	bool "Enable DMA Controller"
+	default n
+	help
+	  enable the DMA controller
+
+config CETUSPLUS_HSDMA
+	bool "Enable HSDMA Controller"
+	default n
+	help
+	  enable the HSDMA controller
+
+config CETUSPLUS_INFO
+	bool "CETUSPLUS Infomation at /proc/cetusplus/info"
+
+comment "Flash MAP"
+config CETUSPLUS_FLASH_PART
+	bool "CETUSPLUS flash partition setting"
+
+if CETUSPLUS_FLASH_PART
+	config ARMBOOT_OFFSET
+	hex "ARMBOOT OFFSET"
+	default 0x0
+	help
+	  The armboot start offset in flash layout
+
+	config KERNEL_OFFSET
+	hex "KERNEL OFFSET"
+	default 0x40000
+	help
+	  The kernel start offset in flash layout
+
+	config ROOTFS_OFFSET
+	hex "ROOTFS OFFSET"
+	default 0x140000
+	help
+	  The rootfs start offset in flash layout
+
+	config CFG_OFFSET
+	hex "CFG OFFSET"
+	default 0x7f0000
+	help
+	  The cfg start offset in flash layout
+endif
+
+comment "Third Party Support"
+
+config CETUSPLUS_EWC_SUPPORT
+	bool "EWC(PreN) Support"
+
+endmenu
+
+endif

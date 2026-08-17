@@ -1,0 +1,34 @@
+######### Metalink (c) #####################
+######### Standard header begin ############
+
+## TOPDIR may be set. It points to the top directory where all the E_* variables are in Makefiles.MTLK.vars
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######### Standard header end ##############
+
+CROSS_COMPILER=$(E_CROSS)/bin/arm-linux-
+KERNELDIR=$(E_KERNEL)
+export 
+
+CONF:
+	echo No confiruration needed
+
+COMP:
+	make KERNELPATH=$(E_KERNEL) CROSS_COMPILE=$(E_CROSS)/bin/arm-linux-uclibc- -C $(E_KERNEL) M=`pwd` modules
+
+CLEAN:
+	make clean	
+
+INSTALL: FORCE
+	install -m 755 -D gpio.ko $(E_DEST)/root/mtlk/etc/gpio.ko
+
+STRIP:
+	
+
+FORCE:
+
+

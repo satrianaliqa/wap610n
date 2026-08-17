@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.str9102
+#
+# @brief   This file for STAR 9102 Dorado to build the WPS utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/star/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-
+CFLAGS=-Os -mlittle-endian -pipe -fno-common -fno-builtin -Dlinux -D__linux__ -Dunix
+CXXFLAGS=${CFLAGS}
+CXX_LDFLAGS=-L/opt/apps-rootfs/openssl-0.9.8a
+CC=${CROSS_COMPILE}gcc
+CXX=${CROSS_COMPILE}g++
+LD=${CROSS_COMPILE}ld
+STL_INCDIR=/opt/apps-rootfs/openssl-0.9.8a/include -I/opt/star/kernel/linux-2.6.16-star/include -I/opt/star/tools/arm-uclibc-3.4.6/include
+STL_LIBDIR=/opt/apps-rootfs/openssl-0.9.8a
+UUID_LIB = /opt/apps-rootfs/e2fsprogs-1.40.2/lib/libuuid.a
+LIBM= -Bdynamic $(UUID_LIB)
+CXXLIBS=
+STRIP=${CROSS_COMPILE}strip
+export CC CXX CXXFLAGS CXX_LDFLAGS CFLAGS LD STL_INCDIR STL_LIBDIR LIBM STRIP UUID_LIB
+
+all:
+	make
+
+clean:
+	make clean
+

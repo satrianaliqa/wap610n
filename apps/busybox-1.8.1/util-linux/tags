@@ -1,0 +1,1291 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+ACTIVE_FLAG	fdisk.c	28;"	d	file:
+ADJTIME_PATH	hwclock.c	136;"	d	file:
+ADJTIME_PATH	hwclock.c	138;"	d	file:
+AIX_INFO_MAGIC	fdisk_aix.c	17;"	d	file:
+AIX_INFO_MAGIC_SWAPPED	fdisk_aix.c	18;"	d	file:
+AIX_LABEL_MAGIC	fdisk_aix.c	15;"	d	file:
+AIX_LABEL_MAGIC_SWAPPED	fdisk_aix.c	16;"	d	file:
+ALIGN1	fdisk.c	/^static const char ioctl_error[] ALIGN1 = "BLKGETSIZE ioctl failed on %s";$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char msg_building_new_label[] ALIGN1 =$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char msg_part_already_defined[] ALIGN1 =$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char unable_to_open[] ALIGN1 = "cannot open %s";$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char unable_to_read[] ALIGN1 = "cannot read from %s";$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char unable_to_seek[] ALIGN1 = "cannot seek on %s";$/;"	v	file:
+ALIGN1	fdisk.c	/^static const char unable_to_write[] ALIGN1 = "cannot write to %s";$/;"	v	file:
+ALIGN1	getopt.c	/^static const char getopt_longopts[] ALIGN1 =$/;"	v	file:
+ALIGN1	hexdump.c	/^static const char add_first[] ALIGN1 = "\\"%07.7_Ax\\n\\"";$/;"	v	file:
+ALIGN1	hexdump.c	/^static const char hexdump_opts[] ALIGN1 = "bcdoxCe:f:n:s:v";$/;"	v	file:
+ALIGN1	mount.c	/^static const char must_be_root[] ALIGN1 = "you must be root";$/;"	v	file:
+ALIGN1	readprofile.c	/^static const char defaultmap[] ALIGN1 = "\/boot\/System.map";$/;"	v	file:
+ALIGN1	readprofile.c	/^static const char defaultpro[] ALIGN1 = "\/proc\/profile";$/;"	v	file:
+ATTRIBUTE_PACKED	fdisk.c	/^} ATTRIBUTE_PACKED;$/;"	v	typeref:struct:partition
+BITS_PER_BLOCK	minix.h	/^	BITS_PER_BLOCK          = BLOCK_SIZE << 3,$/;"	e	enum:__anon22
+BLKGETSIZE	fsck_minix.c	95;"	d	file:
+BLKGETSIZE	mkfs_minix.c	180;"	d	file:
+BLOCK_SIZE	minix.h	/^	BLOCK_SIZE              = 1024,$/;"	e	enum:__anon22
+BLOCK_SIZE	minix.h	55;"	d
+BSD_BBSIZE	fdisk_osf.c	62;"	d	file:
+BSD_DISKMAGIC	fdisk_osf.c	37;"	d	file:
+BSD_DSTYPE_DOSPART	fdisk_osf.c	149;"	d	file:
+BSD_DSTYPE_GEOMETRY	fdisk_osf.c	150;"	d	file:
+BSD_DSTYPE_INDOSPART	fdisk_osf.c	148;"	d	file:
+BSD_DTYPE_DEC	fdisk_osf.c	139;"	d	file:
+BSD_DTYPE_ESDI	fdisk_osf.c	141;"	d	file:
+BSD_DTYPE_FLOPPY	fdisk_osf.c	145;"	d	file:
+BSD_DTYPE_HPFL	fdisk_osf.c	144;"	d	file:
+BSD_DTYPE_HPIB	fdisk_osf.c	143;"	d	file:
+BSD_DTYPE_MSCP	fdisk_osf.c	138;"	d	file:
+BSD_DTYPE_SCSI	fdisk_osf.c	140;"	d	file:
+BSD_DTYPE_SMD	fdisk_osf.c	137;"	d	file:
+BSD_DTYPE_ST506	fdisk_osf.c	142;"	d	file:
+BSD_D_BADSECT	fdisk_osf.c	229;"	d	file:
+BSD_D_CHAIN	fdisk_osf.c	231;"	d	file:
+BSD_D_DOSPART	fdisk_osf.c	232;"	d	file:
+BSD_D_ECC	fdisk_osf.c	228;"	d	file:
+BSD_D_RAMDISK	fdisk_osf.c	230;"	d	file:
+BSD_D_REMOVABLE	fdisk_osf.c	227;"	d	file:
+BSD_FS_ADOS	fdisk_osf.c	187;"	d	file:
+BSD_FS_ADVFS	fdisk_osf.c	189;"	d	file:
+BSD_FS_BOOT	fdisk_osf.c	186;"	d	file:
+BSD_FS_BSDFFS	fdisk_osf.c	180;"	d	file:
+BSD_FS_BSDLFS	fdisk_osf.c	181;"	d	file:
+BSD_FS_EXT2	fdisk_osf.c	193;"	d	file:
+BSD_FS_HFS	fdisk_osf.c	188;"	d	file:
+BSD_FS_HPFS	fdisk_osf.c	183;"	d	file:
+BSD_FS_ISO9660	fdisk_osf.c	184;"	d	file:
+BSD_FS_ISOFS	fdisk_osf.c	185;"	d	file:
+BSD_FS_MSDOS	fdisk_osf.c	195;"	d	file:
+BSD_FS_OTHER	fdisk_osf.c	182;"	d	file:
+BSD_FS_SWAP	fdisk_osf.c	174;"	d	file:
+BSD_FS_SYSV	fdisk_osf.c	177;"	d	file:
+BSD_FS_UNUSED	fdisk_osf.c	173;"	d	file:
+BSD_FS_V6	fdisk_osf.c	175;"	d	file:
+BSD_FS_V7	fdisk_osf.c	176;"	d	file:
+BSD_FS_V71K	fdisk_osf.c	178;"	d	file:
+BSD_FS_V8	fdisk_osf.c	179;"	d	file:
+BSD_LABELOFFSET	fdisk_osf.c	50;"	d	file:
+BSD_LABELOFFSET	fdisk_osf.c	54;"	d	file:
+BSD_LABELOFFSET	fdisk_osf.c	57;"	d	file:
+BSD_LABELSECTOR	fdisk_osf.c	49;"	d	file:
+BSD_LABELSECTOR	fdisk_osf.c	53;"	d	file:
+BSD_LABELSECTOR	fdisk_osf.c	56;"	d	file:
+BSD_LINUX_BOOTDIR	fdisk_osf.c	44;"	d	file:
+BSD_MAXPARTITIONS	fdisk_osf.c	41;"	d	file:
+BSD_SBSIZE	fdisk_osf.c	63;"	d	file:
+CMD_ACCEL	fbset.c	/^	CMD_ACCEL = 5,$/;"	e	enum:__anon23	file:
+CMD_ALL	fbset.c	/^	CMD_ALL = 11,$/;"	e	enum:__anon23	file:
+CMD_BCAST	fbset.c	/^	CMD_BCAST = 116,$/;"	e	enum:__anon23	file:
+CMD_CHANGE	fbset.c	/^	CMD_CHANGE = 13,$/;"	e	enum:__anon23	file:
+CMD_CSYNC	fbset.c	/^	CMD_CSYNC = 113,$/;"	e	enum:__anon23	file:
+CMD_DB	fbset.c	/^	CMD_DB = 2,$/;"	e	enum:__anon23	file:
+CMD_DEPTH	fbset.c	/^	CMD_DEPTH = 104,$/;"	e	enum:__anon23	file:
+CMD_DOUBLE	fbset.c	/^	CMD_DOUBLE = 9,$/;"	e	enum:__anon23	file:
+CMD_EXTSYNC	fbset.c	/^	CMD_EXTSYNC = 115,$/;"	e	enum:__anon23	file:
+CMD_FB	fbset.c	/^	CMD_FB = 1,$/;"	e	enum:__anon23	file:
+CMD_GEOMETRY	fbset.c	/^	CMD_GEOMETRY = 3,$/;"	e	enum:__anon23	file:
+CMD_GSYNC	fbset.c	/^	CMD_GSYNC = 114,$/;"	e	enum:__anon23	file:
+CMD_HSLEN	fbset.c	/^	CMD_HSLEN = 111,$/;"	e	enum:__anon23	file:
+CMD_HSYNC	fbset.c	/^	CMD_HSYNC = 6,$/;"	e	enum:__anon23	file:
+CMD_INFO	fbset.c	/^	CMD_INFO = 12,$/;"	e	enum:__anon23	file:
+CMD_LACED	fbset.c	/^	CMD_LACED = 8,$/;"	e	enum:__anon23	file:
+CMD_LEFT	fbset.c	/^	CMD_LEFT = 107,$/;"	e	enum:__anon23	file:
+CMD_LOWER	fbset.c	/^	CMD_LOWER = 110,$/;"	e	enum:__anon23	file:
+CMD_MATCH	fbset.c	/^	CMD_MATCH = 105,$/;"	e	enum:__anon23	file:
+CMD_MOVE	fbset.c	/^	CMD_MOVE = 119,$/;"	e	enum:__anon23	file:
+CMD_PIXCLOCK	fbset.c	/^	CMD_PIXCLOCK = 106,$/;"	e	enum:__anon23	file:
+CMD_RGBA	fbset.c	/^	CMD_RGBA = 117,$/;"	e	enum:__anon23	file:
+CMD_RIGHT	fbset.c	/^	CMD_RIGHT = 108,$/;"	e	enum:__anon23	file:
+CMD_STEP	fbset.c	/^	CMD_STEP = 118,$/;"	e	enum:__anon23	file:
+CMD_TIMING	fbset.c	/^	CMD_TIMING = 4,$/;"	e	enum:__anon23	file:
+CMD_UPPER	fbset.c	/^	CMD_UPPER = 109,$/;"	e	enum:__anon23	file:
+CMD_VSLEN	fbset.c	/^	CMD_VSLEN = 112,$/;"	e	enum:__anon23	file:
+CMD_VSYNC	fbset.c	/^	CMD_VSYNC = 7,$/;"	e	enum:__anon23	file:
+CMD_VXRES	fbset.c	/^	CMD_VXRES = 102,$/;"	e	enum:__anon23	file:
+CMD_VYRES	fbset.c	/^	CMD_VYRES = 103,$/;"	e	enum:__anon23	file:
+CMD_XRES	fbset.c	/^	CMD_XRES = 100,$/;"	e	enum:__anon23	file:
+CMD_YRES	fbset.c	/^	CMD_YRES = 101,$/;"	e	enum:__anon23	file:
+CONVERTED_TAB_SIZE	more.c	53;"	d	file:
+CREATOR	ipcs.c	89;"	d	file:
+CUR_TIME	mkfs_minix.c	74;"	d	file:
+CUR_TIME	mkfs_minix.c	78;"	d	file:
+DEBUG	mkfs_minix.c	70;"	d	file:
+DEFAULTFBDEV	fbset.c	17;"	d	file:
+DEFAULTFBMODE	fbset.c	18;"	d	file:
+DEFAULT_SECTOR_SIZE	fdisk.c	23;"	d	file:
+EDQUOT	mount.c	594;"	d	file:
+ENABLE_CMDTAGQ	fdisk_sgi.c	58;"	d	file:
+ENABLE_FEATURE_FDISK_BLKSIZE	fdisk.c	19;"	d	file:
+EXTENDED	fdisk.c	30;"	d	file:
+FALSE	mount.c	28;"	d	file:
+FBIOGET_VSCREENINFO	fbset.c	/^	FBIOGET_VSCREENINFO = 0x4600,$/;"	e	enum:__anon24	file:
+FBIOPUT_VSCREENINFO	fbset.c	/^	FBIOPUT_VSCREENINFO = 0x4601$/;"	e	enum:__anon24	file:
+FB_ACTIVATE_ALL	fbset.c	67;"	d	file:
+FB_SYNC_COMP_HIGH_ACT	fbset.c	/^	FB_SYNC_COMP_HIGH_ACT = 8	\/* composite sync high active   *\/$/;"	e	enum:__anon25	file:
+FB_SYNC_EXT	fbset.c	/^	FB_SYNC_EXT = 4,	\/* external sync		*\/$/;"	e	enum:__anon25	file:
+FB_SYNC_HOR_HIGH_ACT	fbset.c	/^	FB_SYNC_HOR_HIGH_ACT = 1,	\/* horizontal sync high active	*\/$/;"	e	enum:__anon25	file:
+FB_SYNC_VERT_HIGH_ACT	fbset.c	/^	FB_SYNC_VERT_HIGH_ACT = 2,	\/* vertical sync high active	*\/$/;"	e	enum:__anon25	file:
+FB_VMODE_DOUBLE	fbset.c	/^	FB_VMODE_DOUBLE = 2,	\/* double scan *\/$/;"	e	enum:__anon25	file:
+FB_VMODE_INTERLACED	fbset.c	/^	FB_VMODE_INTERLACED = 1,	\/* interlaced	*\/$/;"	e	enum:__anon25	file:
+FDFLUSH	freeramdisk.c	15;"	d	file:
+FDFMTBEG	fdformat.c	37;"	d	file:
+FDFMTEND	fdformat.c	39;"	d	file:
+FDFMTTRK	fdformat.c	38;"	d	file:
+FDGETPRM	fdformat.c	40;"	d	file:
+FD_2M	fdformat.c	23;"	d	file:
+FD_FILL_BYTE	fdformat.c	41;"	d	file:
+FD_PERP	fdformat.c	28;"	d	file:
+FD_SECTSIZE	fdformat.c	26;"	d	file:
+FD_SIZECODE	fdformat.c	25;"	d	file:
+FD_SIZECODEMASK	fdformat.c	24;"	d	file:
+FD_STRETCH	fdformat.c	17;"	d	file:
+FD_SWAPSIDES	fdformat.c	18;"	d	file:
+FHSIZE	mount.c	406;"	d	file:
+FHSIZE3	mount.c	407;"	d	file:
+FIRSTZONE	fsck_minix.c	214;"	d	file:
+FLOPPY_MAJOR	fdisk_sun.c	12;"	d	file:
+FREEBSD_PARTITION	fdisk_osf.c	245;"	d	file:
+G	fdisk.c	295;"	d	file:
+G	fsck_minix.c	153;"	d	file:
+G	mdev.c	18;"	d	file:
+G	mkfs_minix.c	121;"	d	file:
+G	more.c	30;"	d	file:
+GETGID	mkfs_minix.c	76;"	d	file:
+GETGID	mkfs_minix.c	80;"	d	file:
+GETUID	mkfs_minix.c	75;"	d	file:
+GETUID	mkfs_minix.c	79;"	d	file:
+HDIO_GETGEO	fdisk.c	49;"	d	file:
+HWCLOCK_OPT_HCTOSYS	hwclock.c	170;"	d	file:
+HWCLOCK_OPT_LOCALTIME	hwclock.c	167;"	d	file:
+HWCLOCK_OPT_RTCFILE	hwclock.c	172;"	d	file:
+HWCLOCK_OPT_SHOW	hwclock.c	169;"	d	file:
+HWCLOCK_OPT_SYSTOHC	hwclock.c	171;"	d	file:
+HWCLOCK_OPT_UTC	hwclock.c	168;"	d	file:
+IDE0_MAJOR	fdisk_sun.c	34;"	d	file:
+IDE1_MAJOR	fdisk_sun.c	37;"	d	file:
+IGNORE_ERRORS	fdisk_sgi.c	56;"	d	file:
+IMAPS	fsck_minix.c	212;"	d	file:
+INIT_G	fsck_minix.c	192;"	d	file:
+INIT_G	more.c	32;"	d	file:
+INIT_G	more.c	49;"	d	file:
+INODES	fsck_minix.c	211;"	d	file:
+INODE_BLOCKS	fsck_minix.c	226;"	d	file:
+INODE_BLOCKS	fsck_minix.c	229;"	d	file:
+INODE_BLOCKS	mkfs_minix.c	143;"	d	file:
+INODE_BLOCKS	mkfs_minix.c	146;"	d	file:
+INODE_BUF1	mkfs_minix.c	128;"	d	file:
+INODE_BUF2	mkfs_minix.c	129;"	d	file:
+INODE_BUFFER_SIZE	fsck_minix.c	232;"	d	file:
+INODE_BUFFER_SIZE	mkfs_minix.c	150;"	d	file:
+INODE_SIZE1	minix.h	/^	INODE_SIZE1             = sizeof(struct minix1_inode),$/;"	e	enum:__anon22
+INODE_SIZE2	minix.h	/^	INODE_SIZE2             = sizeof(struct minix2_inode),$/;"	e	enum:__anon22
+IPCRM_LEGACY	ipcrm.c	32;"	d	file:
+IPC_INFO	ipcs.c	57;"	d	file:
+IS_EXTENDED	fdisk.c	307;"	d	file:
+Inode1	fsck_minix.c	201;"	d	file:
+Inode2	fsck_minix.c	202;"	d	file:
+KEY	ipcs.c	82;"	d	file:
+KEY	ipcs.c	84;"	d	file:
+LABEL_IS_AIX	fdisk.c	115;"	d	file:
+LABEL_IS_AIX	fdisk.c	118;"	d	file:
+LABEL_IS_DOS	fdisk.c	96;"	d	file:
+LABEL_IS_OSF	fdisk.c	123;"	d	file:
+LABEL_IS_OSF	fdisk.c	126;"	d	file:
+LABEL_IS_SGI	fdisk.c	107;"	d	file:
+LABEL_IS_SGI	fdisk.c	110;"	d	file:
+LABEL_IS_SUN	fdisk.c	102;"	d	file:
+LABEL_IS_SUN	fdisk.c	99;"	d	file:
+LIMITS	ipcs.c	87;"	d	file:
+LINUX_EXTENDED	fdisk.c	35;"	d	file:
+LINUX_LVM	fdisk.c	36;"	d	file:
+LINUX_NATIVE	fdisk.c	34;"	d	file:
+LINUX_PARTITION	fdisk.c	32;"	d	file:
+LINUX_RAID	fdisk.c	37;"	d	file:
+LINUX_SWAP	fdisk.c	33;"	d	file:
+LONG_OPT	getopt.c	/^	LONG_OPT = 2$/;"	e	enum:__anon1	file:
+MAGIC	fsck_minix.c	217;"	d	file:
+MAXIMUM_PARTS	fdisk.c	26;"	d	file:
+MAXSIZE	fsck_minix.c	216;"	d	file:
+MAX_DEPTH	fsck_minix.c	/^enum { MAX_DEPTH = 32 };$/;"	e	enum:__anon6	file:
+MAX_GOOD_BLOCKS	mkfs_minix.c	/^	MAX_GOOD_BLOCKS         = 512,$/;"	e	enum:__anon12	file:
+MAX_NFSPROT	mount.c	688;"	d	file:
+MAX_PER_LINE	fdisk.c	2465;"	d	file:
+MAX_SECTOR_SIZE	fdisk.c	24;"	d	file:
+MAX_SYSFS_DEPTH	mdev.c	22;"	d	file:
+MBRbuffer	fdisk.c	/^	char MBRbuffer[MAX_SECTOR_SIZE];$/;"	m	struct:globals	file:
+MBRbuffer	fdisk.c	301;"	d	file:
+MINIX1_INODES_PER_BLOCK	minix.h	/^	MINIX1_INODES_PER_BLOCK = BLOCK_SIZE \/ sizeof(struct minix1_inode),$/;"	e	enum:__anon22
+MINIX1_LINK_MAX	fsck_minix.c	/^	MINIX1_LINK_MAX = 250,$/;"	e	enum:__anon4	file:
+MINIX1_SUPER_MAGIC	minix.h	/^	MINIX1_SUPER_MAGIC      = 0x137F,       \/* original minix fs *\/$/;"	e	enum:__anon22
+MINIX1_SUPER_MAGIC2	minix.h	/^	MINIX1_SUPER_MAGIC2     = 0x138F,       \/* minix fs, 30 char names *\/$/;"	e	enum:__anon22
+MINIX2_INODES_PER_BLOCK	minix.h	/^	MINIX2_INODES_PER_BLOCK = BLOCK_SIZE \/ sizeof(struct minix2_inode),$/;"	e	enum:__anon22
+MINIX2_LINK_MAX	fsck_minix.c	/^	MINIX2_LINK_MAX = 65530,$/;"	e	enum:__anon4	file:
+MINIX2_SUPER_MAGIC	minix.h	/^	MINIX2_SUPER_MAGIC      = 0x2468,       \/* minix V2 fs *\/$/;"	e	enum:__anon22
+MINIX2_SUPER_MAGIC2	minix.h	/^	MINIX2_SUPER_MAGIC2     = 0x2478,       \/* minix V2 fs, 30 char names *\/$/;"	e	enum:__anon22
+MINIX_BAD_INO	minix.h	/^	MINIX_BAD_INO           = 2,$/;"	e	enum:__anon22
+MINIX_ERROR_FS	minix.h	/^	MINIX_ERROR_FS          = 0x0002,       \/* fs has errors *\/$/;"	e	enum:__anon22
+MINIX_I_MAP_SLOTS	fsck_minix.c	/^	MINIX_I_MAP_SLOTS = 8,$/;"	e	enum:__anon4	file:
+MINIX_NAME_MAX	fsck_minix.c	/^	MINIX_NAME_MAX = 255,         \/* # chars in a file name *\/$/;"	e	enum:__anon4	file:
+MINIX_ROOT_INO	minix.h	/^	MINIX_ROOT_INO          = 1,$/;"	e	enum:__anon22
+MINIX_V1	fsck_minix.c	/^	MINIX_V1 = 0x0001,      \/* original minix fs *\/$/;"	e	enum:__anon4	file:
+MINIX_V2	fsck_minix.c	/^	MINIX_V2 = 0x0002,      \/* minix V2 fs *\/$/;"	e	enum:__anon4	file:
+MINIX_VALID_FS	minix.h	/^	MINIX_VALID_FS          = 0x0001,       \/* clean fs *\/$/;"	e	enum:__anon22
+MINIX_Z_MAP_SLOTS	fsck_minix.c	/^	MINIX_Z_MAP_SLOTS = 64,$/;"	e	enum:__anon4	file:
+MNT3ERR_ACCES	mount.c	/^	MNT3ERR_ACCES = 13,$/;"	e	enum:mountstat3	file:
+MNT3ERR_INVAL	mount.c	/^	MNT3ERR_INVAL = 22,$/;"	e	enum:mountstat3	file:
+MNT3ERR_IO	mount.c	/^	MNT3ERR_IO = 5,$/;"	e	enum:mountstat3	file:
+MNT3ERR_NAMETOOLONG	mount.c	/^	MNT3ERR_NAMETOOLONG = 63,$/;"	e	enum:mountstat3	file:
+MNT3ERR_NOENT	mount.c	/^	MNT3ERR_NOENT = 2,$/;"	e	enum:mountstat3	file:
+MNT3ERR_NOTDIR	mount.c	/^	MNT3ERR_NOTDIR = 20,$/;"	e	enum:mountstat3	file:
+MNT3ERR_NOTSUPP	mount.c	/^	MNT3ERR_NOTSUPP = 10004,$/;"	e	enum:mountstat3	file:
+MNT3ERR_PERM	mount.c	/^	MNT3ERR_PERM = 1,$/;"	e	enum:mountstat3	file:
+MNT3ERR_SERVERFAULT	mount.c	/^	MNT3ERR_SERVERFAULT = 10006,$/;"	e	enum:mountstat3	file:
+MNTNAMLEN	mount.c	405;"	d	file:
+MNTPATHLEN	mount.c	404;"	d	file:
+MNT_OK	mount.c	/^	MNT_OK = 0,$/;"	e	enum:mountstat3	file:
+MOUNTPORT	mount.c	403;"	d	file:
+MOUNTPROC3_DUMP	mount.c	517;"	d	file:
+MOUNTPROC3_EXPORT	mount.c	520;"	d	file:
+MOUNTPROC3_MNT	mount.c	516;"	d	file:
+MOUNTPROC3_NULL	mount.c	515;"	d	file:
+MOUNTPROC3_UMNT	mount.c	518;"	d	file:
+MOUNTPROC3_UMNTALL	mount.c	519;"	d	file:
+MOUNTPROC_DUMP	mount.c	503;"	d	file:
+MOUNTPROC_EXPORT	mount.c	506;"	d	file:
+MOUNTPROC_EXPORTALL	mount.c	507;"	d	file:
+MOUNTPROC_MNT	mount.c	502;"	d	file:
+MOUNTPROC_NULL	mount.c	501;"	d	file:
+MOUNTPROC_PATHCONF	mount.c	511;"	d	file:
+MOUNTPROC_UMNT	mount.c	504;"	d	file:
+MOUNTPROC_UMNTALL	mount.c	505;"	d	file:
+MOUNTPROG	mount.c	498;"	d	file:
+MOUNTVERS	mount.c	499;"	d	file:
+MOUNTVERS_POSIX	mount.c	509;"	d	file:
+MOUNT_NOAUTO	mount.c	/^	MOUNT_NOAUTO = (1<<29),$/;"	e	enum:__anon14	file:
+MOUNT_SWAP	mount.c	/^	MOUNT_SWAP   = (1<<30),$/;"	e	enum:__anon14	file:
+MOUNT_USERS	mount.c	/^	MOUNT_USERS  = (1<<28)*ENABLE_DESKTOP,$/;"	e	enum:__anon14	file:
+MOUNT_V3	mount.c	513;"	d	file:
+MSG	ipcrm.c	/^	MSG$/;"	e	enum:type_id	file:
+MSG_INFO	ipcs.c	34;"	d	file:
+MSG_STAT	ipcs.c	33;"	d	file:
+MS_MOVE	switch_root.c	24;"	d	file:
+MS_SILENT	mount.c	34;"	d	file:
+NDDATA	fdisk_osf.c	116;"	d	file:
+NETBSD_PARTITION	fdisk_osf.c	246;"	d	file:
+NEXT_BAD	mkfs_minix.c	312;"	d	file:
+NFS_FHSIZE	mount.c	/^	NFS_FHSIZE = 32,$/;"	e	enum:__anon19	file:
+NFS_MOUNT_INTR	mount.c	/^	NFS_MOUNT_INTR = 0x0002,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_KERBEROS	mount.c	/^	NFS_MOUNT_KERBEROS = 0x0100,	\/* 3 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_NOAC	mount.c	/^	NFS_MOUNT_NOAC = 0x0020,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_NOCTO	mount.c	/^	NFS_MOUNT_NOCTO = 0x0010,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_NONLM	mount.c	/^	NFS_MOUNT_NONLM = 0x0200	\/* 3 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_POSIX	mount.c	/^	NFS_MOUNT_POSIX = 0x0008,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_SECURE	mount.c	/^	NFS_MOUNT_SECURE = 0x0004,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_SOFT	mount.c	/^	NFS_MOUNT_SOFT = 0x0001,	\/* 1 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_TCP	mount.c	/^	NFS_MOUNT_TCP = 0x0040,		\/* 2 *\/$/;"	e	enum:__anon20	file:
+NFS_MOUNT_VER3	mount.c	/^	NFS_MOUNT_VER3 = 0x0080,	\/* 3 *\/$/;"	e	enum:__anon20	file:
+NFS_PORT	mount.c	/^	NFS_PORT = 2049$/;"	e	enum:__anon19	file:
+NON_OPT	getopt.c	/^	NON_OPT = 1,$/;"	e	enum:__anon1	file:
+NORM_FIRSTZONE	fsck_minix.c	233;"	d	file:
+NORM_FIRSTZONE	mkfs_minix.c	151;"	d	file:
+NSPARE	fdisk_osf.c	118;"	d	file:
+OPTION_STRING	umount.c	16;"	d	file:
+OPT_ALL	fbset.c	/^	OPT_ALL      = (1 << 9),$/;"	e	enum:__anon23	file:
+OPT_ALL	umount.c	22;"	d	file:
+OPT_CHANGE	fbset.c	/^	OPT_CHANGE   = (1 << 0),$/;"	e	enum:__anon23	file:
+OPT_DONTFREELOOP	umount.c	19;"	d	file:
+OPT_FORCE	umount.c	17;"	d	file:
+OPT_INFO	fbset.c	/^	OPT_INFO     = (1 << 1),$/;"	e	enum:__anon23	file:
+OPT_LAZY	umount.c	18;"	d	file:
+OPT_NO_MTAB	umount.c	20;"	d	file:
+OPT_Q	getopt.c	/^	OPT_Q	= 0x8,	\/\/ -Q$/;"	e	enum:__anon2	file:
+OPT_READMODE	fbset.c	/^	OPT_READMODE = (1 << 2),$/;"	e	enum:__anon23	file:
+OPT_REMOUNT	umount.c	21;"	d	file:
+OPT_T	getopt.c	/^	OPT_T	= 0x20,	\/\/ -T$/;"	e	enum:__anon2	file:
+OPT_a	getopt.c	/^	OPT_a	= 0x80,	\/\/ -a$/;"	e	enum:__anon2	file:
+OPT_l	getopt.c	/^	OPT_l	= 0x100, \/\/ -l$/;"	e	enum:__anon2	file:
+OPT_n	getopt.c	/^	OPT_n	= 0x2,	\/\/ -n$/;"	e	enum:__anon2	file:
+OPT_o	getopt.c	/^	OPT_o	= 0x1,	\/\/ -o$/;"	e	enum:__anon2	file:
+OPT_q	getopt.c	/^	OPT_q	= 0x4,	\/\/ -q$/;"	e	enum:__anon2	file:
+OPT_s	getopt.c	/^	OPT_s	= 0x10,	\/\/ -s$/;"	e	enum:__anon2	file:
+OPT_u	getopt.c	/^	OPT_u	= 0x40,	\/\/ -u$/;"	e	enum:__anon2	file:
+PID	ipcs.c	91;"	d	file:
+PLURAL	fdisk.c	151;"	d	file:
+RAMFS_MAGIC	switch_root.c	16;"	d	file:
+RESEEK	fdisk_sgi.c	57;"	d	file:
+RFC_868_BIAS	rdate.c	/^enum { RFC_868_BIAS = 2208988800UL };$/;"	e	enum:__anon3	file:
+RTC_RD_TIME	hwclock.c	28;"	d	file:
+RTC_SET_TIME	hwclock.c	27;"	d	file:
+SB	mkfs_minix.c	131;"	d	file:
+SB_FIRSTZONE	mkfs_minix.c	136;"	d	file:
+SB_IMAPS	mkfs_minix.c	134;"	d	file:
+SB_INODES	mkfs_minix.c	133;"	d	file:
+SB_MAGIC	mkfs_minix.c	139;"	d	file:
+SB_MAXSIZE	mkfs_minix.c	138;"	d	file:
+SB_ZMAPS	mkfs_minix.c	135;"	d	file:
+SB_ZONES	mkfs_minix.c	142;"	d	file:
+SB_ZONES	mkfs_minix.c	145;"	d	file:
+SB_ZONE_SIZE	mkfs_minix.c	137;"	d	file:
+SCSI_IOCTL_GET_IDLUN	fdisk_sun.c	14;"	d	file:
+SECTOR_FWD	fdisk_sgi.c	53;"	d	file:
+SECTOR_SIZE	fdisk.c	25;"	d	file:
+SECTOR_SLIP	fdisk_sgi.c	52;"	d	file:
+SEM	ipcrm.c	/^	SEM,$/;"	e	enum:type_id	file:
+SEM_INFO	ipcs.c	52;"	d	file:
+SEM_STAT	ipcs.c	51;"	d	file:
+SGI_EFS	fdisk_sgi.c	14;"	d	file:
+SGI_ENTIRE_DISK	fdisk_sgi.c	21;"	d	file:
+SGI_INFO_MAGIC	fdisk_sgi.c	98;"	d	file:
+SGI_INFO_MAGIC_SWAPPED	fdisk_sgi.c	99;"	d	file:
+SGI_LABEL_MAGIC	fdisk_sgi.c	96;"	d	file:
+SGI_LABEL_MAGIC_SWAPPED	fdisk_sgi.c	97;"	d	file:
+SGI_LVOL	fdisk_sgi.c	15;"	d	file:
+SGI_RLVOL	fdisk_sgi.c	16;"	d	file:
+SGI_SSWAP16	fdisk_sgi.c	101;"	d	file:
+SGI_SSWAP32	fdisk_sgi.c	102;"	d	file:
+SGI_SWAP	fdisk_sgi.c	11;"	d	file:
+SGI_VOLHDR	fdisk_sgi.c	9;"	d	file:
+SGI_VOLUME	fdisk_sgi.c	13;"	d	file:
+SGI_XFS	fdisk_sgi.c	17;"	d	file:
+SGI_XFSLOG	fdisk_sgi.c	18;"	d	file:
+SGI_XLV	fdisk_sgi.c	19;"	d	file:
+SGI_XVM	fdisk_sgi.c	20;"	d	file:
+SHELL_IS_TCSH	getopt.c	/^	SHELL_IS_TCSH = 0x8000, \/* hijack this bit for other purposes *\/$/;"	e	enum:__anon2	file:
+SHM	ipcrm.c	/^	SHM,$/;"	e	enum:type_id	file:
+SHM_DEST	ipcs.c	27;"	d	file:
+SHM_INFO	ipcs.c	39;"	d	file:
+SHM_LOCKED	ipcs.c	28;"	d	file:
+SHM_STAT	ipcs.c	38;"	d	file:
+SINGULAR	fdisk.c	152;"	d	file:
+STATIC_AIX	fdisk.c	116;"	d	file:
+STATIC_AIX	fdisk.c	119;"	d	file:
+STATIC_OSF	fdisk.c	124;"	d	file:
+STATIC_OSF	fdisk.c	127;"	d	file:
+STATIC_SGI	fdisk.c	108;"	d	file:
+STATIC_SGI	fdisk.c	111;"	d	file:
+STATIC_SUN	fdisk.c	100;"	d	file:
+STATIC_SUN	fdisk.c	103;"	d	file:
+STATUS	ipcs.c	88;"	d	file:
+SUNOS_SWAP	fdisk_sun.c	3;"	d	file:
+SUN_LABEL_MAGIC	fdisk_sun.c	6;"	d	file:
+SUN_LABEL_MAGIC_SWAPPED	fdisk_sun.c	7;"	d	file:
+SUN_SSWAP16	fdisk_sun.c	8;"	d	file:
+SUN_SSWAP32	fdisk_sun.c	9;"	d	file:
+SUN_WHOLE_DISK	fdisk_sun.c	4;"	d	file:
+S_LEN	readprofile.c	38;"	d	file:
+Super	fsck_minix.c	204;"	d	file:
+TEST_BUFFER_BLOCKS	mkfs_minix.c	/^	TEST_BUFFER_BLOCKS      = 16,$/;"	e	enum:__anon12	file:
+TIME	ipcs.c	90;"	d	file:
+TMPFS_MAGIC	switch_root.c	20;"	d	file:
+TRACK_FWD	fdisk_sgi.c	54;"	d	file:
+TRACK_MULTIVOL	fdisk_sgi.c	55;"	d	file:
+TRUE	mount.c	27;"	d	file:
+USE_FEATURE_FDISK_BLKSIZE	fdisk.c	20;"	d	file:
+WIN98_EXTENDED	fdisk.c	31;"	d	file:
+ZMAPS	fsck_minix.c	213;"	d	file:
+ZONES	fsck_minix.c	207;"	d	file:
+ZONES	fsck_minix.c	209;"	d	file:
+ZONESIZE	fsck_minix.c	215;"	d	file:
+_GNU_SOURCE	hwclock.c	32;"	d	file:
+_LARGEFILE64_SOURCE	fdisk.c	12;"	d	file:
+__buf	ipcrm.c	/^	struct seminfo *__buf;$/;"	m	union:semun	typeref:struct:semun::seminfo	file:
+__buf	ipcs.c	/^	struct seminfo *__buf;$/;"	m	union:semun	typeref:struct:semun::seminfo	file:
+a2	fdisk_sgi.c	/^	unsigned int   a2;$/;"	m	struct:__anon10	file:
+a3	fdisk_sgi.c	/^	unsigned int   a3;$/;"	m	struct:__anon10	file:
+a4	fdisk_sgi.c	/^	unsigned int   a4;$/;"	m	struct:__anon10	file:
+accel_flags	fbset.c	/^	uint32_t accel_flags;		\/* acceleration flags (hints)	*\/$/;"	m	struct:fb_var_screeninfo	file:
+acdirmax	mount.c	/^	int		acdirmax;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+acdirmin	mount.c	/^	int		acdirmin;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+acregmax	mount.c	/^	int		acregmax;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+acregmin	mount.c	/^	int		acregmin;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+action	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	g	file:
+activate	fbset.c	/^	uint32_t activate;              \/* see FB_ACTIVATE_x *\/$/;"	m	struct:fb_var_screeninfo	file:
+add2freelist	fdisk_sgi.c	/^add2freelist(unsigned int f, unsigned int l)$/;"	f	file:
+add_logical	fdisk.c	/^add_logical(void)$/;"	f	file:
+add_long_options	getopt.c	/^static struct option *add_long_options(struct option *long_options, char *options)$/;"	f	file:
+add_partition	fdisk.c	/^add_partition(int n, int sys)$/;"	f	file:
+add_strings	hexdump.c	/^static const char *const add_strings[] = {$/;"	v	file:
+add_sun_partition	fdisk_sun.c	/^add_sun_partition(int n, int sys)$/;"	f	file:
+add_zone	fsck_minix.c	/^static int add_zone(uint16_t *znr, smallint *corrected)$/;"	f	file:
+add_zone2	fsck_minix.c	/^static int add_zone2(uint32_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_dind	fsck_minix.c	/^static void add_zone_dind(uint16_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_dind2	fsck_minix.c	/^static void add_zone_dind2(uint32_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_dind_blk	fsck_minix.c	/^	char add_zone_dind_blk[BLOCK_SIZE];$/;"	m	struct:globals	file:
+add_zone_dind_blk	fsck_minix.c	188;"	d	file:
+add_zone_ind	fsck_minix.c	/^static void add_zone_ind(uint16_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_ind2	fsck_minix.c	/^static void add_zone_ind2(uint32_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_ind_blk	fsck_minix.c	/^	char add_zone_ind_blk[BLOCK_SIZE];$/;"	m	struct:globals	file:
+add_zone_ind_blk	fsck_minix.c	187;"	d	file:
+add_zone_tind2	fsck_minix.c	/^static void add_zone_tind2(uint32_t *znr, smallint *corrected)$/;"	f	file:
+add_zone_tind_blk	fsck_minix.c	189;"	d	file:
+addr	mount.c	/^	struct sockaddr_in addr;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	typeref:struct:nfs_mount_data::sockaddr_in	file:
+aix_info	fdisk_aix.c	/^aix_info(void)$/;"	f	file:
+aix_other_endian	fdisk_aix.c	/^static int aix_other_endian;$/;"	v	file:
+aix_partition	fdisk_aix.c	/^} aix_partition;$/;"	t	typeref:struct:__anon8	file:
+aix_volumes	fdisk_aix.c	/^static short aix_volumes = 1;$/;"	v	file:
+aixlabel	fdisk_aix.c	20;"	d	file:
+alarm_intr	mkfs_minix.c	/^static void alarm_intr(int alnum)$/;"	f	file:
+alpha_bootblock_checksum	fdisk_osf.c	/^alpha_bootblock_checksum(char *boot)$/;"	f	file:
+alternative	getopt.c	64;"	d	file:
+append_mount_options	mount.c	/^static void append_mount_options(char **oldopts, const char *newopts)$/;"	f	file:
+array	ipcrm.c	/^	unsigned short int *array;$/;"	m	union:semun	file:
+array	ipcs.c	/^	unsigned short int *array;$/;"	m	union:semun	file:
+ask	fsck_minix.c	/^static int ask(const char *string, int def)$/;"	f	file:
+askremotedate	rdate.c	/^static time_t askremotedate(const char *host)$/;"	f	file:
+auth_flavours	mount.c	/^	} auth_flavours;$/;"	m	struct:mountres3_ok	typeref:struct:mountres3_ok::__anon17	file:
+auth_flavours_len	mount.c	/^		unsigned int auth_flavours_len;$/;"	m	struct:mountres3_ok::__anon17	file:
+auth_flavours_val	mount.c	/^		char *auth_flavours_val;$/;"	m	struct:mountres3_ok::__anon17	file:
+automatic	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+automatic	fsck_minix.c	159;"	d	file:
+b1	fdisk_sgi.c	/^	unsigned int   b1;$/;"	m	struct:__anon10	file:
+b2	fdisk_sgi.c	/^	unsigned short b2;$/;"	m	struct:__anon10	file:
+b3	fdisk_sgi.c	/^	unsigned short b3;$/;"	m	struct:__anon10	file:
+bad_zone	fsck_minix.c	/^static int bad_zone(int i)$/;"	f	file:
+badblocks	mkfs_minix.c	/^	int badblocks;$/;"	m	struct:globals	file:
+bb_dump_addfile	hexdump.c	/^static void bb_dump_addfile(char *name)$/;"	f	file:
+bits_per_pixel	fbset.c	/^	uint32_t bits_per_pixel;$/;"	m	struct:fb_var_screeninfo	file:
+blockdev	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+blockdev	fsck_minix.c	173;"	d	file:
+blue	fbset.c	/^	struct fb_bitfield blue;$/;"	m	struct:fb_var_screeninfo	typeref:struct:fb_var_screeninfo::fb_bitfield	file:
+boot_block_buffer	mkfs_minix.c	/^	char boot_block_buffer[512];$/;"	m	struct:globals	file:
+boot_file	fdisk_sgi.c	/^	unsigned char  boot_file[16];    \/* name of the bootfile *\/$/;"	m	struct:__anon9	file:
+boot_ind	fdisk.c	/^	unsigned char boot_ind;         \/* 0x80 - active *\/$/;"	m	struct:partition	file:
+boot_part	fdisk_sgi.c	/^	unsigned short boot_part;        \/* active boot partition *\/$/;"	m	struct:__anon9	file:
+bsd_cround	fdisk_osf.c	291;"	d	file:
+bsd_globals	fdisk_osf.c	/^struct bsd_globals {$/;"	s	file:
+bsd_globals_ptr	fdisk_osf.c	/^static struct bsd_globals *bsd_globals_ptr;$/;"	v	typeref:struct:bsd_globals	file:
+bsd_menu	fdisk_osf.c	/^bsd_menu(void)$/;"	f	file:
+bsd_select	fdisk_osf.c	/^bsd_select(void)$/;"	f	file:
+bsd_trydev	fdisk_osf.c	/^bsd_trydev(const char * dev)$/;"	f	file:
+bsize	mount.c	/^	unsigned int	bsize;			\/* 3 *\/$/;"	m	struct:nfs_mount_data	file:
+buf	ipcrm.c	/^	struct semid_ds *buf;$/;"	m	union:semun	typeref:struct:semun::semid_ds	file:
+buf	ipcs.c	/^	struct semid_ds *buf;$/;"	m	union:semun	typeref:struct:semun::semid_ds	file:
+bytes	fdisk_sgi.c	/^	unsigned short bytes;$/;"	m	struct:device_parameter	file:
+c	fdisk_sgi.c	/^	unsigned int   c[16];$/;"	m	struct:__anon10	file:
+change_sysid	fdisk.c	/^change_sysid(void)$/;"	f	file:
+change_units	fdisk.c	/^change_units(void)$/;"	f	file:
+changed	fdisk.c	/^	char changed;           \/* boolean *\/$/;"	m	struct:pte	file:
+changed	fsck_minix.c	/^	smallint changed;  \/* is filesystem modified? *\/$/;"	m	struct:globals	file:
+changed	fsck_minix.c	165;"	d	file:
+chardev	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+chardev	fsck_minix.c	174;"	d	file:
+check	fdisk.c	/^check(int n, unsigned h, unsigned s, unsigned c, ullong start)$/;"	f	file:
+check	fsck_minix.c	/^static void check(void)$/;"	f	file:
+check1816	fdisk_sgi.c	/^	unsigned short check1816;$/;"	m	struct:__anon10	file:
+check2	fsck_minix.c	/^static void check2(void)$/;"	f	file:
+check_aix_label	fdisk_aix.c	/^check_aix_label(void)$/;"	f	file:
+check_blocks	mkfs_minix.c	/^static void check_blocks(void)$/;"	f	file:
+check_blocks_buffer	mkfs_minix.c	/^	char check_blocks_buffer[BLOCK_SIZE * TEST_BUFFER_BLOCKS];$/;"	m	struct:globals	file:
+check_consistency	fdisk.c	/^check_consistency(const struct partition *p, int partition)$/;"	f	file:
+check_counts	fsck_minix.c	/^static void check_counts(void)$/;"	f	file:
+check_counts2	fsck_minix.c	/^static void check_counts2(void)$/;"	f	file:
+check_file	fsck_minix.c	/^static void check_file(struct minix1_inode *dir, unsigned offset)$/;"	f	file:
+check_file2	fsck_minix.c	/^static void check_file2(struct minix2_inode *dir, unsigned offset)$/;"	f	file:
+check_file_blk	fsck_minix.c	/^	char check_file_blk[BLOCK_SIZE];$/;"	m	struct:globals	file:
+check_file_blk	fsck_minix.c	190;"	d	file:
+check_mount	fsck_minix.c	/^static void check_mount(void)$/;"	f	file:
+check_osf_label	fdisk_osf.c	/^check_osf_label(void)$/;"	f	file:
+check_root	fsck_minix.c	/^static void check_root(void)$/;"	f	file:
+check_root2	fsck_minix.c	/^static void check_root2(void)$/;"	f	file:
+check_sgi_label	fdisk_sgi.c	/^check_sgi_label(void)$/;"	f	file:
+check_sun_label	fdisk_sun.c	/^check_sun_label(void)$/;"	f	file:
+check_utc	hwclock.c	/^static int check_utc(void)$/;"	f	file:
+check_zone_nr	fsck_minix.c	/^static int check_zone_nr(uint16_t *nr, smallint *corrected)$/;"	f	file:
+check_zone_nr2	fsck_minix.c	/^static int check_zone_nr2(uint32_t *nr, smallint *corrected)$/;"	f	file:
+check_zones	fsck_minix.c	/^static void check_zones(unsigned i)$/;"	f	file:
+check_zones2	fsck_minix.c	/^static void check_zones2(unsigned i)$/;"	f	file:
+cin_fileno	more.c	/^	int cin_fileno;$/;"	m	struct:globals	file:
+cin_fileno	more.c	36;"	d	file:
+clear_partition	fdisk.c	/^clear_partition(struct partition *p)$/;"	f	file:
+clearfreelist	fdisk_sgi.c	/^clearfreelist(void)$/;"	f	file:
+cmd_tag_queue_depth	fdisk_sgi.c	/^	unsigned char  cmd_tag_queue_depth;$/;"	m	struct:device_parameter	file:
+cmdoptions_t	fbset.c	/^static const struct cmdoptions_t {$/;"	s	file:
+code	fbset.c	/^	const unsigned char code;$/;"	m	struct:cmdoptions_t	file:
+compare_start	fdisk_sgi.c	/^compare_start(int *x, int *y)$/;"	f	file:
+count_blocks	mkfs_minix.c	/^static int count_blocks(int fd)$/;"	f	file:
+create_doslabel	fdisk.c	/^create_doslabel(void)$/;"	f	file:
+create_empty_dos	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	e	enum:action	file:
+create_empty_sun	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	e	enum:action	file:
+create_sgiinfo	fdisk_sgi.c	/^create_sgiinfo(void)$/;"	f	file:
+create_sgilabel	fdisk_sgi.c	/^create_sgilabel(void)$/;"	f	file:
+create_sunlabel	fdisk_sun.c	/^create_sunlabel(void)$/;"	f	file:
+cround	fdisk.c	310;"	d	file:
+csum	fdisk.c	/^	unsigned short csum;       \/* Label xor'd checksum *\/$/;"	m	struct:__anon7	file:
+csum	fdisk_sgi.c	/^	unsigned int   csum;$/;"	m	struct:__anon9	file:
+current_label_type	fdisk.c	/^static enum label_type current_label_type;$/;"	v	typeref:enum:label_type	file:
+current_name	fsck_minix.c	/^	char current_name[MAX_DEPTH * MINIX_NAME_MAX];$/;"	m	struct:globals	file:
+current_name	fsck_minix.c	191;"	d	file:
+currently_testing	mkfs_minix.c	/^	unsigned currently_testing;$/;"	m	struct:globals	file:
+cyl	fdisk.c	/^	unsigned char cyl;              \/* starting cylinder *\/$/;"	m	struct:partition	file:
+cylinder	fdisk.c	319;"	d	file:
+cylinders	fdisk.c	/^	unsigned short cylinders;$/;"	m	struct:hd_geometry	file:
+cylinders	fdisk.c	/^static unsigned heads, sectors, cylinders;$/;"	v	file:
+d	fdisk_sgi.c	/^	unsigned short d[3];$/;"	m	struct:__anon10	file:
+d_acylinders	fdisk_osf.c	/^	uint32_t   d_acylinders;           \/* # of alt. cylinders per unit *\/$/;"	m	struct:xbsd_disklabel	file:
+d_bbsize	fdisk_osf.c	/^	uint32_t   d_bbsize;               \/* size of boot area at sn0, bytes *\/$/;"	m	struct:xbsd_disklabel	file:
+d_checksum	fdisk_osf.c	/^	uint16_t   d_checksum;             \/* xor of data incl. partitions *\/$/;"	m	struct:xbsd_disklabel	file:
+d_cylskew	fdisk_osf.c	/^	uint16_t   d_cylskew;              \/* sector 0 skew, per cylinder *\/$/;"	m	struct:xbsd_disklabel	file:
+d_drivedata	fdisk_osf.c	/^	uint32_t   d_drivedata[NDDATA];    \/* drive-type specific information *\/$/;"	m	struct:xbsd_disklabel	file:
+d_flags	fdisk_osf.c	/^	uint32_t   d_flags;                \/* generic flags *\/$/;"	m	struct:xbsd_disklabel	file:
+d_headswitch	fdisk_osf.c	/^	uint32_t   d_headswitch;           \/* head switch time, usec *\/$/;"	m	struct:xbsd_disklabel	file:
+d_interleave	fdisk_osf.c	/^	uint16_t   d_interleave;           \/* hardware sector interleave *\/$/;"	m	struct:xbsd_disklabel	file:
+d_magic	fdisk_osf.c	/^	uint32_t   d_magic;                \/* the magic number *\/$/;"	m	struct:xbsd_disklabel	file:
+d_magic2	fdisk_osf.c	/^	uint32_t   d_magic2;               \/* the magic number (again) *\/$/;"	m	struct:xbsd_disklabel	file:
+d_ncylinders	fdisk_osf.c	/^	uint32_t   d_ncylinders;           \/* # of data cylinders per unit *\/$/;"	m	struct:xbsd_disklabel	file:
+d_npartitions	fdisk_osf.c	/^	uint16_t   d_npartitions;          \/* number of partitions in following *\/$/;"	m	struct:xbsd_disklabel	file:
+d_nsectors	fdisk_osf.c	/^	uint32_t   d_nsectors;             \/* # of data sectors per track *\/$/;"	m	struct:xbsd_disklabel	file:
+d_ntracks	fdisk_osf.c	/^	uint32_t   d_ntracks;              \/* # of tracks per cylinder *\/$/;"	m	struct:xbsd_disklabel	file:
+d_packname	fdisk_osf.c	/^	char       d_packname[16];                 \/* pack identifier *\/$/;"	m	struct:xbsd_disklabel	file:
+d_partitions	fdisk_osf.c	/^	} d_partitions[BSD_MAXPARTITIONS]; \/* actually may be more *\/$/;"	m	struct:xbsd_disklabel	typeref:struct:xbsd_disklabel::xbsd_partition	file:
+d_rpm	fdisk_osf.c	/^	uint16_t   d_rpm;                  \/* rotational speed *\/$/;"	m	struct:xbsd_disklabel	file:
+d_sbsize	fdisk_osf.c	/^	uint32_t   d_sbsize;               \/* max size of fs superblock, bytes *\/$/;"	m	struct:xbsd_disklabel	file:
+d_secpercyl	fdisk_osf.c	/^	uint32_t   d_secpercyl;            \/* # of data sectors per cylinder *\/$/;"	m	struct:xbsd_disklabel	file:
+d_secperunit	fdisk_osf.c	/^	uint32_t   d_secperunit;           \/* # of data sectors per unit *\/$/;"	m	struct:xbsd_disklabel	file:
+d_secsize	fdisk_osf.c	/^	uint32_t   d_secsize;              \/* # of bytes per sector *\/$/;"	m	struct:xbsd_disklabel	file:
+d_spare	fdisk_osf.c	/^	uint32_t   d_spare[NSPARE];        \/* reserved for future use *\/$/;"	m	struct:xbsd_disklabel	file:
+d_sparespercyl	fdisk_osf.c	/^	uint16_t   d_sparespercyl;         \/* # of spare sectors per cylinder *\/$/;"	m	struct:xbsd_disklabel	file:
+d_sparespertrack	fdisk_osf.c	/^	uint16_t   d_sparespertrack;       \/* # of spare sectors per track *\/$/;"	m	struct:xbsd_disklabel	file:
+d_subtype	fdisk_osf.c	/^	int16_t    d_subtype;              \/* controller\/d_type specific *\/$/;"	m	struct:xbsd_disklabel	file:
+d_trackskew	fdisk_osf.c	/^	uint16_t   d_trackskew;            \/* sector 0 skew, per track *\/$/;"	m	struct:xbsd_disklabel	file:
+d_trkseek	fdisk_osf.c	/^	uint32_t   d_trkseek;              \/* track-to-track seek, usec *\/$/;"	m	struct:xbsd_disklabel	file:
+d_type	fdisk_osf.c	/^	int16_t    d_type;                 \/* drive type *\/$/;"	m	struct:xbsd_disklabel	file:
+d_typename	fdisk_osf.c	/^	char       d_typename[16];         \/* type name, e.g. "eagle" *\/$/;"	m	struct:xbsd_disklabel	file:
+daemonize	mount.c	/^static inline int daemonize(void) { return -ENOSYS; }$/;"	f	file:
+daemonize	mount.c	/^static int daemonize(void)$/;"	f	file:
+data	mount.c	/^	char                    data[32];$/;"	m	struct:nfs2_fh	file:
+data	mount.c	/^	unsigned char           data[64];$/;"	m	struct:nfs3_fh	file:
+datarate	fdisk_sgi.c	/^	unsigned int   datarate;$/;"	m	struct:device_parameter	file:
+debug	fdisk_sgi.c	/^static int debug;$/;"	v	file:
+delete_block_backed_filesystems	mount.c	/^static void delete_block_backed_filesystems(void)$/;"	f	file:
+delete_contents	switch_root.c	/^static void delete_contents(const char *directory)$/;"	f	file:
+delete_partition	fdisk.c	/^delete_partition(int i)$/;"	f	file:
+dev_fd	fsck_minix.c	/^	int dev_fd;$/;"	m	struct:globals	file:
+dev_fd	fsck_minix.c	154;"	d	file:
+dev_fd	mkfs_minix.c	/^	int dev_fd;$/;"	m	struct:globals	file:
+device	fdformat.c	/^	unsigned int device,head,track;$/;"	m	struct:format_descr	file:
+device_name	fsck_minix.c	/^	char *device_name;$/;"	m	struct:globals	file:
+device_name	fsck_minix.c	170;"	d	file:
+device_name	mkfs_minix.c	/^	char *device_name;$/;"	m	struct:globals	file:
+device_parameter	fdisk_sgi.c	/^struct device_parameter { \/* 48 bytes *\/$/;"	s	file:
+devparam	fdisk_sgi.c	/^	struct device_parameter devparam;       \/*  1 * 48 bytes *\/$/;"	m	struct:__anon9	typeref:struct:__anon9::device_parameter	file:
+die	fsck_minix.c	/^static void die(const char *str)$/;"	f	file:
+dirAction	mdev.c	/^static int dirAction(const char *fileName, struct stat *statbuf,$/;"	f	file:
+directory	fdisk_sgi.c	/^	} directory[15];$/;"	m	struct:__anon9	typeref:struct:__anon9::volume_directory	file:
+directory	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+directory	fsck_minix.c	171;"	d	file:
+dirpath	mount.c	/^typedef char *dirpath;$/;"	t	file:
+dirsize	fsck_minix.c	/^	smallint dirsize;$/;"	m	struct:globals	file:
+dirsize	fsck_minix.c	168;"	d	file:
+dirsize	mkfs_minix.c	/^	int dirsize;$/;"	m	struct:globals	file:
+disk_device	fdisk.c	/^static const char *disk_device;$/;"	v	file:
+disklabelbuffer	fdisk_osf.c	/^	char disklabelbuffer[BSD_BBSIZE];$/;"	m	struct:bsd_globals	file:
+disklabelbuffer	fdisk_osf.c	1059;"	d	file:
+disklabelbuffer	fdisk_osf.c	285;"	d	file:
+display_in_cyl_units	fdisk.c	/^static int display_in_cyl_units = 1;$/;"	v	file:
+div_roundup	fsck_minix.c	/^static ALWAYS_INLINE unsigned div_roundup(unsigned size, unsigned n)$/;"	f	file:
+div_roundup	mkfs_minix.c	/^static ALWAYS_INLINE unsigned div_roundup(unsigned size, unsigned n)$/;"	f	file:
+dmesg_main	dmesg.c	/^int dmesg_main(int argc, char **argv)$/;"	f
+do_check	mkfs_minix.c	/^static size_t do_check(char *buffer, size_t try, unsigned current_block)$/;"	f	file:
+do_em_all	swaponoff.c	/^static int do_em_all(void)$/;"	f	file:
+do_msg	ipcs.c	/^static void do_msg(void)$/;"	f	file:
+do_sem	ipcs.c	/^static void do_sem(void)$/;"	f	file:
+do_shm	ipcs.c	/^static void do_shm(void)$/;"	f	file:
+dos_changed	fdisk.c	/^static int dos_changed;$/;"	v	file:
+dos_compatible_flag	fdisk.c	/^static int dos_compatible_flag = ~0;$/;"	v	file:
+edit_int	fdisk_osf.c	/^edit_int(int def, const char *mesg)$/;"	f	file:
+end_cyl	fdisk.c	/^	unsigned char end_cyl;          \/* end cylinder *\/$/;"	m	struct:partition	file:
+end_head	fdisk.c	/^	unsigned char end_head;         \/* end head *\/$/;"	m	struct:partition	file:
+end_sector	fdisk.c	/^	unsigned char end_sector;       \/* end sector *\/$/;"	m	struct:partition	file:
+errnum	mount.c	/^	short errnum;$/;"	m	struct:__anon21	file:
+error_msg_rpc	mount.c	/^static void error_msg_rpc(const char *msg)$/;"	f	file:
+errors_uncorrected	fsck_minix.c	/^	smallint errors_uncorrected;  \/* flag if some error was not corrected *\/$/;"	m	struct:globals	file:
+errors_uncorrected	fsck_minix.c	166;"	d	file:
+ex_dir	mount.c	/^	dirpath ex_dir;$/;"	m	struct:exportnode	file:
+ex_groups	mount.c	/^	groups ex_groups;$/;"	m	struct:exportnode	file:
+ex_next	mount.c	/^	exports ex_next;$/;"	m	struct:exportnode	file:
+exportnode	mount.c	/^struct exportnode {$/;"	s	file:
+exportnode	mount.c	/^typedef struct exportnode exportnode;$/;"	t	typeref:struct:exportnode	file:
+exports	mount.c	/^typedef struct exportnode *exports;$/;"	t	typeref:struct:exportnode	file:
+ext_index	fdisk.c	/^static int ext_index;               \/* the prime extended partition *\/$/;"	v	file:
+ext_pointer	fdisk.c	/^	struct partition *ext_pointer;  \/* points into sectorbuffer *\/$/;"	m	struct:pte	typeref:struct:pte::partition	file:
+extended_offset	fdisk.c	/^static ullong extended_offset;            \/* offset of link pointers *\/$/;"	v	file:
+fakeIt	mount.c	/^static int fakeIt;$/;"	v	file:
+fakeIt	mount.c	294;"	d	file:
+fb_bitfield	fbset.c	/^struct fb_bitfield {$/;"	s	file:
+fb_var_screeninfo	fbset.c	/^struct fb_var_screeninfo {$/;"	s	file:
+fd	fdisk.c	/^static int fd;                  \/* the disk *\/$/;"	v	file:
+fd	mount.c	/^	int		fd;			\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+fdformat_main	fdformat.c	/^int fdformat_main(int argc, char **argv)$/;"	f
+fdisk	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	e	enum:action	file:
+fdisk_fatal	fdisk.c	/^static void fdisk_fatal(const char *why)$/;"	f	file:
+fdisk_main	fdisk.c	/^int fdisk_main(int argc, char **argv)$/;"	f
+fdisk_swap16	fdisk.c	/^fdisk_swap16(uint16_t x)$/;"	f	file:
+fdisk_swap32	fdisk.c	/^fdisk_swap32(uint32_t x)$/;"	f	file:
+fetch_sun	fdisk_sun.c	/^fetch_sun(uint *starts, uint *lens, uint *start, uint *stop)$/;"	f	file:
+fhandle	mount.c	/^	fhandle3 fhandle;$/;"	m	struct:mountres3_ok	file:
+fhandle	mount.c	/^typedef char fhandle[FHSIZE];$/;"	t	file:
+fhandle3	mount.c	/^} fhandle3;$/;"	t	typeref:struct:__anon15	file:
+fhandle3_len	mount.c	/^	unsigned int fhandle3_len;$/;"	m	struct:__anon15	file:
+fhandle3_val	mount.c	/^	char *fhandle3_val;$/;"	m	struct:__anon15	file:
+fhs_fhandle	mount.c	/^		fhandle fhs_fhandle;$/;"	m	union:fhstatus::__anon16	file:
+fhs_status	mount.c	/^	mountstat3 fhs_status;$/;"	m	struct:mountres3	file:
+fhs_status	mount.c	/^	unsigned int fhs_status;$/;"	m	struct:fhstatus	file:
+fhstatus	mount.c	/^struct fhstatus {$/;"	s	file:
+fhstatus	mount.c	/^typedef struct fhstatus fhstatus;$/;"	t	typeref:struct:fhstatus	file:
+fhstatus_u	mount.c	/^	} fhstatus_u;$/;"	m	struct:fhstatus	typeref:union:fhstatus::__anon16	file:
+fileAction	mdev.c	/^static int fileAction(const char *fileName, struct stat *statbuf,$/;"	f	file:
+fill_bounds	fdisk.c	/^fill_bounds(ullong *first, ullong *last)$/;"	f	file:
+fill_sgiinfo	fdisk_sgi.c	/^fill_sgiinfo(void)$/;"	f	file:
+fillbytes	fdisk_sgi.c	/^	unsigned int   fillbytes;$/;"	m	struct:__anon9	file:
+fillbytes1	fdisk_aix.c	/^	unsigned int   fillbytes1[124];$/;"	m	struct:__anon8	file:
+fillbytes2	fdisk_aix.c	/^	unsigned int   fillbytes2[124];$/;"	m	struct:__anon8	file:
+find_kernel_nfs_mount_version	mount.c	/^find_kernel_nfs_mount_version(void)$/;"	f	file:
+first	fdisk_sgi.c	/^	unsigned int first;$/;"	m	struct:__anon11	file:
+fix_chain_of_logicals	fdisk.c	/^fix_chain_of_logicals(void)$/;"	f	file:
+fix_partition_table_order	fdisk.c	/^fix_partition_table_order(void)$/;"	f	file:
+flag_msg	ipcs.c	569;"	d	file:
+flag_print	ipcs.c	568;"	d	file:
+flag_sem	ipcs.c	570;"	d	file:
+flag_shm	ipcs.c	571;"	d	file:
+flags	fdisk.c	/^		unsigned char flags;$/;"	m	struct:__anon7::sun_info	file:
+flags	fdisk_sgi.c	/^	unsigned int   flags;           \/* controller flags *\/$/;"	m	struct:device_parameter	file:
+flags	mount.c	/^	int		flags;			\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+floppy	fdisk_sun.c	/^static int floppy;$/;"	v	file:
+floppy_struct	fdformat.c	/^struct floppy_struct {$/;"	s	file:
+fmt_gap	fdformat.c	/^			fmt_gap;	\/* gap2 size *\/$/;"	m	struct:floppy_struct	file:
+force	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+force	fsck_minix.c	164;"	d	file:
+format	ipcs.c	/^static char format;$/;"	v	file:
+format_descr	fdformat.c	/^struct format_descr {$/;"	s	file:
+freeblocks	fdisk_sgi.c	/^} freeblocks;$/;"	t	typeref:struct:__anon11	file:
+freelist	fdisk_sgi.c	/^static freeblocks freelist[17]; \/* 16 partitions can produce 17 vacant slots *\/$/;"	v	file:
+freeramdisk_main	freeramdisk.c	/^int freeramdisk_main(int argc, char **argv)$/;"	f
+from_sys_clock	hwclock.c	/^static void from_sys_clock(int utc)$/;"	f	file:
+fsck_minix_main	fsck_minix.c	/^int fsck_minix_main(int argc, char **argv)$/;"	f
+fslist	mount.c	/^static llist_t *fslist;$/;"	v	file:
+g_cmdoptions	fbset.c	/^} g_cmdoptions[] = {$/;"	v	typeref:struct:cmdoptions_t	file:
+g_options	fbset.c	/^static unsigned g_options;$/;"	v	file:
+gap	fdformat.c	/^	unsigned char	gap,		\/* gap1 size *\/$/;"	m	struct:floppy_struct	file:
+gap1	fdisk_sgi.c	/^	unsigned char  gap1;$/;"	m	struct:device_parameter	file:
+gap2	fdisk_sgi.c	/^	unsigned char  gap2;$/;"	m	struct:device_parameter	file:
+generate_output	getopt.c	/^static int generate_output(char **argv, int argc, const char *optstr, const struct option *longopts)$/;"	f	file:
+generate_output	getopt.c	145;"	d	file:
+getTermSettings	more.c	39;"	d	file:
+get_block_backed_filesystems	mount.c	/^static llist_t *get_block_backed_filesystems(void)$/;"	f	file:
+get_boot	fdisk.c	/^get_boot(enum action what)$/;"	f	file:
+get_dirsize	fsck_minix.c	/^static void get_dirsize(void)$/;"	f	file:
+get_existing_partition	fdisk.c	/^get_existing_partition(int warn, int max)$/;"	f	file:
+get_free_block	mkfs_minix.c	/^static int get_free_block(void)$/;"	f	file:
+get_geometry	fdisk.c	/^get_geometry(void)$/;"	f	file:
+get_inode	fsck_minix.c	/^static struct minix1_inode *get_inode(unsigned nr)$/;"	f	file:
+get_inode2	fsck_minix.c	/^static struct minix2_inode *get_inode2(unsigned nr)$/;"	f	file:
+get_kernel_geometry	fdisk.c	/^get_kernel_geometry(void)$/;"	f	file:
+get_list_blocks	mkfs_minix.c	/^static void get_list_blocks(char *filename)$/;"	f	file:
+get_mountport	mount.c	/^get_mountport(struct pmap *pm_mnt,$/;"	f	file:
+get_nonexisting_partition	fdisk.c	/^get_nonexisting_partition(int warn, int max)$/;"	f	file:
+get_nr_sects	fdisk.c	/^get_nr_sects(const struct partition *p)$/;"	f	file:
+get_part_table	fdisk.c	/^get_part_table(int i)$/;"	f	file:
+get_partition	fdisk.c	/^get_partition(int warn, int max)$/;"	f	file:
+get_partition_start	fdisk.c	/^get_partition_start(const struct pte *pe)$/;"	f	file:
+get_partition_table_geometry	fdisk.c	/^get_partition_table_geometry(void)$/;"	f	file:
+get_sectorsize	fdisk.c	/^get_sectorsize(void)$/;"	f	file:
+get_size	mkfs_minix.c	/^static int get_size(const char *file)$/;"	f	file:
+get_start_sect	fdisk.c	/^get_start_sect(const struct partition *p)$/;"	f	file:
+get_sys_types	fdisk.c	/^get_sys_types(void)$/;"	f	file:
+get_sys_types	fdisk.c	841;"	d	file:
+get_sysid	fdisk.c	/^get_sysid(int i)$/;"	f	file:
+getmntent_buf	mount.c	48;"	d	file:
+getmntent_r	mount.c	/^static struct mntent *getmntent_r(FILE* stream, struct mntent* result, char* buffer, int bufsize)$/;"	f	file:
+getopt_main	getopt.c	/^int getopt_main(int argc, char **argv)$/;"	f
+globals	fdisk.c	/^struct globals {$/;"	s	file:
+globals	fsck_minix.c	/^struct globals {$/;"	s	file:
+globals	mdev.c	/^struct globals {$/;"	s	file:
+globals	mkfs_minix.c	/^struct globals {$/;"	s	file:
+globals	more.c	/^struct globals {$/;"	s	file:
+good_blocks_table	mkfs_minix.c	/^	unsigned short good_blocks_table[MAX_GOOD_BLOCKS];$/;"	m	struct:globals	file:
+gotsig	more.c	/^static void gotsig(int sig)$/;"	f	file:
+gr_name	mount.c	/^	name gr_name;$/;"	m	struct:groupnode	file:
+gr_next	mount.c	/^	groups gr_next;$/;"	m	struct:groupnode	file:
+grayscale	fbset.c	/^	uint32_t grayscale;             \/* !=0 Graylevels instead of colors *\/$/;"	m	struct:fb_var_screeninfo	file:
+green	fbset.c	/^	struct fb_bitfield green;       \/* else only length is significant *\/$/;"	m	struct:fb_var_screeninfo	typeref:struct:fb_var_screeninfo::fb_bitfield	file:
+groupnode	mount.c	/^struct groupnode {$/;"	s	file:
+groupnode	mount.c	/^typedef struct groupnode groupnode;$/;"	t	typeref:struct:groupnode	file:
+groups	mount.c	/^typedef struct groupnode *groups;$/;"	t	typeref:struct:groupnode	file:
+guess_device_type	fdisk_sun.c	/^guess_device_type(void)$/;"	f	file:
+hd_geometry	fdisk.c	/^struct hd_geometry {$/;"	s	file:
+head	fdformat.c	/^			head,		\/* nr of heads *\/$/;"	m	struct:floppy_struct	file:
+head	fdformat.c	/^	unsigned int device,head,track;$/;"	m	struct:format_descr	file:
+head	fdisk.c	/^	unsigned char head;             \/* starting head *\/$/;"	m	struct:partition	file:
+head_vol0	fdisk_sgi.c	/^	unsigned short head_vol0;$/;"	m	struct:device_parameter	file:
+heads	fdisk.c	/^	unsigned char heads;$/;"	m	struct:hd_geometry	file:
+heads	fdisk.c	/^static unsigned heads, sectors, cylinders;$/;"	v	file:
+height	fbset.c	/^	uint32_t height;                \/* height of picture in mm *\/$/;"	m	struct:fb_var_screeninfo	file:
+hexdump_main	hexdump.c	/^int hexdump_main(int argc, char **argv)$/;"	f
+hidden	fdisk_osf.c	/^hidden(int type)$/;"	f	file:
+hostname	mount.c	/^	char		hostname[256];		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+hsc2sector	fdisk.c	321;"	d	file:
+hsync_len	fbset.c	/^	uint32_t hsync_len;             \/* length of horizontal sync *\/$/;"	m	struct:fb_var_screeninfo	file:
+hwclock_main	hwclock.c	/^int hwclock_main(int argc, char **argv)$/;"	f
+i386_sys_types	fdisk.c	/^static const char *const i386_sys_types[] = {$/;"	v	file:
+i_atime	minix.h	/^	uint32_t i_atime;$/;"	m	struct:minix2_inode
+i_ctime	minix.h	/^	uint32_t i_ctime;$/;"	m	struct:minix2_inode
+i_gid	minix.h	/^	uint16_t i_gid;$/;"	m	struct:minix2_inode
+i_gid	minix.h	/^	uint8_t  i_gid;$/;"	m	struct:minix1_inode
+i_mode	minix.h	/^	uint16_t i_mode;$/;"	m	struct:minix1_inode
+i_mode	minix.h	/^	uint16_t i_mode;$/;"	m	struct:minix2_inode
+i_mtime	minix.h	/^	uint32_t i_mtime;$/;"	m	struct:minix2_inode
+i_nlinks	minix.h	/^	uint16_t i_nlinks;$/;"	m	struct:minix2_inode
+i_nlinks	minix.h	/^	uint8_t  i_nlinks;$/;"	m	struct:minix1_inode
+i_size	minix.h	/^	uint32_t i_size;$/;"	m	struct:minix1_inode
+i_size	minix.h	/^	uint32_t i_size;$/;"	m	struct:minix2_inode
+i_time	minix.h	/^	uint32_t i_time;$/;"	m	struct:minix1_inode
+i_uid	minix.h	/^	uint16_t i_uid;$/;"	m	struct:minix1_inode
+i_uid	minix.h	/^	uint16_t i_uid;$/;"	m	struct:minix2_inode
+i_zone	minix.h	/^	uint16_t i_zone[9];$/;"	m	struct:minix1_inode
+i_zone	minix.h	/^	uint32_t i_zone[10];$/;"	m	struct:minix2_inode
+id	fdisk.c	/^		unsigned char id;$/;"	m	struct:__anon7::sun_info	file:
+id	fdisk_sgi.c	/^		unsigned int id;$/;"	m	struct:__anon9::sgi_partinfo	file:
+ilfact	fdisk.c	/^	unsigned short ilfact;     \/* Interleave factor *\/$/;"	m	struct:__anon7	file:
+ilfact	fdisk_sgi.c	/^	unsigned short ilfact;$/;"	m	struct:device_parameter	file:
+info	fdisk.c	/^	unsigned char info[128];   \/* Informative text string *\/$/;"	m	struct:__anon7	file:
+infos	fdisk.c	/^	} infos[8];$/;"	m	struct:__anon7	typeref:struct:__anon7::sun_info	file:
+initial_settings	more.c	/^	struct termios initial_settings;$/;"	m	struct:globals	typeref:struct:globals::termios	file:
+initial_settings	more.c	34;"	d	file:
+inode	minix.h	/^	uint16_t inode;$/;"	m	struct:minix_dir_entry
+inode_buffer	fsck_minix.c	/^	char *inode_buffer;$/;"	m	struct:globals	file:
+inode_buffer	fsck_minix.c	178;"	d	file:
+inode_buffer	mkfs_minix.c	/^	char *inode_buffer;$/;"	m	struct:globals	file:
+inode_count	fsck_minix.c	/^	unsigned char *inode_count;$/;"	m	struct:globals	file:
+inode_count	fsck_minix.c	181;"	d	file:
+inode_in_use	fsck_minix.c	256;"	d	file:
+inode_map	fsck_minix.c	/^	char *inode_map;$/;"	m	struct:globals	file:
+inode_map	fsck_minix.c	179;"	d	file:
+inode_map	mkfs_minix.c	/^	char *inode_map;$/;"	m	struct:globals	file:
+installer	fdisk_sgi.c	/^	unsigned char  installer[225];$/;"	m	struct:__anon10	file:
+ipcrm_main	ipcrm.c	/^int ipcrm_main(int argc, char **argv)$/;"	f
+ipcs_main	ipcs.c	/^int ipcs_main(int argc, char **argv)$/;"	f
+is_bsd_partition_type	fdisk_osf.c	/^is_bsd_partition_type(int type)$/;"	f	file:
+is_cleared_partition	fdisk.c	/^is_cleared_partition(const struct partition *p)$/;"	f	file:
+is_dos_partition	fdisk.c	/^is_dos_partition(int t)$/;"	f	file:
+is_ide_cdrom_or_tape	fdisk.c	/^is_ide_cdrom_or_tape(const char *device)$/;"	f	file:
+isinfreelist	fdisk_sgi.c	/^isinfreelist(unsigned int b)$/;"	f	file:
+kern_heads	fdisk.c	/^static unsigned kern_heads, kern_sectors;$/;"	v	file:
+kern_sectors	fdisk.c	/^static unsigned kern_heads, kern_sectors;$/;"	v	file:
+label_aix	fdisk.c	/^	label_dos, label_sun, label_sgi, label_aix, label_osf$/;"	e	enum:label_type	file:
+label_dos	fdisk.c	/^	label_dos, label_sun, label_sgi, label_aix, label_osf$/;"	e	enum:label_type	file:
+label_osf	fdisk.c	/^	label_dos, label_sun, label_sgi, label_aix, label_osf$/;"	e	enum:label_type	file:
+label_sgi	fdisk.c	/^	label_dos, label_sun, label_sgi, label_aix, label_osf$/;"	e	enum:label_type	file:
+label_sun	fdisk.c	/^	label_dos, label_sun, label_sgi, label_aix, label_osf$/;"	e	enum:label_type	file:
+label_type	fdisk.c	/^enum label_type {$/;"	g	file:
+last	fdisk_sgi.c	/^	unsigned int last;$/;"	m	struct:__anon11	file:
+left_margin	fbset.c	/^	uint32_t left_margin;           \/* time from sync to picture *\/$/;"	m	struct:fb_var_screeninfo	file:
+length	fbset.c	/^	uint32_t length;		\/* length of bitfield *\/$/;"	m	struct:fb_bitfield	file:
+line_buffer	fdisk.c	/^	char line_buffer[80];$/;"	m	struct:globals	file:
+line_buffer	fdisk.c	299;"	d	file:
+line_ptr	fdisk.c	/^	char *line_ptr;$/;"	m	struct:globals	file:
+line_ptr	fdisk.c	297;"	d	file:
+linear2chs	fdisk.c	/^linear2chs(unsigned ls, unsigned *c, unsigned *h, unsigned *s)$/;"	f	file:
+links	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+links	fsck_minix.c	175;"	d	file:
+linux_rtc_time	hwclock.c	/^struct linux_rtc_time {$/;"	s	file:
+list	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+list	fsck_minix.c	161;"	d	file:
+list_disk_geometry	fdisk.c	/^list_disk_geometry(void)$/;"	f	file:
+list_table	fdisk.c	/^list_table(int xtra)$/;"	f	file:
+list_types	fdisk.c	/^list_types(const char *const *sys)$/;"	f	file:
+listing	fdisk.c	/^static int listing;                 \/* no aborts for fdisk -l *\/$/;"	v	file:
+listingbuf	fdisk.c	/^	jmp_buf listingbuf;$/;"	m	struct:globals	file:
+listingbuf	fdisk.c	298;"	d	file:
+load_firmware	mdev.c	/^static void load_firmware(const char *const firmware, const char *const sysfs_path)$/;"	f	file:
+losetup_main	losetup.c	/^int losetup_main(int argc, char **argv)$/;"	f
+lower_margin	fbset.c	/^	uint32_t lower_margin;$/;"	m	struct:fb_var_screeninfo	file:
+magic	fdisk.c	/^	unsigned short magic;      \/* Magic number *\/$/;"	m	struct:__anon7	file:
+magic	fdisk_aix.c	/^	unsigned int   magic;        \/* expect AIX_LABEL_MAGIC *\/$/;"	m	struct:__anon8	file:
+magic	fdisk_sgi.c	/^	unsigned int   magic;            \/* expect SGI_LABEL_MAGIC *\/$/;"	m	struct:__anon9	file:
+magic	fdisk_sgi.c	/^	unsigned int   magic;           \/* looks like a magic number *\/$/;"	m	struct:__anon10	file:
+magic	mkfs_minix.c	/^	int magic;$/;"	m	struct:globals	file:
+main	fbset.c	/^int main(int argc, char **argv)$/;"	f
+make_bad_inode	mkfs_minix.c	/^static void make_bad_inode(void)$/;"	f	file:
+make_bad_inode2	mkfs_minix.c	/^static void make_bad_inode2(void)$/;"	f	file:
+make_device	mdev.c	/^static void make_device(char *path, int delete)$/;"	f	file:
+make_root_inode	mkfs_minix.c	/^static void make_root_inode(void)$/;"	f	file:
+make_root_inode2	mkfs_minix.c	/^static void make_root_inode2(void)$/;"	f	file:
+map_block	fsck_minix.c	/^static int map_block(struct minix1_inode *inode, unsigned blknr)$/;"	f	file:
+map_block2	fsck_minix.c	/^static int map_block2(struct minix2_inode *inode, unsigned blknr)$/;"	f	file:
+mark_good_blocks	mkfs_minix.c	/^static void mark_good_blocks(void)$/;"	f	file:
+mark_inode	fsck_minix.c	258;"	d	file:
+mark_inode	mkfs_minix.c	174;"	d	file:
+mark_zone	fsck_minix.c	261;"	d	file:
+mark_zone	mkfs_minix.c	176;"	d	file:
+mdev_main	mdev.c	/^int mdev_main(int argc, char **argv)$/;"	f
+menu	fdisk.c	/^menu(void)$/;"	f	file:
+minix1_inode	minix.h	/^struct minix1_inode {$/;"	s
+minix2_inode	minix.h	/^struct minix2_inode {$/;"	s
+minix_bit	fsck_minix.c	/^static int minix_bit(const char *a, unsigned i)$/;"	f	file:
+minix_bit	mkfs_minix.c	/^static int minix_bit(const char* a, unsigned i)$/;"	f	file:
+minix_clrbit	fsck_minix.c	/^static void minix_clrbit(char *a, unsigned i)$/;"	f	file:
+minix_clrbit	mkfs_minix.c	/^static void minix_clrbit(char *a, unsigned i)$/;"	f	file:
+minix_dir_entry	minix.h	/^struct minix_dir_entry {$/;"	s
+minix_setbit	fsck_minix.c	/^static void minix_setbit(char *a, unsigned i)$/;"	f	file:
+minix_setbit	mkfs_minix.c	/^static void minix_setbit(char *a, unsigned i)$/;"	f	file:
+minix_super_block	minix.h	/^struct minix_super_block {$/;"	s
+mkfs_minix_main	mkfs_minix.c	/^int mkfs_minix_main(int argc, char **argv)$/;"	f
+mkswap_main	mkswap.c	/^int mkswap_main(int argc, char **argv)$/;"	f
+mkswap_selinux_setcontext	mkswap.c	/^static void mkswap_selinux_setcontext(int fd, const char *path)$/;"	f	file:
+mkswap_selinux_setcontext	mkswap.c	50;"	d	file:
+ml_directory	mount.c	/^	dirpath ml_directory;$/;"	m	struct:mountbody	file:
+ml_hostname	mount.c	/^	name ml_hostname;$/;"	m	struct:mountbody	file:
+ml_next	mount.c	/^	mountlist ml_next;$/;"	m	struct:mountbody	file:
+model	fdisk_sun.c	/^	const char *model;$/;"	m	struct:sun_predefined_drives	file:
+more_main	more.c	/^int more_main(int argc, char **argv)$/;"	f
+mount_it_now	mount.c	/^static int mount_it_now(struct mntent *mp, int vfsflags, char *filteropts)$/;"	f	file:
+mount_main	mount.c	/^int mount_main(int argc, char **argv)$/;"	f
+mount_option_str	mount.c	/^static const char mount_option_str[] =$/;"	v	file:
+mount_options	mount.c	/^static const int32_t mount_options[] = {$/;"	v	file:
+mountbody	mount.c	/^struct mountbody {$/;"	s	file:
+mountbody	mount.c	/^typedef struct mountbody mountbody;$/;"	t	typeref:struct:mountbody	file:
+mountinfo	mount.c	/^		mountres3_ok mountinfo;$/;"	m	union:mountres3::__anon18	file:
+mountlist	mount.c	/^typedef struct mountbody *mountlist;$/;"	t	typeref:struct:mountbody	file:
+mountres3	mount.c	/^struct mountres3 {$/;"	s	file:
+mountres3	mount.c	/^typedef struct mountres3 mountres3;$/;"	t	typeref:struct:mountres3	file:
+mountres3_ok	mount.c	/^struct mountres3_ok {$/;"	s	file:
+mountres3_ok	mount.c	/^typedef struct mountres3_ok mountres3_ok;$/;"	t	typeref:struct:mountres3_ok	file:
+mountres3_u	mount.c	/^	} mountres3_u;$/;"	m	struct:mountres3	typeref:union:mountres3::__anon18	file:
+mountstat3	mount.c	/^enum mountstat3 {$/;"	g	file:
+mountstat3	mount.c	/^typedef enum mountstat3 mountstat3;$/;"	t	typeref:enum:mountstat3	file:
+move_begin	fdisk.c	/^move_begin(int i)$/;"	f	file:
+ms_per_word	fdisk_sgi.c	/^	unsigned int   ms_per_word;$/;"	m	struct:device_parameter	file:
+msb_right	fbset.c	/^	uint32_t msb_right;             \/* !=0: Most significant bit is right *\/$/;"	m	struct:fb_bitfield	file:
+nacyl	fdisk.c	/^	unsigned short nacyl;      \/* Alt. cylinder count *\/$/;"	m	struct:__anon7	file:
+nacyl	fdisk_sun.c	/^	unsigned short nacyl;$/;"	m	struct:sun_predefined_drives	file:
+name	fbset.c	/^	const char name[10];$/;"	m	struct:cmdoptions_t	file:
+name	fdformat.c	/^	const char	* name; \/* used only for predefined formats *\/$/;"	m	struct:floppy_struct	file:
+name	minix.h	/^	char name[0];$/;"	m	struct:minix_dir_entry
+name	mount.c	/^typedef char *name;$/;"	t	file:
+name_component	fsck_minix.c	/^	char *name_component[MAX_DEPTH+1];$/;"	m	struct:globals	file:
+name_component	fsck_minix.c	184;"	d	file:
+name_depth	fsck_minix.c	/^	int name_depth;$/;"	m	struct:globals	file:
+name_depth	fsck_minix.c	183;"	d	file:
+namelen	fsck_minix.c	/^	smallint namelen;$/;"	m	struct:globals	file:
+namelen	fsck_minix.c	169;"	d	file:
+namelen	mkfs_minix.c	/^	int namelen;$/;"	m	struct:globals	file:
+namlen	mount.c	/^	int		namlen;			\/* 2 *\/$/;"	m	struct:nfs_mount_data	file:
+ncyl	fdisk.c	/^	unsigned short ncyl;       \/* Data cylinder count *\/$/;"	m	struct:__anon7	file:
+ncyl	fdisk_sun.c	/^	unsigned short ncyl;$/;"	m	struct:sun_predefined_drives	file:
+new_partition	fdisk.c	/^new_partition(void)$/;"	f	file:
+new_settings	more.c	/^	struct termios new_settings;$/;"	m	struct:globals	typeref:struct:globals::termios	file:
+new_settings	more.c	35;"	d	file:
+next	mkfs_minix.c	/^static int next(int zone)$/;"	f	file:
+next	readprofile.c	64;"	d	file:
+nfs2_fh	mount.c	/^struct nfs2_fh {$/;"	s	file:
+nfs3_fh	mount.c	/^struct nfs3_fh {$/;"	s	file:
+nfs_errtbl	mount.c	/^} nfs_errtbl[] = {$/;"	v	typeref:struct:__anon21	file:
+nfs_mount_data	mount.c	/^struct nfs_mount_data {$/;"	s	file:
+nfs_mount_version	mount.c	/^static smalluint nfs_mount_version;$/;"	v	file:
+nfs_strerror	mount.c	/^static char *nfs_strerror(int status)$/;"	f	file:
+nfsmount	mount.c	/^static int nfsmount(struct mntent *mp, int vfsflags, char *filteropts)$/;"	f	file:
+nonstd	fbset.c	/^	uint32_t nonstd;                \/* !=0 Non standard pixel format *\/$/;"	m	struct:fb_var_screeninfo	file:
+normalize	getopt.c	/^static const char *normalize(const char *arg)$/;"	f	file:
+nowarn	fdisk.c	/^static int nowarn;            \/* no warnings for fdisk -l\/-s *\/$/;"	v	file:
+nsect	fdisk.c	/^	unsigned short nsect;      \/* Sectors per track *\/$/;"	m	struct:__anon7	file:
+nsect	fdisk_sgi.c	/^	unsigned short nsect;   \/* sectors\/tracks in cyl 0 or vol 0 *\/$/;"	m	struct:device_parameter	file:
+nsect	fdisk_sun.c	/^	unsigned short nsect;$/;"	m	struct:sun_predefined_drives	file:
+ntrks	fdisk.c	/^	unsigned short ntrks;      \/* Tracks per cylinder *\/$/;"	m	struct:__anon7	file:
+ntrks	fdisk_sgi.c	/^	unsigned short ntrks;   \/* tracks in cyl 0 or vol 0 *\/$/;"	m	struct:device_parameter	file:
+ntrks	fdisk_sun.c	/^	unsigned short ntrks;$/;"	m	struct:sun_predefined_drives	file:
+num_sectors	fdisk.c	/^		uint32_t num_sectors;$/;"	m	struct:__anon7::sun_partinfo	file:
+num_sectors	fdisk_sgi.c	/^		unsigned int num_sectors;       \/* number of blocks *\/$/;"	m	struct:__anon9::sgi_partinfo	file:
+offset	fbset.c	/^	uint32_t offset;                \/* beginning of bitfield *\/$/;"	m	struct:fb_bitfield	file:
+offset	fdisk.c	/^	ullong offset;          \/* disk sector number *\/$/;"	m	struct:pte	file:
+old_root	mount.c	/^	struct nfs2_fh	old_root;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	typeref:struct:nfs_mount_data::nfs2_fh	file:
+p_cpg	fdisk_osf.c	/^		uint16_t   p_cpg;          \/* filesystem cylinders per group *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+p_frag	fdisk_osf.c	/^		uint8_t    p_frag;         \/* filesystem fragments per block *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+p_fsize	fdisk_osf.c	/^		uint32_t   p_fsize;        \/* filesystem basic fragment size *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+p_fstype	fdisk_osf.c	/^		uint8_t    p_fstype;       \/* filesystem type, see below *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+p_offset	fdisk_osf.c	/^		uint32_t   p_offset;       \/* starting sector *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+p_size	fdisk_osf.c	/^		uint32_t   p_size;         \/* number of sectors in partition *\/$/;"	m	struct:xbsd_disklabel::xbsd_partition	file:
+param_count	fbset.c	/^	const unsigned char param_count;$/;"	m	struct:cmdoptions_t	file:
+parse_mount_options	mount.c	/^static int parse_mount_options(char *options, char **unrecognized)$/;"	f	file:
+part_table	fdisk.c	/^	struct partition *part_table;   \/* points into sectorbuffer *\/$/;"	m	struct:pte	typeref:struct:pte::partition	file:
+partition	fdisk.c	/^struct partition {$/;"	s	file:
+partition_type	fdisk.c	/^partition_type(unsigned char type)$/;"	f	file:
+partitions	fdisk.c	/^	} partitions[8];$/;"	m	struct:__anon7	typeref:struct:__anon7::sun_partinfo	file:
+partitions	fdisk.c	/^static int partitions = 4;      \/* maximum partition + 1 *\/$/;"	v	file:
+partitions	fdisk_sgi.c	/^	} partitions[16];$/;"	m	struct:__anon9	typeref:struct:__anon9::sgi_partinfo	file:
+partname	fdisk.c	/^partname(const char *dev, int pno, int lth)$/;"	f	file:
+partname_buffer	fdisk.c	/^	char partname_buffer[80];$/;"	m	struct:globals	file:
+partname_buffer	fdisk.c	300;"	d	file:
+pc_link_max	mount.c	/^	int pc_link_max;$/;"	m	struct:ppathcnf	file:
+pc_mask	mount.c	/^	short pc_mask[2];$/;"	m	struct:ppathcnf	file:
+pc_max_canon	mount.c	/^	short pc_max_canon;$/;"	m	struct:ppathcnf	file:
+pc_max_input	mount.c	/^	short pc_max_input;$/;"	m	struct:ppathcnf	file:
+pc_name_max	mount.c	/^	short pc_name_max;$/;"	m	struct:ppathcnf	file:
+pc_path_max	mount.c	/^	short pc_path_max;$/;"	m	struct:ppathcnf	file:
+pc_pipe_buf	mount.c	/^	short pc_pipe_buf;$/;"	m	struct:ppathcnf	file:
+pc_vdisable	mount.c	/^	uint8_t pc_vdisable;$/;"	m	struct:ppathcnf	file:
+pc_xxx	mount.c	/^	char pc_xxx;$/;"	m	struct:ppathcnf	file:
+pcylcount	fdisk.c	/^	unsigned short pcylcount;  \/* Physical cylinder count *\/$/;"	m	struct:__anon7	file:
+pcylcount	fdisk_sgi.c	/^	unsigned short pcylcount;$/;"	m	struct:device_parameter	file:
+pcylcount	fdisk_sun.c	/^	unsigned short pcylcount;$/;"	m	struct:sun_predefined_drives	file:
+physical_volume_id	fdisk_aix.c	/^	unsigned int   physical_volume_id;$/;"	m	struct:__anon8	file:
+pivot_root_main	pivot_root.c	/^int pivot_root_main(int argc, char **argv)$/;"	f
+pixclock	fbset.c	/^	uint32_t pixclock;              \/* pixel clock in ps (pico seconds) *\/$/;"	m	struct:fb_var_screeninfo	file:
+pop_filename	fsck_minix.c	/^static void pop_filename(void)$/;"	f	file:
+possibly_osf_label	fdisk.c	/^static int possibly_osf_label;$/;"	v	file:
+possibly_osf_label	fdisk_osf.c	/^static int possibly_osf_label;$/;"	v	file:
+ppathcnf	mount.c	/^struct ppathcnf {$/;"	s	file:
+ppathcnf	mount.c	/^typedef struct ppathcnf ppathcnf;$/;"	t	typeref:struct:ppathcnf	file:
+print_buffer	fdisk.c	/^print_buffer(char *pbuffer)$/;"	f	file:
+print_msg	ipcs.c	/^static void print_msg(int msqid)$/;"	f	file:
+print_perms	ipcs.c	/^static void print_perms(int id, struct ipc_perm *ipcp)$/;"	f	file:
+print_raw	fdisk.c	/^print_raw(void)$/;"	f	file:
+print_sem	ipcs.c	/^static void print_sem(int semid)$/;"	f	file:
+print_shm	ipcs.c	/^static void print_shm(int shmid)$/;"	f	file:
+pt_heads	fdisk.c	/^static unsigned pt_heads, pt_sectors;$/;"	v	file:
+pt_offset	fdisk.c	314;"	d	file:
+pt_sectors	fdisk.c	/^static unsigned pt_heads, pt_sectors;$/;"	v	file:
+pte	fdisk.c	/^struct pte {$/;"	s	file:
+ptes	fdisk.c	/^	struct pte ptes[MAXIMUM_PARTS];$/;"	m	struct:globals	typeref:struct:globals::pte	file:
+ptes	fdisk.c	302;"	d	file:
+push_filename	fsck_minix.c	/^static void push_filename(const char *name)$/;"	f	file:
+quiet_errors	getopt.c	66;"	d	file:
+quiet_output	getopt.c	67;"	d	file:
+quote	getopt.c	68;"	d	file:
+rate	fdformat.c	/^			rate,		\/* data rate. |= 0x40 for perpendicular *\/$/;"	m	struct:floppy_struct	file:
+rdate_main	rdate.c	/^int rdate_main(int argc, char **argv)$/;"	f
+read4_little_endian	fdisk.c	/^read4_little_endian(const unsigned char *cp)$/;"	f	file:
+read_block	fsck_minix.c	/^static void read_block(unsigned nr, char *addr)$/;"	f	file:
+read_extended	fdisk.c	/^read_extended(int ext)$/;"	f	file:
+read_hex	fdisk.c	/^read_hex(const char *const *sys)$/;"	f	file:
+read_int	fdisk.c	/^read_int(unsigned low, unsigned dflt, unsigned high, unsigned base, const char *mesg)$/;"	f	file:
+read_line	fdisk.c	/^read_line(const char *prompt)$/;"	f	file:
+read_maybe_empty	fdisk.c	/^read_maybe_empty(const char *mesg)$/;"	f	file:
+read_nonempty	fdisk.c	/^read_nonempty(const char *mesg)$/;"	f	file:
+read_pte	fdisk.c	/^read_pte(struct pte *pe, ullong offset)$/;"	f	file:
+read_rtc	hwclock.c	/^static time_t read_rtc(int utc)$/;"	f	file:
+read_superblock	fsck_minix.c	/^static void read_superblock(void)$/;"	f	file:
+read_tables	fsck_minix.c	/^static void read_tables(void)$/;"	f	file:
+readmode	fbset.c	/^static int readmode(struct fb_var_screeninfo *base, const char *fn,$/;"	f	file:
+readprofile_main	readprofile.c	/^int readprofile_main(int argc, char **argv)$/;"	f
+recursive_check	fsck_minix.c	/^static void recursive_check(unsigned ino)$/;"	f	file:
+recursive_check2	fsck_minix.c	/^static void recursive_check2(unsigned ino)$/;"	f	file:
+red	fbset.c	/^	struct fb_bitfield red;         \/* bitfield in fb mem if true color, *\/$/;"	m	struct:fb_var_screeninfo	typeref:struct:fb_var_screeninfo::fb_bitfield	file:
+regular	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+regular	fsck_minix.c	172;"	d	file:
+remove_ids	ipcrm.c	/^static int remove_ids(type_id type, int argc, char **argv)$/;"	f	file:
+repair	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+repair	fsck_minix.c	158;"	d	file:
+req_nr_inodes	mkfs_minix.c	/^	unsigned long req_nr_inodes;$/;"	m	struct:globals	file:
+require	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	e	enum:action	file:
+reread_partition_table	fdisk.c	/^reread_partition_table(int leave)$/;"	f	file:
+reserved	fbset.c	/^	uint32_t reserved[6];           \/* Reserved for future compatibility *\/$/;"	m	struct:fb_var_screeninfo	file:
+retrans	mount.c	/^	int		retrans;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+retries_on_error	fdisk_sgi.c	/^	unsigned int   retries_on_error;$/;"	m	struct:device_parameter	file:
+right_margin	fbset.c	/^	uint32_t right_margin;          \/* time from picture to sync *\/$/;"	m	struct:fb_var_screeninfo	file:
+root	mount.c	/^	struct nfs3_fh	root;			\/* 4 *\/$/;"	m	struct:nfs_mount_data	typeref:struct:nfs_mount_data::nfs3_fh	file:
+root_block	mkfs_minix.c	/^	char root_block[BLOCK_SIZE];$/;"	m	struct:globals	file:
+root_major	mdev.c	/^	int root_major, root_minor;$/;"	m	struct:globals	file:
+root_major	mdev.c	19;"	d	file:
+root_minor	mdev.c	/^	int root_major, root_minor;$/;"	m	struct:globals	file:
+root_minor	mdev.c	20;"	d	file:
+rootdev	switch_root.c	/^static dev_t rootdev;$/;"	v	file:
+rsize	mount.c	/^	int		rsize;			\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+rspeed	fdisk.c	/^	unsigned short rspeed;     \/* Disk rotational speed *\/$/;"	m	struct:__anon7	file:
+rspeed	fdisk_sun.c	/^	unsigned short rspeed;$/;"	m	struct:sun_predefined_drives	file:
+rtcname	hwclock.c	/^static const char *rtcname;$/;"	v	file:
+s_firstdatazone	minix.h	/^	uint16_t s_firstdatazone;$/;"	m	struct:minix_super_block
+s_imap_blocks	minix.h	/^	uint16_t s_imap_blocks;$/;"	m	struct:minix_super_block
+s_log_zone_size	minix.h	/^	uint16_t s_log_zone_size;$/;"	m	struct:minix_super_block
+s_magic	minix.h	/^	uint16_t s_magic;$/;"	m	struct:minix_super_block
+s_max_size	minix.h	/^	uint32_t s_max_size;$/;"	m	struct:minix_super_block
+s_ninodes	minix.h	/^	uint16_t s_ninodes;$/;"	m	struct:minix_super_block
+s_nzones	minix.h	/^	uint16_t s_nzones;$/;"	m	struct:minix_super_block
+s_state	minix.h	/^	uint16_t s_state;$/;"	m	struct:minix_super_block
+s_zmap_blocks	minix.h	/^	uint16_t s_zmap_blocks;$/;"	m	struct:minix_super_block
+s_zones	minix.h	/^	uint32_t s_zones;$/;"	m	struct:minix_super_block
+scround	fdisk.c	312;"	d	file:
+scsi_disk	fdisk_sun.c	/^static int scsi_disk;$/;"	v	file:
+scsi_string	fdisk_sgi.c	/^	unsigned char  scsi_string[50];$/;"	m	struct:__anon10	file:
+sect	fdformat.c	/^			sect,		\/* sectors per track *\/$/;"	m	struct:floppy_struct	file:
+sector	fdisk.c	/^	unsigned char sector;           \/* starting sector *\/$/;"	m	struct:partition	file:
+sector	fdisk.c	317;"	d	file:
+sector_offset	fdisk.c	/^static unsigned sector_offset = 1;$/;"	v	file:
+sector_size	fdisk.c	/^static unsigned sector_size = DEFAULT_SECTOR_SIZE;$/;"	v	file:
+sectorbuffer	fdisk.c	/^	char *sectorbuffer;     \/* disk sector contents *\/$/;"	m	struct:pte	file:
+sectors	fdisk.c	/^	unsigned char sectors;$/;"	m	struct:hd_geometry	file:
+sectors	fdisk.c	/^static unsigned heads, sectors, cylinders;$/;"	v	file:
+seek_sector	fdisk.c	/^seek_sector(ullong secno)$/;"	f	file:
+semun	ipcrm.c	/^union semun {$/;"	u	file:
+semun	ipcs.c	/^union semun {$/;"	u	file:
+serial	fdisk_sgi.c	/^	unsigned char  serial[137];$/;"	m	struct:__anon10	file:
+setTermSettings	more.c	38;"	d	file:
+setTermSettings	more.c	50;"	d	file:
+set_all_unchanged	fdisk.c	/^set_all_unchanged(void)$/;"	f	file:
+set_changed	fdisk.c	/^set_changed(int i)$/;"	f	file:
+set_hsc	fdisk.c	324;"	d	file:
+set_nr_sects	fdisk.c	/^set_nr_sects(struct partition *p, unsigned nr_sects)$/;"	f	file:
+set_partition	fdisk.c	/^set_partition(int i, int doext, ullong start, ullong stop, int sysid)$/;"	f	file:
+set_shell	getopt.c	/^static void set_shell(const char *new_shell)$/;"	f	file:
+set_start_sect	fdisk.c	/^set_start_sect(struct partition *p, unsigned start_sect)$/;"	f	file:
+set_sun_partition	fdisk_sun.c	/^set_sun_partition(int i, uint start, uint stop, int sysid)$/;"	f	file:
+setarch_main	setarch.c	/^int setarch_main(int ATTRIBUTE_UNUSED argc, char **argv)$/;"	f
+setfreelist	fdisk_sgi.c	/^setfreelist(int i, unsigned int f, unsigned int l)$/;"	f	file:
+setmode	fbset.c	/^static inline void setmode(struct fb_var_screeninfo *base,$/;"	f	file:
+setup_tables	mkfs_minix.c	/^static void setup_tables(void)$/;"	f	file:
+sgi_add_partition	fdisk_sgi.c	/^sgi_add_partition(int n, int sys)$/;"	f	file:
+sgi_change_sysid	fdisk_sgi.c	/^sgi_change_sysid(int i, int sys)$/;"	f	file:
+sgi_check_bootfile	fdisk_sgi.c	/^sgi_check_bootfile(const char* aFile)$/;"	f	file:
+sgi_delete_partition	fdisk_sgi.c	/^sgi_delete_partition(int i)$/;"	f	file:
+sgi_entire	fdisk_sgi.c	/^sgi_entire(void)$/;"	f	file:
+sgi_gaps	fdisk_sgi.c	/^sgi_gaps(void)$/;"	f	file:
+sgi_get_bootfile	fdisk_sgi.c	/^sgi_get_bootfile(void)$/;"	f	file:
+sgi_get_bootpartition	fdisk_sgi.c	/^sgi_get_bootpartition(void)$/;"	f	file:
+sgi_get_lastblock	fdisk_sgi.c	/^sgi_get_lastblock(void)$/;"	f	file:
+sgi_get_nsect	fdisk_sgi.c	/^sgi_get_nsect(void)$/;"	f	file:
+sgi_get_ntrks	fdisk_sgi.c	/^sgi_get_ntrks(void)$/;"	f	file:
+sgi_get_num_sectors	fdisk_sgi.c	/^sgi_get_num_sectors(int i)$/;"	f	file:
+sgi_get_start_sector	fdisk_sgi.c	/^sgi_get_start_sector(int i)$/;"	f	file:
+sgi_get_swappartition	fdisk_sgi.c	/^sgi_get_swappartition(void)$/;"	f	file:
+sgi_get_sysid	fdisk_sgi.c	/^sgi_get_sysid(int i)$/;"	f	file:
+sgi_list_table	fdisk_sgi.c	/^sgi_list_table(int xtra)$/;"	f	file:
+sgi_other_endian	fdisk_sgi.c	/^static int sgi_other_endian;$/;"	v	file:
+sgi_partinfo	fdisk_sgi.c	/^	struct sgi_partinfo {                  \/* 16 * 12 bytes *\/$/;"	s	struct:__anon9	file:
+sgi_partition	fdisk_sgi.c	/^} sgi_partition;$/;"	t	typeref:struct:__anon9	file:
+sgi_set_bootfile	fdisk_sgi.c	/^sgi_set_bootfile(const char* aFile)$/;"	f	file:
+sgi_set_bootpartition	fdisk_sgi.c	/^sgi_set_bootpartition(int i)$/;"	f	file:
+sgi_set_entire	fdisk_sgi.c	/^sgi_set_entire(void)$/;"	f	file:
+sgi_set_partition	fdisk_sgi.c	/^sgi_set_partition(int i, unsigned int start, unsigned int length, int sys)$/;"	f	file:
+sgi_set_swappartition	fdisk_sgi.c	/^sgi_set_swappartition(int i)$/;"	f	file:
+sgi_set_volhdr	fdisk_sgi.c	/^sgi_set_volhdr(void)$/;"	f	file:
+sgi_set_xcyl	fdisk_sgi.c	/^sgi_set_xcyl(void)$/;"	f	file:
+sgi_sys_types	fdisk.c	/^STATIC_SGI const char *const sgi_sys_types[];$/;"	v
+sgi_sys_types	fdisk_sgi.c	/^static const char *const sgi_sys_types[] = {$/;"	v	file:
+sgi_volumes	fdisk_sgi.c	/^static short sgi_volumes = 1;$/;"	v	file:
+sgi_write_table	fdisk_sgi.c	/^sgi_write_table(void)$/;"	f	file:
+sgiinfo	fdisk_sgi.c	/^} sgiinfo;$/;"	t	typeref:struct:__anon10	file:
+sgilabel	fdisk_sgi.c	104;"	d	file:
+sgiparam	fdisk_sgi.c	105;"	d	file:
+shell_TCSH	getopt.c	69;"	d	file:
+shm_info	ipcs.c	/^struct shm_info {$/;"	s	file:
+shm_rss	ipcs.c	/^	ulong shm_rss;		\/* total resident shm *\/$/;"	m	struct:shm_info	file:
+shm_swp	ipcs.c	/^	ulong shm_swp;		\/* total swapped shm *\/$/;"	m	struct:shm_info	file:
+shm_tot	ipcs.c	/^	ulong shm_tot;		\/* total allocated shm *\/$/;"	m	struct:shm_info	file:
+show	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+show	fsck_minix.c	162;"	d	file:
+show_clock	hwclock.c	/^static void show_clock(int utc)$/;"	f	file:
+showmode	fbset.c	/^static inline void showmode(struct fb_var_screeninfo *v)$/;"	f	file:
+singlemount	mount.c	/^static int singlemount(struct mntent *mp, int ignore_busy)$/;"	f	file:
+size	fdformat.c	/^	unsigned int	size,		\/* nr of sectors total *\/$/;"	m	struct:floppy_struct	file:
+size	mount.c	/^	unsigned short          size;$/;"	m	struct:nfs3_fh	file:
+size4	fdisk.c	/^	unsigned char size4[4];         \/* nr of sectors in partition *\/$/;"	m	struct:partition	file:
+skew	fdisk_sgi.c	/^	unsigned char  skew;$/;"	m	struct:device_parameter	file:
+socket_timeout	rdate.c	/^static void socket_timeout(int sig)$/;"	f	file:
+spare0	fdisk.c	/^	unsigned char spare0[14];$/;"	m	struct:__anon7	file:
+spare1	fdisk.c	/^		unsigned char spare1;$/;"	m	struct:__anon7::sun_info	file:
+spare1	fdisk.c	/^	unsigned char spare1[246]; \/* Boot information etc. *\/$/;"	m	struct:__anon7	file:
+spare2	fdisk.c	/^		unsigned char spare2;$/;"	m	struct:__anon7::sun_info	file:
+spare2	fdisk.c	/^	unsigned char spare2[4];   \/* More magic... *\/$/;"	m	struct:__anon7	file:
+spare3	fdisk.c	/^	unsigned char spare3[4];   \/* Even more magic... *\/$/;"	m	struct:__anon7	file:
+sparecyl	fdisk.c	/^	unsigned short sparecyl;   \/* extra sects per cylinder *\/$/;"	m	struct:__anon7	file:
+sparecyl	fdisk_sgi.c	/^	unsigned char  sparecyl;$/;"	m	struct:device_parameter	file:
+sparecyl	fdisk_sun.c	/^	unsigned short sparecyl;$/;"	m	struct:sun_predefined_drives	file:
+spec1	fdformat.c	/^			spec1,		\/* stepping rate, head unload time *\/$/;"	m	struct:floppy_struct	file:
+start	fdisk.c	/^	unsigned long start;$/;"	m	struct:hd_geometry	file:
+start4	fdisk.c	/^	unsigned char start4[4];        \/* starting sector counting from 0 *\/$/;"	m	struct:partition	file:
+start_cylinder	fdisk.c	/^		uint32_t start_cylinder;$/;"	m	struct:__anon7::sun_partinfo	file:
+start_sector	fdisk_sgi.c	/^		unsigned int start_sector;      \/* must be cylinder aligned *\/$/;"	m	struct:__anon9::sgi_partinfo	file:
+stat	mount.c	/^	short stat;$/;"	m	struct:__anon21	file:
+store4_little_endian	fdisk.c	/^store4_little_endian(unsigned char *cp, unsigned val)$/;"	f	file:
+str_units	fdisk.c	/^str_units(int n)$/;"	f	file:
+stretch	fdformat.c	/^			stretch;	\/* !=0 means double track steps *\/$/;"	m	struct:floppy_struct	file:
+suffixes	hexdump.c	/^static const struct suffix_mult suffixes[] = {$/;"	v	typeref:struct:suffix_mult	file:
+sun_autoconfigure_scsi	fdisk_sun.c	/^sun_autoconfigure_scsi(void)$/;"	f	file:
+sun_change_sysid	fdisk_sun.c	/^sun_change_sysid(int i, int sys)$/;"	f	file:
+sun_delete_partition	fdisk_sun.c	/^sun_delete_partition(int i)$/;"	f	file:
+sun_drives	fdisk_sun.c	/^} sun_drives[] = {$/;"	v	typeref:struct:sun_predefined_drives	file:
+sun_info	fdisk.c	/^	struct sun_info {$/;"	s	struct:__anon7	file:
+sun_list_table	fdisk_sun.c	/^sun_list_table(int xtra)$/;"	f	file:
+sun_other_endian	fdisk_sun.c	/^static int sun_other_endian;$/;"	v	file:
+sun_partinfo	fdisk.c	/^	struct sun_partinfo {$/;"	s	struct:__anon7	file:
+sun_partition	fdisk.c	/^} sun_partition;$/;"	t	typeref:struct:__anon7	file:
+sun_predefined_drives	fdisk_sun.c	/^static const struct sun_predefined_drives {$/;"	s	file:
+sun_set_alt_cyl	fdisk_sun.c	/^sun_set_alt_cyl(void)$/;"	f	file:
+sun_set_ilfact	fdisk_sun.c	/^sun_set_ilfact(void)$/;"	f	file:
+sun_set_ncyl	fdisk_sun.c	/^sun_set_ncyl(int cyl)$/;"	f	file:
+sun_set_pcylcount	fdisk_sun.c	/^sun_set_pcylcount(void)$/;"	f	file:
+sun_set_rspeed	fdisk_sun.c	/^sun_set_rspeed(void)$/;"	f	file:
+sun_set_xcyl	fdisk_sun.c	/^sun_set_xcyl(void)$/;"	f	file:
+sun_sys_types	fdisk.c	/^STATIC_SUN const char *const sun_sys_types[];$/;"	v
+sun_sys_types	fdisk_sun.c	/^static const char *const sun_sys_types[] = {$/;"	v	file:
+sun_write_table	fdisk_sun.c	/^sun_write_table(void)$/;"	f	file:
+sunlabel	fdisk.c	504;"	d	file:
+super_block_buffer	fsck_minix.c	/^	char super_block_buffer[BLOCK_SIZE];$/;"	m	struct:globals	file:
+super_block_buffer	fsck_minix.c	186;"	d	file:
+super_block_buffer	mkfs_minix.c	/^	char super_block_buffer[BLOCK_SIZE];$/;"	m	struct:globals	file:
+sv_termios	fsck_minix.c	/^	struct termios sv_termios;$/;"	m	struct:globals	typeref:struct:globals::termios	file:
+sv_termios	fsck_minix.c	185;"	d	file:
+swap_attempts	ipcs.c	/^	ulong swap_attempts;$/;"	m	struct:shm_info	file:
+swap_enable_disable	swaponoff.c	/^static int swap_enable_disable(char *device)$/;"	f	file:
+swap_on_off_main	swaponoff.c	/^int swap_on_off_main(int argc, char **argv)$/;"	f
+swap_part	fdisk_sgi.c	/^	unsigned short swap_part;        \/* active swap partition *\/$/;"	m	struct:__anon9	file:
+swap_successes	ipcs.c	/^	ulong swap_successes;$/;"	m	struct:shm_info	file:
+switch_root_main	switch_root.c	/^int switch_root_main(int argc, char **argv)$/;"	f
+symlinks	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+symlinks	fsck_minix.c	176;"	d	file:
+sync	fbset.c	/^	uint32_t sync;                  \/* see FB_SYNC_x *\/$/;"	m	struct:fb_var_screeninfo	file:
+sync_disks	fdisk_osf.c	/^sync_disks(void)$/;"	f	file:
+sys_ind	fdisk.c	/^	unsigned char sys_ind;          \/* What partition type *\/$/;"	m	struct:partition	file:
+termios_set	fsck_minix.c	/^	smallint termios_set;$/;"	m	struct:globals	file:
+termios_set	fsck_minix.c	167;"	d	file:
+timeo	mount.c	/^	int		timeo;			\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+tm_hour	hwclock.c	/^	int tm_hour;$/;"	m	struct:linux_rtc_time	file:
+tm_isdst	hwclock.c	/^	int tm_isdst;$/;"	m	struct:linux_rtc_time	file:
+tm_mday	hwclock.c	/^	int tm_mday;$/;"	m	struct:linux_rtc_time	file:
+tm_min	hwclock.c	/^	int tm_min;$/;"	m	struct:linux_rtc_time	file:
+tm_mon	hwclock.c	/^	int tm_mon;$/;"	m	struct:linux_rtc_time	file:
+tm_sec	hwclock.c	/^	int tm_sec;$/;"	m	struct:linux_rtc_time	file:
+tm_wday	hwclock.c	/^	int tm_wday;$/;"	m	struct:linux_rtc_time	file:
+tm_yday	hwclock.c	/^	int tm_yday;$/;"	m	struct:linux_rtc_time	file:
+tm_year	hwclock.c	/^	int tm_year;$/;"	m	struct:linux_rtc_time	file:
+to_sys_clock	hwclock.c	/^static void to_sys_clock(int utc)$/;"	f	file:
+toggle_active	fdisk.c	/^toggle_active(int i)$/;"	f	file:
+toggle_dos_compatibility_flag	fdisk.c	/^toggle_dos_compatibility_flag(void)$/;"	f	file:
+toggle_sunflags	fdisk_sun.c	/^toggle_sunflags(int i, unsigned char mask)$/;"	f	file:
+total	fsck_minix.c	/^	int directory, regular, blockdev, chardev, links, symlinks, total;$/;"	m	struct:globals	file:
+total	fsck_minix.c	177;"	d	file:
+total_blocks	mkfs_minix.c	/^	uint32_t total_blocks;$/;"	m	struct:globals	file:
+total_number_of_sectors	fdisk.c	/^static ullong total_number_of_sectors;$/;"	v	file:
+track	fdformat.c	/^			track,		\/* nr of tracks *\/$/;"	m	struct:floppy_struct	file:
+track	fdformat.c	/^	unsigned int device,head,track;$/;"	m	struct:format_descr	file:
+transp	fbset.c	/^	struct fb_bitfield transp;      \/* transparency *\/$/;"	m	struct:fb_var_screeninfo	typeref:struct:fb_var_screeninfo::fb_bitfield	file:
+try_only	fdisk.c	/^enum action { fdisk, require, try_only, create_empty_dos, create_empty_sun };$/;"	e	enum:action	file:
+trydev	fdisk.c	/^trydev(const char *device, int user_specified)$/;"	f	file:
+tryprocpt	fdisk.c	/^tryprocpt(void)$/;"	f	file:
+two_s_complement_32bit_sum	fdisk_sgi.c	/^two_s_complement_32bit_sum(unsigned int* base, int size \/* in bytes *\/)$/;"	f	file:
+type_id	ipcrm.c	/^typedef enum type_id {$/;"	g	file:
+type_id	ipcrm.c	/^} type_id;$/;"	t	typeref:enum:type_id	file:
+type_open	fdisk.c	/^static int type_open = O_RDWR;$/;"	v	file:
+ullong	fdisk.c	/^typedef unsigned long long ullong;$/;"	t	file:
+umount_main	umount.c	/^int umount_main(int argc, char **argv)$/;"	f
+units_per_sector	fdisk.c	/^static unsigned units_per_sector = 1;$/;"	v	file:
+unknown_command	fdisk.c	/^unknown_command(int c)$/;"	f	file:
+unmark_inode	fsck_minix.c	259;"	d	file:
+unmark_inode	mkfs_minix.c	175;"	d	file:
+unmark_zone	fsck_minix.c	262;"	d	file:
+unmark_zone	mkfs_minix.c	177;"	d	file:
+unused0	fdisk_sgi.c	/^	unsigned char  unused0;$/;"	m	struct:device_parameter	file:
+unused1	fdisk_sgi.c	/^	unsigned short unused1;$/;"	m	struct:device_parameter	file:
+update_units	fdisk.c	/^update_units(void)$/;"	f	file:
+upper_margin	fbset.c	/^	uint32_t upper_margin;          \/* time from sync to picture *\/$/;"	m	struct:fb_var_screeninfo	file:
+useMtab	mount.c	/^static int useMtab = 1;$/;"	v	file:
+useMtab	mount.c	293;"	d	file:
+used_good_blocks	mkfs_minix.c	/^	int used_good_blocks;$/;"	m	struct:globals	file:
+used_ids	ipcs.c	/^	int used_ids;$/;"	m	struct:shm_info	file:
+user_cylinders	fdisk.c	/^static unsigned user_cylinders, user_heads, user_sectors;$/;"	v	file:
+user_heads	fdisk.c	/^static unsigned user_cylinders, user_heads, user_sectors;$/;"	v	file:
+user_sectors	fdisk.c	/^static unsigned user_cylinders, user_heads, user_sectors;$/;"	v	file:
+user_set_sector_size	fdisk.c	/^static unsigned user_set_sector_size;$/;"	v	file:
+val	ipcrm.c	/^	int val;$/;"	m	union:semun	file:
+val	ipcs.c	/^	int val;$/;"	m	union:semun	file:
+valid_offset	mkfs_minix.c	/^static long valid_offset(int fd, int offset)$/;"	f	file:
+valid_part_table_flag	fdisk.c	/^valid_part_table_flag(const char *mbuffer)$/;"	f	file:
+vendor	fdisk_sun.c	/^	const char *vendor;$/;"	m	struct:sun_predefined_drives	file:
+verbose	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+verbose	fsck_minix.c	160;"	d	file:
+verify	fdisk.c	/^verify(void)$/;"	f	file:
+verify_sgi	fdisk_sgi.c	/^verify_sgi(int verbose)$/;"	f	file:
+verify_sun	fdisk_sun.c	/^verify_sun(void)$/;"	f	file:
+verify_sun_cmp	fdisk_sun.c	/^verify_sun_cmp(int *a, int *b)$/;"	f	file:
+verify_sun_starts	fdisk_sun.c	/^static uint *verify_sun_starts;$/;"	v	file:
+version	mount.c	/^	int		version;		\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+version2	fsck_minix.c	/^	smallint version2;$/;"	m	struct:globals	file:
+version2	fsck_minix.c	/^enum { version2 = 0 };$/;"	e	enum:__anon5	file:
+version2	fsck_minix.c	156;"	d	file:
+version2	mkfs_minix.c	/^	smallint version2;$/;"	m	struct:globals	file:
+version2	mkfs_minix.c	/^enum { version2 = 0 };$/;"	e	enum:__anon13	file:
+version2	mkfs_minix.c	97;"	d	file:
+vmode	fbset.c	/^	uint32_t vmode;                 \/* see FB_VMODE_x *\/$/;"	m	struct:fb_var_screeninfo	file:
+vol_file_name	fdisk_sgi.c	/^		unsigned char vol_file_name[8]; \/* a character array *\/$/;"	m	struct:__anon9::volume_directory	file:
+vol_file_size	fdisk_sgi.c	/^		unsigned int  vol_file_size;    \/* number of bytes *\/$/;"	m	struct:__anon9::volume_directory	file:
+vol_file_start	fdisk_sgi.c	/^		unsigned int  vol_file_start;   \/* number of logical block *\/$/;"	m	struct:__anon9::volume_directory	file:
+volume_directory	fdisk_sgi.c	/^	struct volume_directory {               \/* 15 * 16 bytes *\/$/;"	s	struct:__anon9	file:
+vsync_len	fbset.c	/^	uint32_t vsync_len;             \/* length of vertical sync *\/$/;"	m	struct:fb_var_screeninfo	file:
+warn_cylinders	fdisk.c	/^warn_cylinders(void)$/;"	f	file:
+warn_geometry	fdisk.c	/^warn_geometry(void)$/;"	f	file:
+warn_mode	fsck_minix.c	/^	smallint repair, automatic, verbose, list, show, warn_mode, force;$/;"	m	struct:globals	file:
+warn_mode	fsck_minix.c	163;"	d	file:
+we_saw_this_host_before	mount.c	/^static inline int we_saw_this_host_before(const char *hostname)$/;"	f	file:
+width	fbset.c	/^	uint32_t width;                 \/* width of picture in mm *\/$/;"	m	struct:fb_var_screeninfo	file:
+write_block	fsck_minix.c	/^static void write_block(unsigned nr, char *addr)$/;"	f	file:
+write_block	mkfs_minix.c	/^static void write_block(int blk, char *buffer)$/;"	f	file:
+write_part_table_flag	fdisk.c	/^write_part_table_flag(char *b)$/;"	f	file:
+write_rtc	hwclock.c	/^static void write_rtc(time_t t, int utc)$/;"	f	file:
+write_sector	fdisk.c	/^write_sector(ullong secno, char *buf)$/;"	f	file:
+write_super_block	fsck_minix.c	/^static void write_super_block(void)$/;"	f	file:
+write_table	fdisk.c	/^write_table(void)$/;"	f	file:
+write_tables	fsck_minix.c	/^static void write_tables(void)$/;"	f	file:
+write_tables	mkfs_minix.c	/^static void write_tables(void)$/;"	f	file:
+wrong_p_order	fdisk.c	/^wrong_p_order(int *prev)$/;"	f	file:
+wsize	mount.c	/^	int		wsize;			\/* 1 *\/$/;"	m	struct:nfs_mount_data	file:
+x_list_table	fdisk.c	/^x_list_table(int extend)$/;"	f	file:
+xbsd_change_fstype	fdisk_osf.c	/^xbsd_change_fstype(void)$/;"	f	file:
+xbsd_check_new_partition	fdisk_osf.c	/^xbsd_check_new_partition(int *i)$/;"	f	file:
+xbsd_create_disklabel	fdisk_osf.c	/^xbsd_create_disklabel(void)$/;"	f	file:
+xbsd_delete_part	fdisk_osf.c	/^xbsd_delete_part(void)$/;"	f	file:
+xbsd_disklabel	fdisk_osf.c	/^struct xbsd_disklabel {$/;"	s	file:
+xbsd_dkcksum	fdisk_osf.c	/^xbsd_dkcksum(struct xbsd_disklabel *lp)$/;"	f	file:
+xbsd_dktypenames	fdisk_osf.c	/^static const char *const xbsd_dktypenames[] = {$/;"	v	file:
+xbsd_dlabel	fdisk_osf.c	/^	struct xbsd_disklabel xbsd_dlabel;$/;"	m	struct:bsd_globals	typeref:struct:bsd_globals::xbsd_disklabel	file:
+xbsd_dlabel	fdisk_osf.c	1060;"	d	file:
+xbsd_dlabel	fdisk_osf.c	286;"	d	file:
+xbsd_edit_disklabel	fdisk_osf.c	/^xbsd_edit_disklabel(void)$/;"	f	file:
+xbsd_fstypes	fdisk_osf.c	/^static const char *const xbsd_fstypes[] = {$/;"	v	file:
+xbsd_get_bootstrap	fdisk_osf.c	/^xbsd_get_bootstrap(char *path, void *ptr, int size)$/;"	f	file:
+xbsd_get_part_index	fdisk_osf.c	/^xbsd_get_part_index(int max)$/;"	f	file:
+xbsd_initlabel	fdisk_osf.c	/^xbsd_initlabel(struct partition *p)$/;"	f	file:
+xbsd_link_part	fdisk_osf.c	/^xbsd_link_part(void)$/;"	f	file:
+xbsd_list_types	fdisk_osf.c	/^xbsd_list_types(void)$/;"	f	file:
+xbsd_new_part	fdisk_osf.c	/^xbsd_new_part(void)$/;"	f	file:
+xbsd_part	fdisk_osf.c	/^static struct partition *xbsd_part;$/;"	v	typeref:struct:partition	file:
+xbsd_part_index	fdisk_osf.c	/^static int xbsd_part_index;$/;"	v	file:
+xbsd_partition	fdisk_osf.c	/^	struct xbsd_partition    {      \/* the partition table *\/$/;"	s	struct:xbsd_disklabel	file:
+xbsd_print_disklabel	fdisk_osf.c	/^xbsd_print_disklabel(int show_all)$/;"	f	file:
+xbsd_readlabel	fdisk_osf.c	/^xbsd_readlabel(struct partition *p)$/;"	f	file:
+xbsd_translate_fstype	fdisk_osf.c	/^xbsd_translate_fstype(int linux_type)$/;"	f	file:
+xbsd_write_bootstrap	fdisk_osf.c	/^xbsd_write_bootstrap(void)$/;"	f	file:
+xbsd_write_disklabel	fdisk_osf.c	/^xbsd_write_disklabel(void)$/;"	f	file:
+xbsd_writelabel	fdisk_osf.c	/^xbsd_writelabel(struct partition *p)$/;"	f	file:
+xdr_dirpath	mount.c	/^static bool_t xdr_dirpath(XDR *xdrs, dirpath *objp)$/;"	f	file:
+xdr_fhandle	mount.c	/^static bool_t xdr_fhandle(XDR *xdrs, fhandle objp)$/;"	f	file:
+xdr_fhandle3	mount.c	/^static bool_t xdr_fhandle3(XDR *xdrs, fhandle3 *objp)$/;"	f	file:
+xdr_fhstatus	mount.c	/^static bool_t xdr_fhstatus(XDR *xdrs, fhstatus *objp)$/;"	f	file:
+xdr_mountres3	mount.c	/^static bool_t xdr_mountres3(XDR *xdrs, mountres3 *objp)$/;"	f	file:
+xdr_mountres3_ok	mount.c	/^static bool_t xdr_mountres3_ok(XDR *xdrs, mountres3_ok *objp)$/;"	f	file:
+xdr_mountstat3	mount.c	/^static bool_t xdr_mountstat3(XDR *xdrs, mountstat3 *objp)$/;"	f	file:
+xmenu	fdisk.c	/^xmenu(void)$/;"	f	file:
+xoffset	fbset.c	/^	uint32_t xoffset;               \/* offset from virtual to visible *\/$/;"	m	struct:fb_var_screeninfo	file:
+xopen_rtc	hwclock.c	/^static int xopen_rtc(int flags)$/;"	f	file:
+xres	fbset.c	/^	uint32_t xres;                  \/* visible resolution *\/$/;"	m	struct:fb_var_screeninfo	file:
+xres_virtual	fbset.c	/^	uint32_t xres_virtual;          \/* virtual resolution *\/$/;"	m	struct:fb_var_screeninfo	file:
+xselect	fdisk.c	/^xselect(void)$/;"	f	file:
+xylogics_gap1	fdisk_sgi.c	/^	unsigned short xylogics_gap1;$/;"	m	struct:device_parameter	file:
+xylogics_gap2	fdisk_sgi.c	/^	unsigned short xylogics_gap2;$/;"	m	struct:device_parameter	file:
+xylogics_readdelay	fdisk_sgi.c	/^	unsigned short xylogics_readdelay;$/;"	m	struct:device_parameter	file:
+xylogics_readgate	fdisk_sgi.c	/^	unsigned short xylogics_readgate;$/;"	m	struct:device_parameter	file:
+xylogics_syncdelay	fdisk_sgi.c	/^	unsigned short xylogics_syncdelay;$/;"	m	struct:device_parameter	file:
+xylogics_writecont	fdisk_sgi.c	/^	unsigned short xylogics_writecont;$/;"	m	struct:device_parameter	file:
+yoffset	fbset.c	/^	uint32_t yoffset;               \/* resolution *\/$/;"	m	struct:fb_var_screeninfo	file:
+yres	fbset.c	/^	uint32_t yres;$/;"	m	struct:fb_var_screeninfo	file:
+yres_virtual	fbset.c	/^	uint32_t yres_virtual;$/;"	m	struct:fb_var_screeninfo	file:
+zone_count	fsck_minix.c	/^	unsigned char *zone_count;$/;"	m	struct:globals	file:
+zone_count	fsck_minix.c	182;"	d	file:
+zone_in_use	fsck_minix.c	255;"	d	file:
+zone_in_use	mkfs_minix.c	171;"	d	file:
+zone_map	fsck_minix.c	/^	char *zone_map;$/;"	m	struct:globals	file:
+zone_map	fsck_minix.c	180;"	d	file:
+zone_map	mkfs_minix.c	/^	char *zone_map;$/;"	m	struct:globals	file:

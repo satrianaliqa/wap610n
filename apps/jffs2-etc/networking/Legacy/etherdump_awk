@@ -1,0 +1,25 @@
+#!/usr/bin/awk -f
+BEGIN
+{
+    mac_own = var ;
+}
+{
+        # Check only the first 16 bytes of the etherdump output.
+        if ($1 == 0000)
+        {
+            #Get Source and Destination MAC from the recieved packet
+                mac_dest = $2":"$3":"$4":"$5":"$6":"$7;
+                mac_source = $8":"$9":"$10":"$11":"$12":"$13;
+                # if the destination MAC is valid(dest mac is mac_own or broadcast):
+                # Save the source address as the cloned address.
+                if (mac_dest == mac_own || mac_dest == "FF:FF:FF:FF:FF:FF")
+                {
+                        if (mac_source != mac_own)
+                        {
+                                print mac_source;
+                                ##DEBUG: print "MAC own:(" mac_own ")" >  "/tmp/awk.log";
+                                exit;
+                        }
+                }
+        }
+}

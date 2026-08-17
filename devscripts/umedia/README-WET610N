@@ -1,0 +1,11 @@
+README
+======
+
+Compilation instructions for WET610N:
+
+tar xzf WET610N_v1.2.23.tar.gz
+cd WET610N_v1.2.23
+make
+
+
+* Replace 1.2.23 with the current version number

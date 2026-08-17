@@ -1,0 +1,40 @@
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR isn't defined")
+endif
+
+
+CROSS_COMPILE=$(E_CROSS)/bin/arm-linux-
+SUBARCH=arm
+KBUILD_VERBOSE=1
+HOSTCFLAGS=$(E_CFLAGS)
+CFLAGS=$(E_CFLAGS) -Os
+LDFLAGS=$(E_LDFLAGS)
+export
+
+CONF:
+	if [ -f ".config" ] ; then  mv -f .config .config.BAKUP ; fi
+	cat .config.MTLK | grep -v CONFIG_PREFIX >  .config
+	echo "" >> .config
+	echo CONFIG_PREFIX=\"$(E_DEST)\" >> .config
+	cat Makefile | sed "s/O2/Os/g" > Makefile.size
+	make oldconfig
+	# TODO
+COMP:
+	make -f Makefile.size v=1 all
+CLEAN:
+	make v=1 clean -f  Makefile.size
+
+.PHONY=INSTALL
+
+INSTALL: FORCE
+	make -f Makefile.size install
+	install -m 755 ./busybox_unstripped $(E_DEST)/bin/busybox
+
+STRIP:
+	install -m 755 ./busybox $(E_DEST)/bin/busybox
+	
+	
+
+FORCE:

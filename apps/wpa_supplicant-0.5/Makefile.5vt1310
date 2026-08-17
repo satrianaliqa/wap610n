@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.5vt1310
+#
+# @brief   This file for ZCOM 5VT1310 to build the wpa_supplicant utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/crosstool/uClibc/bin/arm-linux-uclibc-
+CFLAGS=-O2
+CC=${CROSS_COMPILE}gcc
+STRIP=${CROSS_COMPILE}strip
+export CC STRIP CFLAGS
+
+all:
+	make
+
+clean:
+	make clean
+

@@ -1,0 +1,38 @@
+######### U-Media (c) #####################
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######### Standard header end ##############
+
+CC=$(E_CC)
+LD=$(E_LD)
+CFLAGS=$(E_CFLAGS)
+LDFLAGS=$(E_LDFLAGS)
+
+
+# Compiler flags applied to all files
+CFLAGS+=-Os -Wall -D_POSIX -D_DEBUG -D_VERBOSE $(PLATFORM_CFLAGS)
+PLATFORM_CFLAGS=-Os -march=armv4 -msoft-float -lpthread
+
+export CC LD CFLAGS LDFLAGS EXENAME PLATFORM_CFLAGS
+
+CONF:
+	echo No configuration here
+	
+COMP: 
+	make -f Makefile
+
+CLEAN:
+	make -f Makefile clean
+
+INSTALL: FORCE
+	install -D -m 755 send_event $(E_DEST)/bin/send_event
+STRIP:
+	$(E_STRIP) $(E_DEST)/bin/send_event
+
+FORCE:
+
+

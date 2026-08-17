@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.pika
+#
+# @brief   This file for Sigma 8622 to build the wpa_supplicant utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/toolchains/sigma/8622_pika/toolchain/toolchain/bin/arm-elf-
+CFLAGS=-Os -march=armv4 -mtune=arm7tdmi -mshort-load-bytes -msoft-float
+CC=${CROSS_COMPILE}gcc
+LIBS=-L/opt/toolchains/sigma/8624_dtv/toolchain/toolchain/lib -Wl,-elf2flt="-s32768"
+export CC CFLAGS LIBS
+
+all:
+	make
+
+clean:
+	make clean
+

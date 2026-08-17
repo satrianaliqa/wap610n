@@ -1,0 +1,16 @@
+        SDK for Metalink Ltd. based wireless devices
+
+Copyright (C) 2008 Metalink Ltd. 
+
+This distribution is based on many subproducts, including, but not restricted to:
+linux 2.6.16 kernel
+busybox-1.8.1
+u-boot 1.1.4 bootloader
+openssl
+
+
+All subproducts, including those mentioned above, but not restricted to, are licensed under their original licenses, and keep their original copyrights, unless no such license is specified.
+More details can be found in each subdirectory, and in the src code files.
+
+
+This distribution is provided as-is, and no warranty is provided.

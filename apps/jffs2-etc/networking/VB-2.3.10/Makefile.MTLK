@@ -1,0 +1,42 @@
+######### Metalink (c) #####################
+######### Standard header begin ############
+
+## TOPDIR may be set. It points to the top directory where all the E_* variables are in Makefiles.MTLK.vars
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######### Standard header end ##############
+
+STRIP:
+
+CLEAN:
+
+COMP:
+	echo no compilation here
+
+CONF:
+	echo no configuration here
+
+INSTALL: FORCE
+	install -D -m 755 etherdump_awk $(E_DEST)/root/mtlk/etc/etherdump_awk
+	install -D -m 755 mtlk_init_daemons.sh $(E_DEST)/root/mtlk/etc/mtlk_init_daemons.sh
+	install -D -m 755 mtlk_init_ip.sh $(E_DEST)/root/mtlk/etc/mtlk_init_ip.sh
+	install -D -m 755 mtlk_init_platform.sh.platform.$(PLATFORM_SUFFIX) $(E_DEST)/root/mtlk/etc/mtlk_init_platform.sh
+	install -D -m 755 mtlk_init_rd.sh $(E_DEST)/root/mtlk/etc/mtlk_init_rd.sh
+	install -D -m 755 mtlk_init.sh $(E_DEST)/root/mtlk/etc/mtlk_init.sh
+	install -D -m 755 mtlk_restore_defaults.sh $(E_DEST)/root/mtlk/etc/mtlk_restore_defaults.sh
+	install -D -m 755 mtlk_save_log.sh $(E_DEST)/root/mtlk/etc/mtlk_save_log.sh
+	install -D -m 755 mtlk_pbc_reboot.sh $(E_DEST)/root/mtlk/etc/mtlk_pbc_reboot.sh
+	install -D -m 755 mtlk_init_dhcpd.sh $(E_DEST)/root/mtlk/etc/mtlk_init_dhcpd.sh
+	install -D -m 755 mtlk_stp.sh $(E_DEST)/root/mtlk/etc/mtlk_stp.sh
+	install -D -m 755 mtlk_carrier_detect.sh $(E_DEST)/root/mtlk/etc/mtlk_carrier_detect.sh
+	install -D -m 755 mtlk_SA_learning_disable.sh $(E_DEST)/root/mtlk/etc/mtlk_SA_learning_disable.sh
+	install -D -m 755 mtlk_set_config.tcl $(E_DEST)/root/mtlk/etc/mtlk_set_config.tcl
+	install -D -m 755 mtlk_mac_cloning.sh $(E_DEST)/root/mtlk/etc/mtlk_mac_cloning.sh
+	install -D -m 755 udhcpd.conf $(E_DEST)/root/mtlk/etc/udhcpd.conf
+	install -D -m 755 udhcpdconf.tcl $(E_DEST)/root/mtlk/etc/udhcpdconf.tcl
+	install -D -m 755 dhcp.tcl $(E_DEST)/root/mtlk/etc/dhcp.tcl
+FORCE:

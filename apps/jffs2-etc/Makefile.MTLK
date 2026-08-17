@@ -1,0 +1,54 @@
+######### Metalink (c) #####################
+# Copyright (c) 2008,2009 Metalink Ltd.
+#
+# This makefile is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+# See the file LICENSE for details.
+#
+######### Standard header begin ############
+
+## TOPDIR may be set. It points to the top directory where all the E_* variables are in Makefiles.MTLK.vars
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######### Standard header end ##############
+
+include $(E_TOPDIR)/.config
+
+STRIP:
+
+CLEAN:
+
+COMP:
+	echo no compilation here
+
+CONF:
+	echo no configuration here
+
+INSTALL: FORCE
+	case "$(BOARD_NAME)" in \
+	legacy) \
+		make INSTALL -f Makefile.MTLK -C networking/Legacy \
+	;; \
+	vb-2.3.10) \
+		make INSTALL -f Makefile.MTLK -C networking/VB-2.3.10 \
+	;; \
+	vb) \
+		make INSTALL -f Makefile.MTLK -C networking/VB \
+	;; \
+	ncdb) \
+		make INSTALL -f Makefile.MTLK -C networking/nCDB \
+	;; \
+	CDB_M) \
+		make INSTALL -f Makefile.MTLK -C networking/CDB_M \
+	;; \
+	CDB_S) \
+		make INSTALL -f Makefile.MTLK -C networking/CDB_S \
+	;; \
+	esac	
+
+FORCE:

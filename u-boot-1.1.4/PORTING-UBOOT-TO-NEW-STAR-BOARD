@@ -1,0 +1,6 @@
+
+These are all the places that may need to be copied or modified:
+star_gsw.c
+include/configs/star_orion_vela.h
+Makefile
+board/star_orion/

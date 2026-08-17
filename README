@@ -1,0 +1,88 @@
+===================
+NOTICE
+===================
+	This source code is used for WET610N & WES610N. You can compile it and generate 
+	firmware image by yourself, and upgrade firmware via webpage of WET610N & WES610N.
+	For details, please refer below :
+
+====================
+Software requirement
+====================
+
+Operation System : Fedora 8
+
+	Package Name			Version			Origin
+	------------			-------			------
+	GNU Compiler Collection (gcc)	3.4.6			ftp://mirrors.kernel.org/gnu/gcc/gcc-3.4.6/gcc-3.4.6.tar.bz2
+	GUN binutils			2.17			http://ftp.gnu.org/gnu/binutils/binutils-2.17.tar.bz2
+	uClibc				0.9.28.3		http://www.uclibc.org/downloads/old-releases/uClibc-0.9.28.3.tar.bz2
+	GNU Make			3.80			http://ftp.gnu.org/gnu/make/make-3.80.tar.gz
+	lzma				4.32.5			ftp://ftp.pbone.net/mirror/archive.fedoraproject.org/fedora/linux/updates/8/i386.newkey/lzma-4.32.5-1.fc8.i386.rpm
+	lzma-libs			4.32.5			ftp://ftp.pbone.net/mirror/archive.fedoraproject.org/fedora/linux/updates/8/i386.newkey/lzma-libs-4.32.5-1.fc8.i386.rpm
+
+
+METHOD - 1:
+===================
+Compile instruction
+===================
+
+1. Use below URL to download Fedora 8, and install Fedora 8
+	http://ftp.tcc.edu.tw/iso/RedHat-Fedora/8/i386/Fedora-8-i386-DVD.iso
+
+2. Please use root privilege to login Fedora 8.
+
+3. Setup compile environment:
+	(1) Install Lzma: follow below steps to install it.
+		[Command] :
+    		wget ftp://ftp.pbone.net/mirror/archive.fedoraproject.org/fedora/linux/updates/8/i386.newkey/lzma-libs-4.32.5-1.fc8.i386.rpm
+    		wget ftp://ftp.pbone.net/mirror/archive.fedoraproject.org/fedora/linux/updates/8/i386.newkey/lzma-4.32.5-1.fc8.i386.rpm
+    		rpm -ivh lzma-libs-4.32.5-1.fc8.i386.rpm
+    		rpm -ivh lzma-4.32.5-1.fc8.i386.rpm
+    			
+    	(2) To make sure you execute 'mke2fs' in any directory. please add the path of 'mke2fs' into $PATH
+    		[Command]: 
+    		#cd /
+		#whereis mke2fs
+		mke2fs: /sbin/mke2fs /etc/mke2fs.conf /usr/share/man/man8/mke2fs.8.gz
+		#export PATH=$PATH:/sbin
+
+4. Copy WET610N_v1.0.05_build_4_GPL.tgz into root directory and untar it. 
+	Then enter folder of WET610N_v1.0.05_build_4 and type 'make' to compile code.
+		[Command]:
+    		cd /
+    		cp [/dev/your flash device]/WET610N_v1.0.05_build_4_GPL.tgz . 
+    		tar zxvf  WET610N_v1.0.05_build_4_GPL.tgz
+    		cd WET610N_v1.0.05_build_4
+		tar zxvf rootfs-star.tgz
+	        make
+
+
+5. After complete the make procedure, the firmware image 'WET610N_v1.0.05_build_4' will be generated at output folder.
+
+
+METHOD - 2:   	
+======================
+Toolchain Compilation
+======================
+
+1. Compile toolchain: Actually, we should compile toolchain in Ubuntu-8.04.4.
+
+	(1.) You can find the source code of arm-uclibc-3.4.6.tgz in the folder of toolchain.
+	(2.) Please uncompress it, and follow text file of buildroot-howto.txt, and try to compile the toolchain.
+      	(3.) After toolchain compilation completes, please enter the folder of tools and replace the folder of arm-uclibc-3.4.6 binaries with your new generated one.
+
+Here are the steps to replace with the new toolchain binaries
+	
+2. When you get new toolchain of arm-linux-uclibc-3.4.6.tar.gz from U-buntu-8.04.4, please copy it into "WET610N_v1.0.05_build_4/tools" in Fedora-8.
+	[Command]:
+	cp [/dev/your flash device]/arm-linux-uclibc-3.4.6.tar.gz tools/
+	cd tools
+	rm -rf arm-uclibc-3.4.6/
+	tar zxvf arm-linux-uclibc-3.4.6.tar.gz
+	mv arm-linux-uclibc-3.4.6 arm-uclibc-3.4.6
+
+3. Then you can compile the GPL code of WET610N_v1.0.05_build_4 using the above "compile instruction (method 1)" in Fedora 8
+   the firmware image 'WET610N_v1.0.05_build_4' will be generated at output folder
+   and the image size would be appr ~ 3MB
+	
+

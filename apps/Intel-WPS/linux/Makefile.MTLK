@@ -1,0 +1,47 @@
+######### Metalink (c) #####################
+######### Standard header begin ############
+
+## TOPDIR may be set. It points to the top directory where all the E_* variables are in Makefiles.MTLK.vars
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######## Standard header end ##############
+
+
+#CROSS_COMPILE=/opt/star/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-
+
+CFLAGS +=-Os -mlittle-endian -pipe -fno-common -fno-builtin -Dlinux -D__linux__ -Dunix -march=$(E_ARCH)
+CXXFLAGS=$(CFLAGS)
+CXX_LDFLAGS=-L$(E_TOPDIR)/openssl-0.9.8a
+CC=$(E_CC)
+CXX=$(E_CXX)
+LD=$(E_LD)
+STL_INCDIR=$(E_TOPDIR)/openssl-0.9.8a/include -I$(E_KERNEL)/include -I$(E_CROSS)/include
+STL_LIBDIR=$(E_TOPDIR)/openssl-0.9.8a/
+UUID_LIB=$(E_TOPDIR)/e2fsprogs-1.40.4/lib/libuuid.a
+CXXLIBS=
+# Seva: We needn't to strip it!
+STRIP=echo
+export CC CXX CXXFLAGS CXX_LDFLAGS CFLAGS LD STL_INCDIR STL_LIBDIR STRIP UUID_LIB
+
+CONF:
+	echo No configuration here.
+COMP:
+	make 
+
+CLEAN:
+	make clean
+
+INSTALL: FORCE
+	install -d $(E_DEST)/root/mtlk/etc
+	install -m 755 wsccmd $(E_DEST)/root/mtlk/etc/wsccmd
+	install -m 666 template.conf $(E_DEST)/root/mtlk/etc/template.conf
+
+STRIP: FORCE
+#	$(E_STRIP) wsccmd
+	$(E_STRIP) $(E_DEST)/root/mtlk/etc/wsccmd
+
+FORCE:

@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# This script implements the get_env_param command on the dongle.
+# All env params are saved in jffs, in the file:
+# env_params.conf
+
+param_name=$1
+
+if [ $param_name ]
+then
+	grep "^$param_name " /mnt/jffs2/env_params.conf > /tmp/env_param.conf
+	param_value=`awk -F "=" '{str = $2; sub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/env_param.conf`
+	echo $param_value
+fi

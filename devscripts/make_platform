@@ -1,0 +1,412 @@
+#!/bin/bash
+
+################# IMPORTANT NOTE ################## 
+# This script will work only if following lines
+# exist in /etc/sudoers ("lab" stands for user name):
+#Cmnd_Alias MNTCMD = /bin/mount
+#Cmnd_Alias UMNTCMD = /bin/umount
+#Cmnd_Alias LOOPCMD = /sbin/losetup
+#Cmnd_Alias CHMODCMD = /bin/chmod
+#Cmnd_Alias CPCMD = /bin/cp
+#Cmnd_Alias RMCMD = /bin/rm
+#Cmnd_Alias MVCMD = /bin/mv
+#lab ALL=(ALL) NOPASSWD: MNTCMD 
+#lab ALL=(ALL) NOPASSWD: UMNTCMD
+#lab ALL=(ALL) NOPASSWD: LOOPCMD
+#lab ALL=(ALL) NOPASSWD: CHMODCMD
+#lab ALL=(ALL) NOPASSWD: CPCMD
+
+
+#################### VARIABLES #################### 
+
+
+TOPDIR=${PWD}
+ERROR_STRING="Usage: make_platform ( <TFPT Server IP> <TFPT Server port>) or <--notftp>"
+TEMP_DIR=${TOPDIR}/star_platform_build_$$
+COMBVER_DIR=${TOPDIR}/combver_$$
+DATE=`date +"%Y.%m.%d-%H.%M.%S"`
+LOGFILE=${TOPDIR}/logfile.${DATE}
+RAMDISK=ramdisk_2.6.16.img 
+MOUNTPOINT=${TOPDIR}/mountpoint.$$
+
+WLAN_ADDITION=wlan.tar.gz
+NET_ARCH=na.tar.gz
+
+## If used flag --notftp then the rootfs file and the wan file are searched in this directory:
+FS_DIR=
+
+TFTP_IP=$1
+TFTP_PORT=$2
+LOOP_DEVICE=
+REMOVE_LOG=0
+
+###################### TOOLS ###################### 
+
+TFTP=/usr/bin/tftp
+
+#################### STATE VARS #################### 
+
+## 1 = receive files by tftp, 0 = use local copy of ones
+USE_TFTP=1
+
+#################### FUNCTIONS #################### 
+
+##
+###  teststatus - test status of an operation (which is received as the argument).
+###  Exit if the status ! 0
+###  Arguments: 
+###  $1 - the status to be tested.
+###  $2 - the message to be printed on an error
+
+function teststatus()
+{
+	ST=$1
+	MES=$2
+	
+	if [ 0 != $1 ]
+	then
+		echo ${MES}  
+		echo "For more see the logfile ${LOGFILE}"  
+		exit ${ST}  >> ${LOGFILE} 2>&1
+	fi
+	return 0
+}
+
+############ Write message to log file 
+
+function rlog()
+{
+	echo $1 >> ${LOGFILE}
+}
+
+############ Test arguments
+
+function test_args()
+{
+	if [ "$1" = "--notftp" ]
+	then
+		USE_TFTP=0
+		
+		if [ "$2" ]
+		then
+			FS_DIR=$2
+		else
+			FS_DIR=${TOPDIR}/rootfs_files/
+		fi
+
+		return 0
+	fi
+
+		# Else test that IP address and PORT set.
+
+	if [ ! "${TFTP_IP}" -o ! "${TFTP_PORT}" ]
+	then
+		echo ${ERROR_STRING}
+		REMOVE_LOG=1
+		exit -1
+	else 
+		USE_TFTP=1
+		return 0
+	fi
+
+	### Add here more.
+
+	return 0
+}
+
+## This function runs on exit and clean up the "junk"
+
+function on_exit()
+{
+	# This function will be executed on EXIT 
+	echo "Next commands execite from EXIT context"  >> ${LOGFILE} 2>&1
+	echo "It doesn't matter if they will fail"  >> ${LOGFILE} 2>&1
+
+	# What to do?
+	# Remove files
+	FILES_TO_REMOVE=`tar tzf ${NET_ARCH} >> ${LOGFILE} 2>&1 `
+	rm -f ${FILES_TO_REMOVE}  >> ${LOGFILE} 2>&1
+	rm -f ${NET_ARCH}  >> ${LOGFILE} 2>&1
+	rm -f ${WLAN_ADDITION}  >> ${LOGFILE} 2>&1
+	
+	# Remove TEMP_DIR.
+	sudo /bin/umount ${MOUNTPOINT}   >> ${LOGFILE} 2>&1
+	rmdir  ${MOUNTPOINT}   >> ${LOGFILE} 2>&1
+
+	sudo /sbin/losetup -d ${LOOP_DEVICE} >> ${LOGFILE} 2>&1
+
+        sudo /bin/umount ${MOUNTPOINT}_combined   >> ${LOGFILE} 2>&1
+        rmdir  ${MOUNTPOINT}_combined   >> ${LOGFILE} 2>&1
+
+        rm -fr ${TEMP_DIR}   >> ${LOGFILE} 2>&1
+
+	if [ "${REMOVE_LOG}" = "1" ]
+	then
+		rm -f ${LOGFILE}
+	fi
+	return 0
+}
+
+## The function mounts image file on a loop device, 
+## then mounts loopdevice to the given mount point.
+
+function mount_file()
+{
+	FILE=$1
+	MOUNTP=$2
+	TMPNAME=${FILE}.UNZIPPED.${DATE}
+	
+	## 3. Create directory.
+	mkdir ${MOUNTP}  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't create mount point ${MOUNTP}"
+
+	## Find unused loop device 
+	LOOP_DEVICE=`sudo /sbin/losetup -f`  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't find free loopdevice"
+	
+	sudo /sbin/losetup ${LOOP_DEVICE} ${FILE}  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't mount the image on loop device"
+
+	## 2. Run mount.
+	sudo /bin/mount ${LOOP_DEVICE} ${MOUNTP}   >> ${LOGFILE} 2>&1
+	teststatus $? "Can't mount image ${TMPNAME} to ${MOUNTP}"
+
+	## 3. Create new RAM FS image
+	dd if=/dev/zero of=${FILE}_combined bs=1024 count=12K  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't create ${FILE}_combined"
+
+	mke2fs -F ${FILE}_combined  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't mke2fs ${FILE}_combined"
+
+	mkdir ${MOUNTP}_combined >> ${LOGFILE} 2>&1
+        teststatus $? "Can't mkdir ${MOUNTP}_combined"
+
+        sudo /bin/mount ${FILE}_combined ${MOUNTP}_combined -o loop  >> ${LOGFILE} 2>&1
+        teststatus $? "Can't mount the new image on loop device"
+
+	return 0
+	
+}
+
+## Unmounts the loop device, then removes the mount point.
+
+function umount_file()
+{
+	FILE=$1
+	MOUNTP=$2
+	
+	## 1. Run umount.
+	sudo /bin/umount ${MOUNTP}  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't umount ${FILE}"
+
+        sudo /bin/umount ${MOUNTP}_combined  >> ${LOGFILE} 2>&1
+        teststatus $? "Can't umount ${FILE}_combined"
+
+	## 2. Remove the directory.
+	rmdir ${MOUNTP}  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't remove the directory ${MOUNTP}"
+
+        rmdir ${MOUNTP}_combined  >> ${LOGFILE} 2>&1
+        teststatus $? "Can't remove the directory ${MOUNTP}_combined"
+
+	## Free the loop device
+	sudo /sbin/losetup -d ${LOOP_DEVICE}  >> ${LOGFILE} 2>&1
+	teststatus $? "Can't remove loop device ${LOOP_DEVICE}"
+	
+	return 0
+}
+
+
+############################################################ 
+#################### BODY OF THE SCRIPT #################### 
+
+##
+### Binding the EXIT signal
+rlog "0001"
+trap on_exit EXIT
+
+##
+###  Check the parameters
+rlog "0002"
+test_args $@
+
+if [ -d ${TEMP_DIR} ]
+then
+	rlog "0003" 
+	rm -rf ${TEMP_DIR}  >> ${LOGFILE} 2>&1
+	teststatus $? "The directory ${TEMP_DIR} can't be removed. Call your doctor."
+fi
+
+rlog "0004" 
+mkdir ${TEMP_DIR}  >> ${LOGFILE} 2>&1
+teststatus $? "The directory ${TEMP_DIR} can't be created"
+
+
+if [ 1 = ${USE_TFTP} ]
+then
+	rlog "0005"
+	${TFTP} ${TFTP_IP} ${TFTP_PORT} -m binary -c get ${NET_ARCH} >> ${LOGFILE} 2>&1
+
+	if [ ! -e ${NET_ARCH}  ]
+	then
+		echo "tftp failed: doesn't present ${NET_ARCH} file"
+	fi
+	rlog "0006" 
+	${TFTP} ${TFTP_IP} ${TFTP_PORT} -m binary -c get ${WLAN_ADDITION} >> ${LOGFILE} 2>&1
+	
+	if [ ! -e ${WLAN_ADDITION}  ]
+	then
+		echo "tftp failed: doesn't present ${NET_ARCH} file"
+	fi
+
+	mv -f ./${NET_ARCH} ./${WLAN_ADDITION} ${TEMP_DIR}/
+
+else
+	rlog "0007" 
+	cp ${FS_DIR}/${WLAN_ADDITION}  ${FS_DIR}/${NET_ARCH}  ${TEMP_DIR}/ >> ${LOGFILE} 2>&1
+	teststatus $? "Can't copy files"
+fi
+
+rlog "0008" 
+pushd ${TEMP_DIR} >> ${LOGFILE} 2>&1
+teststatus $? "Can't change the directory to ${TEMP_DIR}"
+
+# Uncompress ramdisk_2.6.16.img.gz - mount - copy files - unmount - compress
+rlog "0009" 
+tar xzf ${NET_ARCH} >> ${LOGFILE} 2>&1
+
+rlog "0010" 
+if [ -e  ${RAMDISK}.gz ]
+then
+	gunzip ${RAMDISK}.gz >> ${LOGFILE} 2>&1
+	teststatus $? "gunzip: creating of the ramdisk is failed"
+	COMPRESSION=gzip
+fi
+
+if [ -e  ${RAMDISK}.lzma ]
+then
+	lzma -d ${RAMDISK}.lzma >> ${LOGFILE} 2>&1
+	teststatus $? "lzma: creating of the ramdisk is failed"
+	COMPRESSION=lzma
+fi
+
+# mkdir ${MOUNTPOINT} #  >> ${LOGFILE} 2>&1
+# teststatus $? "The directory ${TOPDIR}/mount_point can't be created"
+
+rlog "0011" 
+mount_file ${RAMDISK} ${MOUNTPOINT} >> ${LOGFILE} 2>&1
+teststatus $? "The ${RAMDISK} mounting is failed" 
+
+rlog "0012" 
+mkdir  ${TEMP_DIR}/mtlk  >> ${LOGFILE} 2>&1
+teststatus $? "Can't mkdir mtlk"
+
+mkdir  ${TEMP_DIR}/romfs  >> ${LOGFILE} 2>&1
+teststatus $? "Can't mkdir romfs"
+
+mkdir  ${TEMP_DIR}/images  >> ${LOGFILE} 2>&1
+teststatus $? "Can't mkdir images"
+
+sudo cp -Rf  ${MOUNTPOINT}/* ${TEMP_DIR}/romfs/  >> ${LOGFILE} 2>&1
+teststatus $? "Can't cp na romfs files"
+
+### Enter into mountpoint direcory.
+pushd ${MOUNTPOINT}_combined  >> ${LOGFILE} 2>&1
+teststatus $? "Can't enter into mountdir: ${MOUNTPOINT}_combined"
+
+### Open the combined version file.
+rlog "0013" 
+#tar xzf ${TEMP_DIR}/${WLAN_ADDITION} -C root/mtlk/  >> ${LOGFILE} 2>&1
+#teststatus $? "Can't untar ${WLAN_ADDITION}" 
+
+tar xzf ${TEMP_DIR}/${WLAN_ADDITION} -C  ${TEMP_DIR}/mtlk/  >> ${LOGFILE} 2>&1
+teststatus $? "Can't tar xzf ${TEMP_DIR}/${WLAN_ADDITION}"
+
+### Clean unneeded progmodels from  ${TEMP_DIR}/romfs/root/images
+. ${MOUNTPOINT}/root/mtlk/etc/hwtype.sh  >> ${LOGFILE} 2>&1
+if [ $HWTYPE ]
+then
+	pushd  ${TEMP_DIR}/mtlk/images/ >> ${LOGFILE} 2>&1
+	ls ProgModel* | egrep -v "$HWTYPE|CB.bin" | xargs rm -f >> ${LOGFILE} 2>&1
+	popd  >> ${LOGFILE} 2>&1
+fi
+
+sudo cp -Rf  ${TEMP_DIR}/mtlk/* ${TEMP_DIR}/romfs/root/mtlk/  >> ${LOGFILE} 2>&1
+teststatus $? "Can't cp wlan romfs files"
+
+sudo cp -Rf   ${TEMP_DIR}/romfs/* ./  >> ${LOGFILE} 2>&1 
+teststatus $? "Can't sudo cp -Rf romfs to combined folder"
+
+sudo chmod 777 -R root/mtlk/ >> ${LOGFILE} 2>&1
+teststatus $? "Can't chmod ${WLAN_ADDITION}" 
+
+### Back to prevous directory. 
+rlog "0014" 
+popd >> ${LOGFILE} 2>&1
+teststatus $? "Can't change directory to TOPDIR"
+
+### Umount the image and delete the temporary directory.
+rlog "0015"
+sudo chmod 777 -R ${TEMP_DIR}/mtlk >> ${LOGFILE} 2>&1
+teststatus $? "Can't chmod mtlk"
+
+sudo chmod 777 -R ${TEMP_DIR}/romfs >> ${LOGFILE} 2>&1
+teststatus $? "Can't chmod romfs"
+
+rm -rf ${TEMP_DIR}/mtlk ${TEMP_DIR}/romfs  >> ${LOGFILE} 2>&1
+teststatus $? "Can't rm ${TEMP_DIR}/mtlk ${TEMP_DIR}/romfs"
+
+umount_file ${RAMDISK} ${MOUNTPOINT} >> ${LOGFILE} 2>&1
+teststatus $? "The ${RAMDISK} umounting is failed"
+
+### Compress the image.
+rlog "0016"
+if [ $COMPRESSION == "gzip" ]
+then
+	gzip -9  < ${RAMDISK}_combined > ${RAMDISK}.${DATE}
+else
+	lzma -cz   ${RAMDISK}_combined > ${RAMDISK}.${DATE}
+fi
+#mksquashfs ${RAMDISK} ${RAMDISK}.${DATE} -no-recovery -b 1048576
+#bzip2 -9 < ${RAMDISK} > ${RAMDISK}.${DATE}
+teststatus $? "The ${RAMDISK} zipping is failed"
+
+### Compile
+rlog "0017"
+arm-linux-gcc -Wp,-MD,.initrd.o.d  -nostdinc -mlittle-endian -D__ASSEMBLY__ -mapcs-32 -mno-thumb-interwork -D__LINUX_ARM_ARCH__=4 -march=armv4 -mtune=arm9tdmi -msoft-float  -DINITRD=\"${RAMDISK}.${DATE}\"  -c -o initrd.o initrd.S >> ${LOGFILE} 2>&1
+teststatus $? "Can't compile"
+
+### Link
+rlog "0018"
+arm-linux-ld -EL   -p --no-undefined -X --defsym initrd_phys=0x00C00000 --defsym kernel_phys=0x00400000 --defsym params_phys=0x00000100 -T bootp.lds init.o kernel.o initrd.o -o bootp  >> ${LOGFILE} 2>&1
+teststatus $? "Can't link"
+
+### Strip
+rlog "0019"
+arm-linux-objcopy -O binary -R .note -R .comment -S  bootp bootpImage.${DATE} >> ${LOGFILE} 2>&1
+teststatus $? "Can't strip"
+
+### Add checksum - make sure the application mkcsum is in /usr/bin
+mkcsum bootpImage.${DATE} >> ${LOGFILE} 2>&1
+teststatus $? "Can't mkcsum"
+
+### cp
+
+if [ 1 = ${USE_TFTP} ]
+then
+	rlog "0020"
+	${TFTP} ${TFTP_IP} ${TFTP_PORT} -m binary -c put bootpImage.${DATE} bootpImage >> ${LOGFILE} 2>&1
+else
+	rlog "0021"
+	cp -f ./bootpImage.${DATE} ${FS_DIR}/bootpImage >> ${LOGFILE} 2>&1
+	teststatus $? "Can't cp ./bootpImage.${DATE}"
+fi
+rm -f ./bootpImage.${DATE} >> ${LOGFILE} 2>&1
+
+rlog "0022"
+popd >> ${LOGFILE} 2>&1
+teststatus $? "popd failed"
+
+REMOVE_LOG=1
+
+exit 0

@@ -1,0 +1,39 @@
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+CC=$(E_CC)
+PATH := $(E_CROSS)/bin:$(PATH)
+CFLAGS=$(E_CFLAGS)
+LDFLAGS=$(E_LDFLAGS)
+INCLUDE:= $(E_CFLAGS)
+LIB=
+
+
+export CONFIG_LIB_TINYTCL=1
+export CONFIG_LIB_TINYTCL_STATIC=1
+export CONFIG_USER_TINYTCL_TCLSH=1
+
+export TCLDIR = $(E_TOPDIR)/tinytcl
+export CFLAGS += -I $(TCLDIR) -DCONFIG_LIB_TINYTCL_STATIC -Os
+export LIBTCL = -L $(TCLDIR) -ltcl
+
+COMP: all
+
+CLEAN: clean
+
+CONF:
+	
+
+INSTALL: FORCE
+	install -m 755 -D tclsh $(E_DEST)/bin/tclsh
+STRIP: FORCE
+	$(E_STRIP) $(E_DEST)/bin/tclsh
+
+FORCE:
+	
+
+include Makefile
+

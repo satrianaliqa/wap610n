@@ -1,0 +1,23 @@
+# Makefile for compiling OpenSSL for STAR processors.
+# Copyright (c) 2008,2009 Metalink Ltd.
+# This file is distributed under the OpenSSL dual licenses.
+# (BSD style open source licenses)
+# See LICENSE file for more details.
+
+TOPDIR=`cd ../.; pwd`
+STAGING_DIR=/opt/star/tools/arm-uclibc-3.4.6
+ARCH=arm
+TARGET_CFLAGS=-O2 
+PATH=$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
+export PATH ARCH TARGET_CFLAGS
+
+all:
+	CFLAGS="-DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 $(TARGET_CFLAGS)" \
+	./Configure linux-$(ARCH) --prefix=/ --install_prefix=${TOPDIR}/openssl-lib \
+                --openssldir=/usr/lib/ssl -L$(STAGING_DIR)/lib -ldl \
+                -I$(STAGING_DIR)/include $(OPENSSL_OPTS) no-threads \
+                shared no-idea no-mdc2 no-rc5  && \
+	make CC=$(STAGING_DIR)/bin/arm-linux-uclibc-gcc all build-shared
+
+clean:
+	make clean

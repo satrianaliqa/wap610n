@@ -1,0 +1,76 @@
+#!/bin/tclsh
+
+set config_umount_command "config_umount.sh"
+set config_mount_command "config_mount.sh"
+set config_folder "/mnt/jffs2"
+set wlan0_config_file "${config_folder}/wlan0.conf"
+set hostapd0_config_file "${config_folder}/hostapd0.conf"
+
+proc save_flash {} {
+	global config_umount_command
+	global config_mount_command
+	set config_command ""
+	set config_command [exec which $config_umount_command]
+	if {$config_command == ""} {
+		puts "The HW is a Dongle"
+		return
+	}
+	exec $config_command
+	set config_command [exec which $config_mount_command]
+	exec $config_command
+}
+
+puts "make_passphrase:Starting";
+
+# Check that this is an AP
+set res [regexp {.* = (.*)} [exec grep "network_type" ${wlan0_config_file}] dummy network_type]
+
+if {$network_type == 2} {
+	# Get current Passphrase
+	set existing ""
+	set curr ""
+	catch {set existing [exec cat ${wlan0_config_file} | grep "NonProc_WPA_Personal_PSK"]} err]
+  catch {set dummy [regexp {.* = (.*)} [exec grep "NonProc_WPA_Personal_PSK" ${wlan0_config_file}] dummy curr]}
+	# If it's not empty, abort
+	if {$existing == "" || $curr == ""} {
+		set ifconfig [exec ifconfig br0]
+		set res [regexp {HWaddr ([0-9A-Z]+)\:([0-9A-Z]+)\:([0-9A-Z]+)\:([0-9A-Z]+)\:([0-9A-Z]+)\:([0-9A-Z]+)} $ifconfig dummy p1 p2 p3 p4 p5 p6]
+		set newPass "$p1$p2$p3$p4$p5$p6"
+		# make sure the passprase was not deleted
+		if {$newPass != ""} {			
+			# set the passphrase config line
+			set str "NonProc_WPA_Personal_PSK = $newPass"
+			puts "make_passphrase:$str"			
+			# add the passphrase config line to the config file
+			set wlan_cfg_lines [split [exec cat ${wlan0_config_file} | grep -v "NonProc_WPA_Personal_PSK"] "\n"]
+			set new_wlan_file [open ${wlan0_config_file} "w" ]						
+			foreach line $wlan_cfg_lines {
+				puts $new_wlan_file $line
+			}
+			puts $new_wlan_file $str
+			close $new_wlan_file
+			# change passphrase in hostapd if setup is WPA
+			set old_hostapd_cfg [split [exec cat ${hostapd0_config_file} | grep -v "NonProc_WPA_Personal_PSK"] "\n"]
+			set new_hostapd_file [open ${hostapd0_config_file} "w" ]
+			foreach line $old_hostapd_cfg {
+				if {[regexp "^wpa_passphrase" $line] == 1} {
+					puts $new_hostapd_file "wpa_passphrase=${newPass}"
+				} else {
+					puts $new_hostapd_file $line
+				}
+			}
+			close $new_hostapd_file
+			puts "make_passphrase:Saving..."
+			save_flash
+			puts "make_passphrase:Done"
+		} else {
+			puts "make_passphrase:MAC Address failed regexp, Aborting"
+		}
+	} else {
+		puts "End"
+	}
+}
+
+
+
+

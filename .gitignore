@@ -1,0 +1,22 @@
+# Compiled Binaries and Objects
+*.o
+*.ko
+*.cmd
+.tmp_versions
+vmlinux
+
+# Output and Firmware Images
+output/
+images/
+_wlan.tar.gz
+
+# Logs & Temporary Files
+log.log
+*.tmp
+*.bak
+*.swp
+*~
+.DS_Store
+
+# Large redundant archives (>100MB, extracted in tools/arm-uclibc-3.4.6)
+toolchain/arm-uclibc-3.4.6.tgz

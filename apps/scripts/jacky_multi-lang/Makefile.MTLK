@@ -1,0 +1,177 @@
+E_TOPDIR ?=$(PWD)/../
+TOPDIR=$(E_TOPDIR)
+include Makefile.MTLK.vars
+include Makefile.MTLK.files
+include ../.config
+
+###### Directories definitions. #######
+#CRC_DIR=crc
+#E2FS_DIR=e2fsprogs-1.40.4
+#DUTSERVER_DIR=dutserver/linux
+#HOSTAPD_DIR=hostapd-0.4.10
+#OPENSSL_DIR=openssl-0.9.8a
+#WPA_DIR=wpa_supplicant-0.4.10
+#INTELWPS_DIR=Intel-WPS/linux
+#BUSYBOX=busybox
+
+#BCL_DIR=$(TOPDIR)/l/bcl  
+BUSYBOX_DIR=$(TOPDIR)/l/busybox  
+CRC_DIR=$(TOPDIR)/l/crc  
+GET_ENV_PARAM_DIR=$(TOPDIR)/l/get_env_param
+SET_ENV_PARAM_DIR=$(TOPDIR)/l/set_env_param
+#DRIVER_DIR=$(TOPDIR)/l/driver  
+DUTSERVER_DIR=$(TOPDIR)/l/dutserver/linux  
+E2FS_DIR=$(TOPDIR)/l/e2fs  
+GPIO_DIR=$(TOPDIR)/l/gpio  
+HOSTAPD_DIR=$(TOPDIR)/l/hostapd  
+INTELWPS_DIR=$(TOPDIR)/l/intelwps/linux  
+#IPERF_DIR=$(TOPDIR)/l/iperf  
+# IPROUTE_DIR=$(TOPDIR)/l/iproute  
+JFFS2_DIR=$(TOPDIR)/l/jffs2-etc  
+OPENSSL_DIR=$(TOPDIR)/l/openssl  
+PCIUTILS_DIR=$(TOPDIR)/l/pciutils  
+TCPDUMP=$(TOPDIR)/l/tcpdump  
+TINYTCL_DIR=$(TOPDIR)/l/tinytcl  
+# WEBSERVER_DIR=$(TOPDIR)/l/webserver/LINUX  
+# WPASUP_DIR=$(TOPDIR)/l/wpasup
+UPNPD_DIR=$(TOPDIR)/l/mtlk_vb_upnpd
+SIMPDIFF_DIR=$(TOPDIR)/l/simpdiff
+#Add XML Parser for HNAP - Ricky Cao
+EXPAT_DIR=$(TOPDIR)/l/expat
+HNAPWPSSTATUSMONITOR_DIR=$(TOPDIR)/l/hnap_wps_status_monitor
+FORCEETHPCRENEWIP_DIR=$(TOPDIR)/l/force_ethpc_renew_ip
+#Jacky.Yang 9-Feb-2009, ipc for multi-lang
+#MULTILANG_DIR=$(TOPDIR)/l/Multi-Lang
+
+export 
+
+# MTLK_SUBDIRS= $(OPENSSL_DIR) \
+		$(GET_ENV_PARAM_DIR) \
+		$(SET_ENV_PARAM_DIR) \
+		$(UPNPD_DIR) \
+		$(CRC_DIR) \
+		$(DUTSERVER_DIR) \
+		$(E2FS_DIR) \
+		$(HOSTAPD_DIR) \
+		$(INTELWPS_DIR) \
+		$(IPERF_DIR) \
+		$(PCIUTILS_DIR) \
+		$(BUSYBOX_DIR) \
+		$(TINYTCL_DIR) \
+		$(HNAPWPSSTATUSMONITOR_DIR) \
+		$(FORCEETHPCRENEWIP_DIR) \
+		#$(MULTILANG_DIR) \
+		$(EXPAT_DIR)
+#		$(WPASUP_DIR) \
+
+MTLK_SUBDIRS_PRODUCTION= $(OPENSSL_DIR) \
+		$(UPNPD_DIR) \
+		$(SIMPDIFF_DIR) \
+		$(GET_ENV_PARAM_DIR) \
+		$(SET_ENV_PARAM_DIR) \
+		$(CRC_DIR) \
+		$(E2FS_DIR) \
+		$(HOSTAPD_DIR) \
+		$(BUSYBOX_DIR) \
+		$(TINYTCL_DIR) \
+		$(INTELWPS_DIR) \
+		$(GPIO_DIR) \
+		$(JFFS2_DIR) \
+		$(HNAPWPSSTATUSMONITOR_DIR) \
+		$(FORCEETHPCRENEWIP_DIR) \
+		#$(MULTILANG_DIR) \
+		$(EXPAT_DIR)
+#		$(PCIUTILS_DIR) \
+#		$(WPASUP_DIR) \
+#		$(INTELWPS_DIR) \
+
+#MTLK_SUBDIRS_CLEAN= $(MTLK_SUBDIRS)
+#MTLK_SUBDIRS_ALL=$(MTLK_SUBDIRS)
+
+.PHONY: subdirs $(MTLK_SUBDIRS_PRODUCTION)
+
+subdirs: $(MTLK_SUBDIRS_PRODUCTION)
+
+all:   $(MTLK_SUBDIRS_PRODUCTION)
+clean: 
+	for dir in $(MTLK_SUBDIRS_PRODUCTION); do \
+        $(MAKE) -f Makefile.MTLK CLEAN -C $$dir; \
+        done
+comp: 
+	for dir in $(MTLK_SUBDIRS_PRODUCTION); do \
+        $(MAKE) -f Makefile.MTLK COMP -C $$dir; \
+        done
+
+config: 
+	for dir in $(MTLK_SUBDIRS_PRODUCTION); do \
+        $(MAKE) -f Makefile.MTLK CONF -C $$dir; \
+        done
+strip: 
+	for dir in $(MTLK_SUBDIRS_PRODUCTION); do \
+        $(MAKE) -f Makefile.MTLK STRIP -C $$dir; \
+        done
+
+
+
+
+$(MTLK_SUBDIRS_PRODUCTION):
+	$(MAKE) -f Makefile.MTLK CLEAN CONF COMP -C $@
+
+link:
+	TOPDIR=$(E_TOPDIR) ./dolink.sh
+
+install_:
+	@sudo rm -fr $(E_DEST)
+	@install -m 755 -d $(E_DEST)
+	cd $(E_SRC) ; sudo tar cf - * | ( cd $(E_DEST) ; sudo tar xfp -)
+	#@cp -a $(E_SRC) $(E_DEST)
+	for f in $(FILES_PRODUCTION); do \
+        install -D $(E_SRC)/$$f $(E_DEST)/$$f; \
+	done 
+	for dir in $(MTLK_SUBDIRS_PRODUCTION); do \
+        $(MAKE) -f Makefile.MTLK INSTALL -C $$dir; \
+	$(E_STRIP) $(E_DEST)/$$f ; \
+        done
+	#cd $(E_DEST) && sudo tar xzf $(E_SRC)/dev.tgz
+
+	# $(E_STRIP) $(E_DEST)/$$f ; \
+	# $(E_STRIP) $(E_DEST)/lib/*.so
+
+	#@find $(E_DEST) -type f | xargs $(E_STRIP) 
+	#@echo Stripped all executales.
+
+vb4mb: forced link
+	make -f Makefile.MTLK config comp install strip vb4mb_unused_remove
+	make -f Makefile.MTLK vb4mb_clean
+
+vb4mb_clean:
+	for f in $(FILES_UNUSED_IN_MINIMAL); do \
+	sudo rm -fr $(E_DEST)/$$f; \
+	done
+
+svnclean: 
+	find $(E_DEST) -iname "*.svn" | xargs rm -fr
+
+unused_remove:	
+	for f in $(FILES_UNUSED); do \
+	sudo rm -fr $(E_DEST)/$$f; \
+	done
+
+vb4mb_unused_remove:	
+	for f in $(FILES_UNUSED_IN_MINIMAL); do \
+	sudo rm -f $(E_DEST)/$$f; \
+	done
+
+install: install_ svnclean unused_remove
+
+# This variable defined in ../.config 
+customize: forced
+	${BOARD_CUSTOMIZE}
+
+forced:
+
+#### Directories dependencies ######
+
+$(HOSTAPD_DIR): $(OPENSSL_DIR)
+
+$(WPA_DIR): $(OPENSSL_DIR) 

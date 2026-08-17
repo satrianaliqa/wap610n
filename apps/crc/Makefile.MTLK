@@ -1,0 +1,43 @@
+######### Metalink (c) #####################
+######### Standard header begin ############
+
+## TOPDIR may be set. It points to the top directory where all the E_* variables are in Makefiles.MTLK.vars
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+######## Standard header end ##############
+
+#include ../Makefile.MTLK.vars
+
+CC=$(E_CC)
+LD=$(E_LD)
+CFLAGS=$(E_CFLAGS)
+LDFLAGS=$(E_LDFLAGS)
+
+CFLAGS+=-I. -g -Wall -DSTANDALONE
+
+OBJS=crc.o
+TARGET=crc
+
+CONF:
+	echo No config needed here
+
+COMP: $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(TARGET)
+
+CLEAN:
+	rm -f *.o crc
+
+INSTALL: FORCE
+	install -m 755 -D $(TARGET) $(E_DEST)/bin/$(TARGET)
+STRIP: FORCE
+	$(E_STRIP) $(E_DEST)/bin/$(TARGET)
+
+FORCE:
+
+%.o: %.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
+

@@ -1,0 +1,34 @@
+lzmadecode library was added for supporting lzma-compressed ramdisks.
+
+This was included as part of the patch from:
+http://debian.christian-leber.de/kernel_lzma/lzma_ramdisk.patch
+
+
+
+
+LICENSING
+=========
+
+Following is the header from lzmadecode.c/h:
+
+------------------------------------------------------------------
+   LZMA Decoder (optimized for Speed version)
+
+   LZMA SDK 4.17 Copyright (c) 1999-2005 Igor Pavlov (2005-04-05)
+http://www.7-zip.org/
+
+LZMA SDK is licensed under two licenses:
+1) GNU Lesser General Public License (GNU LGPL)
+2) Common Public License (CPL)
+It means that you can select one of these two licenses and 
+follow rules of that license.
+
+SPECIAL EXCEPTION:
+Igor Pavlov, as the author of this Code, expressly permits you to 
+statically or dynamically link your Code (or bind by name) to the 
+interfaces of this file without subjecting your linked Code to the 
+terms of the CPL or GNU LGPL. Any modifications or additions 
+to this file, however, are subject to the LGPL or CPL terms.
+------------------------------------------------------------------
+
+Copies of the LGPL and CPL can be found in this directory.

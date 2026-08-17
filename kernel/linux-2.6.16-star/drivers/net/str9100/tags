@@ -1,0 +1,1253 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.7	//
+AGERE_phy_power_down	star_gsw_phy.c	/^int AGERE_phy_power_down(int phy_addr, int y)$/;"	f
+BIT	star_gsw.h	81;"	d
+CLOSE_PORT	dorado.h	105;"	d
+CLOSE_PORT	dorado2.h	140;"	d
+CLOSE_PORT	dorado2_8021Q_vlantag_vlan.h	139;"	d
+CLOSE_PORT	gpb239m.h	121;"	d
+CLOSE_PORT	gpb239s.h	93;"	d
+CLOSE_PORT	gpb261.h	103;"	d
+CLOSE_PORT	gpb262.h	99;"	d
+CLOSE_PORT	leo.h	95;"	d
+CLOSE_PORT	libra.h	111;"	d
+CLOSE_PORT	libra2.h	112;"	d
+CLOSE_PORT	umedia_vela.h	104;"	d
+CLOSE_PORT	vela.W-VLAN-SUPPORT.h	105;"	d
+CLOSE_PORT	vela.h	102;"	d
+CLOSE_PORT	virgo.h	103;"	d
+CONFIG_GPB261	star_gsw_phy.h	96;"	d
+CONFIG_HAVE_VLAN_TAG	dorado.h	63;"	d
+CONFIG_HAVE_VLAN_TAG	gpb239s.h	56;"	d
+CONFIG_HAVE_VLAN_TAG	gpb261.h	57;"	d
+CONFIG_HAVE_VLAN_TAG	gpb262.h	53;"	d
+CONFIG_HAVE_VLAN_TAG	leo.h	58;"	d
+CONFIG_HAVE_VLAN_TAG	libra.h	68;"	d
+CONFIG_HAVE_VLAN_TAG	libra.h	69;"	d
+CONFIG_HAVE_VLAN_TAG	libra2.h	67;"	d
+CONFIG_HAVE_VLAN_TAG	umedia_vela.h	58;"	d
+CONFIG_HAVE_VLAN_TAG	vela.W-VLAN-SUPPORT.h	56;"	d
+CONFIG_HAVE_VLAN_TAG	vela.h	56;"	d
+CONFIG_HAVE_VLAN_TAG	virgo.h	56;"	d
+CONFIG_PORT0_5	star_gsw_phy.c	1152;"	d	file:
+CONFIG_SERCOMM_VSC7385	star_gsw_config.h	162;"	d
+CONFIG_STAR_GSW_BRIDGE	star_gsw_config.h	113;"	d
+CONFIG_STAR_GSW_NAPI	star_gsw_config.h	103;"	d
+CONFIG_STAR_GSW_TYPE_ONEARM	star_gsw_config.h	161;"	d
+CONFIG_STR9100_PORT_BASE	dorado.h	61;"	d
+CONFIG_STR9100_PORT_BASE	dorado2.h	80;"	d
+CONFIG_STR9100_PORT_BASE	dorado2_8021Q_vlantag_vlan.h	79;"	d
+CONFIG_STR9100_PORT_BASE	gpb239m.h	61;"	d
+CONFIG_STR9100_PORT_BASE	gpb239s.h	54;"	d
+CONFIG_STR9100_PORT_BASE	gpb261.h	59;"	d
+CONFIG_STR9100_PORT_BASE	gpb262.h	55;"	d
+CONFIG_STR9100_PORT_BASE	leo.h	56;"	d
+CONFIG_STR9100_PORT_BASE	libra.h	66;"	d
+CONFIG_STR9100_PORT_BASE	libra2.h	69;"	d
+CONFIG_STR9100_PORT_BASE	umedia_vela.h	60;"	d
+CONFIG_STR9100_PORT_BASE	vela.W-VLAN-SUPPORT.h	61;"	d
+CONFIG_STR9100_PORT_BASE	vela.h	58;"	d
+CONFIG_STR9100_PORT_BASE	virgo.h	58;"	d
+CONFIG_STR9100_VLAN_BASE	dorado.h	62;"	d
+CONFIG_STR9100_VLAN_BASE	dorado2.h	81;"	d
+CONFIG_STR9100_VLAN_BASE	dorado2_8021Q_vlantag_vlan.h	80;"	d
+CONFIG_STR9100_VLAN_BASE	gpb239m.h	62;"	d
+CONFIG_STR9100_VLAN_BASE	gpb239s.h	55;"	d
+CONFIG_STR9100_VLAN_BASE	gpb261.h	56;"	d
+CONFIG_STR9100_VLAN_BASE	gpb262.h	52;"	d
+CONFIG_STR9100_VLAN_BASE	leo.h	57;"	d
+CONFIG_STR9100_VLAN_BASE	libra.h	67;"	d
+CONFIG_STR9100_VLAN_BASE	libra2.h	66;"	d
+CONFIG_STR9100_VLAN_BASE	umedia_vela.h	57;"	d
+CONFIG_STR9100_VLAN_BASE	vela.W-VLAN-SUPPORT.h	55;"	d
+CONFIG_STR9100_VLAN_BASE	vela.h	55;"	d
+CONFIG_STR9100_VLAN_BASE	virgo.h	55;"	d
+CONFIG_VLANTAG_VLAN	dorado2.h	191;"	d
+CONFIG_VLANTAG_VLAN	dorado2_8021Q_vlantag_vlan.h	189;"	d
+CONFIG_VLANTAG_VLAN	gpb239m.h	172;"	d
+CONFIG_VLANTAG_VLAN	vela.W-VLAN-SUPPORT.h	59;"	d
+CPU_PORT	star_gsw_phy.h	124;"	d
+CPU_PORT_PVID	star_gsw_phy.h	141;"	d
+CREATE_NET_DEV0	dorado.h	53;"	d
+CREATE_NET_DEV0	dorado2.h	72;"	d
+CREATE_NET_DEV0	dorado2_8021Q_vlantag_vlan.h	71;"	d
+CREATE_NET_DEV0	gpb239m.h	53;"	d
+CREATE_NET_DEV0	gpb239s.h	47;"	d
+CREATE_NET_DEV0	gpb261.h	49;"	d
+CREATE_NET_DEV0	gpb262.h	45;"	d
+CREATE_NET_DEV0	leo.h	49;"	d
+CREATE_NET_DEV0	libra.h	58;"	d
+CREATE_NET_DEV0	libra2.h	59;"	d
+CREATE_NET_DEV0	umedia_vela.h	50;"	d
+CREATE_NET_DEV0	vela.W-VLAN-SUPPORT.h	48;"	d
+CREATE_NET_DEV0	vela.h	48;"	d
+CREATE_NET_DEV0	virgo.h	48;"	d
+CREATE_NET_DEV1	dorado.h	54;"	d
+CREATE_NET_DEV1	dorado2.h	73;"	d
+CREATE_NET_DEV1	dorado2_8021Q_vlantag_vlan.h	72;"	d
+CREATE_NET_DEV1	gpb239m.h	54;"	d
+CREATE_NET_DEV1	gpb239s.h	48;"	d
+CREATE_NET_DEV1	gpb261.h	50;"	d
+CREATE_NET_DEV1	gpb262.h	46;"	d
+CREATE_NET_DEV1	leo.h	50;"	d
+CREATE_NET_DEV1	libra.h	59;"	d
+CREATE_NET_DEV1	libra2.h	60;"	d
+CREATE_NET_DEV1	umedia_vela.h	51;"	d
+CREATE_NET_DEV1	vela.W-VLAN-SUPPORT.h	49;"	d
+CREATE_NET_DEV1	vela.h	49;"	d
+CREATE_NET_DEV1	virgo.h	49;"	d
+CREATE_NET_DEV2	dorado.h	55;"	d
+CREATE_NET_DEV2	dorado2.h	74;"	d
+CREATE_NET_DEV2	dorado2_8021Q_vlantag_vlan.h	73;"	d
+CREATE_NET_DEV2	gpb239m.h	55;"	d
+CREATE_NET_DEV2	gpb239s.h	49;"	d
+CREATE_NET_DEV2	gpb261.h	51;"	d
+CREATE_NET_DEV2	gpb262.h	47;"	d
+CREATE_NET_DEV2	leo.h	51;"	d
+CREATE_NET_DEV2	libra.h	60;"	d
+CREATE_NET_DEV2	libra2.h	61;"	d
+CREATE_NET_DEV2	umedia_vela.h	52;"	d
+CREATE_NET_DEV2	vela.W-VLAN-SUPPORT.h	50;"	d
+CREATE_NET_DEV2	vela.h	50;"	d
+CREATE_NET_DEV2	virgo.h	50;"	d
+CREATE_NET_DEV_AD	star_gsw.h	90;"	d
+CREATE_NET_DEV_AD	star_gsw.h	93;"	d
+CRITICAL_MSG	star_gsw_config.h	51;"	d
+DEBUG_MSG	star_gsw_config.h	53;"	d
+DORADO	dorado.h	35;"	d
+DORADO2	dorado2.h	36;"	d
+DORADO2	dorado2_8021Q_vlantag_vlan.h	36;"	d
+DORADO2_H	dorado2.h	29;"	d
+DORADO2_H	dorado2_8021Q_vlantag_vlan.h	29;"	d
+DORADO_H	dorado.h	29;"	d
+EWC_PORT	star_gsw.h	85;"	d
+FREE_TX_SKB_MULTI_MAX	star_gsw.c	2424;"	d	file:
+GPB239M_H	gpb239m.h	29;"	d
+GPB239_H	gpb239s.h	29;"	d
+GPB261_H	gpb261.h	29;"	d
+GPB262_H	gpb262.h	29;"	d
+GPIO_REALTEK_RESET	gpb239m.h	35;"	d
+GSW_ARL_TABLE_ACCESS_CONTROL_0	star_gsw_phy.h	156;"	d
+GSW_ARL_TABLE_ACCESS_CONTROL_1	star_gsw_phy.h	157;"	d
+GSW_ARL_TABLE_ACCESS_CONTROL_2	star_gsw_phy.h	158;"	d
+GSW_BIST_RESULT_TEST_0	star_gsw_phy.h	152;"	d
+GSW_CLEAR_ALL_INTERRUPT_STATUS_SOURCES	star_gsw.h	320;"	d
+GSW_CLEAR_INTERRUPT_STATUS_SOURCES	star_gsw.h	323;"	d
+GSW_CLEAR_INTERRUPT_STATUS_SOURCE_BIT	star_gsw.h	326;"	d
+GSW_CPU_PORT_CONFIG	star_gsw_phy.h	175;"	d
+GSW_DELAYED_INTERRUPT_CONFIG	star_gsw_phy.h	177;"	d
+GSW_DISABLE_ALL_INTERRUPT_STATUS_SOURCES	star_gsw.h	329;"	d
+GSW_DISABLE_INTERRUPT_STATUS_SOURCE_BIT	star_gsw.h	335;"	d
+GSW_ENABLE_ALL_INTERRUPT_STATUS_SOURCES	star_gsw.h	332;"	d
+GSW_ENABLE_INTERRUPT_STATUS_SOURCE_BIT	star_gsw.h	338;"	d
+GSW_FS_DESCRIPTOR_BASE_ADDR	star_gsw_phy.h	174;"	d
+GSW_FS_DESCRIPTOR_POINTER	star_gsw_phy.h	173;"	d
+GSW_FS_DMA_CONTROL	star_gsw_phy.h	170;"	d
+GSW_FS_DMA_START	star_gsw.h	350;"	d
+GSW_FS_DMA_STOP	star_gsw.h	353;"	d
+GSW_HNAT_SOURCE_MAC_0_HIGH	star_gsw_phy.h	178;"	d
+GSW_HNAT_SOURCE_MAC_0_LOW	star_gsw_phy.h	179;"	d
+GSW_HNAT_SOURCE_MAC_1_HIGH	star_gsw_phy.h	180;"	d
+GSW_HNAT_SOURCE_MAC_1_LOW	star_gsw_phy.h	181;"	d
+GSW_HNAT_SOURCE_MAC_2_HIGH	star_gsw_phy.h	182;"	d
+GSW_HNAT_SOURCE_MAC_2_LOW	star_gsw_phy.h	183;"	d
+GSW_HNAT_SOURCE_MAC_3_HIGH	star_gsw_phy.h	184;"	d
+GSW_HNAT_SOURCE_MAC_3_LOW	star_gsw_phy.h	185;"	d
+GSW_HNAT_SOURCE_MAC_4_HIGH	star_gsw_phy.h	186;"	d
+GSW_HNAT_SOURCE_MAC_4_LOW	star_gsw_phy.h	187;"	d
+GSW_HNAT_SOURCE_MAC_5_HIGH	star_gsw_phy.h	188;"	d
+GSW_HNAT_SOURCE_MAC_5_LOW	star_gsw_phy.h	189;"	d
+GSW_HNAT_SOURCE_MAC_6_HIGH	star_gsw_phy.h	190;"	d
+GSW_HNAT_SOURCE_MAC_6_LOW	star_gsw_phy.h	191;"	d
+GSW_HNAT_SOURCE_MAC_7_HIGH	star_gsw_phy.h	192;"	d
+GSW_HNAT_SOURCE_MAC_7_LOW	star_gsw_phy.h	193;"	d
+GSW_INTERRUPT_MASK	star_gsw_phy.h	166;"	d
+GSW_INTERRUPT_STATUS	star_gsw_phy.h	167;"	d
+GSW_ISP_TAGGING_PORT_CONFIG	star_gsw_phy.h	196;"	d
+GSW_MAC_PORT_0_CONFIG	star_gsw_phy.h	147;"	d
+GSW_MAC_PORT_1_CONFIG	star_gsw_phy.h	148;"	d
+GSW_PHY_CONTROL	star_gsw_phy.h	151;"	d
+GSW_PORT0_CFG_REG	star_gsw_phy.h	153;"	d
+GSW_PORT1_CFG_REG	star_gsw_phy.h	154;"	d
+GSW_PORT_MIRROR	star_gsw_phy.h	149;"	d
+GSW_QUEUE_STATUS_TEST_1	star_gsw_phy.h	150;"	d
+GSW_READ_FSSD	star_gsw.h	365;"	d
+GSW_READ_FS_BASE	star_gsw.h	377;"	d
+GSW_READ_HNAT_ALG_END_INDEX	star_gsw.h	425;"	d
+GSW_READ_HNAT_ALG_START_INDEX	star_gsw.h	422;"	d
+GSW_READ_HNAT_ARP_BASE_ADDR	star_gsw.h	446;"	d
+GSW_READ_HNAT_CONFIGURATION	star_gsw.h	386;"	d
+GSW_READ_HNAT_FL_RULE_END_INDEX	star_gsw.h	413;"	d
+GSW_READ_HNAT_FL_RULE_START_INDEX	star_gsw.h	410;"	d
+GSW_READ_HNAT_FW_RULE_END_INDEX	star_gsw.h	401;"	d
+GSW_READ_HNAT_FW_RULE_START_INDEX	star_gsw.h	398;"	d
+GSW_READ_HNAT_NAPT_BASE_ADDR	star_gsw.h	437;"	d
+GSW_READ_HNAT_SIP_START_INDEX	star_gsw.h	431;"	d
+GSW_READ_INTERRUPT_STATUS	star_gsw.h	317;"	d
+GSW_READ_TSSD	star_gsw.h	359;"	d
+GSW_READ_TS_BASE	star_gsw.h	371;"	d
+GSW_READ_TS_DMA_STATE	star_gsw.h	347;"	d
+GSW_SET_CPU_PORT_PVID	star_gsw.h	119;"	d
+GSW_SET_PORT0_PVID	star_gsw.h	107;"	d
+GSW_SET_PORT1_PVID	star_gsw.h	113;"	d
+GSW_SET_PPPOE_SESSION_0_ID	star_gsw.h	269;"	d
+GSW_SET_PPPOE_SESSION_1_ID	star_gsw.h	275;"	d
+GSW_SET_PPPOE_SESSION_2_ID	star_gsw.h	281;"	d
+GSW_SET_PPPOE_SESSION_3_ID	star_gsw.h	287;"	d
+GSW_SET_PPPOE_SESSION_4_ID	star_gsw.h	293;"	d
+GSW_SET_PPPOE_SESSION_5_ID	star_gsw.h	299;"	d
+GSW_SET_PPPOE_SESSION_6_ID	star_gsw.h	305;"	d
+GSW_SET_PPPOE_SESSION_7_ID	star_gsw.h	311;"	d
+GSW_SET_VLAN_0_MEMBER	star_gsw.h	173;"	d
+GSW_SET_VLAN_0_TAG	star_gsw.h	221;"	d
+GSW_SET_VLAN_0_VID	star_gsw.h	125;"	d
+GSW_SET_VLAN_1_MEMBER	star_gsw.h	179;"	d
+GSW_SET_VLAN_1_TAG	star_gsw.h	227;"	d
+GSW_SET_VLAN_1_VID	star_gsw.h	131;"	d
+GSW_SET_VLAN_2_MEMBER	star_gsw.h	185;"	d
+GSW_SET_VLAN_2_TAG	star_gsw.h	233;"	d
+GSW_SET_VLAN_2_VID	star_gsw.h	137;"	d
+GSW_SET_VLAN_3_MEMBER	star_gsw.h	191;"	d
+GSW_SET_VLAN_3_TAG	star_gsw.h	239;"	d
+GSW_SET_VLAN_3_VID	star_gsw.h	143;"	d
+GSW_SET_VLAN_4_MEMBER	star_gsw.h	197;"	d
+GSW_SET_VLAN_4_TAG	star_gsw.h	245;"	d
+GSW_SET_VLAN_4_VID	star_gsw.h	149;"	d
+GSW_SET_VLAN_5_MEMBER	star_gsw.h	203;"	d
+GSW_SET_VLAN_5_TAG	star_gsw.h	251;"	d
+GSW_SET_VLAN_5_VID	star_gsw.h	155;"	d
+GSW_SET_VLAN_6_MEMBER	star_gsw.h	209;"	d
+GSW_SET_VLAN_6_TAG	star_gsw.h	257;"	d
+GSW_SET_VLAN_6_VID	star_gsw.h	161;"	d
+GSW_SET_VLAN_7_MEMBER	star_gsw.h	215;"	d
+GSW_SET_VLAN_7_TAG	star_gsw.h	263;"	d
+GSW_SET_VLAN_7_VID	star_gsw.h	167;"	d
+GSW_SWITCH_CONFIG	star_gsw_phy.h	155;"	d
+GSW_TS_DESCRIPTOR_BASE_ADDR	star_gsw_phy.h	172;"	d
+GSW_TS_DESCRIPTOR_POINTER	star_gsw_phy.h	171;"	d
+GSW_TS_DMA_CONTROL	star_gsw_phy.h	169;"	d
+GSW_TS_DMA_START	star_gsw.h	341;"	d
+GSW_TS_DMA_STOP	star_gsw.h	344;"	d
+GSW_VLAN_MEMBER_PORT_MAP	star_gsw_phy.h	164;"	d
+GSW_VLAN_PORT_PVID	star_gsw_phy.h	159;"	d
+GSW_VLAN_TAG_PORT_MAP	star_gsw_phy.h	165;"	d
+GSW_VLAN_VID_0_1	star_gsw_phy.h	160;"	d
+GSW_VLAN_VID_2_3	star_gsw_phy.h	161;"	d
+GSW_VLAN_VID_4_5	star_gsw_phy.h	162;"	d
+GSW_VLAN_VID_6_7	star_gsw_phy.h	163;"	d
+GSW_WRITE_FSSD	star_gsw.h	362;"	d
+GSW_WRITE_FS_BASE	star_gsw.h	374;"	d
+GSW_WRITE_HNAT_ALG_END_INDEX	star_gsw.h	419;"	d
+GSW_WRITE_HNAT_ALG_START_INDEX	star_gsw.h	416;"	d
+GSW_WRITE_HNAT_ARP_BASE_ADDR	star_gsw.h	443;"	d
+GSW_WRITE_HNAT_CONFIGURATION	star_gsw.h	383;"	d
+GSW_WRITE_HNAT_FL_RULE_END_INDEX	star_gsw.h	407;"	d
+GSW_WRITE_HNAT_FL_RULE_START_INDEX	star_gsw.h	404;"	d
+GSW_WRITE_HNAT_FW_RULE_END_INDEX	star_gsw.h	395;"	d
+GSW_WRITE_HNAT_FW_RULE_START_INDEX	star_gsw.h	392;"	d
+GSW_WRITE_HNAT_NAPT_BASE_ADDR	star_gsw.h	434;"	d
+GSW_WRITE_HNAT_NAPT_PORT_BASE	star_gsw.h	440;"	d
+GSW_WRITE_HNAT_SIP_START_INDEX	star_gsw.h	428;"	d
+GSW_WRITE_PRIVATE_IP_BASE	star_gsw.h	389;"	d
+GSW_WRITE_TSSD	star_gsw.h	356;"	d
+GSW_WRITE_TS_BASE	star_gsw.h	368;"	d
+INIT_PORT0_MAC	dorado.h	43;"	d
+INIT_PORT0_MAC	dorado2.h	57;"	d
+INIT_PORT0_MAC	dorado2_8021Q_vlantag_vlan.h	56;"	d
+INIT_PORT0_MAC	gpb239m.h	43;"	d
+INIT_PORT0_MAC	gpb239s.h	37;"	d
+INIT_PORT0_MAC	gpb261.h	40;"	d
+INIT_PORT0_MAC	gpb262.h	36;"	d
+INIT_PORT0_MAC	leo.h	39;"	d
+INIT_PORT0_MAC	libra.h	48;"	d
+INIT_PORT0_MAC	libra2.h	50;"	d
+INIT_PORT0_MAC	umedia_vela.h	40;"	d
+INIT_PORT0_MAC	vela.W-VLAN-SUPPORT.h	39;"	d
+INIT_PORT0_MAC	vela.h	39;"	d
+INIT_PORT0_MAC	virgo.h	39;"	d
+INIT_PORT0_PHY	dorado.h	38;"	d
+INIT_PORT0_PHY	dorado2.h	47;"	d
+INIT_PORT0_PHY	dorado2_8021Q_vlantag_vlan.h	47;"	d
+INIT_PORT0_PHY	gpb239m.h	38;"	d
+INIT_PORT0_PHY	gpb239s.h	33;"	d
+INIT_PORT0_PHY	gpb261.h	32;"	d
+INIT_PORT0_PHY	gpb262.h	32;"	d
+INIT_PORT0_PHY	leo.h	35;"	d
+INIT_PORT0_PHY	libra.h	43;"	d
+INIT_PORT0_PHY	libra2.h	46;"	d
+INIT_PORT0_PHY	umedia_vela.h	35;"	d
+INIT_PORT0_PHY	vela.W-VLAN-SUPPORT.h	35;"	d
+INIT_PORT0_PHY	vela.h	35;"	d
+INIT_PORT0_PHY	virgo.h	35;"	d
+INIT_PORT1_MAC	dorado.h	44;"	d
+INIT_PORT1_MAC	dorado2.h	58;"	d
+INIT_PORT1_MAC	dorado2_8021Q_vlantag_vlan.h	57;"	d
+INIT_PORT1_MAC	gpb239m.h	44;"	d
+INIT_PORT1_MAC	gpb239s.h	38;"	d
+INIT_PORT1_MAC	gpb261.h	41;"	d
+INIT_PORT1_MAC	gpb262.h	37;"	d
+INIT_PORT1_MAC	leo.h	40;"	d
+INIT_PORT1_MAC	libra.h	49;"	d
+INIT_PORT1_MAC	libra2.h	51;"	d
+INIT_PORT1_MAC	umedia_vela.h	41;"	d
+INIT_PORT1_MAC	vela.W-VLAN-SUPPORT.h	40;"	d
+INIT_PORT1_MAC	vela.h	40;"	d
+INIT_PORT1_MAC	virgo.h	40;"	d
+INIT_PORT1_PHY	dorado.h	39;"	d
+INIT_PORT1_PHY	dorado2.h	49;"	d
+INIT_PORT1_PHY	dorado2.h	52;"	d
+INIT_PORT1_PHY	dorado2_8021Q_vlantag_vlan.h	49;"	d
+INIT_PORT1_PHY	dorado2_8021Q_vlantag_vlan.h	51;"	d
+INIT_PORT1_PHY	gpb239m.h	39;"	d
+INIT_PORT1_PHY	gpb239s.h	34;"	d
+INIT_PORT1_PHY	gpb261.h	34;"	d
+INIT_PORT1_PHY	gpb261.h	36;"	d
+INIT_PORT1_PHY	gpb262.h	33;"	d
+INIT_PORT1_PHY	leo.h	36;"	d
+INIT_PORT1_PHY	libra.h	44;"	d
+INIT_PORT1_PHY	libra2.h	47;"	d
+INIT_PORT1_PHY	umedia_vela.h	36;"	d
+INIT_PORT1_PHY	vela.W-VLAN-SUPPORT.h	36;"	d
+INIT_PORT1_PHY	vela.h	36;"	d
+INIT_PORT1_PHY	virgo.h	36;"	d
+INTC_ASSIGN_INTERRUPT_TO_FIQ	star_gsw.h	485;"	d
+INTC_ASSIGN_INTERRUPT_TO_IRQ	star_gsw.h	482;"	d
+INTC_CLEAR_EDGE_TRIGGER_INTERRUPT	star_gsw.h	461;"	d
+INTC_DISABLE_INTERRUPT_SOURCE	star_gsw.h	458;"	d
+INTC_ENABLE_INTERRUPT_SOURCE	star_gsw.h	455;"	d
+INTC_INTERRUPT_CLEAR_EDGE_TRIGGER	star_gsw_phy.h	168;"	d
+INTC_INTERRUPT_MASK	star_gsw_phy.h	176;"	d
+INTC_SET_INTERRUPT_ACTIVE_HIGH_LEVEL_TRIGGER	star_gsw.h	476;"	d
+INTC_SET_INTERRUPT_ACTIVE_LOW_LEVEL_TRIGGER	star_gsw.h	479;"	d
+INTC_SET_INTERRUPT_EDGE_TRIGGER	star_gsw.h	464;"	d
+INTC_SET_INTERRUPT_FALLING_EDGE_TRIGGER	star_gsw.h	473;"	d
+INTC_SET_INTERRUPT_LEVEL_TRIGGER	star_gsw.h	467;"	d
+INTC_SET_INTERRUPT_RISING_EDGE_TRIGGER	star_gsw.h	470;"	d
+INT_BUFFER_FULL	star_gsw.h	515;"	d
+INT_CPU_HOLD	star_gsw.h	519;"	d
+INT_CPU_Q_FULL	star_gsw.h	512;"	d
+INT_CPU_UNKNOWN_VLAN	star_gsw.h	522;"	d
+INT_GLOBAL_Q_FULL	star_gsw.h	514;"	d
+INT_HNAT_Q_FULL	star_gsw.h	513;"	d
+INT_INTRUDER0	star_gsw.h	517;"	d
+INT_INTRUDER1	star_gsw.h	518;"	d
+INT_PORT0_BCS_DROP	star_gsw.h	524;"	d
+INT_PORT0_INGRESS_DROP	star_gsw.h	530;"	d
+INT_PORT0_JAMED_DROP	star_gsw.h	526;"	d
+INT_PORT0_LOCAL_DROP	star_gsw.h	529;"	d
+INT_PORT0_NO_LINK_DROP	star_gsw.h	523;"	d
+INT_PORT0_QUEUE_DROP	star_gsw.h	527;"	d
+INT_PORT0_Q_FULL	star_gsw.h	510;"	d
+INT_PORT0_RMC_DROP	star_gsw.h	528;"	d
+INT_PORT0_RX_CRC_DROP	star_gsw.h	525;"	d
+INT_PORT0_UNKNOWN_VLAN	star_gsw.h	520;"	d
+INT_PORT1_BCS_DROP	star_gsw.h	532;"	d
+INT_PORT1_JAMED_DROP	star_gsw.h	534;"	d
+INT_PORT1_NO_LINK_DROP	star_gsw.h	531;"	d
+INT_PORT1_QUEUE_DROP	star_gsw.h	535;"	d
+INT_PORT1_Q_FULL	star_gsw.h	511;"	d
+INT_PORT1_RMC_DROP	star_gsw.h	536;"	d
+INT_PORT1_RX_CRC_DROP	star_gsw.h	533;"	d
+INT_PORT1_UNKNOWN_VLAN	star_gsw.h	521;"	d
+INT_PORT_STATUS_CHG	star_gsw.h	516;"	d
+INVALID_PORT_BASE_PMAP_PORT	star_gsw_phy.h	143;"	d
+IRQ_HANDLED	star_gsw.c	64;"	d	file:
+IRQ_RETURN	star_gsw.c	63;"	d	file:
+IRQ_RETURN	star_gsw.c	68;"	d	file:
+LAN_GID	dorado.h	182;"	d
+LAN_GID	dorado2.h	226;"	d
+LAN_GID	dorado2_8021Q_vlantag_vlan.h	223;"	d
+LAN_GID	gpb239m.h	206;"	d
+LAN_GID	gpb239s.h	150;"	d
+LAN_GID	gpb261.h	165;"	d
+LAN_GID	gpb262.h	161;"	d
+LAN_GID	leo.h	152;"	d
+LAN_GID	libra.h	188;"	d
+LAN_GID	libra2.h	180;"	d
+LAN_GID	umedia_vela.h	166;"	d
+LAN_GID	vela.W-VLAN-SUPPORT.h	167;"	d
+LAN_GID	vela.h	164;"	d
+LAN_GID	virgo.h	165;"	d
+LAN_PORT	star_gsw.h	83;"	d
+LEO	leo.h	32;"	d
+LEO_H	leo.h	29;"	d
+LIBRA	libra.h	40;"	d
+LIBRA2	libra2.h	40;"	d
+LIBRA_H	libra.h	29;"	d
+LINUX24	star_gsw_phy.h	38;"	d
+LINUX26	star_gsw_phy.h	40;"	d
+MAX_PACKET_LEN	star_gsw_config.h	285;"	d
+MAX_PEND_INT_CNT	star_gsw_config.h	153;"	d
+MAX_PEND_TIME	star_gsw_config.h	155;"	d
+MAX_PORT_NUM	star_gsw.h	541;"	d
+MAX_TX_SKB_FREE_NUM	star_gsw.c	2425;"	d	file:
+MAX_VLAN_NUM	star_gsw.h	540;"	d
+MIN_PACKET_LEN	star_gsw.c	76;"	d	file:
+MODEL	dorado.h	72;"	d
+MODEL	dorado2.h	98;"	d
+MODEL	dorado2_8021Q_vlantag_vlan.h	97;"	d
+MODEL	gpb239m.h	79;"	d
+MODEL	gpb239s.h	70;"	d
+MODEL	gpb261.h	169;"	d
+MODEL	gpb262.h	165;"	d
+MODEL	leo.h	72;"	d
+MODEL	libra.h	78;"	d
+MODEL	libra2.h	43;"	d
+MODEL	umedia_vela.h	170;"	d
+MODEL	vela.W-VLAN-SUPPORT.h	171;"	d
+MODEL	vela.h	168;"	d
+MODEL	virgo.h	71;"	d
+NET_DEV0	dorado2.h	88;"	d
+NET_DEV0	dorado2_8021Q_vlantag_vlan.h	87;"	d
+NET_DEV0	gpb239m.h	69;"	d
+NET_DEV0	gpb239s.h	60;"	d
+NET_DEV0	gpb261.h	62;"	d
+NET_DEV0	gpb262.h	58;"	d
+NET_DEV0	leo.h	62;"	d
+NET_DEV0	libra2.h	72;"	d
+NET_DEV0	umedia_vela.h	63;"	d
+NET_DEV0	vela.W-VLAN-SUPPORT.h	64;"	d
+NET_DEV0	vela.h	61;"	d
+NET_DEV0	virgo.h	61;"	d
+NET_DEV1	dorado2.h	90;"	d
+NET_DEV1	dorado2_8021Q_vlantag_vlan.h	89;"	d
+NET_DEV1	gpb239m.h	71;"	d
+NET_DEV1	gpb239s.h	62;"	d
+NET_DEV1	gpb261.h	64;"	d
+NET_DEV1	gpb262.h	60;"	d
+NET_DEV1	leo.h	64;"	d
+NET_DEV1	libra2.h	74;"	d
+NET_DEV1	umedia_vela.h	65;"	d
+NET_DEV1	vela.W-VLAN-SUPPORT.h	66;"	d
+NET_DEV1	vela.h	63;"	d
+NET_DEV1	virgo.h	63;"	d
+NORMAL_MSG	star_gsw_config.h	49;"	d
+OPEN_PORT	dorado.h	77;"	d
+OPEN_PORT	dorado2.h	103;"	d
+OPEN_PORT	dorado2_8021Q_vlantag_vlan.h	102;"	d
+OPEN_PORT	gpb239m.h	84;"	d
+OPEN_PORT	gpb239s.h	75;"	d
+OPEN_PORT	gpb261.h	76;"	d
+OPEN_PORT	gpb262.h	72;"	d
+OPEN_PORT	leo.h	77;"	d
+OPEN_PORT	libra.h	83;"	d
+OPEN_PORT	libra2.h	85;"	d
+OPEN_PORT	umedia_vela.h	77;"	d
+OPEN_PORT	vela.W-VLAN-SUPPORT.h	78;"	d
+OPEN_PORT	vela.h	75;"	d
+OPEN_PORT	virgo.h	76;"	d
+PDEBUG	star_gsw_config.h	74;"	d
+PDEBUG	star_gsw_config.h	77;"	d
+PDEBUG	star_gsw_config.h	80;"	d
+PDEBUG	star_gsw_config.h	83;"	d
+PDEBUGG	star_gsw_config.h	86;"	d
+PDEBUGG	star_gsw_config.h	87;"	d
+PHY_AN_ADVERTISEMENT_REG_ADDR	star_gsw.h	495;"	d
+PHY_AN_ADVERTISEMENT_REG_ADDR	star_gsw_phy.c	1033;"	d	file:
+PHY_AN_REAMOTE_CAP_REG_ADDR	star_gsw.h	496;"	d
+PHY_CH_STATUS_OUTPUT_REG_ADDR	star_gsw.h	499;"	d
+PHY_CONTROL_REG_ADDR	star_gsw.h	491;"	d
+PHY_CONTROL_REG_ADDR	star_gsw_phy.c	1032;"	d	file:
+PHY_ID1_REG_ADDR	star_gsw.h	493;"	d
+PHY_ID2_REG_ADDR	star_gsw.h	494;"	d
+PHY_LSI_L84225_ID1	star_gsw.h	503;"	d
+PHY_LSI_L84225_ID2	star_gsw.h	504;"	d
+PHY_RESERVED1_REG_ADDR	star_gsw.h	497;"	d
+PHY_RESERVED2_REG_ADDR	star_gsw.h	498;"	d
+PHY_RESERVED3_REG_ADDR	star_gsw.h	500;"	d
+PHY_RESERVED4_REG_ADDR	star_gsw.h	501;"	d
+PHY_STATUA_REG_ADDR	star_gsw.h	492;"	d
+PMAP_CPU_PORT	star_gsw.h	101;"	d
+PMAP_PORT0	star_gsw.h	99;"	d
+PMAP_PORT1	star_gsw.h	100;"	d
+PMAP_TUN_PORT	star_gsw.h	89;"	d
+PORT0	star_gsw_phy.h	122;"	d
+PORT0_LINK_DOWN	dorado.h	47;"	d
+PORT0_LINK_DOWN	dorado2.h	61;"	d
+PORT0_LINK_DOWN	dorado2_8021Q_vlantag_vlan.h	60;"	d
+PORT0_LINK_DOWN	gpb239m.h	47;"	d
+PORT0_LINK_DOWN	gpb239s.h	41;"	d
+PORT0_LINK_DOWN	gpb261.h	43;"	d
+PORT0_LINK_DOWN	gpb262.h	39;"	d
+PORT0_LINK_DOWN	leo.h	43;"	d
+PORT0_LINK_DOWN	libra.h	52;"	d
+PORT0_LINK_DOWN	libra2.h	53;"	d
+PORT0_LINK_DOWN	umedia_vela.h	44;"	d
+PORT0_LINK_DOWN	vela.W-VLAN-SUPPORT.h	42;"	d
+PORT0_LINK_DOWN	vela.h	42;"	d
+PORT0_LINK_DOWN	virgo.h	42;"	d
+PORT0_LINK_UP	dorado.h	48;"	d
+PORT0_LINK_UP	dorado2.h	62;"	d
+PORT0_LINK_UP	dorado2_8021Q_vlantag_vlan.h	61;"	d
+PORT0_LINK_UP	gpb239m.h	48;"	d
+PORT0_LINK_UP	gpb239s.h	42;"	d
+PORT0_LINK_UP	gpb261.h	44;"	d
+PORT0_LINK_UP	gpb262.h	40;"	d
+PORT0_LINK_UP	leo.h	44;"	d
+PORT0_LINK_UP	libra.h	53;"	d
+PORT0_LINK_UP	libra2.h	54;"	d
+PORT0_LINK_UP	umedia_vela.h	45;"	d
+PORT0_LINK_UP	vela.W-VLAN-SUPPORT.h	43;"	d
+PORT0_LINK_UP	vela.h	43;"	d
+PORT0_LINK_UP	virgo.h	43;"	d
+PORT0_PHY_RESET	dorado.h	58;"	d
+PORT0_PHY_RESET	dorado2.h	77;"	d
+PORT0_PHY_RESET	dorado2_8021Q_vlantag_vlan.h	76;"	d
+PORT0_PHY_RESET	gpb239m.h	58;"	d
+PORT0_PHY_RESET	gpb239s.h	51;"	d
+PORT0_PHY_RESET	gpb261.h	53;"	d
+PORT0_PHY_RESET	gpb262.h	49;"	d
+PORT0_PHY_RESET	leo.h	53;"	d
+PORT0_PHY_RESET	libra.h	63;"	d
+PORT0_PHY_RESET	libra2.h	63;"	d
+PORT0_PHY_RESET	umedia_vela.h	54;"	d
+PORT0_PHY_RESET	vela.W-VLAN-SUPPORT.h	52;"	d
+PORT0_PHY_RESET	vela.h	52;"	d
+PORT0_PHY_RESET	virgo.h	52;"	d
+PORT0_PVID	star_gsw_phy.h	135;"	d
+PORT1	star_gsw_phy.h	123;"	d
+PORT1_INGRESS_DROP	star_gsw.h	538;"	d
+PORT1_LINK_DOWN	dorado.h	50;"	d
+PORT1_LINK_DOWN	dorado2.h	65;"	d
+PORT1_LINK_DOWN	dorado2.h	68;"	d
+PORT1_LINK_DOWN	dorado2_8021Q_vlantag_vlan.h	64;"	d
+PORT1_LINK_DOWN	dorado2_8021Q_vlantag_vlan.h	67;"	d
+PORT1_LINK_DOWN	gpb239m.h	50;"	d
+PORT1_LINK_DOWN	gpb239s.h	44;"	d
+PORT1_LINK_DOWN	gpb261.h	46;"	d
+PORT1_LINK_DOWN	gpb262.h	42;"	d
+PORT1_LINK_DOWN	leo.h	46;"	d
+PORT1_LINK_DOWN	libra.h	55;"	d
+PORT1_LINK_DOWN	libra2.h	56;"	d
+PORT1_LINK_DOWN	umedia_vela.h	47;"	d
+PORT1_LINK_DOWN	vela.W-VLAN-SUPPORT.h	45;"	d
+PORT1_LINK_DOWN	vela.h	45;"	d
+PORT1_LINK_DOWN	virgo.h	45;"	d
+PORT1_LINK_UP	dorado.h	51;"	d
+PORT1_LINK_UP	dorado2.h	66;"	d
+PORT1_LINK_UP	dorado2.h	69;"	d
+PORT1_LINK_UP	dorado2_8021Q_vlantag_vlan.h	65;"	d
+PORT1_LINK_UP	dorado2_8021Q_vlantag_vlan.h	68;"	d
+PORT1_LINK_UP	gpb239m.h	51;"	d
+PORT1_LINK_UP	gpb239s.h	45;"	d
+PORT1_LINK_UP	gpb261.h	47;"	d
+PORT1_LINK_UP	gpb262.h	43;"	d
+PORT1_LINK_UP	leo.h	47;"	d
+PORT1_LINK_UP	libra.h	56;"	d
+PORT1_LINK_UP	libra2.h	57;"	d
+PORT1_LINK_UP	umedia_vela.h	48;"	d
+PORT1_LINK_UP	vela.W-VLAN-SUPPORT.h	46;"	d
+PORT1_LINK_UP	vela.h	46;"	d
+PORT1_LINK_UP	virgo.h	46;"	d
+PORT1_LOCAL_DROP	star_gsw.h	537;"	d
+PORT1_PHY_RESET	dorado.h	59;"	d
+PORT1_PHY_RESET	dorado2.h	78;"	d
+PORT1_PHY_RESET	dorado2_8021Q_vlantag_vlan.h	77;"	d
+PORT1_PHY_RESET	gpb239m.h	59;"	d
+PORT1_PHY_RESET	gpb239s.h	52;"	d
+PORT1_PHY_RESET	gpb261.h	54;"	d
+PORT1_PHY_RESET	gpb262.h	50;"	d
+PORT1_PHY_RESET	leo.h	54;"	d
+PORT1_PHY_RESET	libra.h	64;"	d
+PORT1_PHY_RESET	libra2.h	64;"	d
+PORT1_PHY_RESET	umedia_vela.h	55;"	d
+PORT1_PHY_RESET	vela.W-VLAN-SUPPORT.h	53;"	d
+PORT1_PHY_RESET	vela.h	53;"	d
+PORT1_PHY_RESET	virgo.h	53;"	d
+PORT1_PVID	star_gsw_phy.h	137;"	d
+PORT1_PVID	star_gsw_phy.h	139;"	d
+PORT_BASE_PMAP_EWC_PORT	dorado.h	70;"	d
+PORT_BASE_PMAP_EWC_PORT	dorado2.h	96;"	d
+PORT_BASE_PMAP_EWC_PORT	dorado2_8021Q_vlantag_vlan.h	95;"	d
+PORT_BASE_PMAP_EWC_PORT	gpb239m.h	77;"	d
+PORT_BASE_PMAP_EWC_PORT	gpb239s.h	68;"	d
+PORT_BASE_PMAP_EWC_PORT	gpb261.h	70;"	d
+PORT_BASE_PMAP_EWC_PORT	gpb262.h	66;"	d
+PORT_BASE_PMAP_EWC_PORT	leo.h	70;"	d
+PORT_BASE_PMAP_EWC_PORT	libra.h	76;"	d
+PORT_BASE_PMAP_EWC_PORT	libra2.h	80;"	d
+PORT_BASE_PMAP_EWC_PORT	umedia_vela.h	71;"	d
+PORT_BASE_PMAP_EWC_PORT	vela.W-VLAN-SUPPORT.h	72;"	d
+PORT_BASE_PMAP_EWC_PORT	vela.h	69;"	d
+PORT_BASE_PMAP_EWC_PORT	virgo.h	69;"	d
+PORT_BASE_PMAP_LAN_PORT	dorado.h	68;"	d
+PORT_BASE_PMAP_LAN_PORT	dorado2.h	94;"	d
+PORT_BASE_PMAP_LAN_PORT	dorado2_8021Q_vlantag_vlan.h	93;"	d
+PORT_BASE_PMAP_LAN_PORT	gpb239m.h	75;"	d
+PORT_BASE_PMAP_LAN_PORT	gpb239s.h	66;"	d
+PORT_BASE_PMAP_LAN_PORT	gpb261.h	68;"	d
+PORT_BASE_PMAP_LAN_PORT	gpb262.h	64;"	d
+PORT_BASE_PMAP_LAN_PORT	leo.h	68;"	d
+PORT_BASE_PMAP_LAN_PORT	libra.h	74;"	d
+PORT_BASE_PMAP_LAN_PORT	libra2.h	78;"	d
+PORT_BASE_PMAP_LAN_PORT	umedia_vela.h	69;"	d
+PORT_BASE_PMAP_LAN_PORT	vela.W-VLAN-SUPPORT.h	70;"	d
+PORT_BASE_PMAP_LAN_PORT	vela.h	67;"	d
+PORT_BASE_PMAP_LAN_PORT	virgo.h	67;"	d
+PORT_BASE_PMAP_TUN_PORT	star_gsw.h	91;"	d
+PORT_BASE_PMAP_TUN_PORT	star_gsw.h	94;"	d
+PORT_BASE_PMAP_WAN_PORT	dorado.h	69;"	d
+PORT_BASE_PMAP_WAN_PORT	dorado2.h	95;"	d
+PORT_BASE_PMAP_WAN_PORT	dorado2_8021Q_vlantag_vlan.h	94;"	d
+PORT_BASE_PMAP_WAN_PORT	gpb239m.h	76;"	d
+PORT_BASE_PMAP_WAN_PORT	gpb239s.h	67;"	d
+PORT_BASE_PMAP_WAN_PORT	gpb261.h	69;"	d
+PORT_BASE_PMAP_WAN_PORT	gpb262.h	65;"	d
+PORT_BASE_PMAP_WAN_PORT	leo.h	69;"	d
+PORT_BASE_PMAP_WAN_PORT	libra.h	75;"	d
+PORT_BASE_PMAP_WAN_PORT	libra2.h	79;"	d
+PORT_BASE_PMAP_WAN_PORT	umedia_vela.h	70;"	d
+PORT_BASE_PMAP_WAN_PORT	vela.W-VLAN-SUPPORT.h	71;"	d
+PORT_BASE_PMAP_WAN_PORT	vela.h	68;"	d
+PORT_BASE_PMAP_WAN_PORT	virgo.h	68;"	d
+PPPOE_ID_1_LOC	star_gsw.c	2098;"	d	file:
+PPPOE_ID_2_LOC	star_gsw.c	2099;"	d	file:
+PRINT_INFO	star_gsw_config.h	97;"	d
+PRINT_INFO	star_gsw_config.h	99;"	d
+PRINT_PACKET	star_gsw_config.h	68;"	d
+PWRMGT_PAD_DRIVE_STRENGTH_CONTROL	star_gsw_phy.h	195;"	d
+PWRMGT_SOFTWARE_RESET_CONTROL	star_gsw_phy.h	194;"	d
+RXRING_INFO	star_gsw.h	/^} RXRING_INFO;$/;"	t	typeref:struct:__anon4
+STAR_GSW_EWC_DEV	star_gsw.c	/^static struct net_device *STAR_GSW_EWC_DEV;$/;"	v	typeref:struct:net_device	file:
+STAR_GSW_FSQF_ISR	star_gsw_config.h	145;"	d
+STAR_GSW_H	star_gsw.h	30;"	d
+STAR_GSW_LAN_DEV	star_gsw.c	/^static struct net_device *STAR_GSW_LAN_DEV;$/;"	v	typeref:struct:net_device	file:
+STAR_GSW_MAX_RFD_NUM	star_gsw_config.h	292;"	d
+STAR_GSW_MAX_TFD_NUM	star_gsw_config.h	291;"	d
+STAR_GSW_RXDESC	star_gsw.h	/^} __attribute__((packed)) STAR_GSW_RXDESC;$/;"	t	typeref:struct:__anon2
+STAR_GSW_RX_HW_CHECKSUM	star_gsw_config.h	132;"	d
+STAR_GSW_TXDESC	star_gsw.h	/^} __attribute__((packed)) STAR_GSW_TXDESC;$/;"	t	typeref:struct:__anon1
+STAR_GSW_TX_HW_CHECKSUM	star_gsw_config.h	131;"	d
+STAR_GSW_TX_HW_CHECKSUM	star_gsw_config.h	139;"	d
+STAR_GSW_WAN_DEV	star_gsw.c	/^static struct net_device *STAR_GSW_WAN_DEV;$/;"	v	typeref:struct:net_device	file:
+STAR_NAPI_DEV	star_gsw.c	/^static struct net_device STAR_NAPI_DEV;$/;"	v	typeref:struct:net_device	file:
+STR9100_GSW_BROADCAST_RATE_CONTROL	star_gsw_config.h	119;"	d
+STR9100_GSW_DISABLE_FORWARDING_BROADCAST_PACKET	star_gsw_config.h	125;"	d
+STR9100_GSW_DISABLE_FORWARDING_MULTICAST_PACKET	star_gsw_config.h	126;"	d
+STR9100_GSW_DISABLE_FORWARDING_UNKNOW_PACKET	star_gsw_config.h	127;"	d
+STR9100_GSW_MULTICAST_RATE_CONTROL	star_gsw_config.h	120;"	d
+STR9100_GSW_UNKNOW_PACKET_RATE_CONTROL	star_gsw_config.h	121;"	d
+TUN_PORT	star_gsw.h	88;"	d
+TXRING_INFO	star_gsw.h	/^} TXRING_INFO;$/;"	t	typeref:struct:__anon3
+U_MEDIA	umedia_vela.h	32;"	d
+U_MEDIA_VELA_H	umedia_vela.h	29;"	d
+VELA	vela.W-VLAN-SUPPORT.h	32;"	d
+VELA	vela.h	32;"	d
+VELA_H	vela.W-VLAN-SUPPORT.h	29;"	d
+VELA_H	vela.h	29;"	d
+VIRGO	virgo.h	32;"	d
+VIRGO_H	virgo.h	29;"	d
+VLAN0_GROUP	dorado.h	139;"	d
+VLAN0_GROUP	dorado2.h	180;"	d
+VLAN0_GROUP	dorado2_8021Q_vlantag_vlan.h	179;"	d
+VLAN0_GROUP	gpb239m.h	161;"	d
+VLAN0_GROUP	gpb239s.h	118;"	d
+VLAN0_GROUP	gpb261.h	136;"	d
+VLAN0_GROUP	gpb262.h	132;"	d
+VLAN0_GROUP	leo.h	120;"	d
+VLAN0_GROUP	libra.h	145;"	d
+VLAN0_GROUP	libra2.h	146;"	d
+VLAN0_GROUP	umedia_vela.h	137;"	d
+VLAN0_GROUP	vela.W-VLAN-SUPPORT.h	138;"	d
+VLAN0_GROUP	vela.h	135;"	d
+VLAN0_GROUP	virgo.h	136;"	d
+VLAN0_GROUP_ID	star_gsw_phy.h	126;"	d
+VLAN0_VID	dorado.h	129;"	d
+VLAN0_VID	dorado2.h	171;"	d
+VLAN0_VID	dorado2_8021Q_vlantag_vlan.h	170;"	d
+VLAN0_VID	gpb239m.h	152;"	d
+VLAN0_VID	gpb239s.h	108;"	d
+VLAN0_VID	gpb261.h	126;"	d
+VLAN0_VID	gpb262.h	122;"	d
+VLAN0_VID	leo.h	110;"	d
+VLAN0_VID	libra.h	135;"	d
+VLAN0_VID	libra2.h	136;"	d
+VLAN0_VID	umedia_vela.h	127;"	d
+VLAN0_VID	vela.W-VLAN-SUPPORT.h	128;"	d
+VLAN0_VID	vela.h	125;"	d
+VLAN0_VID	virgo.h	126;"	d
+VLAN0_VLAN_TAG	dorado.h	152;"	d
+VLAN0_VLAN_TAG	dorado.h	156;"	d
+VLAN0_VLAN_TAG	dorado2.h	196;"	d
+VLAN0_VLAN_TAG	dorado2.h	200;"	d
+VLAN0_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	193;"	d
+VLAN0_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	197;"	d
+VLAN0_VLAN_TAG	gpb239m.h	177;"	d
+VLAN0_VLAN_TAG	gpb239m.h	180;"	d
+VLAN0_VLAN_TAG	gpb239s.h	130;"	d
+VLAN0_VLAN_TAG	gpb261.h	145;"	d
+VLAN0_VLAN_TAG	gpb262.h	141;"	d
+VLAN0_VLAN_TAG	leo.h	132;"	d
+VLAN0_VLAN_TAG	libra.h	158;"	d
+VLAN0_VLAN_TAG	libra.h	162;"	d
+VLAN0_VLAN_TAG	libra2.h	156;"	d
+VLAN0_VLAN_TAG	umedia_vela.h	146;"	d
+VLAN0_VLAN_TAG	vela.W-VLAN-SUPPORT.h	147;"	d
+VLAN0_VLAN_TAG	vela.h	144;"	d
+VLAN0_VLAN_TAG	virgo.h	145;"	d
+VLAN1_GROUP	dorado.h	140;"	d
+VLAN1_GROUP	dorado2.h	181;"	d
+VLAN1_GROUP	dorado2_8021Q_vlantag_vlan.h	180;"	d
+VLAN1_GROUP	gpb239m.h	163;"	d
+VLAN1_GROUP	gpb239s.h	119;"	d
+VLAN1_GROUP	gpb261.h	137;"	d
+VLAN1_GROUP	gpb262.h	133;"	d
+VLAN1_GROUP	leo.h	121;"	d
+VLAN1_GROUP	libra.h	146;"	d
+VLAN1_GROUP	libra2.h	147;"	d
+VLAN1_GROUP	umedia_vela.h	138;"	d
+VLAN1_GROUP	vela.W-VLAN-SUPPORT.h	139;"	d
+VLAN1_GROUP	vela.h	136;"	d
+VLAN1_GROUP	virgo.h	137;"	d
+VLAN1_GROUP_ID	star_gsw_phy.h	127;"	d
+VLAN1_VID	dorado.h	130;"	d
+VLAN1_VID	dorado2.h	172;"	d
+VLAN1_VID	dorado2_8021Q_vlantag_vlan.h	171;"	d
+VLAN1_VID	gpb239m.h	153;"	d
+VLAN1_VID	gpb239s.h	109;"	d
+VLAN1_VID	gpb261.h	127;"	d
+VLAN1_VID	gpb262.h	123;"	d
+VLAN1_VID	leo.h	111;"	d
+VLAN1_VID	libra.h	136;"	d
+VLAN1_VID	libra2.h	137;"	d
+VLAN1_VID	umedia_vela.h	128;"	d
+VLAN1_VID	vela.W-VLAN-SUPPORT.h	129;"	d
+VLAN1_VID	vela.h	126;"	d
+VLAN1_VID	virgo.h	127;"	d
+VLAN1_VLAN_TAG	dorado.h	153;"	d
+VLAN1_VLAN_TAG	dorado.h	157;"	d
+VLAN1_VLAN_TAG	dorado2.h	197;"	d
+VLAN1_VLAN_TAG	dorado2.h	201;"	d
+VLAN1_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	194;"	d
+VLAN1_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	198;"	d
+VLAN1_VLAN_TAG	gpb239m.h	178;"	d
+VLAN1_VLAN_TAG	gpb239m.h	181;"	d
+VLAN1_VLAN_TAG	gpb239s.h	131;"	d
+VLAN1_VLAN_TAG	gpb261.h	146;"	d
+VLAN1_VLAN_TAG	gpb262.h	142;"	d
+VLAN1_VLAN_TAG	leo.h	133;"	d
+VLAN1_VLAN_TAG	libra.h	159;"	d
+VLAN1_VLAN_TAG	libra.h	163;"	d
+VLAN1_VLAN_TAG	libra2.h	157;"	d
+VLAN1_VLAN_TAG	umedia_vela.h	147;"	d
+VLAN1_VLAN_TAG	vela.W-VLAN-SUPPORT.h	148;"	d
+VLAN1_VLAN_TAG	vela.h	145;"	d
+VLAN1_VLAN_TAG	virgo.h	146;"	d
+VLAN2_GROUP	dorado.h	141;"	d
+VLAN2_GROUP	dorado2.h	182;"	d
+VLAN2_GROUP	dorado2_8021Q_vlantag_vlan.h	181;"	d
+VLAN2_GROUP	gpb239m.h	164;"	d
+VLAN2_GROUP	gpb239s.h	123;"	d
+VLAN2_GROUP	gpb261.h	138;"	d
+VLAN2_GROUP	gpb262.h	134;"	d
+VLAN2_GROUP	leo.h	125;"	d
+VLAN2_GROUP	libra.h	147;"	d
+VLAN2_GROUP	libra2.h	148;"	d
+VLAN2_GROUP	umedia_vela.h	139;"	d
+VLAN2_GROUP	vela.W-VLAN-SUPPORT.h	140;"	d
+VLAN2_GROUP	vela.h	137;"	d
+VLAN2_GROUP	virgo.h	138;"	d
+VLAN2_GROUP_ID	star_gsw_phy.h	128;"	d
+VLAN2_VID	dorado.h	131;"	d
+VLAN2_VID	dorado2.h	173;"	d
+VLAN2_VID	dorado2_8021Q_vlantag_vlan.h	172;"	d
+VLAN2_VID	gpb239m.h	154;"	d
+VLAN2_VID	gpb239s.h	110;"	d
+VLAN2_VID	gpb261.h	128;"	d
+VLAN2_VID	gpb262.h	124;"	d
+VLAN2_VID	leo.h	112;"	d
+VLAN2_VID	libra.h	137;"	d
+VLAN2_VID	libra2.h	138;"	d
+VLAN2_VID	umedia_vela.h	129;"	d
+VLAN2_VID	vela.W-VLAN-SUPPORT.h	130;"	d
+VLAN2_VID	vela.h	127;"	d
+VLAN2_VID	virgo.h	128;"	d
+VLAN2_VLAN_TAG	dorado.h	160;"	d
+VLAN2_VLAN_TAG	dorado2.h	204;"	d
+VLAN2_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	201;"	d
+VLAN2_VLAN_TAG	gpb239m.h	184;"	d
+VLAN2_VLAN_TAG	gpb239s.h	132;"	d
+VLAN2_VLAN_TAG	gpb261.h	147;"	d
+VLAN2_VLAN_TAG	gpb262.h	143;"	d
+VLAN2_VLAN_TAG	leo.h	134;"	d
+VLAN2_VLAN_TAG	libra.h	166;"	d
+VLAN2_VLAN_TAG	libra2.h	158;"	d
+VLAN2_VLAN_TAG	umedia_vela.h	148;"	d
+VLAN2_VLAN_TAG	vela.W-VLAN-SUPPORT.h	149;"	d
+VLAN2_VLAN_TAG	vela.h	146;"	d
+VLAN2_VLAN_TAG	virgo.h	147;"	d
+VLAN3_GROUP	dorado.h	142;"	d
+VLAN3_GROUP	dorado2.h	183;"	d
+VLAN3_GROUP	dorado2_8021Q_vlantag_vlan.h	182;"	d
+VLAN3_GROUP	gpb239m.h	165;"	d
+VLAN3_GROUP	gpb239s.h	124;"	d
+VLAN3_GROUP	gpb261.h	139;"	d
+VLAN3_GROUP	gpb262.h	135;"	d
+VLAN3_GROUP	leo.h	126;"	d
+VLAN3_GROUP	libra.h	148;"	d
+VLAN3_GROUP	libra2.h	149;"	d
+VLAN3_GROUP	umedia_vela.h	140;"	d
+VLAN3_GROUP	vela.W-VLAN-SUPPORT.h	141;"	d
+VLAN3_GROUP	vela.h	138;"	d
+VLAN3_GROUP	virgo.h	139;"	d
+VLAN3_GROUP_ID	star_gsw_phy.h	129;"	d
+VLAN3_VID	dorado.h	132;"	d
+VLAN3_VID	dorado2.h	174;"	d
+VLAN3_VID	dorado2_8021Q_vlantag_vlan.h	173;"	d
+VLAN3_VID	gpb239m.h	155;"	d
+VLAN3_VID	gpb239s.h	111;"	d
+VLAN3_VID	gpb261.h	129;"	d
+VLAN3_VID	gpb262.h	125;"	d
+VLAN3_VID	leo.h	113;"	d
+VLAN3_VID	libra.h	138;"	d
+VLAN3_VID	libra2.h	139;"	d
+VLAN3_VID	umedia_vela.h	130;"	d
+VLAN3_VID	vela.W-VLAN-SUPPORT.h	131;"	d
+VLAN3_VID	vela.h	128;"	d
+VLAN3_VID	virgo.h	129;"	d
+VLAN3_VLAN_TAG	dorado.h	161;"	d
+VLAN3_VLAN_TAG	dorado2.h	205;"	d
+VLAN3_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	202;"	d
+VLAN3_VLAN_TAG	gpb239m.h	185;"	d
+VLAN3_VLAN_TAG	gpb239s.h	133;"	d
+VLAN3_VLAN_TAG	gpb261.h	148;"	d
+VLAN3_VLAN_TAG	gpb262.h	144;"	d
+VLAN3_VLAN_TAG	leo.h	135;"	d
+VLAN3_VLAN_TAG	libra.h	167;"	d
+VLAN3_VLAN_TAG	libra2.h	159;"	d
+VLAN3_VLAN_TAG	umedia_vela.h	149;"	d
+VLAN3_VLAN_TAG	vela.W-VLAN-SUPPORT.h	150;"	d
+VLAN3_VLAN_TAG	vela.h	147;"	d
+VLAN3_VLAN_TAG	virgo.h	148;"	d
+VLAN4_GROUP	dorado.h	143;"	d
+VLAN4_GROUP	dorado2.h	184;"	d
+VLAN4_GROUP	dorado2_8021Q_vlantag_vlan.h	183;"	d
+VLAN4_GROUP	gpb239m.h	166;"	d
+VLAN4_GROUP	gpb239s.h	125;"	d
+VLAN4_GROUP	gpb261.h	140;"	d
+VLAN4_GROUP	gpb262.h	136;"	d
+VLAN4_GROUP	leo.h	127;"	d
+VLAN4_GROUP	libra.h	149;"	d
+VLAN4_GROUP	libra2.h	150;"	d
+VLAN4_GROUP	umedia_vela.h	141;"	d
+VLAN4_GROUP	vela.W-VLAN-SUPPORT.h	142;"	d
+VLAN4_GROUP	vela.h	139;"	d
+VLAN4_GROUP	virgo.h	140;"	d
+VLAN4_GROUP_ID	star_gsw_phy.h	130;"	d
+VLAN4_VID	dorado.h	133;"	d
+VLAN4_VID	dorado2.h	175;"	d
+VLAN4_VID	dorado2_8021Q_vlantag_vlan.h	174;"	d
+VLAN4_VID	gpb239m.h	156;"	d
+VLAN4_VID	gpb239s.h	112;"	d
+VLAN4_VID	gpb261.h	130;"	d
+VLAN4_VID	gpb262.h	126;"	d
+VLAN4_VID	leo.h	114;"	d
+VLAN4_VID	libra.h	139;"	d
+VLAN4_VID	libra2.h	140;"	d
+VLAN4_VID	umedia_vela.h	131;"	d
+VLAN4_VID	vela.W-VLAN-SUPPORT.h	132;"	d
+VLAN4_VID	vela.h	129;"	d
+VLAN4_VID	virgo.h	130;"	d
+VLAN4_VLAN_TAG	dorado.h	162;"	d
+VLAN4_VLAN_TAG	dorado2.h	206;"	d
+VLAN4_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	203;"	d
+VLAN4_VLAN_TAG	gpb239m.h	186;"	d
+VLAN4_VLAN_TAG	gpb239s.h	134;"	d
+VLAN4_VLAN_TAG	gpb261.h	149;"	d
+VLAN4_VLAN_TAG	gpb262.h	145;"	d
+VLAN4_VLAN_TAG	leo.h	136;"	d
+VLAN4_VLAN_TAG	libra.h	168;"	d
+VLAN4_VLAN_TAG	libra2.h	160;"	d
+VLAN4_VLAN_TAG	umedia_vela.h	150;"	d
+VLAN4_VLAN_TAG	vela.W-VLAN-SUPPORT.h	151;"	d
+VLAN4_VLAN_TAG	vela.h	148;"	d
+VLAN4_VLAN_TAG	virgo.h	149;"	d
+VLAN5_GROUP	dorado.h	144;"	d
+VLAN5_GROUP	dorado2.h	185;"	d
+VLAN5_GROUP	dorado2_8021Q_vlantag_vlan.h	184;"	d
+VLAN5_GROUP	gpb239m.h	167;"	d
+VLAN5_GROUP	gpb239s.h	126;"	d
+VLAN5_GROUP	gpb261.h	141;"	d
+VLAN5_GROUP	gpb262.h	137;"	d
+VLAN5_GROUP	leo.h	128;"	d
+VLAN5_GROUP	libra.h	150;"	d
+VLAN5_GROUP	libra2.h	151;"	d
+VLAN5_GROUP	umedia_vela.h	142;"	d
+VLAN5_GROUP	vela.W-VLAN-SUPPORT.h	143;"	d
+VLAN5_GROUP	vela.h	140;"	d
+VLAN5_GROUP	virgo.h	141;"	d
+VLAN5_GROUP_ID	star_gsw_phy.h	131;"	d
+VLAN5_VID	dorado.h	134;"	d
+VLAN5_VID	dorado2.h	176;"	d
+VLAN5_VID	dorado2_8021Q_vlantag_vlan.h	175;"	d
+VLAN5_VID	gpb239m.h	157;"	d
+VLAN5_VID	gpb239s.h	113;"	d
+VLAN5_VID	gpb261.h	131;"	d
+VLAN5_VID	gpb262.h	127;"	d
+VLAN5_VID	leo.h	115;"	d
+VLAN5_VID	libra.h	140;"	d
+VLAN5_VID	libra2.h	141;"	d
+VLAN5_VID	umedia_vela.h	132;"	d
+VLAN5_VID	vela.W-VLAN-SUPPORT.h	133;"	d
+VLAN5_VID	vela.h	130;"	d
+VLAN5_VID	virgo.h	131;"	d
+VLAN5_VLAN_TAG	dorado.h	163;"	d
+VLAN5_VLAN_TAG	dorado2.h	207;"	d
+VLAN5_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	204;"	d
+VLAN5_VLAN_TAG	gpb239m.h	187;"	d
+VLAN5_VLAN_TAG	gpb239s.h	135;"	d
+VLAN5_VLAN_TAG	gpb261.h	150;"	d
+VLAN5_VLAN_TAG	gpb262.h	146;"	d
+VLAN5_VLAN_TAG	leo.h	137;"	d
+VLAN5_VLAN_TAG	libra.h	169;"	d
+VLAN5_VLAN_TAG	libra2.h	161;"	d
+VLAN5_VLAN_TAG	umedia_vela.h	151;"	d
+VLAN5_VLAN_TAG	vela.W-VLAN-SUPPORT.h	152;"	d
+VLAN5_VLAN_TAG	vela.h	149;"	d
+VLAN5_VLAN_TAG	virgo.h	150;"	d
+VLAN6_GROUP	dorado.h	145;"	d
+VLAN6_GROUP	dorado2.h	186;"	d
+VLAN6_GROUP	dorado2_8021Q_vlantag_vlan.h	185;"	d
+VLAN6_GROUP	gpb239m.h	168;"	d
+VLAN6_GROUP	gpb239s.h	127;"	d
+VLAN6_GROUP	gpb261.h	142;"	d
+VLAN6_GROUP	gpb262.h	138;"	d
+VLAN6_GROUP	leo.h	129;"	d
+VLAN6_GROUP	libra.h	151;"	d
+VLAN6_GROUP	libra2.h	152;"	d
+VLAN6_GROUP	umedia_vela.h	143;"	d
+VLAN6_GROUP	vela.W-VLAN-SUPPORT.h	144;"	d
+VLAN6_GROUP	vela.h	141;"	d
+VLAN6_GROUP	virgo.h	142;"	d
+VLAN6_GROUP_ID	star_gsw_phy.h	132;"	d
+VLAN6_VID	dorado.h	135;"	d
+VLAN6_VID	dorado2.h	177;"	d
+VLAN6_VID	dorado2_8021Q_vlantag_vlan.h	176;"	d
+VLAN6_VID	gpb239m.h	158;"	d
+VLAN6_VID	gpb239s.h	114;"	d
+VLAN6_VID	gpb261.h	132;"	d
+VLAN6_VID	gpb262.h	128;"	d
+VLAN6_VID	leo.h	116;"	d
+VLAN6_VID	libra.h	141;"	d
+VLAN6_VID	libra2.h	142;"	d
+VLAN6_VID	umedia_vela.h	133;"	d
+VLAN6_VID	vela.W-VLAN-SUPPORT.h	134;"	d
+VLAN6_VID	vela.h	131;"	d
+VLAN6_VID	virgo.h	132;"	d
+VLAN6_VLAN_TAG	dorado.h	164;"	d
+VLAN6_VLAN_TAG	dorado2.h	208;"	d
+VLAN6_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	205;"	d
+VLAN6_VLAN_TAG	gpb239m.h	188;"	d
+VLAN6_VLAN_TAG	gpb239s.h	136;"	d
+VLAN6_VLAN_TAG	gpb261.h	151;"	d
+VLAN6_VLAN_TAG	gpb262.h	147;"	d
+VLAN6_VLAN_TAG	leo.h	138;"	d
+VLAN6_VLAN_TAG	libra.h	170;"	d
+VLAN6_VLAN_TAG	libra2.h	162;"	d
+VLAN6_VLAN_TAG	umedia_vela.h	152;"	d
+VLAN6_VLAN_TAG	vela.W-VLAN-SUPPORT.h	153;"	d
+VLAN6_VLAN_TAG	vela.h	150;"	d
+VLAN6_VLAN_TAG	virgo.h	151;"	d
+VLAN7_GROUP	dorado.h	146;"	d
+VLAN7_GROUP	dorado2.h	187;"	d
+VLAN7_GROUP	dorado2_8021Q_vlantag_vlan.h	186;"	d
+VLAN7_GROUP	gpb239m.h	169;"	d
+VLAN7_GROUP	gpb239s.h	128;"	d
+VLAN7_GROUP	gpb261.h	143;"	d
+VLAN7_GROUP	gpb262.h	139;"	d
+VLAN7_GROUP	leo.h	130;"	d
+VLAN7_GROUP	libra.h	152;"	d
+VLAN7_GROUP	libra2.h	153;"	d
+VLAN7_GROUP	umedia_vela.h	144;"	d
+VLAN7_GROUP	vela.W-VLAN-SUPPORT.h	145;"	d
+VLAN7_GROUP	vela.h	142;"	d
+VLAN7_GROUP	virgo.h	143;"	d
+VLAN7_GROUP_ID	star_gsw_phy.h	133;"	d
+VLAN7_VID	dorado.h	136;"	d
+VLAN7_VID	dorado2.h	178;"	d
+VLAN7_VID	dorado2_8021Q_vlantag_vlan.h	177;"	d
+VLAN7_VID	gpb239m.h	159;"	d
+VLAN7_VID	gpb239s.h	115;"	d
+VLAN7_VID	gpb261.h	133;"	d
+VLAN7_VID	gpb262.h	129;"	d
+VLAN7_VID	leo.h	117;"	d
+VLAN7_VID	libra.h	142;"	d
+VLAN7_VID	libra2.h	143;"	d
+VLAN7_VID	umedia_vela.h	134;"	d
+VLAN7_VID	vela.W-VLAN-SUPPORT.h	135;"	d
+VLAN7_VID	vela.h	132;"	d
+VLAN7_VID	virgo.h	133;"	d
+VLAN7_VLAN_TAG	dorado.h	165;"	d
+VLAN7_VLAN_TAG	dorado2.h	209;"	d
+VLAN7_VLAN_TAG	dorado2_8021Q_vlantag_vlan.h	206;"	d
+VLAN7_VLAN_TAG	gpb239m.h	189;"	d
+VLAN7_VLAN_TAG	gpb239s.h	137;"	d
+VLAN7_VLAN_TAG	gpb261.h	152;"	d
+VLAN7_VLAN_TAG	gpb262.h	148;"	d
+VLAN7_VLAN_TAG	leo.h	139;"	d
+VLAN7_VLAN_TAG	libra.h	171;"	d
+VLAN7_VLAN_TAG	libra2.h	163;"	d
+VLAN7_VLAN_TAG	umedia_vela.h	153;"	d
+VLAN7_VLAN_TAG	vela.W-VLAN-SUPPORT.h	154;"	d
+VLAN7_VLAN_TAG	vela.h	151;"	d
+VLAN7_VLAN_TAG	virgo.h	152;"	d
+VSC8201_phy_power_down	star_gsw_phy.c	/^int VSC8201_phy_power_down(int phy_addr, int y)$/;"	f
+WAN_GID	dorado.h	183;"	d
+WAN_GID	dorado2.h	227;"	d
+WAN_GID	dorado2_8021Q_vlantag_vlan.h	224;"	d
+WAN_GID	gpb239m.h	207;"	d
+WAN_GID	gpb239s.h	151;"	d
+WAN_GID	gpb261.h	166;"	d
+WAN_GID	gpb262.h	162;"	d
+WAN_GID	leo.h	153;"	d
+WAN_GID	libra.h	189;"	d
+WAN_GID	libra2.h	181;"	d
+WAN_GID	umedia_vela.h	167;"	d
+WAN_GID	vela.W-VLAN-SUPPORT.h	168;"	d
+WAN_GID	vela.h	165;"	d
+WAN_GID	virgo.h	166;"	d
+WAN_PORT	star_gsw.h	84;"	d
+WARNING_MSG	star_gsw_config.h	50;"	d
+__LIBRA2_H_	libra2.h	29;"	d
+__REG	star_gsw.h	580;"	d
+__STAR_GSW_CONFIG_H__	star_gsw_config.h	30;"	d
+__STAR_GSW_PHY_H__	star_gsw_phy.h	30;"	d
+_gsw_arl_table_entry_	star_gsw.h	/^typedef struct _gsw_arl_table_entry_$/;"	s
+_gsw_info_	star_gsw.h	/^typedef struct _gsw_info_ {$/;"	s
+_port_config_	star_gsw.h	/^typedef struct _port_config_ {$/;"	s
+_vlan_config_	star_gsw.h	/^typedef struct _vlan_config_ {$/;"	s
+add_mac_into_arl	star_gsw.c	/^int add_mac_into_arl(u16 gid, u8 *mac)$/;"	f
+age_field	star_gsw.h	/^    u32    age_field;$/;"	m	struct:_gsw_arl_table_entry_
+between	star_gsw.c	281;"	d	file:
+config_MAC_port0_libra2	star_gsw_phy.c	/^void config_MAC_port0_libra2(void)$/;"	f
+config_MAC_port1_libra2	star_gsw_phy.c	/^void config_MAC_port1_libra2(void)$/;"	f
+config_flag	star_gsw.h	/^	u32	config_flag;$/;"	m	struct:_port_config_
+config_my_vlan_mac	star_gsw.c	/^int config_my_vlan_mac(u16 gid, u16 vid, u8 *mac)$/;"	f
+configure_icplus_175c_phy	star_gsw_phy.c	/^void configure_icplus_175c_phy(void)$/;"	f
+configure_icplus_175c_phy0_3	star_gsw_phy.c	/^void configure_icplus_175c_phy0_3(void)$/;"	f
+configure_icplus_175c_phy4	star_gsw_phy.c	/^void configure_icplus_175c_phy4(void)$/;"	f
+cown	star_gsw.h	/^	u32 cown:1;$/;"	m	struct:__anon1
+cown	star_gsw.h	/^	u32 cown:1;$/;"	m	struct:__anon2
+cur_index	star_gsw.h	/^	u32			cur_index;$/;"	m	struct:__anon4
+cur_index	star_gsw.h	/^	unsigned int		cur_index; \/\/ TX's current will point to Free Descriptors$/;"	m	struct:__anon3
+data_ptr	star_gsw.h	/^	u32 data_ptr;$/;"	m	struct:__anon1
+data_ptr	star_gsw.h	/^	u32 data_ptr;$/;"	m	struct:__anon2
+del_mac_from_arl	star_gsw.c	/^void del_mac_from_arl(u8 gid, u8 *mac)$/;"	f
+del_my_vlan_mac	star_gsw.c	/^void del_my_vlan_mac(u8 gid)$/;"	f
+des_mtd_env	star_gsw.c	/^void des_mtd_env(void)$/;"	f
+disable_AN	star_gsw_phy.c	/^int disable_AN(int port, int y)$/;"	f
+disable_AN_VSC7385	star_gsw_phy.c	/^int disable_AN_VSC7385(int y)$/;"	f
+enable_cpu_port	star_gsw.c	/^void enable_cpu_port(int y)$/;"	f
+eor	star_gsw.h	/^	u32 eor:1;$/;"	m	struct:__anon1
+eor	star_gsw.h	/^	u32 eor:1;$/;"	m	struct:__anon2
+filter	star_gsw.h	/^    u32    filter;$/;"	m	struct:_gsw_arl_table_entry_
+fmg_get	star_gsw.c	/^int fmg_get(const char *name, char **ret_value, int *ret_len)$/;"	f
+fmg_set	star_gsw.c	/^int fmg_set(const char *name,const char *value)$/;"	f
+fp	star_gsw.h	/^	u32 fp:1;$/;"	m	struct:__anon1
+fr	star_gsw.h	/^	u32 fr:1;$/;"	m	struct:__anon1
+fs	star_gsw.h	/^	u32 fs:1;$/;"	m	struct:__anon1
+fs	star_gsw.h	/^	u32 fs:1;$/;"	m	struct:__anon2
+gpb262_init	star_gsw_phy.c	/^int gpb262_init (int port)$/;"	f
+gsw_arl_table_entry_t	star_gsw.h	/^} gsw_arl_table_entry_t;$/;"	t	typeref:struct:_gsw_arl_table_entry_
+gsw_info_t	star_gsw.h	/^} gsw_info_t;$/;"	t	typeref:struct:_gsw_info_
+gsw_vlan_rx_kill_vid	star_gsw.c	/^void gsw_vlan_rx_kill_vid(struct net_device *dev, unsigned short vid)$/;"	f
+gsw_vlan_rx_register	star_gsw.c	/^void gsw_vlan_rx_register(struct net_device *dev, struct vlan_group *grp)$/;"	f
+hr	star_gsw.h	/^	u32 hr:6;$/;"	m	struct:__anon2
+ico	star_gsw.h	/^	u32 ico:1;$/;"	m	struct:__anon1
+icp_101a_init	star_gsw_phy.c	/^int icp_101a_init (int port)$/;"	f
+icp_101a_phy_reset	star_gsw_phy.c	/^int icp_101a_phy_reset (int port)$/;"	f
+icp_175c_all_phy_power_down	star_gsw_phy.c	/^void icp_175c_all_phy_power_down(int y)$/;"	f
+icplus_175c_phy_power_down	star_gsw_phy.c	/^void icplus_175c_phy_power_down(int port_no, int type)$/;"	f
+init_mtd_env	star_gsw.c	/^int init_mtd_env(void)$/;"	f
+init_packet_forward	star_gsw_phy.c	/^void init_packet_forward(int port)$/;"	f
+init_switch	star_gsw.c	/^void init_switch(void)$/;"	f
+inss	star_gsw.h	/^	u32 inss:1;$/;"	m	struct:__anon1
+install_isr_account	star_gsw.c	/^static int install_isr_account = 0;$/;"	v	file:
+insv	star_gsw.h	/^	u32 insv:1;$/;"	m	struct:__anon1
+interrupt	star_gsw.h	/^	u32 interrupt:1;$/;"	m	struct:__anon1
+ipf	star_gsw.h	/^	u32 ipf:1;$/;"	m	struct:__anon2
+is_qf	star_gsw.c	/^static volatile unsigned long is_qf = 0; \/\/ determine queue full state$/;"	v	file:
+l4f	star_gsw.h	/^	u32 l4f:1;$/;"	m	struct:__anon2
+length	star_gsw.h	/^	u32 length:16;$/;"	m	struct:__anon1
+length	star_gsw.h	/^	u32 length:16;$/;"	m	struct:__anon2
+lock	star_gsw.h	/^	spinlock_t lock;$/;"	m	struct:star_gsw_private
+ls	star_gsw.h	/^	u32 ls:1;$/;"	m	struct:__anon1
+ls	star_gsw.h	/^	u32 ls:1;$/;"	m	struct:__anon2
+mac_addr	star_gsw.h	/^    u8     mac_addr[6];$/;"	m	struct:_gsw_arl_table_entry_
+mac_str_to_int	star_gsw.c	/^int mac_str_to_int(const char *mac_str, int mac_str_len, u8 *mac_int, int mac_len)$/;"	f
+max_pend_int_cnt	star_gsw.c	/^static u32 max_pend_int_cnt=MAX_PEND_INT_CNT, max_pend_time=MAX_PEND_TIME;$/;"	v	file:
+max_pend_time	star_gsw.c	/^static u32 max_pend_int_cnt=MAX_PEND_INT_CNT, max_pend_time=MAX_PEND_TIME;$/;"	v	file:
+mtd_buf	star_gsw.c	/^static char *mtd_buf=NULL;$/;"	v	file:
+my_vlan0_mac	dorado.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x50};$/;"	v
+my_vlan0_mac	dorado2.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x50};$/;"	v
+my_vlan0_mac	dorado2_8021Q_vlantag_vlan.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x50};$/;"	v
+my_vlan0_mac	gpb239m.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x50};$/;"	v
+my_vlan0_mac	gpb239s.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x12};$/;"	v
+my_vlan0_mac	gpb261.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	gpb262.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	leo.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x12};$/;"	v
+my_vlan0_mac	libra.h	/^static u8 my_vlan0_mac[6] = {0x00, 0x11, 0xbb, 0xcc, 0xdd, 0x50};$/;"	v
+my_vlan0_mac	libra2.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	umedia_vela.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	vela.W-VLAN-SUPPORT.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	vela.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x11};$/;"	v
+my_vlan0_mac	virgo.h	/^static u8 my_vlan0_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x11};$/;"	v
+my_vlan1_mac	dorado.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x60};$/;"	v
+my_vlan1_mac	dorado2.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x60};$/;"	v
+my_vlan1_mac	dorado2_8021Q_vlantag_vlan.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x60};$/;"	v
+my_vlan1_mac	gpb239m.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x60};$/;"	v
+my_vlan1_mac	gpb239s.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x23};		\/\/ robin 080116 - prevent conflicting$/;"	v
+my_vlan1_mac	gpb261.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	gpb262.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	leo.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan1_mac	libra.h	/^static u8 my_vlan1_mac[6] = {0x00, 0x11, 0xbb, 0xcc, 0xdd, 0x60};$/;"	v
+my_vlan1_mac	libra2.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	umedia_vela.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	vela.W-VLAN-SUPPORT.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	vela.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x21};$/;"	v
+my_vlan1_mac	virgo.h	/^static u8 my_vlan1_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x21};$/;"	v
+my_vlan2_mac	dorado.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan2_mac	dorado2.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan2_mac	dorado2_8021Q_vlantag_vlan.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan2_mac	gpb239m.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan2_mac	gpb239s.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x32};$/;"	v
+my_vlan2_mac	gpb261.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	gpb262.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	leo.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x32};$/;"	v
+my_vlan2_mac	libra.h	/^static u8 my_vlan2_mac[6] = {0x00, 0x11, 0xbb, 0xcc, 0xdd, 0x22};$/;"	v
+my_vlan2_mac	libra2.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	umedia_vela.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	vela.W-VLAN-SUPPORT.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	vela.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x31};$/;"	v
+my_vlan2_mac	virgo.h	/^static u8 my_vlan2_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x31};$/;"	v
+my_vlan3_mac	dorado.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x23};$/;"	v
+my_vlan3_mac	dorado2.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x23};$/;"	v
+my_vlan3_mac	dorado2_8021Q_vlantag_vlan.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x23};$/;"	v
+my_vlan3_mac	gpb239m.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x21};$/;"	v
+my_vlan3_mac	gpb239s.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x42};$/;"	v
+my_vlan3_mac	gpb261.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	gpb262.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	leo.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x42};$/;"	v
+my_vlan3_mac	libra.h	/^static u8 my_vlan3_mac[6] = {0x00, 0x11, 0xbb, 0xcc, 0xdd, 0x23};$/;"	v
+my_vlan3_mac	libra2.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	umedia_vela.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	vela.W-VLAN-SUPPORT.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	vela.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xcc, 0x41};$/;"	v
+my_vlan3_mac	virgo.h	/^static u8 my_vlan3_mac[6] = {0x00, 0xaa, 0xbb, 0xcc, 0xdd, 0x41};$/;"	v
+obj-m	Makefile	/^obj-m :=$/;"	m
+obj-y	Makefile	/^obj-y :=$/;"	m
+pad	star_gsw.h	/^	u8	pad[2];$/;"	m	struct:_vlan_config_
+pad	star_gsw.h	/^    u8     pad[2];$/;"	m	struct:_gsw_arl_table_entry_
+phy_addr	star_gsw.h	/^	u32			phy_addr;$/;"	m	struct:__anon3
+phy_addr	star_gsw.h	/^	u32			phy_addr;$/;"	m	struct:__anon4
+pmap	star_gsw.h	/^	int pmap;$/;"	m	struct:star_gsw_private
+pmap	star_gsw.h	/^	u32 pmap:3;$/;"	m	struct:__anon1
+port	star_gsw.h	/^	port_config_t port[MAX_PORT_NUM];$/;"	m	struct:_gsw_info_
+port_config_t	star_gsw.h	/^} port_config_t;$/;"	t	typeref:struct:_port_config_
+port_map	star_gsw.h	/^    u32    port_map;$/;"	m	struct:_gsw_arl_table_entry_
+pri	star_gsw.h	/^	u32 pri:3;$/;"	m	struct:__anon1
+print_mtd_env	star_gsw.c	/^void print_mtd_env(void)$/;"	f
+print_packet	star_gsw.c	/^void print_packet(unsigned char *data, int len) $/;"	f
+prot	star_gsw.h	/^	u32 prot:2;$/;"	m	struct:__anon2
+pvid	star_gsw.h	/^	u32	pvid;	\/* 3-bit Port PVID *\/$/;"	m	struct:_port_config_
+rc_port	star_gsw.c	/^static int rc_port = 0; \/\/ rc mean reference counting, determine port open\/close.$/;"	v	file:
+rtl8201cp_init	star_gsw_phy.c	/^int rtl8201cp_init (int port)$/;"	f
+rxring	star_gsw.c	/^static RXRING_INFO rxring;$/;"	v	file:
+sid	star_gsw.h	/^	u32 sid:3;$/;"	m	struct:__anon1
+skb_ptr	star_gsw.h	/^	struct sk_buff		*skb_ptr[STAR_GSW_MAX_RFD_NUM];	\/\/ RX's sk_buff ptr$/;"	m	struct:__anon4	typeref:struct:__anon4::sk_buff
+skb_ptr	star_gsw.h	/^	struct sk_buff		*skb_ptr[STAR_GSW_MAX_TFD_NUM]; \/\/ TX's sk_buff ptr$/;"	m	struct:__anon3	typeref:struct:__anon3::sk_buff
+sp	star_gsw.h	/^	u32 sp:2;$/;"	m	struct:__anon2
+star_gsw_alloc_skb	star_gsw.c	/^static inline struct sk_buff *star_gsw_alloc_skb(void)$/;"	f	file:
+star_gsw_buffer_alloc	star_gsw.c	/^static int __init star_gsw_buffer_alloc(void)$/;"	f	file:
+star_gsw_buffer_free	star_gsw.c	/^static void star_gsw_buffer_free(void)$/;"	f	file:
+star_gsw_close	star_gsw.c	/^static int star_gsw_close(struct net_device *dev)$/;"	f	file:
+star_gsw_config_AGERE	star_gsw_phy.c	/^void star_gsw_config_AGERE()$/;"	f
+star_gsw_config_ASIX	star_gsw_phy.c	/^void star_gsw_config_ASIX()$/;"	f
+star_gsw_config_VSC7385	star_gsw_phy.c	/^void star_gsw_config_VSC7385(void)$/;"	f
+star_gsw_config_VSC8201	star_gsw_phy.c	/^static int star_gsw_config_VSC8201(u8 mac_port, u8 phy_addr)	\/\/ include cicada 8201$/;"	f	file:
+star_gsw_config_VSC8601	star_gsw_phy.c	/^static int star_gsw_config_VSC8601(u8 mac_port, u8 phy_addr)	$/;"	f	file:
+star_gsw_config_VSC8X01	star_gsw_phy.c	/^static void star_gsw_config_VSC8X01()$/;"	f	file:
+star_gsw_config_cpu_port	star_gsw.c	/^static int star_gsw_config_cpu_port(void)$/;"	f	file:
+star_gsw_config_mac_port1_loopback	star_gsw_phy.c	/^static int star_gsw_config_mac_port1_loopback(void)$/;"	f	file:
+star_gsw_del_arl_table	star_gsw.c	/^int star_gsw_del_arl_table(u8 *mac, u32 vlan_gid)$/;"	f
+star_gsw_driver_version	star_gsw.c	/^static const char star_gsw_driver_version[] =$/;"	v	file:
+star_gsw_enable	star_gsw.c	/^static void star_gsw_enable(struct net_device *dev)$/;"	f	file:
+star_gsw_exit_module	star_gsw.c	/^module_exit(star_gsw_exit_module);$/;"	v
+star_gsw_exit_module	star_gsw.c	/^static void __exit star_gsw_exit_module(void)$/;"	f	file:
+star_gsw_fsqf_isr	star_gsw.c	/^IRQ_RETURN star_gsw_fsqf_isr(int irq, void *dev_id, struct pt_regs *regs)$/;"	f
+star_gsw_get_rfd_buff	star_gsw.c	/^static int star_gsw_get_rfd_buff(int index)$/;"	f	file:
+star_gsw_get_stats	star_gsw.c	/^static struct net_device_stats *star_gsw_get_stats(struct net_device *dev)$/;"	f	file:
+star_gsw_hnat_setup_vlan_src_mac	star_gsw.c	/^static int star_gsw_hnat_setup_vlan_src_mac(void)$/;"	f	file:
+star_gsw_hnat_write_vlan_src_mac	star_gsw.c	/^void star_gsw_hnat_write_vlan_src_mac(u8 index, u8 *vlan_src_mac)$/;"	f
+star_gsw_hw_init	star_gsw.c	/^static void __init star_gsw_hw_init(void)$/;"	f	file:
+star_gsw_info	star_gsw.c	/^gsw_info_t star_gsw_info;$/;"	v
+star_gsw_init_module	star_gsw.c	/^module_init(star_gsw_init_module);$/;"	v
+star_gsw_init_module	star_gsw.c	/^static int __init star_gsw_init_module(void)$/;"	f	file:
+star_gsw_install_isr	star_gsw.c	/^static int star_gsw_install_isr(struct net_device *dev)$/;"	f	file:
+star_gsw_interrupt_enable	star_gsw.c	/^static void star_gsw_interrupt_enable(void)$/;"	f	file:
+star_gsw_notifier_reboot	star_gsw.c	/^static struct notifier_block star_gsw_notifier_reboot = {$/;"	v	typeref:struct:notifier_block	file:
+star_gsw_notify_reboot	star_gsw.c	/^static int star_gsw_notify_reboot(struct notifier_block *nb, unsigned long event, void *ptr)$/;"	f	file:
+star_gsw_open	star_gsw.c	/^static int star_gsw_open(struct net_device *dev)$/;"	f	file:
+star_gsw_poll	star_gsw.c	/^static int star_gsw_poll(struct net_device *netdev, int *budget)$/;"	f	file:
+star_gsw_private	star_gsw.h	/^struct star_gsw_private {$/;"	s
+star_gsw_probe	star_gsw.c	/^static int __init star_gsw_probe(int port_type)$/;"	f	file:
+star_gsw_probe_tun	star_gsw.c	/^static int __init star_gsw_probe_tun(void){$/;"	f	file:
+star_gsw_proc_entry	star_gsw.c	/^static struct proc_dir_entry *star_gsw_proc_entry;$/;"	v	typeref:struct:proc_dir_entry	file:
+star_gsw_proc_init	star_gsw.c	/^static int __init star_gsw_proc_init(void)$/;"	f	file:
+star_gsw_read_phy	star_gsw_phy.c	/^static int star_gsw_read_phy(u8 phy_addr, u8 phy_reg, u16 volatile *read_data)$/;"	f	file:
+star_gsw_read_proc	star_gsw.c	/^static int star_gsw_read_proc(char *page, char **start, off_t off, int count, int *eof, void *data)$/;"	f	file:
+star_gsw_receive_isr	star_gsw.c	/^IRQ_RETURN star_gsw_receive_isr(int irq, void *dev_id, struct pt_regs *regs)$/;"	f
+star_gsw_receive_packet	star_gsw.c	/^void star_gsw_receive_packet(int mode, int *work_done, int work_to_do)$/;"	f
+star_gsw_search_arl_table	star_gsw.c	/^inline int star_gsw_search_arl_table(u8 *mac, u32 vlan_gid)$/;"	f
+star_gsw_send_lock	star_gsw.c	/^static spinlock_t star_gsw_send_lock;$/;"	v	file:
+star_gsw_send_packet	star_gsw.c	/^static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)$/;"	f	file:
+star_gsw_set_ewc_mac_addr	star_gsw.c	/^static int star_gsw_set_ewc_mac_addr(struct net_device *dev, void *addr)$/;"	f	file:
+star_gsw_set_lan_mac_addr	star_gsw.c	/^static int star_gsw_set_lan_mac_addr(struct net_device *dev, void *addr)$/;"	f	file:
+star_gsw_set_mac_addr	star_gsw.c	/^static void star_gsw_set_mac_addr(int index, const char *mac, int mac_len)$/;"	f	file:
+star_gsw_set_phy_addr	star_gsw_phy.c	/^static int star_gsw_set_phy_addr(u8 mac_port, u8 phy_addr)$/;"	f	file:
+star_gsw_set_wan_mac_addr	star_gsw.c	/^static int star_gsw_set_wan_mac_addr(struct net_device *dev, void *addr)$/;"	f	file:
+star_gsw_status_isr	star_gsw.c	/^IRQ_RETURN star_gsw_status_isr(int irq, void *dev_id, struct pt_regs *regs)$/;"	f
+star_gsw_status_tbl	star_gsw.c	/^static char *star_gsw_status_tbl[] = {$/;"	v	file:
+star_gsw_timeout	star_gsw.c	/^static void star_gsw_timeout(struct net_device *dev)$/;"	f	file:
+star_gsw_timer	star_gsw.c	/^static struct timer_list star_gsw_timer;$/;"	v	typeref:struct:timer_list	file:
+star_gsw_timer_func	star_gsw.c	/^static void star_gsw_timer_func(unsigned long data)$/;"	f	file:
+star_gsw_uninstall_isr	star_gsw.c	/^static int star_gsw_uninstall_isr(struct net_device *dev)$/;"	f	file:
+star_gsw_vlan_init	star_gsw.c	/^static void star_gsw_vlan_init(void)$/;"	f	file:
+star_gsw_write_arl_table_entry	star_gsw.c	/^static int star_gsw_write_arl_table_entry(gsw_arl_table_entry_t *arl_table_entry)$/;"	f	file:
+star_gsw_write_phy	star_gsw_phy.c	/^static int star_gsw_write_phy(u8 phy_addr, u8 phy_reg, u16 write_data)$/;"	f	file:
+star_gsw_write_proc	star_gsw.c	/^int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long count, void *data)$/;"	f
+star_phy_reset_proc_entry	star_gsw.c	/^static struct proc_dir_entry *star_phy_reset_proc_entry;$/;"	v	typeref:struct:proc_dir_entry	file:
+star_phy_reset_write_proc	star_gsw_phy.c	/^int star_phy_reset_write_proc(struct file *file, const char *buffer, unsigned long count, void *data)$/;"	f
+stats	star_gsw.h	/^	struct net_device_stats stats;$/;"	m	struct:star_gsw_private	typeref:struct:star_gsw_private::net_device_stats
+status_flag	star_gsw.h	/^	u32	status_flag;$/;"	m	struct:_port_config_
+std_phy_power_down	star_gsw_phy.c	/^int std_phy_power_down(int phy_addr, int y)$/;"	f
+str9100_gsw_config_mac_port0	star_gsw_phy.c	/^int str9100_gsw_config_mac_port0()$/;"	f
+str9100_gsw_config_mac_port1	star_gsw_phy.c	/^int str9100_gsw_config_mac_port1()$/;"	f
+tco	star_gsw.h	/^	u32 tco:1;$/;"	m	struct:__anon1
+to_free_index	star_gsw.h	/^        u32                     to_free_index;$/;"	m	struct:__anon3
+tundev_close	star_gsw.c	/^static int tundev_close(struct net_device *dev){$/;"	f	file:
+tundev_init	star_gsw.c	/^static void tundev_init(struct net_device *dev){$/;"	f	file:
+tundev_open	star_gsw.c	/^static int tundev_open(struct net_device *dev){$/;"	f	file:
+txring	star_gsw.c	/^static TXRING_INFO txring;$/;"	v	file:
+uco	star_gsw.h	/^	u32 uco:1;$/;"	m	struct:__anon1
+unused	star_gsw.h	/^	u32 unused:24;$/;"	m	struct:__anon1
+unused	star_gsw.h	/^	u32 unused;$/;"	m	struct:__anon2
+unused2	star_gsw.h	/^	u32 unused2;$/;"	m	struct:__anon1
+unused2	star_gsw.h	/^	u32 unused2;$/;"	m	struct:__anon2
+vid	star_gsw.h	/^	u32 vid:3;$/;"	m	struct:__anon1
+vir_addr	star_gsw.h	/^	STAR_GSW_RXDESC		*vir_addr;$/;"	m	struct:__anon4
+vir_addr	star_gsw.h	/^	STAR_GSW_TXDESC		*vir_addr;$/;"	m	struct:__anon3
+vlan	star_gsw.h	/^	vlan_config_t vlan[MAX_VLAN_NUM];$/;"	m	struct:_gsw_info_
+vlan_config_t	star_gsw.h	/^} vlan_config_t;$/;"	t	typeref:struct:_vlan_config_
+vlan_gid	star_gsw.h	/^	u32	vlan_gid;	\/* 3-bit VLAN group ID *\/$/;"	m	struct:_vlan_config_
+vlan_gid	star_gsw.h	/^    u32    vlan_gid;$/;"	m	struct:_gsw_arl_table_entry_
+vlan_group	star_gsw.h	/^	u32	vlan_group;	\/* 3-bit VLAN group port map *\/$/;"	m	struct:_vlan_config_
+vlan_mac	star_gsw.h	/^	u8	vlan_mac[6];$/;"	m	struct:_vlan_config_
+vlan_mac	star_gsw.h	/^    u32    vlan_mac;$/;"	m	struct:_gsw_arl_table_entry_
+vlan_tag_flag	star_gsw.h	/^	u32	vlan_tag_flag;	\/* 3-bit VLAN tag port map *\/$/;"	m	struct:_vlan_config_
+vlan_vid	star_gsw.h	/^	u32	vlan_vid;	\/* 12-bit VLAN ID *\/$/;"	m	struct:_vlan_config_
+vlgrp	star_gsw.h	/^        struct vlan_group               *vlgrp;$/;"	m	struct:star_gsw_private	typeref:struct:star_gsw_private::vlan_group

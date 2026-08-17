@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# This script implements the set_env_param command on the dongle.
+# All env params are saved in jffs, in the file:
+# env_params.conf
+
+param_name=$1
+param_value=$2
+
+if [ $param_name ]
+then
+	grep -v "^$param_name " /mnt/jffs2/env_params.conf > /tmp/env_params.conf
+	echo "$param_name = $param_value" >> /tmp/env_params.conf 
+	mv /tmp/env_params.conf /mnt/jffs2/env_params.conf
+fi

@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.cavium
+#
+# @brief   This file for CAVIUM to build the wpa_supplicant utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/toolchains/cavium/Nitrox-SOHO-2.8.3/uClinux/brecis/tools/mipsisa32-brecis-uclinux/bin/mips-
+CFLAGS=-mips32 -mtune=4kc -EB -I/opt/toolchains/cavium/Nitrox-SOHO-2.8.3-we18/uClinux/brecis/tools/mipsisa32-brecis-uclinux/mipsisa32-brecis-uclinux/include/openssl
+CC=${CROSS_COMPILE}gcc
+STRIP=${CROSS_COMPILE}strip
+LIBS=-L/opt/toolchains/cavium/Nitrox-SOHO-2.8.3-we18/uClinux/brecis/tools/mipsisa32-brecis-uclinux/mipsisa32-brecis-uclinux/lib
+export CC STRIP CFLAGS LIBS
+
+all:
+	make
+
+clean:
+	make clean
+

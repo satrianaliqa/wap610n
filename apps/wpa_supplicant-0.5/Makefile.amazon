@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.amazon
+#
+# @brief   This file for Infineon Amazon_S to build the wpa_supplicant utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/toolchains/infineon/toolchain/compiler/mips-linux-
+CFLAGS=-O2
+CC=${CROSS_COMPILE}gcc
+STRIP=/opt/uclibc-toolchain/ifx-lxdb26-1.0.2/gcc-3.4.4/toolchain-mips/bin/mips-linux-strip
+export CC STRIP CFLAGS
+
+all:
+	make
+
+clean:
+	make clean
+

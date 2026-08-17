@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2006-2007 Metalink Broadband (Israel)
+#
+# @file    Makefile.vantage26
+#
+# @brief   This file for Sigma 8634 (linux-2.6) to build the wpa_supplicant utility
+#
+# Author:  Oleksandr Baglei <OleksandrB@metalinkbb.com>
+#
+
+CROSS_COMPILE=/opt/toolchains/sigma/8634_jabil/toolchain26/toolchain/build_mipsel_nofpu/staging_dir/bin/mipsel-linux-
+CFLAGS=-O2
+CC=${CROSS_COMPILE}gcc
+STRIP=${CROSS_COMPILE}strip
+export CC STRIP CFLAGS
+
+all:
+	make
+
+clean:
+	make clean
+
