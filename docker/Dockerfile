@@ -47,6 +47,7 @@ RUN cd /tmp && \
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
+ENV PATH="/workspace/tools/arm-uclibc-3.4.6/bin:${PATH}"
 
 # Allow passwordless sudo for root / any user
 RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers

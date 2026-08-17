@@ -39,9 +39,11 @@ jobs:
             --privileged \
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
-            wap610n-builder /bin/bash -c "
+            -e TARGET="$TARGET" \
+            wap610n-builder /bin/bash -c '
               set -e
-              echo '--> Step 1: Checking and preparing rootfs...'
+              export PATH="/workspace/tools/arm-uclibc-3.4.6/bin:$PATH"
+              echo "--> Step 1: Checking and preparing rootfs..."
               if [ ! -d rootfs-star ]; then
                   tar -zxvf rootfs-star.tgz
               fi
@@ -64,20 +66,24 @@ jobs:
               ln -sf bin/busybox rootfs/linuxrc
               ln -sf busybox rootfs/bin/sh
 
-              echo '--> Step 2: Configuring board target star-6.7.2-mtlk-U-Media-vela...'
+              echo "--> Step 2: Configuring board target star-6.7.2-mtlk-U-Media-vela..."
               ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
 
-              echo '--> Step 3: Compiling Kernel, Apps, and RootFS...'
-              ./make_nv.sh build wlan.tar.gz \$TARGET
+              echo "--> Step 3: Compiling Kernel, Apps, and RootFS ($TARGET)..."
+              ./make_nv.sh build wlan.tar.gz "$TARGET"
 
               # Copy to clean .bin name
               if [ -e output/bootpImage ]; then
                   cp -vf output/bootpImage output/WAP610N_v1.0.05.bin
               fi
 
-              echo '--> Listing outputs:'
+              # Fix permissions for runner user
+              chmod -R 777 output/ 2>/dev/null || true
+              chmod -R 777 images/ 2>/dev/null || true
+
+              echo "--> Listing outputs:"
               ls -lh output/
-            "
+            '
 
       - name: Audit & Verify Firmware Integrity
         run: |
