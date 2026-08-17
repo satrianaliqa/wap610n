@@ -5,6 +5,9 @@
 .tmp_versions
 vmlinux
 
+# Preserve toolchain precompiled objects
+!tools/**
+
 # Output and Firmware Images
 output/
 images/
