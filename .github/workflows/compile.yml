@@ -72,10 +72,10 @@ jobs:
               echo "--> Step 3: Compiling Kernel, Apps, and RootFS ($TARGET)..."
               ./make_nv.sh build wlan.tar.gz "$TARGET"
 
-              # Copy to clean .bin name
-              if [ -e output/bootpImage ]; then
-                  cp -vf output/bootpImage output/WAP610N_v1.0.05.bin
-              fi
+              # Normalize output binary names
+              [ -f output/bootpImage ] && cp -vf output/bootpImage output/WAP610N_v1.0.05.bin || true
+              [ -f output/WAP610N_v1.0.05_build_0 ] && cp -vf output/WAP610N_v1.0.05_build_0 output/WAP610N_v1.0.05.bin || true
+              [ -f output/WAP610N_v1.0.05.bin ] && cp -vf output/WAP610N_v1.0.05.bin output/bootpImage || true
 
               # Fix permissions for runner user
               chmod -R 777 output/ 2>/dev/null || true

@@ -4,7 +4,18 @@ set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$DIR/.." && pwd)"
-BIN_PATH="${1:-$ROOT_DIR/output/WAP610N_v1.0.05.bin}"
+
+# Find firmware binary dynamically
+if [ -n "$1" ] && [ -f "$1" ]; then
+    BIN_PATH="$1"
+elif [ -f "$ROOT_DIR/output/WAP610N_v1.0.05.bin" ]; then
+    BIN_PATH="$ROOT_DIR/output/WAP610N_v1.0.05.bin"
+elif [ -f "$ROOT_DIR/output/bootpImage" ]; then
+    BIN_PATH="$ROOT_DIR/output/bootpImage"
+else
+    BIN_PATH=$(find "$ROOT_DIR/output" -type f -name "*WAP610N*" 2>/dev/null | head -n 1 || true)
+fi
+
 RAMDISK_LZMA="$ROOT_DIR/output/ramdisk_2.6.16.img.lzma"
 
 # Detect container runtime
