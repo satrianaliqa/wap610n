@@ -34,6 +34,28 @@ if [ -n "$1" ]; then
 			fi
 		fi
 	fi
+
+	# Install Metalink init scripts & platform configurations
+	if [ -d "apps/jffs2-etc/networking/VB" ]; then
+		echo "Installing Metalink VB startup scripts to ${ROOTFS_DIR}/root/mtlk/etc/..."
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/etc"
+		cp -af apps/jffs2-etc/networking/VB/*.sh "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
+		cp -af apps/jffs2-etc/networking/VB/*.tcl "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
+		cp -af apps/jffs2-etc/networking/VB/etherdump_awk "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
+		[ -f "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" ] && \
+			cp -af "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" "${ROOTFS_DIR}/root/mtlk/etc/mtlk_init_platform.sh"
+	fi
+
+	# Force ProjectName to WAP610N (Access Point mode with SSID linksys)
+	if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
+		echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
+		cat << 'EOF' > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
+ProjectName="WAP610N"
+FIRMWARE_VERSION="1.0.05"
+ProjectFirmwareVersionDate="1.0.05 build 0, Aug 17, 2026"
+EOF
+		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
+	fi
 fi
 
 # Ensure device nodes and symlinks are present in rootfs

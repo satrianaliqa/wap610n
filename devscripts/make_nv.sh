@@ -420,54 +420,8 @@ then
 	#mkdir _${WLAN_ROOTFS_FILE}
 	#tar xzvf ${WLAN_ROOTFS_FILE} -C _${WLAN_ROOTFS_FILE}
     fi
-	#Copy Linksys GUI
-	if [ "${MODENAME}" = "WAP610N" -o "${MODENAME}" = "WAP610N_dev" ]; then
-        rm -fr _${WLAN_ROOTFS_FILE}/web/admin
-	rm -fr _${WLAN_ROOTFS_FILE}/web/ap
-	rm -fr _${WLAN_ROOTFS_FILE}/web/basic
-	rm -fr _${WLAN_ROOTFS_FILE}/web/wireless
-	rm -fr _${WLAN_ROOTFS_FILE}/web/network
-	rm -fr _${WLAN_ROOTFS_FILE}/web/advanced 
-	rm -fr _${WLAN_ROOTFS_FILE}/web/image
-	rm -fr _${WLAN_ROOTFS_FILE}/web/lang
-	rm -fr _${WLAN_ROOTFS_FILE}/web/station
-	rm -fr _${WLAN_ROOTFS_FILE}/web/status
-    	cp -R -p -v ${ROOTDIR}/apps/webSite_WAP610N-WET610N/* ${ROOTDIR}/_${WLAN_ROOTFS_FILE}/web/
-	rm -fr _${WLAN_ROOTFS_FILE}/web/Templates ; rm -fr _${WLAN_ROOTFS_FILE}/web/_image_source
-	rm -fr _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults_WET610N.asp
-	mv _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults_WAP610N.asp _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults.asp
-	cp _${WLAN_ROOTFS_FILE}/saved_configs/default_ap_WAP610N.conf _${WLAN_ROOTFS_FILE}/saved_configs/default_ap.conf
-	rm -fr _${WLAN_ROOTFS_FILE}/web/station
-	rm -fr _${WLAN_ROOTFS_FILE}/web/basic
-	rm -f _${WLAN_ROOTFS_FILE}/web/network/sta_network.asp
-	rm -fr _${WLAN_ROOTFS_FILE}/web/status/sta_link_status.asp
-	rm -fr _${WLAN_ROOTFS_FILE}/web/wireless
-	#mv _${WLAN_ROOTFS_FILE}/web/basic/network_ap.asp _${WLAN_ROOTFS_FILE}/web/basic/network.asp
-	#rm -f _${WLAN_ROOTFS_FILE}/web/basic/mode_sta.asp
-	#mv _${WLAN_ROOTFS_FILE}/web/basic/mode_ap.asp _${WLAN_ROOTFS_FILE}/web/basic/mode.asp
-    fi
-    
-    if [ "${MODENAME}" = "WET610N"  ]; then
-	rm -fr _${WLAN_ROOTFS_FILE}/web/admin
-	rm -fr _${WLAN_ROOTFS_FILE}/web/basic
-	rm -fr _${WLAN_ROOTFS_FILE}/web/wireless
-	rm -fr _${WLAN_ROOTFS_FILE}/web/network
-	rm -fr _${WLAN_ROOTFS_FILE}/web/advanced 
-	rm -fr _${WLAN_ROOTFS_FILE}/web/image
-	rm -fr _${WLAN_ROOTFS_FILE}/web/lang
-	rm -fr _${WLAN_ROOTFS_FILE}/web/station
-	rm -fr _${WLAN_ROOTFS_FILE}/web/status
-    	cp -R -p -v ${ROOTDIR}/apps/webSite_WAP610N-WET610N/* ${ROOTDIR}/_${WLAN_ROOTFS_FILE}/web/
-	rm -fr _${WLAN_ROOTFS_FILE}/web/Templates ; rm -fr _${WLAN_ROOTFS_FILE}/web/_image_source
-	rm -fr _${WLAN_ROOTFS_FILE}/web/wireless
-	rm -fr _${WLAN_ROOTFS_FILE}/web/status/ap_link_status.asp
-	rm -fr _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults_WAP610N.asp
-	mv _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults_WET610N.asp _${WLAN_ROOTFS_FILE}/web/admin/factory_defaults.asp
-	cp _${WLAN_ROOTFS_FILE}/saved_configs/default_sta_WET610N.conf _${WLAN_ROOTFS_FILE}/saved_configs/default_sta.conf
-	rm -f _${WLAN_ROOTFS_FILE}/web/ap
-	rm -fr _${WLAN_ROOTFS_FILE}/web/basic
-	rm -f _${WLAN_ROOTFS_FILE}/web/basic/ap_network.asp
-    fi
+	# Keep intact Linksys GUI assets from wlan.tar.gz
+	echo "--> Keeping full Linksys GUI web assets for ${MODENAME}..."
 	
 	#cd ${WEBSERVER_PATH}
 	#./release.sh

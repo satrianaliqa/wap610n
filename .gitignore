@@ -16,6 +16,46 @@ output/
 images/
 _wlan.tar.gz
 
+# Intermediate build binaries & libraries
+*.a
+*.la
+*.lo
+*.so*
+*.elf
+*.gdb
+.libs/
+/apps/busybox-1.8.1/busybox*
+/apps/busybox-1.8.1/applets/usage
+/apps/crc/crc
+/apps/detected_BrLoop/DetectedBrLoop
+/apps/force_ethpc_renew_ip/force_ethpc_renew_ip
+/apps/get_env_param/get_env_param
+/apps/set_env_param/set_env_param
+/apps/hnap_wps_status_monitor/hnap_wps_status_monitor
+/apps/ipc_api/send_event
+/apps/simpdiff/simpdiff
+/apps/tinytcl/tclsh
+/apps/tinytcl/build_extensions
+/apps/tinytcl/load_extensions.c
+/apps/openssl-0.9.8a/apps/openssl
+/apps/openssl-0.9.8a/test/*test
+/apps/openssl-0.9.8a/test/*t
+/apps/openssl-0.9.8a/crypto/buildinf.h
+/apps/openssl-0.9.8a/openssl.pc
+/apps/expat/Makefile
+/apps/expat/config.log
+/apps/expat/config.status
+/apps/expat/expat_config.h
+/apps/expat/libtool
+/kernel/linux-2.6.16-star/arch/arm/boot/Image
+/kernel/linux-2.6.16-star/arch/arm/boot/zImage
+/kernel/linux-2.6.16-star/arch/arm/boot/bootpImage
+/kernel/linux-2.6.16-star/arch/arm/boot/bootp/bootp
+/kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
+/kernel/linux-2.6.16-star/arch/arm/boot/compressed/piggy.gz
+/kernel/linux-2.6.16-star/include/asm-arm/arch
+/kernel/linux-2.6.16-star/include/asm-arm/mach-types.h
+
 # Logs & Temporary Files
 log.log
 *.tmp
@@ -26,3 +66,5 @@ log.log
 
 # Large redundant archives (>100MB, extracted in tools/arm-uclibc-3.4.6)
 toolchain/arm-uclibc-3.4.6.tgz
+apps/openssl-0.9.8a/**/lib
+apps/openssl-0.9.8a/*.pc
