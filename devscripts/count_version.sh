@@ -1,5 +1,5 @@
 #!/bin/sh
-ROOTDIR=`pwd ../`
+ROOTDIR=${ROOTDIR:-$(pwd)}
 #if [ -z "$ROOTDIR" ]
 #then
 #	echo "ROOTDIR is not set" >&2

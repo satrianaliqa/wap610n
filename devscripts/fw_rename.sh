@@ -1,5 +1,5 @@
 #!/bin/sh
-ROOTDIR=`pwd ../`
+ROOTDIR=${ROOTDIR:-$(pwd)}
 MODENAME=$1
 ENV_CONF=${ROOTDIR}/config/.config_${MODENAME}
 . ${ENV_CONF}

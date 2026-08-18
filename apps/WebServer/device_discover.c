@@ -57,7 +57,7 @@ struct device_discover_instance {
 	uint8_t supported_action;
 
 	uint8_t devphy[PHY_MAX_LEN];
-}__attribute__((packed));;
+}__attribute__((packed));
 
 int dd_doSystem(char *format, ...)
 {

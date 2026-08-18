@@ -20,7 +20,7 @@ if [ ! $? -eq 0 ]
 then
 	echo "config_mount ($$): Could not obtain config lock!"
 	logger -t $$ "config_mount: Could not obtain config lock!"
-	return 1
+	exit 1
 fi
 
 # Check if already mounted - if so, warn and do nothing
@@ -33,7 +33,7 @@ then
 	# Release lock
 	config_unlock.sh $$
 
-	return 1
+	exit 1
 fi
 
 echo " ($$) Mounting configuration filesystem"

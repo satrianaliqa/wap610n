@@ -81,6 +81,9 @@ int getClientGateway(char *gateway, int isDHCP)
 
 	if(isDHCP){
 		FILE *fp = fopen("/proc/net/route", "r");
+		if(fp == NULL){
+			return -1;
+		}
 
 		while (fgets(buff, sizeof(buff), fp) != NULL) {
 			if (nl) {
@@ -136,6 +139,7 @@ int detect_layer3_link_with_ping(char *gateway)
 	memset(command, 0, 128);
 	//Clear gateway entry in arp table
 	sprintf(command, "/sbin/arp -d %s", gateway);
+	system(command);
 	memset(command, 0, 128);
 	//Send a echo request for update arp table
 	sprintf(command, "/bin/ping %s", gateway);

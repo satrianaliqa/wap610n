@@ -11,7 +11,7 @@ ALL_OBJS = ${VLAN_OBJS}
 VCONFIG = vconfig                  #program to be created
 
 
-all: ${VCONFIG} macvlan_config
+all: ${VCONFIG}
 
 
 #This is pretty silly..

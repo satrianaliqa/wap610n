@@ -356,7 +356,7 @@ int hnap_getClientGateway(char *gateway)
 					if (dest.s_addr == 0) {
 						strcpy(gateway, (gw.s_addr==0 ? "0.0.0.0" : inet_ntoa(gw)));
 						fclose(fp);
-						return 0;;
+						return 0;
 					}
 				}
 			}

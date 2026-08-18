@@ -48,7 +48,6 @@ install_:
 	cp -a $(E_SRC)/. $(E_DEST)/
 	for dir in $(MTLK_APPS); do \
         $(MAKE) -f Makefile.MTLK INSTALL -C $(TOPDIR)/$$dir; \
-	$(E_STRIP) $(E_DEST)/$$f ; \
         done
 	cp -a $(E_TOPDIR)/scripts/devel.sh $(E_DEST)/bin/
 

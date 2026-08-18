@@ -18,7 +18,7 @@ fi
 
 # Detect ramdisk relative to BIN_PATH or repo output
 if [ -f "$(dirname "$BIN_PATH")/ramdisk_2.6.16.img.lzma" ]; then
-    RAMDISK_LZMA="$(dirname "$BIN_PATH")/ramdisk_2.6.16.img.lzma"
+    RAMDISK_LZMA="$(cd "$(dirname "$BIN_PATH")" && pwd)/ramdisk_2.6.16.img.lzma"
 else
     RAMDISK_LZMA="$ROOT_DIR/output/ramdisk_2.6.16.img.lzma"
 fi

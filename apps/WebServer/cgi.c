@@ -245,7 +245,7 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	if (wp->cgiStdin == NULL) {
 		wp->cgiStdin = websGetCgiCommName();
 	} 
-	stdIn = bstrdupA(B_L, wp->cgiStdin);;
+	stdIn = bstrdupA(B_L, wp->cgiStdin);
 	stdOut = websGetCgiCommName();
 /*
  *	Now launch the process.  If not successful, do the cleanup of resources.

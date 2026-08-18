@@ -34,7 +34,7 @@ int get_station_link_status(void)
 			continue;
 		}
 		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s  %d %d %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 		//printf("paramCount=%d, link_status=%d\n", paramCount, link_status);
 		if(paramCount == 11)
 			printf("=====> link status of wlan is %d\n", link_status);
@@ -50,7 +50,7 @@ int expose_wps_status(int statusCode)
 	char command[128]={0};
 
 	sprintf(command, "echo %d > /tmp/hnap_wps_status", statusCode);
-	system(command);
+	return system(command);
 }
 
 /*int get_config(char *config_value, char *config_name, char *config_file)

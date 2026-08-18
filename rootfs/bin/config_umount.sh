@@ -18,7 +18,7 @@ if [ ! $? -eq 0 ]
 then
 	echo " ($$) config_umount: Could not obtain config lock!"
 	logger -t $$ "config_umount: Could not obtain config lock!"
-	return 1
+	exit 1
 fi
 
 echo " ($$) Unmounting configuration filesystem"
@@ -38,7 +38,7 @@ do
 		# Release lock
 		config_unlock.sh $$
 
-		return 1
+		exit 1
 	fi
 	sleep 1
 	
@@ -76,7 +76,7 @@ do
 		# Release lock
 		config_unlock.sh $$
 
-		return 1
+		exit 1
 	fi
 
 	# Try copying again

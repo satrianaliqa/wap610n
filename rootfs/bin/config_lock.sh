@@ -25,7 +25,7 @@ CONFIG_LOCKFILE=/tmp/config_lock
 if [ ! $# -eq 1 ]
 then
 	echo "config_lock usage: $0 <PID>"
-	return 2
+	exit 2
 fi
 
 PID=$1
@@ -39,7 +39,7 @@ then
 	# Lock was successful
 	# We can now be sure that we own the lock
 	echo " ($PID) Got config lock"
-	return 0
+	exit 0
 fi
 
 
@@ -81,4 +81,4 @@ fi
 
 # Config lock is already taken - return fail
 echo " ($PID) Can't get config lock"
-return 1
+exit 1

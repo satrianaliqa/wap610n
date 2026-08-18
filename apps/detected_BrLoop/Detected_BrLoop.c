@@ -80,7 +80,7 @@ void port_status(TPState *tp)
 void reEnableDisPort()
 {
 	FILE *pp;
-	int i = 0;;
+	int i = 0;
 	char portStatus[4] = {0};
 	pp = popen("cat /proc/str9100/switch_port_enable", "r");
 	if(pp == NULL){

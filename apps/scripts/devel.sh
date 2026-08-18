@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 
 # Description.
 
@@ -194,7 +194,7 @@ then
         ${MOUNT_DIR}/etc/debugfs.mount
         if [ $? != 0 ]
         then
-                echo "Can' error occured when ran ${MOUNT_DIR}/etc/debugfs.mount"
+                echo "An error occurred when running ${MOUNT_DIR}/etc/debugfs.mount"
         fi
 
 else

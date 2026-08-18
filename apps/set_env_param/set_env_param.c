@@ -114,8 +114,7 @@ printf("\nCannot malloc 0x10000\n");
 			else /* end is marked with double '\0' */
 			{
 				curr_str--;
-				break;	fclose(f);
-
+				break;
 			}
 
 		}
@@ -141,7 +140,7 @@ printf("\nCannot malloc 0x10000\n");
     tmp_f=fopen("/dev/mtdblock3","w");
     if (!tmp_f)
 	{
-printf("\nCannot open /tmp/mtdblock3\n");
+printf("\nCannot open /dev/mtdblock3\n");
 		free (crc);
 		return 1;
 	}
