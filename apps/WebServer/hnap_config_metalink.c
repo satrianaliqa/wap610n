@@ -315,6 +315,7 @@ int hnap_getIfMac(char *ifname, char *if_hw)
 	strncpy(ifr.ifr_name, ifname, IF_NAMESIZE);
 	if(ioctl(skfd, SIOCGIFHWADDR, &ifr) < 0) {
 		printf("ERROR: IOCTL fail when take %s MAC fail..\n", ifname);
+		close(skfd);
 		return -1;
 	}
 
@@ -337,6 +338,10 @@ int hnap_getClientGateway(char *gateway)
 	unsigned long int d,g,m;
 
 	FILE *fp = fopen("/proc/net/route", "r");
+	if (fp == NULL) {
+		strcpy(gateway, "0.0.0.0");
+		return -1;
+	}
 
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		if (nl) {
@@ -737,13 +742,14 @@ int hnap_get_station_wireless_info(char *request, char *result)
 		fptr = popen("iwpriv wlan0 g_ConInfo", "r");
 		if(fptr!=NULL){
 			if(fgets(tmpBuf, 256, fptr)!=NULL){
-				hnap_getNthValueSafe(1, tmpBuf, ',', result, sizeof(result));
+				hnap_getNthValueSafe(1, tmpBuf, ',', result, sizeof(tmpBuf));
 			}else{
 				isFail=1;
 			}
+			pclose(fptr);
 		}else{
 			isFail=1;
-			printf("Unknow request for get_wireless_info !!!\n");
+			printf("popen fail for get_wireless_info channel query\n");
 		}
 	}else if(!strcmp(request, "channelwidth")){
 		fptr = popen("iwpriv wlan0 g_ConInfo", "r");
@@ -1173,7 +1179,7 @@ void hnap_active_wlan_basic(int isRadioOn)
 	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand 1");
 	
 	hnap_get_config(CONFIG_WLAN_CHANNEL_WIDTH, paramValue);
-	hnap_doSystem(command, "/root/mtlk/etc/mtpriv wlan0 IsHTEnabled %d", paramValue);
+	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 IsHTEnabled %d", atoi(paramValue));
 	
 	hnap_doSystem("/sbin/ifconfig wlan0 up");
 	
@@ -1414,7 +1420,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	FILE* fp = NULL;
 	MT_IMAGE_HEADER imageHeader;
 	int isLittleEndian = hnap_IsLittleEndian();
-	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
+	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 	int precentComplete=0;
 
 	printf("Flash update in progress - do not interrupt this process !\n");
@@ -1663,7 +1669,7 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 		{
 //june.chen, 2011-01-17, support Device ID for both WES610N (0x13) and WET610N (0x11). This is because WET610N and WES610N fw is interchangeable
 #if 1
-			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && (mtdDeviceID == 0x11) || (mtdDeviceID == 0x13)){
+			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x13))){
 			}
 			else{
 				printf("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)", imageHeader.deviceID, mtdDeviceID);
@@ -2061,7 +2067,7 @@ int hnap_active_wps_monitor(void)
 	//2. If current WPS status is SEARCHING, REGISTING, CONNECTNG or any ERROR, then abort them first
 	if(currentStatus!=WPS_STATUS_IDLE){
 		//hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl abort; /root/mtlk/etc/mtlk_wps_cmd.tcl start");
-		if((currentStatus != WPS_STATUS_ERROR_WALK_TIMEOUT) && (currentStatus != WPS_STATUS_ERROR_SESSION_TIMEOUT) && (currentStatus != WPS_STATUS_ERROR_SESSION_OVERLAP) && (currentStatus != WPS_STATUS_ERROR_INVALID_PIN) || (currentStatus != WPS_STATUS_ERROR_CONNECT_FAILURE)){
+		if((currentStatus != WPS_STATUS_ERROR_WALK_TIMEOUT) && (currentStatus != WPS_STATUS_ERROR_SESSION_TIMEOUT) && (currentStatus != WPS_STATUS_ERROR_SESSION_OVERLAP) && (currentStatus != WPS_STATUS_ERROR_INVALID_PIN) && (currentStatus != WPS_STATUS_ERROR_CONNECT_FAILURE)){
 			system("/root/mtlk/web/stop_wps_progress.sh");
 		}
 	}

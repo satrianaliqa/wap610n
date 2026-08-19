@@ -103,7 +103,7 @@ all:
 	$(MAKE) wsccmd
 
 wsccmd: $(OBJS)
-	$(CXX) $(CXX_LDFLAGS) -g -o $@ $(OBJS) -lpthread -lssl -lcrypto $(LIBM) $(CXXLIBS) $(UUID_LIB)
+	$(CXX) $(CXX_LDFLAGS) -g -o $@ $(OBJS) $(CXXLIBS) $(UUID_LIB) -lssl -lcrypto -lpthread -ldl $(LIBM)
 #	$(LD) -r -o wsccmd $(OBJS) $(LIBS) -L$(STL_LIBDIR)
 #	$(LD) $(LDFLAGS) $(OBJS) $(LIBS) $(LIBPATH) -o wsccmd
 	if [ "$(STRIP)" ]; then cp wsccmd wsccmd_debug && $(STRIP) wsccmd; fi
@@ -131,5 +131,5 @@ clean:
 
 romfs:
 
-.FONY: all clean
+.PHONY: all clean romfs
 -include $(OBJS:%.o=%.d)

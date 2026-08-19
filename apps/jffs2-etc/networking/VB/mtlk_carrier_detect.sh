@@ -20,7 +20,7 @@
 
 if [ ! -e /proc/str9100 ] && [ ! -e /proc/str8131 ]; then
 	echo Skipping carrier detect mechanism on this platform.
-	return
+	exit 0
 fi
 
 while [ 1 ]

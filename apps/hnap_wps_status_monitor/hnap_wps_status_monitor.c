@@ -1,20 +1,20 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-#include<sys/stat.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
-#define CONFIG_VALE_MAXLEN	512
+#define CONFIG_VALUE_MAXLEN	512
 
-int gotSignal=0;
+volatile sig_atomic_t gotSignal=0;
 
 void signal_handler(int sig)
 {
 	if(sig == SIGUSR1){
-		printf("Got a SIGUSER1 from external process, prepare to terminate wps status monitor..\n");
 		gotSignal=1;
 	}
 }
@@ -23,10 +23,12 @@ int get_station_link_status(void)
 {
 	uint8_t tmpBuf[512] = {0};
 	uint8_t ifName[16] = {0};
-	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon, we;
+	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;
 	FILE *fptr = popen("cat /proc/net/wireless", "r");
+	if(fptr == NULL)
+		return 0;
 
 	//printf("is_station_wlan_link_up..\n");
 	while(fgets(tmpBuf, 512, fptr) != NULL){
@@ -66,8 +68,8 @@ int expose_wps_status(int statusCode)
 		return -1;
 	}
 
-	memset(config_value, 0, CONFIG_VALE_MAXLEN);
-	if(fgets(config_value, CONFIG_VALE_MAXLEN, fptr)==NULL){
+	memset(config_value, 0, CONFIG_VALUE_MAXLEN);
+	if(fgets(config_value, CONFIG_VALUE_MAXLEN, fptr)==NULL){
 		pclose(fptr);
 		return -1;
 	}
@@ -80,7 +82,7 @@ int recover_wildcardssid(void)
 {
 	FILE *fptr;
 	char command[256]={0};
-	char configValue[CONFIG_VALE_MAXLEN]={0};
+	char configValue[CONFIG_VALUE_MAXLEN]={0};
 
 	get_config(configValue, "NonProc_ESSID", "/mnt/jffs2/wlan0.conf");	
 
@@ -158,27 +160,33 @@ int main(int argc, char *argv[])
 			}
 			memset(buf, 0, 128);
 			if(fgets(buf, 128, fptr)!=NULL){
-				pclose(fptr);
 				//printf("The value of wps_current_status is \"%s\"\n", buf);
 				bufptr = strchr(buf, '=');
-				bufptr = bufptr+1;
-				wps_status = atoi(bufptr);
-				expose_wps_status(wps_status);
-				printf("Status Code = %d\n", wps_status); //Ricky Trace				
-				if(wps_status==3){
-					//expose_wps_status(wps_status);
-					system("rm /var/wpsRunning");
-					break;
-				}else if(wps_status==10 || wps_status==11 || wps_status==12 || wps_status==13){
-					//When status is ERROR, I stop to monitor status
-					system("rm /var/wpsRunning");
-					//recover_wildcardssid();
-					printf("Got WPS ERROR event %d .. \n", wps_status);
-					break;
+				if(bufptr != NULL){
+					bufptr = bufptr+1;
+					wps_status = atoi(bufptr);
+					expose_wps_status(wps_status);
+					printf("Status Code = %d\n", wps_status); //Ricky Trace				
+					if(wps_status==3){
+						//expose_wps_status(wps_status);
+						system("rm /var/wpsRunning");
+						pclose(fptr);
+						fptr = NULL;
+						break;
+					}else if(wps_status==10 || wps_status==11 || wps_status==12 || wps_status==13){
+						//When status is ERROR, I stop to monitor status
+						system("rm /var/wpsRunning");
+						//recover_wildcardssid();
+						printf("Got WPS ERROR event %d .. \n", wps_status);
+						pclose(fptr);
+						fptr = NULL;
+						break;
+					}
 				}
 			}
 			if(fptr!=NULL){
 				pclose(fptr);
+				fptr = NULL;
 			}
 
 			/*result = stat("/tmp/wps_last_code", &statBuf);
@@ -278,13 +286,15 @@ int main(int argc, char *argv[])
 				fptr = popen("cat /tmp/wps_last_code", "r");
 				if(fptr!=NULL){
 					memset(buf, 0, 128);
-					if(fgets(buf, 128, fptr)!=-1){
+					if(fgets(buf, 128, fptr)!=NULL){
 						//printf("value in wps_current_status = %s\n", buf);
 						bufptr = strchr(buf, '=');
-						bufptr = bufptr+1;
-						last_status=wps_status;
-						wps_status = atoi(bufptr);
-						printf("last_status=%d, wps_status=%d\n", last_status, wps_status);
+						if(bufptr != NULL){
+							bufptr = bufptr+1;
+							last_status=wps_status;
+							wps_status = atoi(bufptr);
+							printf("last_status=%d, wps_status=%d\n", last_status, wps_status);
+						}
 						if(wps_status==3 || wps_status==4){
 							if(wps_status==3){
 								printf("got a SESSION OVERLAP event ..\n");
@@ -317,6 +327,7 @@ int main(int argc, char *argv[])
 						}
 					}
 					pclose(fptr);
+					fptr = NULL;
 				}
 				break;
 			}	
@@ -324,8 +335,10 @@ int main(int argc, char *argv[])
 	}
 
 End:
-	if(fptr!=NULL)
+	if(fptr!=NULL){
 		pclose(fptr);
+		fptr = NULL;
+	}
 	
 	wps_status = 0;
 	expose_wps_status(wps_status);

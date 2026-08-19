@@ -17,11 +17,13 @@ STRIP=$(E_STRIP)
 TARGET=vconfig
 export CC STRIP CCFLAGS TARGET
 
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+
 COMP:
-	make CC=$(E_CC) STRIP=$(E_STRIP) CCFLAGS="-O2 -march=$(E_ARCH) -D_GNU_SOURCE -Wall -msoft-float -I$(E_KERNEL)/include"
+	$(MAKE) CC=$(E_CC) STRIP=$(E_STRIP) CCFLAGS="-O2 -march=armv4 -D_GNU_SOURCE -Wall -msoft-float -I$(E_KERNEL)/include"
 
 CLEAN:
-	make clean
+	$(MAKE) clean
 
 INSTALL: FORCE
 	install -m 755 -D $(TARGET) $(E_DEST)/bin/$(TARGET)

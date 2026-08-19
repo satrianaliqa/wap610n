@@ -1,5 +1,5 @@
 /*
- * sysd.c - Sysetm Daemon
+ * send_event.c - System Daemon IPC Event Sender
  * Jacky.Yang 29-Nov-2007
  */
 
@@ -27,6 +27,7 @@ int main (int argc, char *argv[])
 	if(firewallReloadID == -1){
 		printf("send_event: Create firewall reload message queue fail!\n");
 		perror("msgget");
+		return 1;
 	}
 	
 	if (argc == 2) {
@@ -100,4 +101,5 @@ int main (int argc, char *argv[])
 			msgsnd(firewallReloadID, &msgInfo, msgSize, 0);
 		}
 	}
+	return 0;
 }

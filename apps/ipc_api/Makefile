@@ -7,12 +7,12 @@
 #
 
 EXEC = send_event
-CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/char
+.PHONY: all romfs clean
 
 all: $(EXEC)
 
 $(EXEC): $(EXEC).c
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $@.c $(LDLIBS)
+	$(CC) $(CFLAGS) -o $@ $@.c $(LDFLAGS) $(LDLIBS)
 
 romfs:
 	$(ROMFSINST) /usr/sbin/$(EXEC)

@@ -17,15 +17,17 @@ export CONFIG_LIB_TINYTCL_STATIC=1
 export CONFIG_USER_TINYTCL_TCLSH=1
 
 export TCLDIR = $(E_TOPDIR)/tinytcl
-export CFLAGS += -I $(TCLDIR) -DCONFIG_LIB_TINYTCL_STATIC -Os
+export CFLAGS += -I $(TCLDIR) -DCONFIG_LIB_TINYTCL_STATIC -Os -march=armv4 -msoft-float
 export LIBTCL = -L $(TCLDIR) -ltcl
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
 
 COMP: all
 
 CLEAN: clean
 
 CONF:
-	
+	@echo "No config needed"
 
 INSTALL: FORCE
 	install -m 755 -D tclsh $(E_DEST)/bin/tclsh

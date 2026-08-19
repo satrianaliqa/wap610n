@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 DHCPD_CONFIG_STRING=
 
 DHCP_START_ADDRESS=`awk -F "=" '/^DHCPDStartAddress/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
@@ -52,7 +52,7 @@ then
 	DHCPD_CONFIG_STRING="$DHCPD_CONFIG_STRING domain $DHCP_DOMAIN"
 fi
 
-if [ $DHCP_START_ADDRESS ]
+if [ "$DHCP_LEASETIME" ]
 then
 	DHCPD_CONFIG_STRING="$DHCPD_CONFIG_STRING lease $DHCP_LEASETIME"
 fi

@@ -8,7 +8,7 @@ CFLAGS+=-I. -g -Wall -DSTANDALONE
 
 all: $(EXEC)
 $(EXEC): $(OBJS)  
-	$(CC) $(LDFLAGS) -o $@ $(OBJS) 
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS) 
 
 romfs:
 	$(ROMFSINST)    /bin/$(EXEC)

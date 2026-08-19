@@ -60,10 +60,9 @@ else
  else
   echo "BOARD_NAME=legacy" > .config
  fi
- # Update busybox configuration
  pushd busybox-1.8.1
  rm -f .config
- ln -fs ../../boards/${SELECTED_PLATFORM}/busybox/.config .config.MTLK
+ ln -fs ../../boards/${SELECTED_PLATFORM}/busybox/.config .config
  popd  > /dev/null
  popd  > /dev/null
 fi

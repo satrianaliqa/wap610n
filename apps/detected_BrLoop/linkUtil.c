@@ -29,8 +29,8 @@
 #include <arpa/inet.h>
 #include <linux/route.h>
 
-#define CONFIG_VALE_MAXLEN	512
-#define WLAN_CONFIG_PATH	"/tmp/wlan0.conf"
+#define WLAN_CONFIG_PATH	"/mnt/jffs2/wlan0.conf"
+#define CONFIG_VALUE_MAXLEN	512
 #define SYS_CONFIG_PATH	"/tmp/sys.conf"
 
 int securityMode=0, authMode=0, ipConfigMethod=0;
@@ -69,8 +69,8 @@ int get_config(char *config_value, char *config_name, char *config_file)
 		return -1;
 	}
 
-	memset(config_value, 0, CONFIG_VALE_MAXLEN);
-	if(fgets(config_value, CONFIG_VALE_MAXLEN, fptr)==NULL){
+	memset(config_value, 0, CONFIG_VALUE_MAXLEN);
+	if(fgets(config_value, CONFIG_VALUE_MAXLEN, fptr)==NULL){
 		pclose(fptr);
 		return -1;
 	}
@@ -88,10 +88,14 @@ int getClientGateway(char *gateway, int isDHCP)
 	int    flgs, ref, use, metric, mtu, window, irtt;
 	unsigned long int d,g,m;
 	
-	char configValue[CONFIG_VALE_MAXLEN]={0}; //for get current setting from configuration
+	char configValue[CONFIG_VALUE_MAXLEN]={0}; //for get current setting from configuration
 
 	if(isDHCP){
 		FILE *fp = fopen("/proc/net/route", "r");
+		if (fp == NULL) {
+			strcpy(gateway, "0.0.0.0");
+			return 0;
+		}
 
 		while (fgets(buff, sizeof(buff), fp) != NULL) {
 			if (nl) {
@@ -147,6 +151,7 @@ int detect_layer3_link_with_ping(char *gateway)
 	memset(command, 0, 128);
 	//Clear gateway entry in arp table
 	sprintf(command, "/sbin/arp -d %s", gateway);
+	system(command);
 	memset(command, 0, 128);
 	//Send a echo request for update arp table
 	sprintf(command, "/bin/ping %s", gateway);
@@ -184,6 +189,8 @@ int check_gateway_in_arptable(char *gateway)
 	char buf[512]={0};
 	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[8]={0};
 	arp_table=popen("cat /proc/net/arp", "r");
+	if(arp_table == NULL)
+		return 0;
 	fgets(buf, 512, arp_table);
 	memset(buf, 0, 512);
 	while(fgets(buf, 512, arp_table)!=NULL){
@@ -370,8 +377,8 @@ end:
 	return link_status==3?1:0;
 }
 
-void initLinkUtil(){
-	char configValue[CONFIG_VALE_MAXLEN]={0};
+void initLinkUtil(void){
+	char configValue[CONFIG_VALUE_MAXLEN]={0};
 
 	if(get_config(configValue, "NonProcSecurityMode", WLAN_CONFIG_PATH)==-1){
 		printf("get NonProcSecurityMode fail ..\n");
@@ -380,7 +387,7 @@ void initLinkUtil(){
 	}
 
 	if(get_config(configValue, "NonProc_Authentication", WLAN_CONFIG_PATH)==-1){
-		printf("get NonProcSecurityMode fail ..\n");
+		printf("get NonProc_Authentication fail ..\n");
 	}else{
 		authMode = atoi(configValue);
 	}

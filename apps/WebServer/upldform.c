@@ -75,7 +75,7 @@ void *MT_BurnAndVerifyImage(void* data)
 	FILE* fp = NULL;
 	MT_IMAGE_HEADER imageHeader;
 	int isLittleEndian = MT_IsLittleEndian();
-	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
+	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 	int size;
 
 	// Checksum for the uploaded file
@@ -316,7 +316,7 @@ void *MT_BurnAndVerifyImage(void* data)
 		debug_printf("MT_BurnAndVerifyImage: verifiedOk != 1\n");
 		gMTBurnParams.precentComplete = -1;
 		gMTBurnParams.burnState = error_e;
-		sprintf(gMTBurnParams.errorMessage,T("Error : Error verifying image at location %d<br>ferror=%d"), ferror(fp), locVerify);
+		sprintf(gMTBurnParams.errorMessage,T("Error : Error verifying image at location %d<br>ferror=%d"), locVerify, ferror(fp));
 	}
 	else
 	{
@@ -326,7 +326,7 @@ void *MT_BurnAndVerifyImage(void* data)
 		gMTBurnParams.precentComplete = 100;
 		
 		
-		doSystem("echo rm /var/firmware_upgrading"); //Ricky add, I'll also use this flag.
+		doSystem("rm -f /var/firmware_upgrading"); //Ricky add, I'll also use this flag.
 		debug_printf("MT_BurnAndVerifyImage: Start to reboot\n");
 		checkStartToWait();
 		system("sleep 3 ; reboot &");
@@ -653,7 +653,8 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 		{
 			if (strcmp(isConfig,"1") != 0)
 			{
-				fileNameWithNoPath = strchr(sendFileName,'/')+1;
+				char *slash = strrchr(sendFileName, '/');
+				fileNameWithNoPath = slash ? slash + 1 : sendFileName;
 			}
 			else 
 			{
@@ -787,7 +788,7 @@ static int MT_ValidateImage(const char_t* imageBuf, int imageSize)
 		{
 //june.chen, 2011-01-17, support Device ID for both WES610N (0x13) and WET610N (0x11). This is because WET610N and WES610N fw is interchangeable
 #if 1
-			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && (mtdDeviceID == 0x11) || (mtdDeviceID == 0x13)){
+			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x13))){
 			}
 			else{
 				gsprintf(gMTBurnParams.errorMessage,T("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)<br>"), imageHeader.deviceID, mtdDeviceID);

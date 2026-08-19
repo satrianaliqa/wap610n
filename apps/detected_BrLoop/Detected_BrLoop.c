@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define UMEDIA_TRUE 1
 #define UMEDIA_FALSE 0
@@ -88,16 +89,19 @@ void reEnableDisPort()
 		return;
 	}
 
-	i = 3;
-	while(i >= 0){
-		portStatus[i] = fgetc(pp);		
+	i = 0;
+	while(i < 4){
+		int c = fgetc(pp);
+		if (c == EOF) break;
+		portStatus[i] = c;		
 
 		if(portStatus[i] != '3'){
 			char cmd_sys[CMD_LEN] = {0};
 			sprintf(cmd_sys,"echo %d > /proc/str9100/switch_port_enable", i);
 			system(cmd_sys);
 		}
-		i--;
+		fgetc(pp); // skip delimiter if any
+		i++;
 	}
 	
 	pclose(pp);
@@ -123,8 +127,6 @@ void init_status(TPState *tp)
 {
 	char cmd_sys[CMD_LEN]={0};
 	reset_Portmap(tp);
-	//get port link status
-	port_status(tp);
 
 	memset(tp->portLink, 0, sizeof(tp->portLink));
 	memset(tp->prePortLink, 0, sizeof(tp->prePortLink));

@@ -8,8 +8,7 @@ endif
 CROSS_COMPILE=$(E_CROSS)/bin/arm-linux-
 SUBARCH=arm
 KBUILD_VERBOSE=1
-HOSTCFLAGS=$(E_CFLAGS)
-CFLAGS=$(E_CFLAGS) -Os
+CFLAGS=$(E_CFLAGS) -Os -march=armv4 -msoft-float
 LDFLAGS=$(E_LDFLAGS)
 export
 
@@ -19,17 +18,17 @@ CONF:
 	echo "" >> .config
 	echo CONFIG_PREFIX=\"$(E_DEST)\" >> .config
 	cat Makefile | sed "s/O2/Os/g" > Makefile.size
-	make oldconfig
+	$(MAKE) oldconfig
 	# TODO
 COMP:
-	make -f Makefile.size v=1 all
+	$(MAKE) -f Makefile.size v=1 all
 CLEAN:
-	make v=1 clean -f  Makefile.size
+	$(MAKE) v=1 clean -f  Makefile.size
 
-.PHONY=INSTALL
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
 
 INSTALL: FORCE
-	make -f Makefile.size install
+	$(MAKE) -f Makefile.size install
 	install -m 755 ./busybox_unstripped $(E_DEST)/bin/busybox
 
 STRIP:

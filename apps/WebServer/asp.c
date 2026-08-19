@@ -74,7 +74,7 @@ void websAspClose()
  *	documents, it is better to make them plain HTML files rather than ASPs.
  */
 
-int startOrigParser(webs_t wp, char_t **lpath, int **ejid, char_t **nextp, char_t **last, int **rc)
+int startOrigParser(webs_t wp, char_t **lpath, int *ejid, char_t **nextp, char_t **last, int *rc)
 {
 	char_t *token, *ep, *cp, *lang, *result;
 	int engine;
@@ -160,7 +160,7 @@ int startOrigParser(webs_t wp, char_t **lpath, int **ejid, char_t **nextp, char_
 		}
 }
 //startMultiLangParser: ruleFlag=>fullHTML or dynamicHTML
-int startMultiLangParser(webs_t wp, char_t **nextp, char_t **last, int **rc, char *startTagStart, char *startTagEnd, char *endTag, char *ruleFlag)
+int startMultiLangParser(webs_t wp, char_t **nextp, char_t **last, int *rc, char *startTagStart, char *startTagEnd, char *endTag, char *ruleFlag)
 {
 	//printf("startMultiLangParser: startTagStart=%s(%d), startTagEnd=%s(%d), endTag=%s(%d)\n", startTagStart, strlen(startTagStart), startTagEnd, strlen(startTagEnd), endTag, strlen(endTag));
 	
@@ -407,7 +407,7 @@ int websAspRequest(webs_t wp, char_t *lpath)
 				if (startMultiLangParser(wp, &nextp, &last, &rc, startTagStart, startTagEnd, endTag, "fullHTML") == 0)
 					goto done;
 			}
-			else if (optionMode == 1)
+			else
 				stopLoop  = 1;
 		}
 		else

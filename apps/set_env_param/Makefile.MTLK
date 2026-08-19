@@ -17,27 +17,29 @@ LD=$(E_LD)
 CFLAGS=$(E_CFLAGS)
 LDFLAGS=$(E_LDFLAGS)
 
-CFLAGS+=-I. -g -Wall -DSTANDALONE
+CFLAGS+=-I. -Os -march=armv4 -msoft-float -Wall -DSTANDALONE
 
 OBJS=set_env_param.o
 TARGET=set_env_param
 
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+
 CONF:
-	echo No config needed here
+	@echo "No config needed here"
 
 COMP: $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(TARGET)
+	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
 CLEAN:
-	rm -f *.o get_env_param
+	rm -f *.o set_env_param
 
 INSTALL: FORCE
-#	install -m 755 -D $(TARGET) $(E_DEST)/bin/$(TARGET)
+	install -m 755 -D $(TARGET) $(E_DEST)/bin/$(TARGET)
 STRIP: FORCE
 	$(E_STRIP) $(E_DEST)/bin/$(TARGET)
 
 FORCE:
 
 %.o: %.c
-	$(CC) $(CFLAGS) $(LDFLAGS) -c $^ -o $@
+	$(CC) $(CFLAGS) -c $^ -o $@
 

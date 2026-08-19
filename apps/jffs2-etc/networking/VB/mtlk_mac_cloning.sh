@@ -16,7 +16,7 @@ fi
 # Make sure the sniffed packet is on the ethernet port 
 # (ASSUMPTION: always port 1 in brctl)
 SNIFFED_PORT=
-while [ ! $SNIFFED_PORT -o $SNIFFED_PORT == 2 ]
+while [ -z "$SNIFFED_PORT" ] || [ "$SNIFFED_PORT" = "2" ]
 do
 	if [ -e /bin/etherdump ]
 	then

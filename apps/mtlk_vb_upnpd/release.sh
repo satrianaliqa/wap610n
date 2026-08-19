@@ -1,5 +1,5 @@
 #!/bin/sh
-rm upnpd.platform.*
+rm -f upnpd.platform.*
 
 make -f makefile.snapgear clean
 make -f makefile.snapgear

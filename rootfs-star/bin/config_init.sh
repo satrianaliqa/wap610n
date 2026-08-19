@@ -12,7 +12,7 @@ IP=192.168.1.100
 CONFIG_BLOCK=/dev/mtdblock4
 
 MODEL=`awk '/^Demo/ {print $4}' /proc/str9100/gsw`
-if [ "$MODEL" == "GPB239S" ]
+if [ "$MODEL" = "GPB239S" ]
 then
         CONFIG_IMG=config_239S.img.gz
 else

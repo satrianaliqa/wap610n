@@ -10,17 +10,20 @@ endif
 
 ######### Standard header end ##############
 
-CFLAGS=-Os
+CFLAGS=-Os -march=armv4 -msoft-float
+LDFLAGS=$(E_LDFLAGS)
 CC=$(E_CC)
-export CC CFLAGS
+export CC CFLAGS LDFLAGS
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
 
 CONF:
-	echo No configuration here
+	@echo "No configuration needed"
 COMP:
-	make all
+	$(MAKE) all
 
 CLEAN:
-	make clean
+	$(MAKE) clean
 
 INSTALL: FORCE
 	install -D -m 755 hnap_wps_status_monitor $(E_DEST)/root/mtlk/etc/hnap_wps_status_monitor

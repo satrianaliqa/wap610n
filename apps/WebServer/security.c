@@ -113,7 +113,7 @@ int GetBridgPortForMAC(const char* mac)
 				continue;
 
 			sscanf(buff,"%s %s",port,macaddr);
-			if (macaddr != "" && strcmp(macaddr,mac) == 0)
+			if (macaddr[0] != '\0' && strcmp(macaddr,mac) == 0)
 			{
 				portNum = atoi(port);
 				break;
@@ -149,7 +149,7 @@ int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
 
 			sscanf(buff,"%s %s %s %s",ipaddr,tmp1,tmp2,macaddr);
 
-			if (ipaddr != "" && strcmp(ipaddr,ip) == 0)
+			if (ipaddr[0] != '\0' && strcmp(ipaddr,ip) == 0)
 			{
 				strncpy(mac,macaddr,mac_len-1); // In case we have multiple entries, we take the last which is the most updated.
 			}
@@ -393,8 +393,6 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
  *					User and password check out.
  */
 				}
-
-				bfree (B_L, userpass);
 			}
 #ifdef DIGEST_ACCESS_SUPPORT
 		} else if (flags & WEBS_AUTH_DIGEST) {

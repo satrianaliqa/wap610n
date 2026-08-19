@@ -16,7 +16,7 @@ do
 	# (to notify topology change to neighbors)
 	for ip in `awk '/[0-9]+\.[0-9]+\./ {print $1}' /proc/net/arp`
 	do
-		ping $ip
+		ping -c 1 "$ip" > /dev/null 2>&1
 	done
 	sleep 5
 done

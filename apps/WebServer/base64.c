@@ -81,7 +81,7 @@ int websDecode64(char_t *outbuf, char_t *string, int outlen)
 			c = map64[*cp & 0xff];
 			if (c == -1) {
 				error(E_L, E_LOG, T("Bad string: %s at %c index %d"), string,
-					c, i);
+					*cp, i);
 				return -1;
 			} 
 			shiftbuf = shiftbuf | (c << shift);
@@ -143,7 +143,7 @@ int b64_decode( const char* str, unsigned char* space, int size )
     	space_idx = 0;
     	phase = 0;
     	for ( cp = str; *cp != '\0'; ++cp ){
-		d = b64_decode_table[(int)*cp];
+		d = b64_decode_table[(unsigned char)*cp];
 		if ( d != -1 ){
 	    		switch ( phase ){
 				case 0:

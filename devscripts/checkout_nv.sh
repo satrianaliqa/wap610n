@@ -1,3 +1,4 @@
+#!/bin/bash
 NUM_OF_PARAMS=$#
 
 STAR_DIR=./star
@@ -54,7 +55,7 @@ cp $CM_FILE $STAR_DIR/net_ver.cm  > /dev/null
 pushd $STAR_DIR > /dev/null
 mkdir output
 mkdir images
-ln -s devscripts/make_nv.sh .
+ln -s ../devscripts/make_nv.sh .
 echo "Copying $CM_FILE to $STAR_DIR/net_ver.cm and applying it ..."
 CM_FILE=net_ver.cm
 
@@ -101,7 +102,7 @@ popd  > /dev/null
 # Configure applications
 pushd apps > /dev/null
 PWD=`pwd`
-E_CROSS=${PWD}/../tools/arm-uclibc-3.4.6 E_KERNEL=${PWD}../kernel/linux-2.6.16-star make -f Makefile.MTLK link config
+E_CROSS=${PWD}/../tools/arm-uclibc-3.4.6 E_KERNEL=${PWD}/../kernel/linux-2.6.16-star make -f Makefile.MTLK link config
 popd > /dev/null
 
 popd  > /dev/null

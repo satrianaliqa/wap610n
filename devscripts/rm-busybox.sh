@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # A script to delete the current busybox apps + links before copying a new version
 

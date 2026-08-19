@@ -21,8 +21,8 @@ do
 		ping -c 1 $ip > /dev/null 2>/dev/null
 		if [ ! $? = 0 ]
 		then
-			# Issue ping without args (light busybox syntax)
-			ping $ip
+			# Issue ping with single count
+			ping -c 1 "$ip" > /dev/null 2>&1
 		fi		
 	done
 	sleep 5

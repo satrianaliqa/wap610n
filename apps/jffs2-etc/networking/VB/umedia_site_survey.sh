@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo "Going site survey .."
-cat 1 > /var/hnapSiteSurvey
+echo 1 > /var/hnapSiteSurvey
 cd /root/mtlk/web/
 /root/mtlk/web/init_security.tcl reactivate
 sleep 2

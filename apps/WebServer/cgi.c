@@ -260,6 +260,7 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		bfreeSafe(B_L, cgiPath);
 		bfreeSafe(B_L, argp);
 		bfreeSafe(B_L, envp);
+		bfreeSafe(B_L, stdIn);
 		bfreeSafe(B_L, stdOut);
 	} else {
 /*

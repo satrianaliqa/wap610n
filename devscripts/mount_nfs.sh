@@ -5,7 +5,7 @@ NFS_DIR=$2
 LOCAL_DIR=$3
 
 
-if [ $1 = "--help" -o $1 = "-h" ]
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
 	echo "This script mount remote NFS server"
 	echo "Parameters:"

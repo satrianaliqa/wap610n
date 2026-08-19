@@ -1,12 +1,12 @@
 EXEC = DetectedBrLoop
 OBJS = Detected_BrLoop.o linkUtil.o
 
-CFLAGS += -I$(ROOTDIR)/$(LINUXDIR)/drivers/char/
+.PHONY: all romfs clean
 
 all: $(EXEC)
 
 $(EXEC): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LDFLAGS)
 
 romfs:
 	$(ROMFSINST) /usr/bin/$(EXEC)

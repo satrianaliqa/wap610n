@@ -4,14 +4,14 @@
 # of the image, along with a file list.
 # Use the "-n" option to skip creating a backup (NO BACKUP)
 
-# Path for ramdisk images
-RDPATH=/opt/star/images
-MOUNT_POINT=/mnt/rd
+ROOTPATH=`cd ; pwd`
+MOUNT_POINT=${MOUNT_POINT:-"${ROOTPATH}/METALINK/tmp/mnt/rd"}
+RDPATH=${RDPATH:-/opt/star/images}
 
 # Check if a backup must be made
 SKIP_BAK=0
 getopts n nobak
-if [ $nobak = "n" ]
+if [ "$nobak" = "n" ]
 then
 	SKIP_BAK=1
 fi
@@ -24,7 +24,7 @@ then
 	mkdir $RDPATH/BAK
 fi
 
-if [ $SKIP_BAK = 0 ]
+if [ "$SKIP_BAK" = "0" ]
 then
 	# Save a time-stamped dump of all the files on the rootfs
 	sudo ls -lR $MOUNT_POINT > $RDPATH/BAK/ramdisk_2.6.16_${VER}.txt 2> /dev/null
@@ -34,7 +34,7 @@ fi
 sudo umount $MOUNT_POINT 
 gzip -f $RDPATH/ramdisk_2.6.16.img
 
-if [ $SKIP_BAK = 0 ]
+if [ "$SKIP_BAK" = "0" ]
 then
 	# Save a time-stamped backup copy of the rootfs
 	cp $RDPATH/ramdisk_2.6.16.img.gz $RDPATH/BAK/ramdisk_2.6.16_$VER.img.gz

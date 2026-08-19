@@ -63,8 +63,8 @@ DEPEND_FILES	= ../asp.o ../balloc.o ../base64.o ../cgi.o ../default.o  \
 # CFLAGS	= -DWEBS -DUEMF -DOS="LINUX" -DLINUX $(UMSW) $(DASW) $(SSLSW) $(IFMODSW)
 
 ############### Settings for Snapgear -these are overridden by other platforms ################
-PLATFORM_CFLAGS ?= -mbig-endian -mapcs-32 -mcpu=xscale -mtune=xscale -Wa,-mcpu=xscale \
-        -malignment-traps -Uarm -O3 -fomit-frame-pointer
+PLATFORM_CFLAGS ?= -mlittle-endian -mapcs-32 -march=armv4 -mtune=arm9tdmi -msoft-float \
+        -Os -fomit-frame-pointer
 # SNAPGEAR = /home/arnonm/Desktop/svn/wl/linux/trunk/snapgear/dongle-2.0
 SNAPGEAR ?= /tools/dongle-2.0
 CROSS_COMPILE ?= $(SNAPGEAR)/tools/ucfront-gcc arm-linux-
@@ -82,8 +82,10 @@ LDFLAGS	= $(SSLLIB) $(IFMODLIB) $(ADDITIONAL_LIBS)
 
 #Add for HNAP - U-Media Ricky Cao on Jun 04 2008
 CFLAGS += -I../../expat/lib -I../../expat -DWITH_METALINK -DDUAL_BAND
-LDFLAGS += -L../../expat -lexpat -DWITH_METALINK -DDUAL_BAND
+LDFLAGS += -L../../expat -lexpat
 #U-Media Ricky Cao on Jun 04 2008
+
+.PHONY: compile clean
 
 compile: $(NAME)
 
@@ -101,8 +103,11 @@ $(NAME): Makefile $(ARCH)
 		$(CFLAGS) $(IFLAGS) \
 		main.o $(ARCH) $(LDFLAGS) $(ADDITIONAL_OBJS) 
 
+PROPRIETARY_BLOBS = ../mt_api.o ../mt_task.o ../mt_validation.o
+CLEAN_FILES = $(filter-out $(PROPRIETARY_BLOBS), $(DEPEND_FILES))
+
 clean:
-	rm -f $(NAME) $(ARCH) $(DEPEND_FILES)
+	rm -f $(NAME) $(ARCH) $(CLEAN_FILES)
 
 #
 #	Dependencies

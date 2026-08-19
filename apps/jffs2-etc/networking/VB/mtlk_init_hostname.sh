@@ -6,4 +6,4 @@ hostname $1
 
 echo $1 > /etc/hostname
 
-export HOSTNAME=/bin/hostname
+export HOSTNAME=$1

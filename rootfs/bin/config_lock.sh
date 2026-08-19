@@ -45,8 +45,8 @@ fi
 
 # Lock failed - check if old process still exists, or we need to clean up a stale lock and try again
 
-OLDPID=`ls -l $CONFIG_LOCKFILE | awk '{print $11}'` 2> /dev/null
-if [ ! $OLDPID ]
+OLDPID=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
+if [ -z "$OLDPID" ]
 then
 	# The lock was released since we issued the ln command.
 	# Try obtaining a lock again
@@ -65,8 +65,8 @@ then
 	# Extra validation needed: it could be that you will rm a newly obtained lock,
 	# if the old lock was deleted between the cat and the kill, and a different process got the lock,
 	# so make sure that the lock PID didn't change
-	LOCKPID=`ls -l $CONFIG_LOCKFILE | awk '{print $11}'` 2> /dev/null
-	if [ $LOCKPID -eq $OLDPID ]
+	LOCKPID=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
+	if [ -n "$LOCKPID" ] && [ "$LOCKPID" = "$OLDPID" ]
 	then 
 		echo " ($PID) Found stale config lock (OLD: $OLDPID)"
 		

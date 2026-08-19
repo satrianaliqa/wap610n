@@ -10,18 +10,17 @@
 #include <arpa/inet.h>
 #include <linux/route.h>
 
-#define CONFIG_VALE_MAXLEN	512
+#define CONFIG_VALUE_MAXLEN	512
 #define WLAN_CONFIG_PATH	"/tmp/wlan0.conf"
 #define SYS_CONFIG_PATH	"/tmp/sys.conf"
 
 int securityMode=0, authMode=0, ipConfigMethod=0;
 
-int gotSIGUSR1=0;
+volatile sig_atomic_t gotSIGUSR1=0;
 
 void signal_handler(int sig)
 {
 	if(sig == SIGUSR1){
-		printf("Got a SIGUSER1 from external process, prepare to terminate force_ethpc_renew_ip..\n");
 		gotSIGUSR1=1;
 	}
 }
@@ -58,8 +57,8 @@ int get_config(char *config_value, char *config_name, char *config_file)
 		return -1;
 	}
 
-	memset(config_value, 0, CONFIG_VALE_MAXLEN);
-	if(fgets(config_value, CONFIG_VALE_MAXLEN, fptr)==NULL){
+	memset(config_value, 0, CONFIG_VALUE_MAXLEN);
+	if(fgets(config_value, CONFIG_VALUE_MAXLEN, fptr)==NULL){
 		pclose(fptr);
 		return -1;
 	}
@@ -77,7 +76,7 @@ int getClientGateway(char *gateway, int isDHCP)
 	int    flgs, ref, use, metric, mtu, window, irtt;
 	unsigned long int d,g,m;
 	
-	char configValue[CONFIG_VALE_MAXLEN]={0}; //for get current setting from configuration
+	char configValue[CONFIG_VALUE_MAXLEN]={0}; //for get current setting from configuration
 
 	if(isDHCP){
 		FILE *fp = fopen("/proc/net/route", "r");
@@ -177,6 +176,8 @@ int check_gateway_in_arptable(char *gateway)
 	char buf[512]={0};
 	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[8]={0};
 	arp_table=popen("cat /proc/net/arp", "r");
+	if(arp_table == NULL)
+		return 0;
 	fgets(buf, 512, arp_table);
 	memset(buf, 0, 512);
 	while(fgets(buf, 512, arp_table)!=NULL){
@@ -207,7 +208,7 @@ int detect_layer3_link_by_packets(void)
 		return -1;
 	}
 	if(!strcmp(gateway, "0.0.0.0")){
-		printf("The default gateway deesn't be configured\n");
+		printf("The default gateway is not configured\n");
 		return -1;
 	}
 
@@ -305,6 +306,8 @@ int get_station_layer3_link_status(void)
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;	
 	FILE *fptr = popen("cat /proc/net/wireless", "r");
+	if(fptr == NULL)
+		return 0;
 
 	while(fgets(tmpBuf, 512, fptr) != NULL){
 		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
@@ -385,7 +388,7 @@ end:
 
 int main(int argc, char** argv)
 {
-	char configValue[CONFIG_VALE_MAXLEN]={0};
+	char configValue[CONFIG_VALUE_MAXLEN]={0};
 	char buf[128]={0};
 	int tempCount=0;
 
@@ -405,7 +408,7 @@ int main(int argc, char** argv)
 	}
 
 	if(get_config(configValue, "NonProc_Authentication", WLAN_CONFIG_PATH)==-1){
-		printf("get NonProcSecurityMode fail ..\n");
+		printf("get NonProc_Authentication fail ..\n");
 	}else{
 		authMode = atoi(configValue);
 	}

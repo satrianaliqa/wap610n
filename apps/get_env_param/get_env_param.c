@@ -9,14 +9,16 @@
  *  Licensed under GPLv2 or later, see file LICENSE 
  */
 
-#include "stdio.h"
-#include "string.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 
 int main(int argc, char* argv[])
 {
     FILE *f;
-    unsigned long r;
-	char *param_name, curr_param[256], param_value[256], curr_char, *curr_str = curr_param;
+    uint32_t r;
+	char *param_name, curr_param[256], param_value[256], *curr_str = curr_param;
+	int curr_char;
 	int curr_idx=0;
 	
 	if (argc !=2)
@@ -31,14 +33,18 @@ int main(int argc, char* argv[])
 	}
 
 	/* Skip the 4 bytes of crc */
-    fread(&r, sizeof(unsigned long), 1, f);
+    if (fread(&r, sizeof(uint32_t), 1, f) != 1)
+	{
+		fclose(f);
+		return 1;
+	}
 
 	curr_param[0] = param_value[0] = 0;
-	while (!feof(f))
+	while ((curr_char = fgetc(f)) != EOF)
 	{
 		/* Read the param string in format name=value*/
-		curr_char = fgetc(f);
-		curr_str[curr_idx++] = curr_char;
+		if (curr_idx < 255)
+			curr_str[curr_idx++] = (char)curr_char;
 		if (curr_char=='=') // End of name, move to read the value
 		{
 			curr_str[curr_idx-1] = 0;

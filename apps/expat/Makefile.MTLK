@@ -21,18 +21,20 @@ CONF:
 	./configure --host=arm-linux
 
 COMP:
-	make CC=$(CC) -f Makefile -C expat buildlib
+	$(MAKE) CC=$(CC) -f Makefile -C expat buildlib
 
 CLEAN:
 	./configure --host=arm-linux
-	make -f Makefile -C expat distclean
+	$(MAKE) -f Makefile -C expat distclean
 
 INSTALL: FORCE
-	install -m 777 -d  $(E_DEST)/lib/
+	install -m 755 -d  $(E_DEST)/lib/
 	install -m 755 libexpat.so* $(E_DEST)/lib/
 
 STRIP:
-	$(E_STRIP) $(E_DEST)/lib/libexpat.so
-	$(E_STRIP) $(E_DEST)/lib/libexpat.so.0.*
+	-$(E_STRIP) $(E_DEST)/lib/libexpat.so
+	-$(E_STRIP) $(E_DEST)/lib/libexpat.so.0.*
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
 
 FORCE:

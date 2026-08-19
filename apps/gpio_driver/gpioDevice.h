@@ -64,7 +64,6 @@ void gpio_pbc_end(int);
 int  gpio_init(void);
 void gpio_cleanup(void);
 
-void gpio_pulse(unsigned long, unsigned long);
 void led_pulse(unsigned long) ;
 
 

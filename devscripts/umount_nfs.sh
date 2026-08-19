@@ -3,7 +3,7 @@
 LOCAL_DIR=$1
 
 
-if [ $1 = "--help" -o $1 = "-h" ]
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
 	echo "This script umount remote NFS server"
 	echo "Parameters:"

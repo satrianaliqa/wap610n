@@ -20,4 +20,4 @@ sudo tar xzf ${1}-UMEDIA.tgz
 sudo chown -R `whoami` $1
 cd $1
 ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
-./make_nv.sh build wlan.tar.gz
+./make_nv.sh build wlan.tar.gz WET610N

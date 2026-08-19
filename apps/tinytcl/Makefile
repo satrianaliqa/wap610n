@@ -44,10 +44,7 @@ OBJS += debugger/Dbg.o debugger/Dbg_cmd.o
 CFLAGS += -I. -Idebugger -DDEBUGGER -DDEBUGGER_INIT=\"Dbg_lib.tcl\"
 endif
 
-TARGETS += $(LIBTCL)
-ifdef UCLINUX_BUILD_USER
-TARGETS += $(EXE)
-endif
+TARGETS += $(LIBTCL) $(EXE)
 
 all: $(TARGETS)
 
@@ -67,7 +64,7 @@ libtcl.so: $(OBJS) build_extensions
 # The dependency here is a bit overkill, but it's simple
 build_extensions: extensions/*/*
 	@for e in $(EXTENSIONS); do \
-		$(MAKE) -C extensions/$$e TCLDIR=../.. -$(MAKEFLAGS) || exit 1; \
+		$(MAKE) -C extensions/$$e TCLDIR=../.. $(MAKEFLAGS) || exit 1; \
 	done
 	touch build_extensions
 

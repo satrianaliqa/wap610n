@@ -27,5 +27,5 @@ configure:
 	./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
 
 build:
-	./make_nv.sh build wlan.tar.gz
+	./make_nv.sh build wlan.tar.gz WET610N
 

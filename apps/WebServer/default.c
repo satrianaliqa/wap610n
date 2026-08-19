@@ -28,8 +28,8 @@ static char_t	*websDefaultPage;			/* Default page name */
 static char_t	*websDefaultDir;			/* Default Web page directory */
 
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
-#define WIATPPAGEPATH "wait_page.asp"
-#define SCRPITNAME ".js"
+#define WAITPAGEPATH "wait_page.asp"
+#define SCRIPTNAME ".js"
 #define PICNAME ".gif"
 #define CSSNAME ".css"
 
@@ -128,14 +128,11 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	//Jacky.Yang 11-Feb-2009, Start - for limitation apply process.
 	//printf("lpath:%s\n", lpath);
 	//if (!waitOtherProcess || ((strstr(lpath, WIATPPAGEPATH) != 0) || (strstr(lpath, SCRPITNAME) != 0)))CSSNAME
-	if (waitOtherProcess && (strstr(lpath, "goform") == 0) && (strstr(lpath, WIATPPAGEPATH) == 0) && (strstr(lpath, SCRPITNAME) == 0) && (strstr(lpath, PICNAME) == 0) && (strstr(lpath, CSSNAME) == 0))
+	if (waitOtherProcess && (strstr(lpath, "goform") == 0) && (strstr(lpath, WAITPAGEPATH) == 0) && (strstr(lpath, SCRIPTNAME) == 0) && (strstr(lpath, PICNAME) == 0) && (strstr(lpath, CSSNAME) == 0))
 	{
-		nchars = gstrlen(path);
-		if (path[nchars-1] == '/' || path[nchars-1] == '\\') {
-			path[--nchars] = '\0';
-		}
-		nchars += gstrlen(websDefaultPage) + 2;
-		fmtAlloc(&tmp, nchars, T("/%s"), WIATPPAGEPATH);
+		//printf("websDefaultHandler: return to wait_page.asp\n");
+		nchars = gstrlen(WAITPAGEPATH) + 2;
+		fmtAlloc(&tmp, nchars, T("/%s"), WAITPAGEPATH);
 		websRedirect(wp, tmp);
 		bfreeSafe(B_L, tmp);
 		return 1;
@@ -260,18 +257,18 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	if (flags & WEBS_ASP) {
 		//Jacky.Yang 11-Feb-2009, for limitation apply process.
 		//printf("lpath:%s\n", lpath);
-		if (!waitOtherProcess || ((strstr(lpath, WIATPPAGEPATH) != 0) || (strstr(lpath, SCRPITNAME) != 0)))
+		if (!waitOtherProcess || ((strstr(lpath, WAITPAGEPATH) != 0) || (strstr(lpath, SCRIPTNAME) != 0)))
 		{
 			if (websAspRequest(wp, lpath) < 0) {
 				return 1;
 			}
 		}
-		/*else
+		else
 		{
 			websWrite(wp, T("<head>"));
-			websWrite(wp, T("<meta http-equiv=\"refresh\" content=\"0;url=%s\" />"), WIATPPAGEPATH);
+			websWrite(wp, T("<meta http-equiv=\"refresh\" content=\"0;url=%s\" />"), WAITPAGEPATH);
 			websWrite(wp, T("</head>"));
-		}*/
+		}
 		websDone(wp, 200);
 		return 1;
 	}

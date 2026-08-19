@@ -5,8 +5,8 @@ WEBROOTDIR=`pwd`
 ROOTDIR=`cd ../.. ; pwd`
 cd ${WEBROOTDIR}/LINUX
 
-rm webs.platform.STAR
-rm webs.platform.DONGLE
+rm -f webs.platform.STAR
+rm -f webs.platform.DONGLE
 
 make -f Makefile.snapgear clean
 make -f Makefile.snapgear

@@ -103,7 +103,7 @@ function test_args()
 	then
 		echo ${ERROR_STRING}
 		REMOVE_LOG=1
-		exit -1
+		exit 1
 	else 
 		USE_TFTP=1
 		return 0
@@ -119,12 +119,13 @@ function test_args()
 function on_exit()
 {
 	# This function will be executed on EXIT 
-	echo "Next commands execite from EXIT context"  >> ${LOGFILE} 2>&1
+	cd /
+	echo "Next commands execute from EXIT context"  >> ${LOGFILE} 2>&1
 	echo "It doesn't matter if they will fail"  >> ${LOGFILE} 2>&1
 
 	# What to do?
 	# Remove files
-	FILES_TO_REMOVE=`tar tzf ${NET_ARCH} >> ${LOGFILE} 2>&1 `
+	FILES_TO_REMOVE=$(tar tzf "${NET_ARCH}" 2>/dev/null)
 	rm -f ${FILES_TO_REMOVE}  >> ${LOGFILE} 2>&1
 	rm -f ${NET_ARCH}  >> ${LOGFILE} 2>&1
 	rm -f ${WLAN_ADDITION}  >> ${LOGFILE} 2>&1
@@ -256,7 +257,7 @@ then
 	
 	if [ ! -e ${WLAN_ADDITION}  ]
 	then
-		echo "tftp failed: doesn't present ${NET_ARCH} file"
+		echo "tftp failed: doesn't present ${WLAN_ADDITION} file"
 	fi
 
 	mv -f ./${NET_ARCH} ./${WLAN_ADDITION} ${TEMP_DIR}/
@@ -361,7 +362,7 @@ teststatus $? "The ${RAMDISK} umounting is failed"
 
 ### Compress the image.
 rlog "0016"
-if [ $COMPRESSION == "gzip" ]
+if [ "$COMPRESSION" = "gzip" ]
 then
 	gzip -9  < ${RAMDISK}_combined > ${RAMDISK}.${DATE}
 else

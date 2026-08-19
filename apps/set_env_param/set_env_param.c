@@ -30,7 +30,8 @@ int main(int argc, char* argv[])
 {
 	FILE *f, *tmp_f;
 	unsigned long *crc;
-	char *param_name, *param_value=NULL, curr_char, *curr_str;
+	char *param_name, *param_value=NULL, *curr_str;
+	int curr_char;
 	int curr_str_idx=0, param_found=0, out_of_space=0;
 	list_elem params_arr[500];
 	
@@ -57,7 +58,7 @@ printf("\nCannot malloc 0x10000\n");
 	memset(curr_str, 0, CFG_ENV_SIZE);
 
 	/* Skip the 4 bytes of crc */
-	crc = curr_str;
+	crc = (unsigned long *)curr_str;
     fread(curr_str, ENV_HEADER_SIZE, 1, f);
 
 	curr_str += ENV_HEADER_SIZE;

@@ -52,7 +52,7 @@ install_:
 	cp -a $(E_TOPDIR)/scripts/devel.sh $(E_DEST)/bin/
 
 svnclean: 
-	find $(E_DEST) -iname "*.svn" | xargs rm -fr
+	find $(E_DEST) -iname "*.svn" -exec rm -rf {} + 2>/dev/null || true
 
 # Remove files that were received as binary-only from STAR, and not used by any platform in our toolchain:
 #  TODO: Consider deleting them from svn, and then remove this step of the build process

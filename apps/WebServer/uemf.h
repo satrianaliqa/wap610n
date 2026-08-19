@@ -602,7 +602,7 @@ typedef enum {
 //	errmsg 		= 13
 } vtype_t;
 
-#ifndef __NO_PACK
+#if !defined(__NO_PACK) && !defined(__arm__) && !defined(__arm)
 #pragma pack(2)
 #endif /* _NO_PACK */
 
@@ -631,7 +631,7 @@ typedef struct {
 	unsigned int	allocated	: 8;		/* String was balloced */
 } value_t;
 
-#ifndef __NO_PACK
+#if !defined(__NO_PACK) && !defined(__arm__) && !defined(__arm)
 #pragma pack()
 #endif /* __NO_PACK */
 

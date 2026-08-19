@@ -16,15 +16,17 @@ is_ap=$1
 is_Reboot=$2
 
 # Jacky.Yang 30-Jun-2009, Get HW type.
-REGISTER3=`echo "read_phy" >> /proc/str9100/reg_debug ; cat /proc/str9100/reg_debug | awk -F= '/reg/ {str = $5;  print str}'`
+if [ "$ProjectName" != "WAP610N" ]; then
+	REGISTER3=`echo "read_phy" >> /proc/str9100/reg_debug ; cat /proc/str9100/reg_debug | awk -F= '/reg/ {str = $5;  print str}'`
 
-#echo "@@@@@ reg3 in /proc/str9100/reg_debug is $REGISTER3 @@@@@" > /dev/console
-if [ "$REGISTER3" = "0xc852" ]; then
-	#echo "ProjectName:${ProjectName}"
-	ProjectName="WES610N"
-else
-	#echo "ProjectName:${ProjectName}"
-	ProjectName="WET610N"
+	#echo "@@@@@ reg3 in /proc/str9100/reg_debug is $REGISTER3 @@@@@" > /dev/console
+	if [ "$REGISTER3" = "0xc852" ]; then
+		#echo "ProjectName:${ProjectName}"
+		ProjectName="WES610N"
+	else
+		#echo "ProjectName:${ProjectName}"
+		ProjectName="WET610N"
+	fi
 fi
 
 
@@ -42,11 +44,11 @@ then
 fi
 
 echo "ProjectName:${ProjectName}"
-if [ ${ProjectName} = "WAP610N" ]; then
+if [ "${ProjectName}" = "WAP610N" ]; then
 	cat $SAVED_CONFIG_PATH/default_ap_WAP610N.conf $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
-elif [ ${ProjectName} = "WET610N" ]; then
+elif [ "${ProjectName}" = "WET610N" ]; then
 	cat $SAVED_CONFIG_PATH/default_sta_WET610N.conf $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
-elif [ ${ProjectName} = "WES610N" ]; then
+elif [ "${ProjectName}" = "WES610N" ]; then
 	cat $SAVED_CONFIG_PATH/default_sta_WES610N.conf $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
 else
 	cat $SAVED_CONFIG_PATH/$AP_CONF $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_ON_CONF > $TMP_CONF_FILE

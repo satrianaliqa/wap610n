@@ -501,7 +501,7 @@ void websReadEvent(webs_t wp)
                 /* check that buffer allocation was good */
                 //Tom.Hung 2009-7-21, replace IMAGE_MAX_SIZE to getFlashSize()
                 //if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > IMAGE_MAX_SIZE) || !(buffer = malloc(wp->clen+wp->lenPostData)))
-                if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > getFlashSize() && !(wp->flags & WEBS_HNAP_FW_UPGRADE) || wp->clen > (getFlashSize()+0x50000) && wp->flags & WEBS_HNAP_FW_UPGRADE) || !(buffer = malloc(wp->clen+wp->lenPostData)))
+                if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > getFlashSize() && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
                 //Tom.Hung 2009-7-21
                 {
                     char tmp[MAX_LINE];
@@ -1068,13 +1068,13 @@ static void websParseRequest(webs_t wp)
 					//It can not decode some character, so I replace it with b64_decode that is port from httpd
 					//U-Media Ricky Cao
 					//websDecode64(userAuth, ++cp, sizeof(userAuth));
-					b64Decode_len= b64_decode(++cp, userAuth, sizeof(userAuth));
+					b64Decode_len= b64_decode(++cp, userAuth, sizeof(userAuth) - 1);
 				} else {
 					//There are some problems in the websDecode64 of goahead webserber 
 					//It can not decode some character, so I replace it with b64_decode that is port from httpd
 					//U-Media Ricky Cao
 					//websDecode64(userAuth, value, sizeof(userAuth));
-					b64Decode_len = b64_decode(value, userAuth, sizeof(userAuth));
+					b64Decode_len = b64_decode(value, userAuth, sizeof(userAuth) - 1);
 				}
 				userAuth[b64Decode_len]='\0'; //Add for b64_decode() - U-Media Ricky Cao
 

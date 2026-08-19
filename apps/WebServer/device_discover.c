@@ -203,6 +203,7 @@ int dd_getIfIp(char *ifname, char *if_addr)
 	strncpy(ifr.ifr_name, ifname, 16);
 	if (ioctl(skfd, SIOCGIFADDR, &ifr) < 0) {
 		dd_print_string("getIfIp: ioctl SIOCGIFADDR error for %s", ifname);
+		close(skfd);
 		return -1;
 	}
 	strcpy(if_addr, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
@@ -225,6 +226,7 @@ int dd_getIfNetmask(char *ifname, char *if_net)
 	strncpy(ifr.ifr_name, ifname, 16);
 	if (ioctl(skfd, SIOCGIFNETMASK, &ifr) < 0) {
 		dd_print_string("getIfNetmask: ioctl SIOCGIFNETMASK error for %s\n", ifname);
+		close(skfd);
 		return -1;
 	}
 	strcpy(if_net, inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
@@ -460,8 +462,6 @@ send:
 	memcpy(*packetBuf, replyHeader, strlen(replyHeader));
 	memcpy(*packetBuf+strlen(replyHeader), ret, strlen(ret));
 
-	free(ret);
-
 	return dataLen;
 }
 //=====Above functions are for process XML content=====
@@ -677,8 +677,9 @@ int dd_parse_header(uint8_t *hvPair, struct device_discover_instance *ddi)
 			else
 				dd_print_string("WARNING: the value size (%d) for DPhy (%d) is too large..\n", strlen(value), PHY_MAX_LEN);
 		}else if(!strcmp(header, "CSeq")){
-			if(1<=atoi(value)<=65535)
-				ddi->cseq=atoi(value);
+			int cseq_val = atoi(value);
+			if(cseq_val >= 1 && cseq_val <= 65535)
+				ddi->cseq = (uint16_t)cseq_val;
 			else
 				dd_print_string("WARNING: Invalid value %d for CSeq in header..\n", atoi(value));
 		}else if(!strcmp(header, "Authorization")){
@@ -1133,7 +1134,7 @@ int dd_process_none_location_discovery(struct device_discover_instance *ddi, cha
             		}
 
             		for (justread = 0; justread < toread; ){
-                		char cur = *(bodyContent+justread);
+                		char cur = *(bodyContent + body_read + justread);
 
 				line[justread] = cur;
                 		justread++;
@@ -1204,14 +1205,14 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	int hvLen=0;
 	int headerEnd=0;
 	uint8_t devMac[17]={0};
-	char *txPacket;
+	char *txPacket = NULL;
 	int result=0;
 	int dataRead=0;
 	int bodyLen=0;
 	char *bodyContent=NULL;
 
 	ddi = (struct device_discover_instance *)malloc(sizeof(struct device_discover_instance));
-	memset(ddi, 0, sizeof(ddi));
+	memset(ddi, 0, sizeof(struct device_discover_instance));
 
 	dd_getIfMacStr("br0", devMac);
 	strcpy(ddi->devphy, devMac);	

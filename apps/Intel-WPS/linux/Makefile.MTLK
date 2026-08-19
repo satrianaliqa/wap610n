@@ -13,7 +13,7 @@ endif
 
 #CROSS_COMPILE=/opt/star/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-
 
-CFLAGS +=-Os -mlittle-endian -pipe -fno-common -fno-builtin -Dlinux -D__linux__ -Dunix -march=$(E_ARCH)
+CFLAGS +=-Os -mlittle-endian -march=armv4 -msoft-float -pipe -fno-common -fno-builtin -Dlinux -D__linux__ -Dunix
 CXXFLAGS=$(CFLAGS)
 CXX_LDFLAGS=-L$(E_TOPDIR)/openssl-0.9.8a
 CC=$(E_CC)
@@ -27,13 +27,15 @@ CXXLIBS=
 STRIP=echo
 export CC CXX CXXFLAGS CXX_LDFLAGS CFLAGS LD STL_INCDIR STL_LIBDIR STRIP UUID_LIB
 
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+
 CONF:
-	echo No configuration here.
+	@echo "No configuration needed"
 COMP:
-	make 
+	$(MAKE) 
 
 CLEAN:
-	make clean
+	$(MAKE) clean
 
 INSTALL: FORCE
 	install -d $(E_DEST)/root/mtlk/etc

@@ -7,8 +7,8 @@
 #MOUNT_POINT=/mnt/rd
 #Jacky.Yang 6-May-2009
 ROOTPATH=`cd ; pwd`
-mkdir -p ${ROOTPATH}/METALINK/tmp/mnt/rd
-MOUNT_POINT=${ROOTPATH}/METALINK/tmp/mnt/rd
+mkdir -p "${ROOTPATH}/METALINK/tmp/mnt/rd"
+MOUNT_POINT=${MOUNT_POINT:-"${ROOTPATH}/METALINK/tmp/mnt/rd"}
 
 # Path for ramdisk images
 RD=/opt/star/images/ramdisk_2.6.16.img
@@ -19,7 +19,7 @@ cp $RD.gz $RD.PREV.gz
 # Delete the old image if prompted to
 # option c = clean image
 getopts c clean
-if [ $clean = "c" ]
+if [ "$clean" = "c" ]
 then
 	echo Creating clean rootfs
         mkblankfs.sh $RD 
@@ -37,7 +37,7 @@ fi
 
 # mount just if $MOUNT_POINT is not mounted
 mount | grep "$MOUNT_POINT"
-if [ $? == 1 ]
+if [ $? -eq 1 ]
 then
 	sudo mount $RD $MOUNT_POINT  -o loop
 else

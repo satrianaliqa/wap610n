@@ -293,7 +293,7 @@ function set_nfs_server
 {
 	if [ "$1" != "" ]
 	then
-		NFS_SERVER=$3
+		NFS_SERVER=$1
 	else
 		NFS_SERVER=${NFS_SERVER_DEFAULT}
 	fi
@@ -320,7 +320,7 @@ then
 			then # Installation to local directory
 				if [ ! -d $4 ]
 				then
-					install 777 $4
+					install -d -m 777 "$4"
 				fi
 				pushd ${DEBUGFS_DIR}
 				E_DEBUGFS=${4} make -f Makefile.MTLK install

@@ -13,22 +13,22 @@
 # http://narnia/svn/sw/tools/wps_scripts/WPS_PBC.sh
 #########################################################################3
 
-if expr $1 != ""
+if [ -n "$1" ]
 then
 	WPS_ON=$1
 fi
 
-if expr $2 != ""
+if [ -n "$2" ]
 then
 	NETWORK_TYPE=$2
 fi
 
-if [ $WPS_ON == 1 ] || [ $NETWORK_TYPE > 2 ]
+if [ "$WPS_ON" = "1" ] || [ "${NETWORK_TYPE:-0}" -gt 2 ]
 then
 	cd /root/mtlk/etc
 
 	action_type='get_conf_via_pbc'
-	if [ $NETWORK_TYPE == 2 ]
+	if [ "$NETWORK_TYPE" = "2" ]
 	then
 		action_type='conf_via_pbc'
 	fi

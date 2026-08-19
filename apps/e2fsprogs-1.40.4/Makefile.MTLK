@@ -11,19 +11,21 @@ endif
 
 ######### Standard header end ##############
 
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+ 
 CONF:
 	./configure --host=$(E_HOST) --with-cc=$(E_CC) --with-linker=$(E_LD) CFLAGS=$(E_CFLAGS) LDFLAGS=$(E_LDFLAGS) --disable-tls --disable-nls --disable-e2initrd-helper --prefix=$(E_DEST)
 
 COMP:
-	make -f Makefile libs
+	$(MAKE) -f Makefile libs
 
 CLEAN:
-	make -f Makefile clean
+	$(MAKE) -f Makefile clean
 
 INSTALL: FORCE
 	install -m 755 lib/uuid/libuuid.a $(E_DEST)/lib/libuuid.a
 STRIP: FORCE
-	$(E_STRIP) $(E_DEST)/lib/libuuid.a
+	$(E_STRIP) --strip-debug $(E_DEST)/lib/libuuid.a || true
 
 FORCE:
 	

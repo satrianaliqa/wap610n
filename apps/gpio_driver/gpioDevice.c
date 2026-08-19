@@ -306,6 +306,7 @@ int gpio_init(void)
 		str9100_gpio_set_edgeintr(&gpio_pbc_start, PIN_TRIG_SINGLE, PIN_TRIG_FAILING, gpio);
 	}
 	
+	return 0;
 }
 
 
@@ -323,6 +324,8 @@ int gpio_init(void)
 static ssize_t gpio_read(struct file *file,  char *buf, size_t count, loff_t *offset)
 {
 	int gpio = MINOR(file->f_dentry->d_inode->i_rdev);
+	if (gpio >= MAX_GPIOS || gpio < 0)
+		return (-ENODEV);
 	/* If pbc button is pushed PBC_ON is copied to /dev/pbc0. BLOCK until it is pressed. */
 	// TODO: Expand wq to an array??
 	wait_event_interruptible(wq,pbc_flag[gpio]!=0);
@@ -432,7 +435,7 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 	// Get the led number from the device MINOR number
 	gpio = MINOR(file->f_dentry->d_inode->i_rdev);
 
-	if (gpio > MAX_GPIOS)
+	if (gpio >= MAX_GPIOS || gpio < 0)
 		return (-ENODEV);
 	if(copy_from_user(Buffer, buf, count))
 		return (-ENOMEM);

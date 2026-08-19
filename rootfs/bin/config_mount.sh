@@ -46,7 +46,7 @@ fi
 gunzip -c $CONFIG_BLOCK > $CONFIG_FILE
 
 # Check if gunzip failed - if so, restore configuration sector and defaults.
-if expr $? != 0
+if [ $? -ne 0 ]
 then
 	echo " ($$) No config sector found. Copying factory defaults"
 	gunzip -c $CONFIG_DEFAULT > $CONFIG_FILE
@@ -56,8 +56,8 @@ fi
 # Mount the existing or newly created config fs
 mount $CONFIG_FILE $CONFIG_MNT -o loop
 
-# Check if umount failed - if so, restore configuration sector and defaults.
-if expr $? != 0
+# Check if mount failed - if so, restore configuration sector and defaults.
+if [ $? -ne 0 ]
 then
 	echo " ($$) No valid config filesystem found. Copying factory defaults"
 	gunzip -c $CONFIG_DEFAULT > $CONFIG_FILE
@@ -70,7 +70,7 @@ config_unlock.sh $$
 
 
 # Copy default params if needed
-if expr $RESTORE_DEFAULTS = 1
+if [ "$RESTORE_DEFAULTS" = "1" ]
 then
 	$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh
 fi

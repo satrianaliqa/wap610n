@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # This is a script to select the star directory to work with.
  
@@ -37,20 +37,5 @@ ln -s ${dirs[$selected]} star
 cd -
 
 exit
-
-######################
-# No longer needed:
-######################
-
-read -p "Update rootfs?   "  yesno
-if [ $yesno = "y" ]
-then 
-	if [ -h rootfs-star ]
-	then
-		rm rootfs-star
-	fi
-
-	ln -s rootfs-${dirs[$selected]} rootfs-star
-fi
 
 

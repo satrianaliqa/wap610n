@@ -35,13 +35,13 @@ echo FIRMWARE_MAJOR=${FIRMWARE_MAJOR} FIRMWARE_MINOR=${FIRMWARE_MINOR} FIRMWARE_
 # Include ${VER_FILE} file first, and check value.
 . ${VER_FILE}
 CHECK_FLAG=0
-if [ ${MAJOR} -ne ${FIRMWARE_MAJOR} ]; then
+if [ "${MAJOR:-0}" -ne "${FIRMWARE_MAJOR:-0}" ]; then
 	CHECK_FLAG=1
 fi
-if [ ${MINOR} -ne ${FIRMWARE_MINOR} ]; then
+if [ "${MINOR:-0}" -ne "${FIRMWARE_MINOR:-0}" ]; then
 	CHECK_FLAG=1
 fi
-if [ ${PATCH} -ne ${FIRMWARE_PATCH} ]; then
+if [ "${PATCH:-0}" -ne "${FIRMWARE_PATCH:-0}" ]; then
 	CHECK_FLAG=1
 fi
 

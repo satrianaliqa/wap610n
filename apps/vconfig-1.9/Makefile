@@ -11,6 +11,8 @@ ALL_OBJS = ${VLAN_OBJS}
 VCONFIG = vconfig                  #program to be created
 
 
+.PHONY: all clean purge
+
 all: ${VCONFIG}
 
 
@@ -20,7 +22,7 @@ vconfig.h: Makefile
 
 
 $(VCONFIG): $(VLAN_OBJS)
-	$(CC) $(CCFLAGS) $(LDFLAGS) -o $(VCONFIG) $(VLAN_OBJS) $(LDLIBS)
+	$(CC) $(CCFLAGS) -o $(VCONFIG) $(VLAN_OBJS) $(LDFLAGS) $(LDLIBS)
 	$(STRIP) $(VCONFIG)
 
 macvlan_config: macvlan_config.c

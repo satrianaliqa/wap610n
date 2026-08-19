@@ -20,8 +20,8 @@ fi
 
 PID=$1
 
-LOCKFOUND=`ls -l $CONFIG_LOCKFILE` 2> /dev/null
-if [ ! $? -eq 0 ]
+LOCKFOUND=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null)
+if [ $? -ne 0 ]
 then
 	# No config lock is taken - return fail
 	echo " ($PID) Unable to release config lock. No lock taken"
@@ -29,9 +29,9 @@ then
 fi
 
 # Make sure that we are the owners of the lock
-PID_FOUND=`ls -l $CONFIG_LOCKFILE | awk '{print $11}'` 2> /dev/null
+PID_FOUND=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
 
-if [ ! $PID_FOUND -eq $PID ]
+if [ "$PID_FOUND" != "$PID" ]
 then
 	# Config lock isn't owned by us - return fail
 	echo " ($PID) Unable to release config lock. Not owner (OLD: $PID_FOUND)"

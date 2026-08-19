@@ -9,13 +9,13 @@
 ### DEBUG: Uncomment to turn on printing of shell commands
 ##set -x
 
-time ()
+get_uptime ()
 {
-	time=`cat /proc/uptime | awk -F ' ' '{print $1}'`
-	echo $time
+	uptime_val=`cat /proc/uptime | awk -F ' ' '{print $1}'`
+	echo $uptime_val
 }
 
-#echo Start mtlk_init.sh `time` > /tmp/timestep.txt
+#echo Start mtlk_init.sh `get_uptime` > /tmp/timestep.txt
 
 #Disable SA learning featrue of internal switch of STAR CPU - Ricky Cao on Nov. 27 2008
 #Because it will result abnormal packet forwarding

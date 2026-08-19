@@ -17,9 +17,11 @@ endif
 #PATH=$(STAGING_DIR)/bin:/bin:/sbin:/usr/bin:/usr/sbin
 ARCH=arm
 CC=$(E_CC)
-CFLAGS += "-DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -Os -DSTRIP_UNUSED"
+CFLAGS += -DOPENSSL_NO_KRB5 -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -Os -DSTRIP_UNUSED
 PATH=$(E_CROSS)/bin:/bin:/sbin:/usr/bin:/usr/sbin
 export PATH ARCH CC CFLAGS
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
 
 CONF:
 	./Configure linux-$(ARCH) --prefix=/ --install_prefix=${TOPDIR}/openssl-lib \
@@ -28,13 +30,13 @@ CONF:
          shared no-idea no-mdc2 no-rc5
 
 COMP:
-	make CC=$(CC) -f Makefile all build-shared
+	$(MAKE) CC=$(CC) -f Makefile all build-shared
 
 CLEAN:
-	make -f Makefile clean
+	$(MAKE) -f Makefile clean
 
 INSTALL: FORCE
-	install -m 777 -d  $(E_DEST)/lib/
+	install -m 755 -d  $(E_DEST)/lib/
 	install -m 755 libcrypto.so* $(E_DEST)/lib/
 	install -m 755 libssl.so* $(E_DEST)/lib/
 

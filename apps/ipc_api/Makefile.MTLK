@@ -15,18 +15,21 @@ LDFLAGS=$(E_LDFLAGS)
 
 # Compiler flags applied to all files
 CFLAGS+=-Os -Wall -D_POSIX -D_DEBUG -D_VERBOSE $(PLATFORM_CFLAGS)
-PLATFORM_CFLAGS=-Os -march=armv4 -msoft-float -lpthread
+PLATFORM_CFLAGS=-Os -march=armv4 -msoft-float
+LDFLAGS+=-lpthread
 
 export CC LD CFLAGS LDFLAGS EXENAME PLATFORM_CFLAGS
 
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+
 CONF:
-	echo No configuration here
+	@echo "No configuration needed"
 	
 COMP: 
-	make -f Makefile
+	$(MAKE) -f Makefile
 
 CLEAN:
-	make -f Makefile clean
+	$(MAKE) -f Makefile clean
 
 INSTALL: FORCE
 	install -D -m 755 send_event $(E_DEST)/bin/send_event

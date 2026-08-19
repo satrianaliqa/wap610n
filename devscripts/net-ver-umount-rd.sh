@@ -41,8 +41,8 @@ sudo umount ${TMPFOLDER}
 ##gzip -f -9 $RDPATH/ramdisk_2.6.16.img
 lzma -f -z  $RDPATH/ramdisk_2.6.16.img
 
-if [ $SKIP_BAK = 0 ]
+if [ "$SKIP_BAK" = "0" ]
 then
 	# Save a time-stamped backup copy of the rootfs
-	cp $RDPATH/ramdisk_2.6.16.img.gz $RDPATH/BAK/ramdisk_2.6.16_$VER.img.gz
+	cp $RDPATH/ramdisk_2.6.16.img.lzma $RDPATH/BAK/ramdisk_2.6.16_$VER.img.lzma
 fi

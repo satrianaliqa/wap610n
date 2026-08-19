@@ -115,15 +115,15 @@ unsigned long crctab[] = {
  *	of bytes read.  It returns 0 on success and 1 on failure.  Errno is
  *	set on failure.
  */
-crc(int fd, unsigned long *cval, unsigned long *clen)
+int crc(int fd, unsigned long *cval, unsigned long *clen)
 {
 	register int i, nr, step;
 	register unsigned char *p;
 	register unsigned long crcv, total;
 	unsigned char buf[8192];
 
-	crcv = step = total = 0;
-    crcv = *cval; /* use current crc */
+	step = total = 0;
+	crcv = *cval; /* use current crc */
 	while ((nr = read(fd, buf, sizeof(buf))) > 0)
 		for (total += nr, p = buf; nr--; ++p) {
 			if (!(i = crcv >> 24 ^ *p)) {
@@ -149,6 +149,8 @@ crc(int fd, unsigned long *cval, unsigned long *clen)
 */
 #define _POSIX_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -161,7 +163,6 @@ char **argv;
     char * line;
     int fd,i;
     unsigned long cval = 0, clen = 0;
-    struct stat buf;
     int flags = O_RDONLY;
 #if defined(_WIN32)
     flags |= _O_BINARY;
@@ -175,13 +176,9 @@ char **argv;
     
     for (i = 1; i < argc; i++)
     {
-            line = argv[i];
+        line = argv[i];
         if((fd = open(line, flags))<0)
         {   
-            perror(line);
-        }
-        else if(stat(line, &buf)<0)
-        {
             perror(line);
         }
         else
