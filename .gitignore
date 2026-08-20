@@ -6,8 +6,10 @@
 /kernel/linux-2.6.16-star/vmlinux
 /kernel/linux-2.6.16-star/System.map
 
-# DO NOT ignore prebuilt objects in toolchain and vendor proprietary blobs
+# DO NOT ignore prebuilt objects in toolchain, rootfs, and vendor proprietary blobs
 !tools/**
+!rootfs-star/**
+!rootfs/**
 !apps/WebServer/*.o
 !*.lds*
 
@@ -25,6 +27,10 @@ _wlan.tar.gz
 *.gdb
 .libs/
 /apps/busybox-1.8.1/busybox*
+/apps/busybox-1.8.1/Makefile.size
+/apps/busybox-1.8.1/.config.BAKUP
+/apps/busybox-1.8.1/.kconfig.d
+/apps/busybox-1.8.1/.kernelrelease
 /apps/busybox-1.8.1/applets/usage
 /apps/busybox-1.8.1/scripts/basic/docproc
 /apps/busybox-1.8.1/scripts/basic/fixdep
