@@ -58,6 +58,20 @@ EOF
 	fi
 fi
 
+# Ensure all base rootfs directories and mount points exist
+ensure_rootfs_dirs() {
+	local base="$1"
+	mkdir -p "$base/proc" "$base/sys" "$base/tmp" "$base/mnt" "$base/mnt/jffs2" \
+	         "$base/var" "$base/var/run" "$base/var/log" "$base/var/lock" \
+	         "$base/root" "$base/home" "$base/opt" "$base/etc" \
+	         "$base/bin" "$base/sbin" "$base/lib" "$base/usr/bin" "$base/usr/sbin" \
+	         "$base/dev" "$base/dev/pts" "$base/dev/shm" "$base/dev/net" "$base/dev/input"
+	chmod 1777 "$base/tmp" 2>/dev/null || true
+	chmod 755 "$base/proc" "$base/sys" "$base/mnt" "$base/var" "$base/root" 2>/dev/null || true
+}
+
+ensure_rootfs_dirs "${ROOTFS_DIR}"
+
 # Ensure complete device nodes and symlinks are present in rootfs
 create_device_nodes() {
 	local target_dev="$1"
@@ -148,12 +162,12 @@ rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.
 RD=images/ramdisk_2.6.16.img
 dd if=/dev/zero of=${RD} bs=1k count=12288 >/dev/null 2>&1
 mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
-
 MNT_DIR=/tmp/mnt_rd
 mkdir -p ${MNT_DIR}
 mount -o loop ${RD} ${MNT_DIR}
 cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/
-# Ensure device nodes exist in mounted ramdisk as root
+# Ensure essential directories and device nodes exist in mounted ramdisk as root
+ensure_rootfs_dirs "${MNT_DIR}"
 create_device_nodes "${MNT_DIR}/dev"
 umount ${MNT_DIR}
 rmdir ${MNT_DIR}
