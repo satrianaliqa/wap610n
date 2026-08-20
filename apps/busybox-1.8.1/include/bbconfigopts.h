@@ -52,7 +52,7 @@ static const char *const bbconfig_config =
 "# CONFIG_INSTALL_SH_APPLET_SYMLINK is not set\n"
 "# CONFIG_INSTALL_SH_APPLET_HARDLINK is not set\n"
 "# CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER is not set\n"
-"CONFIG_PREFIX=\"/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/..//../rootfs\"\n"
+"CONFIG_PREFIX=\"/home/satszz/wap610n/apps/busybox-1.8.1/../../rootfs-star\"\n"
 "CONFIG_PASSWORD_MINLEN=6\n"
 "CONFIG_MD5_SIZE_VS_SPEED=2\n"
 "CONFIG_FEATURE_FAST_TOP=y\n"

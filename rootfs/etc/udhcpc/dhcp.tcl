@@ -339,7 +339,7 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 
 	if {[file exists /sbin/resolvconf] == 1} {
 		log "using /sbin/resolvconf"
-		exec echo -n "$R" | resolvconf -a "${interface}.udhcpc" 
+		exec echo -n "$R" | resolvconf -a "${iface}.udhcpc" 
 	} else {
 		log "writing $::RESOLV_CONF"
 		exec echo -n "$R" > "$::RESOLV_CONF"

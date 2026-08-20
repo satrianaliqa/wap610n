@@ -2,7 +2,7 @@
  * Automatically generated C config: don't edit
  * Busybox version: 1.8.1
  */
-#define AUTOCONF_TIMESTAMP "2010-12-10 12:04:20 CST"
+#define AUTOCONF_TIMESTAMP "2026-08-21 02:45:39 WIB"
 
 #define CONFIG_HAVE_DOT_CONFIG 1
 #define ENABLE_HAVE_DOT_CONFIG 1
@@ -192,7 +192,7 @@
 #define ENABLE_INSTALL_SH_APPLET_SCRIPT_WRAPPER 0
 #define USE_INSTALL_SH_APPLET_SCRIPT_WRAPPER(...)
 #define SKIP_INSTALL_SH_APPLET_SCRIPT_WRAPPER(...) __VA_ARGS__
-#define CONFIG_PREFIX "/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/..//../rootfs"
+#define CONFIG_PREFIX "/home/satszz/wap610n/apps/busybox-1.8.1/../../rootfs-star"
 #define ENABLE_PREFIX 1
 #define USE_PREFIX(...) __VA_ARGS__
 #define SKIP_PREFIX(...)

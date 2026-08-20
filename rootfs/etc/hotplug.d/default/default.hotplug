@@ -42,7 +42,7 @@ debug_mesg "arguments ($*) env (`env`)"
 # through argv.
 # 
 if [ $# -lt 1 ] || [ "$1" = "help" ] || [ "$1" = "--help" ]; then
-    if [ -t ]; then
+    if [ -t 1 ]; then
 	echo "Usage: $0 AgentName [AgentArguments]"
 
 	AGENTS=""

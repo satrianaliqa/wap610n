@@ -18,7 +18,7 @@ CONF:
 	echo "" >> .config
 	echo CONFIG_PREFIX=\"$(E_DEST)\" >> .config
 	cat Makefile | sed "s/O2/Os/g" > Makefile.size
-	$(MAKE) oldconfig
+	$(MAKE) -f Makefile.size oldconfig
 	# TODO
 COMP:
 	$(MAKE) -f Makefile.size v=1 all

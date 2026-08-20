@@ -26,6 +26,10 @@ _wlan.tar.gz
 .libs/
 /apps/busybox-1.8.1/busybox*
 /apps/busybox-1.8.1/applets/usage
+/apps/busybox-1.8.1/scripts/basic/docproc
+/apps/busybox-1.8.1/scripts/basic/fixdep
+/apps/busybox-1.8.1/scripts/basic/split-include
+/apps/busybox-1.8.1/scripts/kconfig/conf
 /apps/crc/crc
 /apps/detected_BrLoop/DetectedBrLoop
 /apps/force_ethpc_renew_ip/force_ethpc_renew_ip
