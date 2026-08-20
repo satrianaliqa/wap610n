@@ -92,8 +92,9 @@ do
 			echo "U-Media, mount_config.sh: No such file /mnt/jffs2/wlan0.conf waiting...$countTMP" > /dev/console
 		fi
 	else
-		echo "U-Media, mount_config.sh: it seems can't get /mnt/jffs2/wlan0.conf file." > /dev/console
+		echo "U-Media, mount_config.sh: Missing wlan0.conf! Restoring factory defaults now..." > /dev/console
+		$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh
 		break
 	fi
 done
-echo "U-Media, mount_config.sh: Stop to check /mnt/jffs2/wlan.conf." > /dev/console
+echo "U-Media, mount_config.sh: Configuration filesystem ready." > /dev/console

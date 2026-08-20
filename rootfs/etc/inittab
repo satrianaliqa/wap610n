@@ -14,24 +14,19 @@
 # process   == program to run
 
 # Startup the system
-null::sysinit:/bin/mount -t proc proc /proc
-null::sysinit:/bin/mount -a
-null::sysinit:/bin/mount -o remount,rw /
-null::sysinit:/bin/mkdir /tmp/var
-null::sysinit:/bin/mkdir /tmp/var/run
-null::sysinit:/bin/ln -s /tmp/var /var
-null::sysinit:/bin/hostname -F /etc/hostname
-null::sysinit:/sbin/ifconfig lo 127.0.0.1 up
-null::sysinit:/sbin/route add -net 127.0.0.0 netmask 255.0.0.0 lo
-# june.chen, 2010-12-23, add this line for making disable console stably
-null::sysinit:/bin/ln -fs /dev/null /dev/console
-
+::sysinit:/bin/mount -t proc proc /proc
+::sysinit:/bin/mount -a
+::sysinit:/bin/mount -o remount,rw /
+::sysinit:/bin/mkdir /tmp/var
+::sysinit:/bin/mkdir /tmp/var/run
+::sysinit:/bin/ln -s /tmp/var /var
+::sysinit:/bin/hostname -F /etc/hostname
+::sysinit:/sbin/ifconfig lo 127.0.0.1 up
+::sysinit:/sbin/route add -net 127.0.0.0 netmask 255.0.0.0 lo
 
 # Run the metalink init scripts
-# TODO: You may have to change the path
-# mount the rwfs before executing mtlk init
-ttyS0::sysinit:/bin/sh /bin/config_mount.sh
-ttyS0::sysinit:/bin/sh /etc/mtlk_init_start.sh
+::sysinit:/bin/sh /bin/config_mount.sh
+::sysinit:/bin/sh /etc/mtlk_init_start.sh
 
 # now run any rc scripts
 #::sysinit:/etc/init.d/rcS
@@ -41,7 +36,6 @@ ttyS0::sysinit:/bin/sh /etc/mtlk_init_start.sh
 #tty2::respawn:/sbin/getty 38400 tty2
 
 # Put a getty on the serial port
-#ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100
 ttyS0::respawn:/sbin/getty -L ttyS0 38400 vt100
 
 # Start a shell

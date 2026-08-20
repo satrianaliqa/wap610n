@@ -36,25 +36,19 @@ sudo $CONTAINER_CMD run --rm \
         echo '--> Step 1: Checking and preparing rootfs...'
         if [ ! -d rootfs-star ]; then
             tar -zxvf rootfs-star.tgz
+        elif [ ! -e rootfs-star/dev/console ]; then
+            echo '--> Extracting device nodes from rootfs-star.tgz...'
+            tar -zxvf rootfs-star.tgz rootfs-star/dev 2>/dev/null || true
         fi
         if [ ! -e rootfs ]; then
             ln -sf rootfs-star rootfs
         fi
 
-        # Ensure device nodes and init symlinks are 100% correct in rootfs
-        mkdir -p rootfs/dev
-        [ -e rootfs/dev/console ] || mknod rootfs/dev/console c 5 1
-        [ -e rootfs/dev/null ] || mknod rootfs/dev/null c 1 3
-        [ -e rootfs/dev/ttyS0 ] || mknod rootfs/dev/ttyS0 c 4 64
-        chmod 600 rootfs/dev/console
-        chmod 666 rootfs/dev/null
-        chown -R 0:0 rootfs/dev
-
         # Ensure init symlinks
-        ln -sf bin/busybox rootfs/init
-        ln -sf ../bin/busybox rootfs/sbin/init
-        ln -sf bin/busybox rootfs/linuxrc
-        ln -sf busybox rootfs/bin/sh
+        ln -sf bin/busybox rootfs/init 2>/dev/null || true
+        ln -sf ../bin/busybox rootfs/sbin/init 2>/dev/null || true
+        ln -sf bin/busybox rootfs/linuxrc 2>/dev/null || true
+        ln -sf busybox rootfs/bin/sh 2>/dev/null || true
 
         echo '--> Step 2: Configuring board target star-6.7.2-mtlk-U-Media-vela...'
         ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela

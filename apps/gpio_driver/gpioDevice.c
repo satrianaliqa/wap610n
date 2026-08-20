@@ -328,24 +328,26 @@ static ssize_t gpio_read(struct file *file,  char *buf, size_t count, loff_t *of
 		return (-ENODEV);
 	/* If pbc button is pushed PBC_ON is copied to /dev/pbc0. BLOCK until it is pressed. */
 	// TODO: Expand wq to an array??
-	wait_event_interruptible(wq,pbc_flag[gpio]!=0);
+	if (wait_event_interruptible(wq, pbc_flag[gpio] != 0))
+		return (-ERESTARTSYS);
+
 	if (pbc_flag[gpio] > 0)
 	{
-		if (pbc_flag[gpio] >1)
+		if (pbc_flag[gpio] > 1)
 		{
-			if (copy_to_user(buf,PBC_ON, 1))
+			if (copy_to_user(buf, PBC_ON, 1))
 			{  
 				return (-ENOMEM);
 			}
 			pbc_flag[gpio]--;
 			return 1;
 		} else {
-			pbc_flag[gpio]--;
+			pbc_flag[gpio] = 0;
 			return 0;
 		}	
 	} else 
 	{
-		return 0;			
+		return (-EAGAIN);			
 	}
 }
 

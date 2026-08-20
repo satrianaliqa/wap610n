@@ -22,23 +22,10 @@ FILES_UNUSED= \
 /usr/sbin/ftl_check \
 /usr/sbin/ftl_format 
 
-# Files that are deleted in the 4MB version:
+# Files that are deleted in the minimal debug-stripped version:
 FILES_UNUSED_IN_MINIMAL= \
-/lib/iptables \
-/lib/modules/2.6.16-star/net/str9100_shnat.ko \
-/sbin/iptables \
 /usr/bin/gdbserver \
-/root/mtlk/images \
-/root/mtlk/driver/mtlk.ko \
 /bin/iperf \
-/root/mtlk/bcl/BclSockServer \
-/root/mtlk/web \
-/root/mtlk/saved_configs \
-/lib/libcrypto.so \
-/lib/libssl.so \
-/lib/libstdc++.so.6.0.3 \
-/lib/libstdc++.so.6 \
-/lib/libstdc++.so \
 /bin/lsof \
 /usr/bin/ldd \
 /usr/bin/pmap \
