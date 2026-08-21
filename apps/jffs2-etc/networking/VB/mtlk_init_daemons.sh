@@ -22,6 +22,24 @@ fi
 # Start the upnp Daemon
 nice -n 18 upnpd &
 
+# Start Telnet and Dropbear SSH daemons for remote terminal access & diagnosis
+if [ -x /usr/sbin/telnetd ]; then
+	echo "Starting Telnet daemon (port 23)..." > /dev/console
+	telnetd -l /bin/sh &
+fi
+
+if [ -x /usr/sbin/dropbear ]; then
+	echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
+	mkdir -p /etc/dropbear
+	if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
+		/usr/bin/dropbearkey -t rsa -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
+	fi
+	if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
+		/usr/bin/dropbearkey -t dss -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
+	fi
+	/usr/sbin/dropbear -B &
+fi
+
 # Start the DHCP Client
 nice -n 18 /etc/udhcpc/dhcp.tcl startup &
 

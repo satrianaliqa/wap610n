@@ -1,0 +1,38 @@
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+CC = $(E_CC)
+AR = $(E_AR)
+STRIP_CMD = $(E_STRIP)
+PATH := $(E_CROSS)/bin:$(PATH)
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP FORCE
+
+CONF:
+	@if [ ! -f Makefile ]; then \
+		CC="$(E_CC)" AR="$(E_AR)" STRIP="$(E_STRIP)" \
+		CFLAGS="$(E_CFLAGS) -Os" LDFLAGS="$(E_LDFLAGS)" \
+		./configure --host=arm-linux --prefix=/usr \
+		--disable-utmp --disable-wtmp --disable-lastlog --disable-syslog; \
+	fi
+
+COMP: CONF
+	$(MAKE) MULTI=1 PROGRAMS="dropbear dropbearkey scp"
+
+CLEAN:
+	@if [ -f Makefile ]; then $(MAKE) clean; fi
+
+INSTALL: FORCE
+	install -m 755 -D dropbearmulti $(E_DEST)/usr/sbin/dropbearmulti
+	ln -sf dropbearmulti $(E_DEST)/usr/sbin/dropbear
+	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/dropbearkey
+	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/scp
+	mkdir -p $(E_DEST)/etc/dropbear
+
+STRIP: FORCE
+	$(E_STRIP) $(E_DEST)/usr/sbin/dropbearmulti
+
+FORCE:
