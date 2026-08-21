@@ -56,8 +56,14 @@ FIRMWARE_VERSION="1.0.05"
 ProjectFirmwareVersionDate="1.0.05 build 0, Aug 17, 2026"
 EOF
 		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network"
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"
 		ln -sf sta_network.asp "${ROOTFS_DIR}/root/mtlk/web/network/ap_network.asp" 2>/dev/null || true
+		ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/security.asp" 2>/dev/null || true
+		ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_basic.asp" 2>/dev/null || true
+		ln -sf ../station/wireless_advanced.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_advanced.asp" 2>/dev/null || true
+		ln -sf ../station/wmm.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wmm.asp" 2>/dev/null || true
+		ln -sf ../station/wps_status.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wps_status.asp" 2>/dev/null || true
+		ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
 	fi
 fi
 
