@@ -56,6 +56,8 @@ FIRMWARE_VERSION="1.0.05"
 ProjectFirmwareVersionDate="1.0.05 build 0, Aug 17, 2026"
 EOF
 		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network"
+		ln -sf sta_network.asp "${ROOTFS_DIR}/root/mtlk/web/network/ap_network.asp" 2>/dev/null || true
 	fi
 fi
 
