@@ -38,10 +38,11 @@ if [ -n "$1" ]; then
 	# Install Metalink init scripts & platform configurations
 	if [ -d "apps/jffs2-etc/networking/VB" ]; then
 		echo "Installing Metalink VB startup scripts to ${ROOTFS_DIR}/root/mtlk/etc/..."
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/etc"
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/etc" "${ROOTFS_DIR}/root/mtlk/saved_configs"
 		cp -af apps/jffs2-etc/networking/VB/*.sh "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
 		cp -af apps/jffs2-etc/networking/VB/*.tcl "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
 		cp -af apps/jffs2-etc/networking/VB/etherdump_awk "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
+		cp -af apps/jffs2-etc/networking/VB/*.conf "${ROOTFS_DIR}/root/mtlk/saved_configs/" 2>/dev/null || true
 		[ -f "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" ] && \
 			cp -af "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" "${ROOTFS_DIR}/root/mtlk/etc/mtlk_init_platform.sh"
 	fi

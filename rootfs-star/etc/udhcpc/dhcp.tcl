@@ -196,7 +196,9 @@ proc get_auto_ap {} {
 ##################################################################
 proc get_ip_config {} {
 	set val [get_parameter ip_config_method]
-	#log "ip_config_method==$val"
+	if {$val == ""} {
+		set val 0
+	}
 	return $val
 }
 
@@ -508,16 +510,15 @@ if {[info exists ::argv]} {
 		#update_web_ip $current_ip
 		#call_generic_event_script
 
-		if {$ip_config != 0  || [get_parameter network_mode] == "2"} {
-			# if not in auto or already an AP, cancel the auto_ap mode.
+		if {$ip_config == 1} {
+			log "Static IP configuration active (ip_config_method=1)"
 			if {[get_parameter auto_network_mode] == 1} {
 				log "Disabling auto_network_mode"
-				#exec echo "Turn OFF - AUTO AP MODE - Status StartUp" > /dev/console
 				auto_ap_turn_off
 			}
 		} else {
-			# start the udhcpc
-			log "Starting udhcpc daemon"
+			# start the udhcpc DHCP client on bridge
+			log "Starting udhcpc daemon on br0"
 			set hostName ""
 			catch { set hostName [exec cat /etc/hostname]}
 			if {[file exists /etc/udhcpc/dhcp.tcl]} {
