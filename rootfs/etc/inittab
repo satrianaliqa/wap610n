@@ -35,11 +35,9 @@
 #tty1::respawn:/sbin/getty 38400 tty1
 #tty2::respawn:/sbin/getty 38400 tty2
 
-# Put a getty on the serial port
-ttyS0::respawn:/sbin/getty -L ttyS0 38400 vt100
-
-# Start a shell
-#::respawn:/bin/sh
+# Put a shell on the serial port (press Enter to activate)
+ttyS0::askfirst:-/bin/sh
+console::askfirst:-/bin/sh
 
 # Logging junk
 #null::sysinit:/bin/touch /var/log/messages
