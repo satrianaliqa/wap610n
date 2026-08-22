@@ -187,56 +187,36 @@ function selectSecurityMode(mode) {
 }
 
 function selectRFBand() {
-	var channelList;
-	var value = document.getElementById("frequencyBand").value;
-	var origIndex = document.getElementById("channel").selectedIndex;
-	//alert("jacky - origIndex:"+origIndex);
+	var chElem = document.getElementById("channel");
+	if (!chElem) return;
+	var value = document.getElementById("frequencyBand") ? document.getElementById("frequencyBand").value : "1";
+	var origIndex = chElem.selectedIndex;
 	removeAllOption("channel");
 
+	var channelList = pvChannel24FCCnoCB;
+	var cbElem = document.getElementById("channelBounding") || document.getElementById("channelBonding");
+	var cb = cbElem ? cbElem.value : 0;
+	var ulElem = document.getElementById("upperLower") || document.getElementById("upperLowerChannelBonding");
+	var ul = ulElem ? ulElem.value : 0;
+
 	if (value == "0") {
-		if ((document.getElementById("channelBounding").value == 0)) {
-			//channelList = pvChannel52FCCnoCB;
-			channelList = pvChannel52FCCnoCB;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 0)) {
-			//channelList = pvChannel52FCCCBU;
-			channelList = pvChannel52FCCCBU;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 1)) {
-			//channelList = pvChannel52FCCCBL;
-			channelList = pvChannel52FCCCBL;
-		}
-	
-		for (loopCount=0; loopCount<channelList.length; loopCount=loopCount+2)
-		{
-			addNewOption("channel", channelList[loopCount], channelList[loopCount], channelList[loopCount], channelList[loopCount+1]);
-		}
-		if (origIndex != -1)
-			document.getElementById("channel").options[origIndex].selected = true;
+		if (cb == 0) channelList = pvChannel52FCCnoCB;
+		else if (cb == 1 && ul == 0) channelList = pvChannel52FCCCBU;
+		else if (cb == 1 && ul == 1) channelList = pvChannel52FCCCBL;
 	}
 	else if (value == "1") {
-		if ((document.getElementById("channelBounding").value == 0)) {
-			//channelList = pvChannel24ETCInoCB;
-			channelList = pvChannel24FCCnoCB;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 0)) {
-			//channelList = pvChannel24ETCICBU;
-			channelList = pvChannel24FCCCBU;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 1)) {
-			//channelList = pvChannel24ETCICBL;
-			channelList = pvChannel24FCCCBL;
-		}
-	
-		for (loopCount=0; loopCount<channelList.length; loopCount=loopCount+2)
-		{
+		if (cb == 0) channelList = pvChannel24FCCnoCB;
+		else if (cb == 1 && ul == 0) channelList = pvChannel24FCCCBU;
+		else if (cb == 1 && ul == 1) channelList = pvChannel24FCCCBL;
+	}
+
+	if (channelList) {
+		for (var loopCount=0; loopCount<channelList.length; loopCount=loopCount+2) {
 			addNewOption("channel", channelList[loopCount], channelList[loopCount], channelList[loopCount], channelList[loopCount+1]);
 		}
-		if (origIndex != -1)
-			document.getElementById("channel").options[origIndex].selected = true;
-	}
-	else if (value == "both") {
-		//alert("both");
+		if (origIndex != -1 && origIndex < chElem.options.length) {
+			chElem.options[origIndex].selected = true;
+		}
 	}
 }
 
