@@ -88,7 +88,7 @@ function updateLinkStatus(){
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	document.getElementById("waitMsg").innerHTML = "<!--#tr id=\"status.wait\" -->Please wait <!--#endtr-->";
 	waitStatus();

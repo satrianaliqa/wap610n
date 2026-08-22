@@ -51,7 +51,7 @@ function template_load() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 }
 </script>
 <!-- InstanceEndEditable -->

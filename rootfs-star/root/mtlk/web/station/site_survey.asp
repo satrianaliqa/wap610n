@@ -399,7 +399,7 @@ function waitStatus()
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
 	

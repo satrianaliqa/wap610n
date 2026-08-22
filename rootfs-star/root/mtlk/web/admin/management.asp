@@ -122,7 +122,7 @@ function checkValue() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var password = "<% getParam(1, "AdminPassword"); %>";
 	var timeOut = "<% getParam(1, "AuthenticationTimeout"); %>";

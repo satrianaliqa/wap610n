@@ -649,15 +649,9 @@ function fwUpgraceStatus(status, IPandMask)
 
 function wpsStatus(status, mainPageName)
 {
-	/*docTemp = IPandMask;
-	index = docTemp.indexOf(','); //IP
-	currentIP = docTemp.substr(0, index);*/
-	
 	if (status*1 == 1)
 	{
 		if (mainPageName != "wps_status.asp")
 			top.location.href = "/station/wps_status.asp";
 	}
-	else if (mainPageName == "wps_status.asp")
-		top.location.href = "/station/wireless_basic.asp";
 }

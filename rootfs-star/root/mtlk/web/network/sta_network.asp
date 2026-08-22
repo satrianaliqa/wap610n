@@ -129,7 +129,7 @@ function checkValue() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var lang_element = document.getElementById("langSelection");
 	var langset = "<% getParam(1, "Language"); %>";

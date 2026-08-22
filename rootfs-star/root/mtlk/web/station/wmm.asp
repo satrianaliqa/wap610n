@@ -563,7 +563,7 @@ function apMode() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var mode = "<% getParam(1, "network_type"); %>";
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
