@@ -75,6 +75,7 @@ jobs:
               # Normalize output binary names
               [ -f output/bootpImage ] && cp -vf output/bootpImage output/WAP610N_v1.0.08.bin || true
               [ -f output/WAP610N_v1.0.08_build_0 ] && cp -vf output/WAP610N_v1.0.08_build_0 output/WAP610N_v1.0.08.bin || true
+              [ -f output/WAP610N_v1.0.05_build_0 ] && cp -vf output/WAP610N_v1.0.05_build_0 output/WAP610N_v1.0.08.bin || true
               [ -f output/WAP610N_v1.0.08.bin ] && cp -vf output/WAP610N_v1.0.08.bin output/bootpImage || true
 
               # Fix permissions for runner user

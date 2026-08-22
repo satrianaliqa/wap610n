@@ -30,6 +30,6 @@ $(obj)/init.o:  FORCE
 #	$(obj)/mkcsum  arch/arm/boot/zImage $(INITRD) > $(obj)/cksum.S
 
 $(obj)/mkcsum: $(obj)/mkcsum.c
-	cc -o $(obj)/mkcsum $(obj)/mkcsum.c -lz
+	$(HOSTCC) -O2 -o $(obj)/mkcsum $(obj)/mkcsum.c -lz
 
 .PHONY:	$(INITRD) FORCE

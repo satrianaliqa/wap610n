@@ -42,7 +42,7 @@ typedef struct {
   unsigned int cksum;
 } header;
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   header head;
   char buf[512*100];
