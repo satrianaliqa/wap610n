@@ -64,6 +64,7 @@ static int  websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
+extern void formDumpFirmware(webs_t wp, char_t *path, char_t *query);
 #ifdef B_STATS
 static void printMemStats(int handle, char_t *fmt, ...);
 static void memLeaks();
@@ -336,6 +337,7 @@ static int initWebs()
 	formDefineManagement();
 	formDefineUtils();
 	formDefineWPS();
+	websFormDefine(T("dumpFirmware"), formDumpFirmware);
 
 /*
  *	Create the Form handlers for the User Management pages

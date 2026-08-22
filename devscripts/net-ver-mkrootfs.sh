@@ -21,19 +21,8 @@ if [ -n "$1" ]; then
 	fi
 	chmod 777 -R "${ROOTFS_DIR}/root/mtlk/"
 
-	# Save only needed Progmodels and delete the rest
-	if [ -f ./apps/.config ]; then
-		grep HWTYPE ./apps/.config > "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh" || true
-		if [ -f "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh" ]; then
-			. "${ROOTFS_DIR}/root/mtlk/etc/hwtype.sh"
-			if [ -n "$HWTYPE" ] && [ -d "${ROOTFS_DIR}/root/mtlk/images" ]; then
-				echo "Cleaning unused Progmodels for $HWTYPE..."
-				pushd "${ROOTFS_DIR}/root/mtlk/images" >/dev/null
-				ls ProgModel* 2>/dev/null | egrep -v "$HWTYPE|CB.bin" | xargs rm -f 2>/dev/null || true
-				popd >/dev/null
-			fi
-		fi
-	fi
+	# Keep all ProgModel microcode files intact for full hardware revision compatibility
+	echo "Keeping all ProgModel microcode calibration files intact in ${ROOTFS_DIR}/root/mtlk/images/..."
 
 	# Install Metalink init scripts & platform configurations
 	if [ -d "apps/jffs2-etc/networking/VB" ]; then
@@ -64,6 +53,13 @@ EOF
 		ln -sf ../station/wmm.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wmm.asp" 2>/dev/null || true
 		ln -sf ../station/wps_status.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wps_status.asp" 2>/dev/null || true
 		ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
+		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
+			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
+		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
+			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" 2>/dev/null || true
+		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
+			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
 	fi
 fi
 

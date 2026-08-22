@@ -975,4 +975,54 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 	MT_WriteRedirectScript(wp,redirectPage);
     websFooter(wp);
     websDone(wp, 200);
-}    
+}
+
+/*
+ * Dump Firmware directly from physical MTD NOR flash partitions in 4KB streaming chunks.
+ * Zero RAM overhead: direct bit-exact streaming over HTTP.
+ */
+void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
+{
+	FILE *fp = NULL;
+	char buff[4096];
+	size_t n = 0;
+	char_t *dumpType = websGetVar(wp, T("type"), T("full"));
+	const char *devPath = "/dev/mtdblock0";
+	const char *outName = "WAP610N_full_flash_dump.bin";
+
+	if (strcmp(dumpType, "kernel") == 0) {
+		devPath = "/dev/mtdblock1";
+		outName = "WAP610N_kernel_rootfs_dump.bin";
+	} else if (strcmp(dumpType, "config") == 0) {
+		devPath = "/dev/mtdblock2";
+		outName = "WAP610N_config_dump.bin";
+	}
+
+	fp = fopen(devPath, "rb");
+	if (!fp) {
+		if (strcmp(dumpType, "kernel") == 0) devPath = "/dev/mtd1";
+		else if (strcmp(dumpType, "config") == 0) devPath = "/dev/mtd2";
+		else devPath = "/dev/mtd0";
+		fp = fopen(devPath, "rb");
+	}
+
+	if (!fp) {
+		websError(wp, 500, T("Cannot open MTD device for dumping"));
+		return;
+	}
+
+	websWrite(wp, T("HTTP/1.0 200 OK\r\n"));
+	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
+	websWrite(wp, T("Pragma: no-cache\r\n"));
+	websWrite(wp, T("Cache-control: no-cache\r\n"));
+	websWrite(wp, T("Content-Type: application/octet-stream\r\n"));
+	websWrite(wp, T("Content-Disposition: attachment; filename=\"%s\"\r\n"), outName);
+	websWrite(wp, T("\r\n"));
+
+	while ((n = fread(buff, 1, sizeof(buff), fp)) > 0) {
+		if (websWriteBlock(wp, buff, n) < 0) break;
+	}
+	fclose(fp);
+	websDone(wp, 200);
+}
+
