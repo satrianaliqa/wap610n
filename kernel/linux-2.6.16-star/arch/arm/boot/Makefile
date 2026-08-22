@@ -66,11 +66,10 @@ $(obj)/uImage:	$(obj)/zImage FORCE
 	$(call if_changed,uimage)
 	@echo '  Image $@ is ready'
 
-$(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
-	$(Q)$(MAKE) $(build)=$(obj)/bootp $@
-	@:
+$(obj)/bootp/mkcsum: $(src)/bootp/mkcsum.c
+	$(HOSTCC) -O2 -o $@ $< -lz
 
-$(obj)/bootpImage: $(obj)/bootp/bootp FORCE
+$(obj)/bootpImage: $(obj)/bootp/bootp $(obj)/bootp/mkcsum FORCE
 	$(call if_changed,objcopy)
 	@echo run mkcsum
 	$(obj)/bootp/mkcsum $(obj)/bootpImage

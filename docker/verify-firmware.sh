@@ -63,8 +63,19 @@ else
     echo "⚠️ Device ID Hex: $DEVICE_ID_HEX (Cek ke U-Boot config)"
 fi
 
-# 3. Check Ramdisk Contents
-echo "3. Pengecekan Integritas Isi RootFS (Ramdisk): "
+# 3. Check CRC32 Checksum in Header and Footer
+HEADER_CRC=$(hexdump -s 28 -n 4 -e '1/4 "%08x"' "$BIN_PATH" 2>/dev/null || od -j 28 -N 4 -t x4 -An "$BIN_PATH" | tr -d ' ')
+FOOTER_CRC=$(tail -c 4 "$BIN_PATH" | (hexdump -e '1/4 "%08x"' 2>/dev/null || od -t x4 -An | tr -d ' '))
+echo -n "3. Pengecekan Validasi CRC32 (Anti Image-Corrupt): "
+if [ -n "$HEADER_CRC" ] && [ "$HEADER_CRC" != "00000000" ] && [ "$HEADER_CRC" = "$FOOTER_CRC" ]; then
+    echo "✅ VALID (CRC32: 0x$HEADER_CRC cocok di header dan footer)"
+else
+    echo "❌ INVALID (Header CRC: 0x$HEADER_CRC != Footer CRC: 0x$FOOTER_CRC - mkcsum tidak berjalan!)"
+    exit 1
+fi
+
+# 4. Check Ramdisk Contents
+echo "4. Pengecekan Integritas Isi RootFS (Ramdisk): "
 sudo $CONTAINER_CMD run --rm --privileged \
     -v "$(dirname "$RAMDISK_LZMA"):/output:z" \
     wap610n-builder /bin/bash -c "
