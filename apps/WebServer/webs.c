@@ -533,13 +533,20 @@ void websReadEvent(webs_t wp)
                     wp->postData = buffer;
                     /* read all data that was left */
                     wp->clen -= nbytes;
-                    while (wp->clen >0)
+                    while (wp->clen > 0)
                     {
-                        nbytes = socketRead(wp->sid, wp->postData+ wp->lenPostData, wp->clen);
-                        wp->clen -= nbytes;
-                        wp->lenPostData += nbytes;
+                        nbytes = socketRead(wp->sid, wp->postData + wp->lenPostData, wp->clen);
+                        if (nbytes > 0) {
+                            wp->clen -= nbytes;
+                            wp->lenPostData += nbytes;
+                        } else if (nbytes < 0) {
+                            /* Non-blocking socket wait up to 100ms */
+                            socketSelect(wp->sid, 100);
+                        } else {
+                            /* Connection closed */
+                            break;
+                        }
                     }
-                    wp->clen += nbytes; /* it is being reduced a few rows below */
                 }
             } else
             if (wp->postData) {
