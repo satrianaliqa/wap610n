@@ -56,7 +56,7 @@ var redirectUrlPath;
 function basicDisplay(value) {
 	//objectDisplay("configTypeField", value);
 	//objectDisplay("configTypeSeparate", value);
-	objectDisplay("freqBand", "none");
+	objectDisplay("freqBand", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -83,7 +83,7 @@ function mainDisplay(value) {
 	objectDisplay("outputField", value);
 	objectDisplay("configTypeField", value);
 	objectDisplay("configTypeSeparate", value);
-	objectDisplay("freqBand", "none");
+	objectDisplay("freqBand", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -603,15 +603,16 @@ function page_load() {
 		WPSDisplay("none");
 		basicDisplay("block");
 
-		if (mode*1 == 0) //STA mode
+		if (mode*1 == 0 || mode*1 == 2) // Both STA and AP mode (WAP610N)
 		{
-			document.modeOption.nowMode.value = "stationMode";
-			selectMode(0);
+			document.modeOption.nowMode.value = (mode*1 == 2) ? "apMode" : "stationMode";
+			selectMode(mode*1);
 			removeAllOption("frequencyBand");
 			addNewOption("frequencyBand", "", "", "0", "5GHz");
 			addNewOption("frequencyBand", "", "", "1", "2.4GHz");
 			addNewOption("frequencyBand", "", "", "2", "Both");
-			document.getElementById("frequencyBand").options[FrequencyBand].selected = true;
+			if (FrequencyBand && document.getElementById("frequencyBand").options[FrequencyBand])
+				document.getElementById("frequencyBand").options[FrequencyBand].selected = true;
 		}
 		document.getElementById("display_ESSID").value = transSSID(ESSID);
 	}
