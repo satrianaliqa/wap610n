@@ -66,6 +66,10 @@ jobs:
               ln -sf bin/busybox rootfs/linuxrc
               ln -sf busybox rootfs/bin/sh
 
+              # Ensure host mkcsum tool is compiled
+              gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
+              chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
+
               echo "--> Step 2: Configuring board target star-6.7.2-mtlk-U-Media-vela..."
               ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
 

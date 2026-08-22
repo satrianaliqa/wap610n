@@ -70,12 +70,13 @@ $(obj)/bootp/bootp: $(obj)/zImage initrd FORCE
 	$(Q)$(MAKE) $(build)=$(obj)/bootp $@
 	@:
 
-$(obj)/bootp/mkcsum: $(src)/bootp/mkcsum.c
-	$(HOSTCC) -O2 -o $@ $< -lz
-
-$(obj)/bootpImage: $(obj)/bootp/bootp $(obj)/bootp/mkcsum FORCE
+$(obj)/bootpImage: $(obj)/bootp/bootp FORCE
 	$(call if_changed,objcopy)
 	@echo run mkcsum
+	@if [ ! -x $(obj)/bootp/mkcsum ]; then \
+		$(HOSTCC) -O2 arch/arm/boot/bootp/mkcsum.c -lz -o $(obj)/bootp/mkcsum 2>/dev/null || \
+		gcc -O2 arch/arm/boot/bootp/mkcsum.c -lz -o $(obj)/bootp/mkcsum 2>/dev/null || true; \
+	fi
 	$(obj)/bootp/mkcsum $(obj)/bootpImage
 	@echo '  Kernel: $@ is ready'
 
