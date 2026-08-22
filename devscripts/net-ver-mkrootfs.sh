@@ -187,17 +187,7 @@ mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
 
 RD=images/ramdisk_2.6.16.img
-dd if=/dev/zero of=${RD} bs=1k count=12288 >/dev/null 2>&1
-mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
-MNT_DIR=/tmp/mnt_rd
-mkdir -p ${MNT_DIR}
-mount -o loop ${RD} ${MNT_DIR}
-cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/
-# Ensure essential directories and device nodes exist in mounted ramdisk as root
-ensure_rootfs_dirs "${MNT_DIR}"
-create_device_nodes "${MNT_DIR}/dev"
-umount ${MNT_DIR}
-rmdir ${MNT_DIR}
+mke2fs -d ${ROOTFS_DIR} -F -b 1024 -m 0 ${RD} 12288
 
 echo "--> Compressing ramdisk image with LZMA..."
 lzma -f -z ${RD}

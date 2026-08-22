@@ -1,0 +1,320 @@
+﻿¿Templates.1,Wersja oprogramowania sprzętowego:
+Templates.2,Dwupasmowa karta sieciowa do gier i wideo Wireless-N
+Templates.WES610N,Dwupasmowy przełącznik Ethernet Wireless-N
+mainmenu.1,Bezprzewodowa
+mainmenu.2,Konfiguracja
+mainmenu.3,Administracja
+mainmenu.4,Stan
+mainmenutitle.1,Bezprzewodowa
+mainmenutitle.2,Konfiguracja
+mainmenutitle.3,Administracja
+mainmenutitle.4,Stan
+mainmenutitle.5,Zaawansowane
+adm.submenu.1,Zarządzanie
+adm.submenu.2,Domyślne ustawienia fabryczne
+adm.submenu.3,Uaktualnienie oprogramowania sprzętowego
+adm.waitpage.title,Ponowne uruchomienie systemu
+adm.man.title,Zarządzanie
+adm.man.0,Język
+adm.man.0-1,Wybierz język:
+adm.man.1,Dostęp do mostu
+adm.man.1-1,Hasło mostu:
+adm.man.1-2,Wprowadź ponownie, aby potwierdzić:
+adm.man.1-3,Czas bezczynności:
+adm.man.1-4,(60-3600 sek.)
+adm.man.2,Dostęp do zarządzania lokalnego
+adm.man.2-1,Dostęp za pośrednictwem sieci bezprzewodowej:
+adm.man.2-2,Włączony
+adm.man.2-3,Wyłączony
+adm.man.3,Tworzenie i przywracanie kopii zapasowych
+adm.man.3-1,Kopie zapasowe:
+adm.man.3-2,Konfiguracje kopii zapasowych
+adm.man.3-3,Przywracanie:
+adm.man.3-4,Przywracanie konfiguracji
+adm.man.4,Ponowne uruchomienie systemu
+adm.man.4-1,Ponowne uruchomienie:
+adm.man.4-2,Rozpocznij ponowne uruchomienie
+adm.man.save,Zapisz ustawienia
+adm.man.cancel,Anuluj zmiany
+adm.man.alert.1,Wybierz plik konfiguracji, który ma być przywrócony.
+adm.man.alert.2,Długość hasła nie może przekraczać 64 znaków!
+adm.man.alert.3,Pola Hasło oraz Sprawdź hasło nie zgadzają się. Ponownie potwierdź hasło administratora.
+adm.man.alert.4,Czas bezczynności musi być dłuższy niż 60 sekund i krótszy niż 3600.
+adm.man.confirm.1,Czy na pewno ponownie uruchomić urządzenie?
+adm.fd.title,Domyślne ustawienia fabryczne
+adm.fd.1,Przywróć wszystkie ustawienia
+adm.fd.confirm.1,Ostrzeżenie! Jeżeli klikniesz przycisk OK, urządzenie powróci do domyślnych ustawień fabrycznych, a wszystkie poprzednie ustawienia zostaną usunięte.
+adm.fu.title,Uaktualnienie oprogramowania sprzętowego
+adm.fu.1,Wybierz plik, aby zaktualizować oprogramowanie sprzętowe:
+adm.fu.2,Rozpocznij aktualizację
+adm.fu.3,Ostrzeżenie:
+adm.fu.4,Aktualizacja oprogramowania sprzętowego może zająć kilkanaście minut. Nie wyłączaj 
+adm.fu.5,zasilania ani nie naciskaj przycisku resetowania.
+adm.fu.6,NIE wolno przerywać procesu aktualizacji!
+adm.fu.alert.1,Rezygnacja: (nie można utworzyć wystąpienia XMLHTTP
+adm.fu.alert.2,Wystąpił problem z żądaniem.
+adm.fu.alert.3,Ten plik obrazu jest nieprawidłowy.
+nets.submenu.1,Podstawowa konfiguracja
+nets.bns.title,Konfiguracja sieci
+nets.bns.nct.1,Adres IP mostu
+nets.bns.nct.1-1,Automatyczna konfiguracja — DHCP
+nets.bns.nct.1-2,Statyczny adres IP
+nets.bns.nct.1-3,Nazwa hosta:
+nets.bns.nct.1-4,Statyczny adres IP:
+nets.bns.nct.1-5,Maska podsieci:
+nets.bns.nct.1-6,Brama domyślna:
+nets.bns.nct.save,Zapisz ustawienia
+nets.bns.nct.cancel,Anuluj zmiany
+nets.bns.check.1,Adres IP sieci
+nets.bns.check.2,Maska podsieci
+nets.bns.check.3,Brama domyślna
+status.submenu.1,Most
+status.submenu.2,Sieć bezprzewodowa
+status.submenu.3,Informacje
+status.b.1,Informacje o moście
+status.b.1-1,Wersja oprogramowania sprzętowego:
+status.b.2,Sieć lokalna
+status.b.2-1,Lokalny adres MAC:
+status.b.2-2,Adres IP mostu:
+status.b.2-3,Maska podsieci:
+status.b.2-4,Brama domyślna:
+status.wn.1,Sieć bezprzewodowa
+status.wn.1-1,Status łącza:
+status.wn.1-2,Adres MAC:
+status.wn.1-3,Nazwa sieciowa (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Pasmo radiowe:
+status.wn.1-6,Zasięg kanału:
+status.wn.1-7,Kanał dla całej sieci:
+status.wn.1-8,Kanał standardowy:
+status.wn.1-9,Przepływność:
+status.wn.1-10,Sygnał:
+status.wn.1-11,Zabezpieczenia:
+status.wait,Czekaj 
+status.a.title,Informacje
+status.a.1,Serwer sieci Web
+status.a.1-1,W oparciu o:
+w.submenu.1,Podstawowe ustawienia sieci bezprzewodowej
+w.submenu.2,Planowanie sieci bezprzewodowej
+w.submenu.3,WMM®
+w.submenu.4,Zaawansowane ustawienia sieci bezprzewodowej
+w.bws.1,Podstawowe ustawienia sieci bezprzewodowej
+w.bws.1-1,Widok konfiguracji:
+w.bws.1-2,Ręcznie
+w.bws.1-3,Wi-Fi Protected Setup (Chroniona konfiguracja sieci Wi-Fi)
+w.bws.1-4,Pasmo częstotliwości:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Oba
+w.bws.1-8,Nazwa sieciowa (SSID):
+w.bws.2,Zabezpieczenia sieci bezprzewodowej
+w.bws.2-1,Rodzaj zabezpieczenia:
+w.bws.2-2,Wyłączony
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Szyfrowanie:
+w.bws.2-7,104/128-bitowe (26 cyfr szesnastkowe)
+w.bws.2-8,40/64-bitowe (10 cyfr szesnastkowych)
+w.bws.2-9,Hasło:
+w.bws.2-10,Klucz 1:
+w.bws.2-11,Klucz 2:
+w.bws.2-12,Klucz 3:
+w.bws.2-13,Klucz 4:
+w.bws.2-14,Klucz Tx:
+w.bws.2-15,Klucz 1
+w.bws.2-16,Uwierzytelnianie:
+w.bws.2-17,Otwórz
+w.bws.2-18,Udostępnione
+w.bws.2-19,Automatycznie
+w.bws.2-20,Szyfrowanie:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP lub AES
+w.bws.2-24,Hasło:
+w.bws.2-25,Wi-Fi Protected Setup (Chroniona konfiguracja sieci Wi-Fi)
+w.bws.2-26,Jeżeli twój router (lub punkt dostępowy) obsługuje Wi-Fi Protected Setup, użyj jednej z następujących metod:
+w.bws.2-27,1. Jeśli router jest wyposażony w przycisk Wi-Fi Protected Setup, kliknij go lub przyciśnij, a następnie kliknij przycisk po prawej stronie.
+w.bws.2-28,LUB
+w.bws.2-29,2. W przypadku żądania podania numeru PIN urządzenia klienta wprowadź ten numer
+w.bws.2-30,w routerze, a następnie kliknij
+w.bws.2-31,Status łącza:
+w.bws.2-32,Rozłączone
+w.bws.2-33,Nazwa sieciowa (SSID):
+w.bws.2-34,Zabezpieczenia:
+w.bws.save,Zapisz ustawienia
+w.bws.cancel,Anuluj zmiany
+w.bws.alert.1,Podaj 10 znaków szesnastkowych klucza
+w.bws.alert.2,Podaj 26 znaków szesnastkowych klucza
+w.bws.asp.1,Połącz z
+w.bws.asp.2,Czekaj 
+w.bws.asp.3,Uruchomiono Wi-Fi Protected Setup
+w.bws.asp.4,Czekaj
+w.bws.asp.5,Zresetowano Wi-Fi Protected Setup Czekaj, to może potrwać kilka sekund.
+w.bws.asp.6,Zakończono WPS…
+w.bws.asp.7,[Działa]
+w.bws.asp.8,PRZYKŁAD
+w.bws.asp.9,Zapisano ustawienia. Czekaj.
+w.bws.asp.10,Gratulujemy!
+w.bws.asp.11,Udało się nawiązać połączenie z SSID:
+w.bws.asp.12,Wyszukiwanie routera (lub punktu dostępowego).
+w.bws.asp.13,Proszę czekać…
+w.bws.asp.14,Jeżeli nie kliknąłeś jeszcze przycisku Wi-Fi Protected Setup na routerze (lub punkcie dostępowym), zrób to teraz.
+w.bws.asp.15,Numer PIN twojego mostu to:
+w.bws.asp.16,Wyszukiwanie routera (lub punktu dostępowego).
+w.bws.asp.17,Proszę czekać…
+w.bws.asp.18,Działa
+w.bws.asp.19,Błąd
+w.bws.asp.20,OK
+w.bws.asp.21,Samodzielny wybór punktu dostępowego
+w.bws.asp.22,Błąd: nakładanie.
+w.bws.asp.23,Błąd: błąd kodu PIN.
+w.bws.asp.24,Stan oczekiwania
+w.bws.asp.25,Limit czasu
+w.bws.asp.26,Oczekiwanie na połączenia przychodzące…
+w.bws.asp.27,Zostaną wyszukane punkty dostępowe
+w.bws.asp.28,Zarejestruj w stacji przychodzącej…
+w.bws.asp.29,Zarejestruj w punkcie dostępowym…
+w.bws.asp.30,Połącz ze stacją…
+w.bws.asp.31,Połącz z punktem dostępowym…
+w.bws.js.1,Błąd połączenia!
+w.bws.js.2,Nie udało się połączyć mostu bezprzewodowego z routerem (lub punktem dostępowym).
+w.bws.js.3,Wróć do routera i spróbuj ponownie.
+w.bws.js.4,Po zakończeniu proszę czekać…
+w.bws.js.5,Zamknij
+w.bws.js.6,Urządzenie nie może pobrać bieżącego adresu IP, spróbuj znaleźć go w punkcie dostępowym!
+w.wnss.1,Planowanie sieci bezprzewodowej
+w.wnss.1-1,Odśwież
+w.wnss.1-2,Połącz
+w.wnss.2,Zabezpieczenia sieci bezprzewodowej
+w.wnss.2-1,Nazwa sieciowa (SSID):
+w.wnss.2-2,Rodzaj zabezpieczenia:
+w.wnss.2-3,Szyfrowanie:
+w.wnss.2-4,104/128-bitowe (26 cyfr szesnastkowe)
+w.wnss.2-5,40/64-bitowe (10 cyfr szesnastkowych)
+w.wnss.2-6,Hasło:
+w.wnss.2-7,Klucz 1:
+w.wnss.2-8,Klucz 2:
+w.wnss.2-9,Klucz 3:
+w.wnss.2-10,Klucz 4:
+w.wnss.2-11,Klucz Tx:
+w.wnss.2-12,Klucz 1
+w.wnss.2-13,Uwierzytelnianie:
+w.wnss.2-14,Otwórz
+w.wnss.2-15,Udostępnione
+w.wnss.2-16,Automatycznie
+w.wnss.2-17,Szyfrowanie:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP lub AES
+w.wnss.2-21,Hasło:
+w.wnss.2-22,Odśwież
+w.wnss.2-23,Połącz
+w.wnss.2-24,Liczba sieci bezprzewodowych:
+w.wnss.2-25,Wybierz opcję
+w.wnss.2-26,Nazwa sieci bezprzewodowej
+w.wnss.2-27,GHz
+w.wnss.2-28,Sygnał
+w.wnss.2-29,Zabezpieczenia
+w.wnss.2-30,Wyłączony
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA-Personal
+w.wnss.2-33,WPA-Enterprise
+w.wnss.alert.1,Nie można pobrać trybu.
+w.wnss.alert.2,Podaj 10 znaków szesnastkowych klucza
+w.wnss.alert.3,Podaj 26 znaków szesnastkowych klucza
+w.wnss.alert.4,Wybierz jeden punkt dostępowy/router, z którym chcesz się połączyć, i ponownie naciśnij Connect.
+w.wnss.alert.5,Tryb zabezpieczeń WPA-Enterprise nie jest obsługiwany!
+w.wnss.alert.6,Tryb zabezpieczeń WPA2-Enterprise nie jest obsługiwany!
+w.wnss.alert.7,Tryb zabezpieczeń WPA2-Enterprise nie jest obsługiwany!
+w.wmm.title,WMM®
+w.wmm.1,Tryb dostępu
+w.wmm.1-1,Tło
+w.wmm.1-2,Najlepsza wartość
+w.wmm.1-3,Filmy
+w.wmm.1-4,Głos
+w.wmm.1-5,Użyj agregacji:
+w.wmm.1-6,Nie
+w.wmm.1-7,Tak
+w.wmm.1-8,Akceptuj agregację:
+w.wmm.1-9,Nie
+w.wmm.1-10,Tak
+w.wmm.1-11,Max. liczba pakietów w agregacji:
+w.wmm.1-12,Max. rozmiar agregacji:
+w.wmm.1-13,Interwał limitu czasu:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Min. rozmiar pakietów w agregacji:
+w.wmm.1-15,Limit czasu ADDBA:
+w.wmm.1-16,Rozmiar okna agregacji:
+w.wmm.1-17,Min. CW dla STA:
+w.wmm.1-18,Maks. CW dla STA:
+w.wmm.1-19,AIFSN dla STA:
+w.wmm.1-20,TXOP dla STA:
+w.wmm.1-21,Min. CW dla AP:
+w.wmm.1-22,Maks. CW dla AP:
+w.wmm.1-23,AIFSN dla AP:
+w.wmm.1-24,TXOP dla AP:
+w.wmm.save,Zapisz ustawienia
+w.wmm.cancel,Anuluj zmiany
+w.wmm.alert.1,Nie można pobrać trybu.
+w.wmm.alert.2,Maks. łączna suma pakietów musi się mieścić w zakresie
+w.wmm.alert.3,Maks. łączna suma pakietów musi się mieścić w zakresie
+w.wmm.alert.4,Maks. łączna suma pakietów musi się mieścić w zakresie
+w.wmm.alert.5,Maks. łączny rozmiar musi się mieścić w zakresie
+w.wmm.alert.6,Maks. łączny rozmiar musi się mieścić w zakresie
+w.wmm.alert.7,Maksymalny łączny rozmiar musi się mieścić w zakresie następujących wartości:
+w.wmm.alert.8,Min. rozmiar pakietu w agregacji musi się mieścić między 0 a 1500!
+w.wmm.alert.9,Wartość limitu czasu ADDBA musi się mieścić między 0 a 65535!
+w.wmm.alert.10,Rozmiar okna agregacji musi się mieścić między 0 a 64!
+w.wmm.alert.11,Wartość interwału limitu czasu musi się mieścić w zakresie
+w.aws.title,Zaawansowane ustawienia sieci bezprzewodowej
+w.aws.1,Użyj wykrywania radarowego:
+w.aws.2,Nie
+w.aws.3,Tak
+w.aws.4,Lista kanałów ograniczonych AOCS:
+w.aws.5,Użyj LDPC:
+w.aws.6,Nie
+w.aws.7,Tak
+w.aws.8,Użyj ukrytego SSID:
+w.aws.9,Nie
+w.aws.10,Tak
+w.aws.11,Rodzaj ochrony ERP:
+w.aws.12,Brak
+w.aws.13,RTS/CTS
+w.aws.14,CTS2Self
+w.aws.15,Użyj nakładanej ochrony BSS:
+w.aws.16,Nie
+w.aws.17,Tak
+w.aws.18,Rodzaj ochrony 11n:
+w.aws.19,Brak
+w.aws.20,RTS/CTS
+w.aws.21,CTS2Self
+w.aws.22,Włącz przekazywanie AP:
+w.aws.23,Nie
+w.aws.24,Tak
+w.aws.25,Użyj niezawodnego multicast:
+w.aws.26,Nie
+w.aws.27,Tak
+w.aws.28,Użyj STBC:
+w.aws.29,Nie
+w.aws.30,Tak
+w.aws.31,Procent maksymalnej mocy nadawania:
+w.aws.32,Rodzaj klasyfikacji QoS:
+w.aws.38,Ponownie nawiąż połączenie Ethernet podczas inicjalizacji połączenia bezprzewodowego:
+w.aws.save,Zapisz ustawienia
+w.aws.cancel,Anuluj zmiany
+func.js.1,Przetwarzanie, proszę czekać......
+func.js.2,Ponowne uruchamianie, proszę czekać......
+u-media.js.1,Długość SSID nie może przekraczać 32 znaków!
+u-media.js.2,Hasło klucza musi zawierać od 8 do 63 znaków ASCII.
+u-media.js.3-1,Błąd.
+u-media.js.3-2, jest pusty!
+u-media.js.4-1,Zostanie wyświetlony ekran 
+u-media.js.4-2,powinno być numerem [0-9].
+u-media.js.5,Zostanie wyświetlony ekran 
+u-media.js.6,Rezygnacja: (nie można utworzyć wystąpienia XMLHTTP
+u-media.js.7,Podaj 64 znaki szesnastkowe klucza pre-shared!
+u-media.js.8,Klucz hasła musi się składać z 8-63 znaków ASCII!
+adm.waitpage.1,Przetwarzane
+w.bws.2-35,Połączono
+HT.confirm,OSTRZEŻENIE: Przy wybranym rodzaju szyfrowania Twoje urządzenia Wireless-N będą funkcjonować z prędkością przesyłu danych odpowiadającą standardowi Wireless-G. Jeżeli chcesz, aby urządzenia Wireless-N działały z pełną prędkością przesyłu danych wybierz szyfrowanie WPA2-Personal. Kliknij OK, aby zachować dokonany wybór i kontynuować, albo Anuluj, aby wybrać inny rodzaj szyfrowania.

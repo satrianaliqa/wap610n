@@ -1,0 +1,1 @@
+reloadParamFromConfig("NonProc_ESSID","NonProc_WPA_Personal_PSK","NonProcSecurityMode","Wildcard_ESSID","unconfigured","WepKeys_DefaultKey0","NonProc_WepKeyLength","NonProc_Authentication");

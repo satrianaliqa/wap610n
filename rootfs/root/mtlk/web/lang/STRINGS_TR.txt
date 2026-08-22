@@ -1,0 +1,320 @@
+﻿¿Templates.1,Bellenim Sürümü:
+Templates.2,Dual-Band Kablosuz-N Oyun ve Video Adaptörü
+Templates.WES610N,Dual-Bant Kablosuz-N Ethernet Anahtarı
+mainmenu.1,Kablosuz
+mainmenu.2,Kurulum
+mainmenu.3,Yönetim
+mainmenu.4,Durum
+mainmenutitle.1,Kablosuz
+mainmenutitle.2,Kurulum
+mainmenutitle.3,Yönetim
+mainmenutitle.4,Durum
+mainmenutitle.5,Gelişmiş
+adm.submenu.1,Yönetim
+adm.submenu.2,Fabrika Varsayılanları
+adm.submenu.3,Bellenim Yükseltme
+adm.waitpage.title,Sistemi Yeniden Başlat
+adm.man.title,Yönetim
+adm.man.0,Dil
+adm.man.0-1,Dili seçin:
+adm.man.1,Köprü Erişimi
+adm.man.1-1,Köprü Parolası:
+adm.man.1-2,Onaylamak için yeniden girin:
+adm.man.1-3,Boşta Zamanaşımı:
+adm.man.1-4,(60-3600 saniye)
+adm.man.2,Yerel Yönetim Erişimi
+adm.man.2-1,Kablosuz Erişim:
+adm.man.2-2,Etkin
+adm.man.2-3,Devre Dışı
+adm.man.3,Yedekle ve Geri Yükle
+adm.man.3-1,Yedekle:
+adm.man.3-2,Yapılandırmaları Yedekle
+adm.man.3-3,Geri Yükle:
+adm.man.3-4,Yapılandırmaları Geri Yükle
+adm.man.4,Sistemi Yeniden Başlat
+adm.man.4-1,Yeniden Başlat:
+adm.man.4-2,Yeniden Başlat
+adm.man.save,Ayarları Kaydet
+adm.man.cancel,Değişiklikleri İptal Et
+adm.man.alert.1,Lütfen geri yüklemek için bir yapılandırma dosyası seçin.
+adm.man.alert.2,Parola 64 karakterden uzun olamaz!
+adm.man.alert.3,Parola ve Parola Onayı aynı değil. Lütfen yönetici parolasını yeniden onaylayın.
+adm.man.alert.4,Boşta Zamanaşımı süresi 60 saniyeden büyük ve 3600 saniyeden küçük olmalıdır.
+adm.man.confirm.1,Aygıtı yeniden başlatmak istediğinizden emin misiniz?
+adm.fd.title,Fabrika Varsayılanları
+adm.fd.1,Tüm Ayarları Geri Yükle
+adm.fd.confirm.1,Uyarı! Tamam'ı tıklatırsanız, aygıt fabrika varsayılanlarına sıfırlanacak ve önceki tüm ayarlar silinecektir.
+adm.fu.title,Bellenim Yükseltme
+adm.fu.1,Lütfen bellenimi yükseltmek için bir dosya seçin:
+adm.fu.2,Yükseltmeye Başlat
+adm.fu.3,Uyarı:
+adm.fu.4,Bellenimin yükseltilmesi birkaç dakika sürebilir. Lütfen 
+adm.fu.5,gücü kapatmayın veya sıfırlama düğmesine basmayın.
+adm.fu.6,Yükseltme DURDURULMAMALIDIR !!
+adm.fu.alert.1,Vaz geçiliyor :( Bir XMLHTTP kopyası oluşturulamıyor
+adm.fu.alert.2,İstekte bir sorun var.
+adm.fu.alert.3,Bu resim dosyası hatalı.
+nets.submenu.1,Temel Kurulum
+nets.bns.title,Ağ Kurulumu
+nets.bns.nct.1,Köprü IP'si
+nets.bns.nct.1-1,Otomatik Yapılandırma - DHCP
+nets.bns.nct.1-2,Statik IP
+nets.bns.nct.1-3,Ana Makine Adı:
+nets.bns.nct.1-4,Statik IP Adresi:
+nets.bns.nct.1-5,Alt Ağ Maskesi:
+nets.bns.nct.1-6,Varsayılan Ağ Geçidi:
+nets.bns.nct.save,Ayarları Kaydet
+nets.bns.nct.cancel,Değişiklikleri İptal Et
+nets.bns.check.1,Ağ IP Adresi
+nets.bns.check.2,Alt Ağ Maskesi
+nets.bns.check.3,Varsayılan Ağ Geçidi
+status.submenu.1,Köprü
+status.submenu.2,Kablosuz Ağ
+status.submenu.3,Hakkında
+status.b.1,Köprü Bilgileri
+status.b.1-1,Bellenim Sürümü:
+status.b.2,Yerel Ağ
+status.b.2-1,Yerel MAC Adresi:
+status.b.2-2,Köprü IP Adresi:
+status.b.2-3,Alt Ağ Maskesi:
+status.b.2-4,Varsayılan Ağ Geçidi:
+status.wn.1,Kablosuz Ağ
+status.wn.1-1,Bağlantı Durumu:
+status.wn.1-2,MAC Adresi:
+status.wn.1-3,Ağ Adı (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Radyo Bandı:
+status.wn.1-6,Kanal Genişliği:
+status.wn.1-7,Geniş Kanal:
+status.wn.1-8,Standart Kanal:
+status.wn.1-9,Veri Hızı:
+status.wn.1-10,Sinyal:
+status.wn.1-11,Güvenlik:
+status.wait,Lütfen bekleyin 
+status.a.title,Hakkında
+status.a.1,Web Sunucusu
+status.a.1-1,Destekleyen:
+w.submenu.1,Temel Kablosuz Ayarları
+w.submenu.2,Kablosuz Ağ Yer Araştırması
+w.submenu.3,WMM®
+w.submenu.4,Gelişmiş Kablosuz Ayarları
+w.bws.1,Temel Kablosuz Ayarları
+w.bws.1-1,Yapılandırma Ekranı:
+w.bws.1-2,El ile
+w.bws.1-3,Wi-Fi Korumalı Kurulum
+w.bws.1-4,Frekans Bandı:
+w.bws.1-5,5 GHz
+w.bws.1-6,2.4 GHz
+w.bws.1-7,Her İkisi
+w.bws.1-8,Ağ Adı (SSID):
+w.bws.2,Kablosuz Güvenliği
+w.bws.2-1,Güvenlik Modu:
+w.bws.2-2,Devre Dışı
+w.bws.2-3,WEP
+w.bws.2-4,WPA Kişisel
+w.bws.2-5,WPA2 Kişisel
+w.bws.2-6,Şifreleme:
+w.bws.2-7,104 / 128-bit (26 onaltılık basamak)
+w.bws.2-8,40 / 64-bit (10 onaltılık basamak)
+w.bws.2-9,Parola:
+w.bws.2-10,Anahtar 1:
+w.bws.2-11,Anahtar 2:
+w.bws.2-12,Anahtar 3:
+w.bws.2-13,Anahtar 4:
+w.bws.2-14,Tx Anahtarı:
+w.bws.2-15,Anahtar 1
+w.bws.2-16,Kimlik Doğrulama:
+w.bws.2-17,Açık
+w.bws.2-18,Paylaşılmış
+w.bws.2-19,Otomatik
+w.bws.2-20,Şifreleme:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP veya AES
+w.bws.2-24,Parola:
+w.bws.2-25,Wi-Fi Korumalı Kurulum
+w.bws.2-26,Router'ınız (veya erişim noktanız) Wi-Fi Korumalı Kurulumu destekliyorsa, aşağıdaki yöntemlerden birini kullanın:
+w.bws.2-27,1. Router'ınızda Wi-Fi Korumalı Kurulum düğmesi bulunuyorsa bu düğmeye basın ve ardından sağdaki düğmeyi tıklatın.
+w.bws.2-28,YA DA
+w.bws.2-29,2. Router'ınız istemci aygıtının PIN numarasını soruyorsa, bu numarayı
+w.bws.2-30,router'ınıza girin ve daha sonra şunu tıklatın:
+w.bws.2-31,Bağlantı Durumu:
+w.bws.2-32,Bağlı Değil
+w.bws.2-33,Ağ Adı (SSID):
+w.bws.2-34,Güvenlik:
+w.bws.save,Ayarları Kaydet
+w.bws.cancel,Değişiklikleri İptal Et
+w.bws.alert.1,Lütfen 10 Onaltılı anahtar karakterini girin
+w.bws.alert.2,Lütfen 26 Onaltılı anahtar karakterini girin
+w.bws.asp.1,Bağlanma yöntemi:
+w.bws.asp.2,Lütfen bekleyin 
+w.bws.asp.3,Wi-Fi Korumalı Kurulum başlatıldı
+w.bws.asp.4,Lütfen bekleyin
+w.bws.asp.5,Wi-Fi Korumalı Kurulum sıfırlandı. Lütfen bekleyin, bu işlem birkaç saniye sürebilir.
+w.bws.asp.6,WPS bitti …
+w.bws.asp.7,[Çalışıyor]
+w.bws.asp.8,ÖRNEK
+w.bws.asp.9,Ayarlar kaydedildi. Lütfen bekleyin.
+w.bws.asp.10,Tebrikler!
+w.bws.asp.11,SSID'ye başarıyla bağlandınız:
+w.bws.asp.12,Router'ınız (veya erişim noktanız) aranıyor.
+w.bws.asp.13,Lütfen bekleyin…
+w.bws.asp.14,Router'ınızda (veya erişim noktanızda) Wi-Fi Korumalı Kurulum düğmesini tıklatmadıysanız, lütfen şimdi tıklatın.
+w.bws.asp.15,Köprünüzün PIN numarası:
+w.bws.asp.16,Router'ınız (veya erişim noktanız) aranıyor.
+w.bws.asp.17,Lütfen bekleyin…
+w.bws.asp.18,Çalışıyor
+w.bws.asp.19,Hata
+w.bws.asp.20,Tamam
+w.bws.asp.21,El ile AP seçimi
+w.bws.asp.22,Hata: çakışıyor.
+w.bws.asp.23,Hata: PIN kodu hatası.
+w.bws.asp.24,Bekleme durumu
+w.bws.asp.25,Zamanaşımı
+w.bws.asp.26,Gelen bağlantıları bekleniyor …
+w.bws.asp.27,AP'ler aranacak
+w.bws.asp.28,Gelen STA ile kaydol …
+w.bws.asp.29,AP ile kaydol …
+w.bws.asp.30,STA ile bağlan …
+w.bws.asp.31,AP ile bağlan …
+w.bws.js.1,Bağlantı Hatası!
+w.bws.js.2,Bu kablosuz köprü router'ınıza (veya bir erişim noktasına) bağlanamadı.
+w.bws.js.3,Router'ınızı kontrol edin ve yeniden deneyin.
+w.bws.js.4,Bitirdiğinizde, lütfen bekleyin …
+w.bws.js.5,Kapat
+w.bws.js.6,Aygıt geçerli IP adresini başarılı bir şekilde alamıyor, lütfen AP'de bulmayı deneyin!
+w.wnss.1,Kablosuz Ağ Yer Araştırması
+w.wnss.1-1,Yenile
+w.wnss.1-2,Bağlan
+w.wnss.2,Kablosuz Güvenliği
+w.wnss.2-1,Ağ Adı(SSID):
+w.wnss.2-2,Güvenlik Modu:
+w.wnss.2-3,Şifreleme:
+w.wnss.2-4,104 / 128-bit (26 onaltılık basamak)
+w.wnss.2-5,40 / 64-bit (10 onaltılık basamak)
+w.wnss.2-6,Parola:
+w.wnss.2-7,Anahtar 1:
+w.wnss.2-8,Anahtar 2:
+w.wnss.2-9,Anahtar 3:
+w.wnss.2-10,Anahtar 4:
+w.wnss.2-11,Tx Anahtarı:
+w.wnss.2-12,Anahtar 1
+w.wnss.2-13,Kimlik Doğrulama:
+w.wnss.2-14,Açık
+w.wnss.2-15,Paylaşılmış
+w.wnss.2-16,Otomatik
+w.wnss.2-17,Şifreleme:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP veya AES
+w.wnss.2-21,Parola:
+w.wnss.2-22,Yenile
+w.wnss.2-23,Bağlan
+w.wnss.2-24,Kablosuz Ağların Sayısı:
+w.wnss.2-25,Seç
+w.wnss.2-26,Kablosuz Ağ Adı
+w.wnss.2-27,GHz
+w.wnss.2-28,Sinyal
+w.wnss.2-29,Güvenlik
+w.wnss.2-30,Devre Dışı
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA-Kişisel
+w.wnss.2-33,WPA-Şirket
+w.wnss.alert.1,Moda geçilemiyor.
+w.wnss.alert.2,Lütfen 10 Onaltılı anahtar karakterini girin
+w.wnss.alert.3,Lütfen 26 Onaltılı anahtar karakterini girin
+w.wnss.alert.4,Lütfen bağlanmak istediğiniz bir AP'yi/Router'ı seçin ve Bağlan düğmesini yeniden tıklatın.
+w.wnss.alert.5,WPA-Şirket güvenlik modunu desteklemiyoruz!
+w.wnss.alert.6,WPA2-Şirket güvenlik modunu desteklemiyoruz!
+w.wnss.alert.7,WPA2-Şirket güvenlik modunu desteklemiyoruz!
+w.wmm.title,WMM®
+w.wmm.1,Erişim Modu
+w.wmm.1-1,Arka Plan
+w.wmm.1-2,En Yüksek Gayret
+w.wmm.1-3,Video
+w.wmm.1-4,Ses
+w.wmm.1-5,Biriktirme Kullan:
+w.wmm.1-6,Hayır
+w.wmm.1-7,Evet
+w.wmm.1-8,Biriktirme Kabul Et:
+w.wmm.1-9,Hayır
+w.wmm.1-10,Evet
+w.wmm.1-11,Maks. Biriktirme Paketlerinin Sayısı:
+w.wmm.1-12,Maks. Biriktirme Boyutu:
+w.wmm.1-13,Zamanaşımı Aralığı:
+w.wmm.1-13d,(0-100ms)
+w.wmm.1-14,Min. Biriktirme Paketlerinin Boyutu:
+w.wmm.1-15,ADDBA Zamanaşımı:
+w.wmm.1-16,Biriktirme Penceresi Boyutu:
+w.wmm.1-17,STA için CW min:
+w.wmm.1-18,STA için CW maks:
+w.wmm.1-19,STA için AIFSN:
+w.wmm.1-20,STA için TXOP:
+w.wmm.1-21,AP için CW min:
+w.wmm.1-22,AP için CW maks:
+w.wmm.1-23,AP için AIFSN:
+w.wmm.1-24,AP için TXOP:
+w.wmm.save,Ayarları Kaydet
+w.wmm.cancel,Değişiklikleri İptal Et
+w.wmm.alert.1,Moda geçilemiyor.
+w.wmm.alert.2,Maks. Biriktirme Paketleri Sayısı şu değerler arasında olmalıdır:
+w.wmm.alert.3,Maks. Biriktirme Paketleri Sayısı şu değerler arasında olmalıdır:
+w.wmm.alert.4,Maks. Biriktirme Paketleri Sayısı şu değerler arasında olmalıdır:
+w.wmm.alert.5,Maks. Biriktirme boyutu şu değerler arasında olmalıdır:
+w.wmm.alert.6,Maks. Biriktirme boyutu şu değerler arasında olmalıdır:
+w.wmm.alert.7,Biriktirme maksimum boyutu şu değerler arasında olmalıdır:
+w.wmm.alert.8,Min. Biriktirme paket boyutu 0 ile 1500 arasında olmalıdır!
+w.wmm.alert.9,ADDBA zamanaşımı değeri 0 ile 65535 arasında olmalıdır.
+w.wmm.alert.10,Biriktirme Penceresi Boyutu 0 ile 64 arasında olmalıdır !
+w.wmm.alert.11,Zamanaşımı Aralığı değeri şu değerler arasında olmalıdır:
+w.aws.title,Gelişmiş Kablosuz Ayarları
+w.aws.1,Radar Algılamasını Kullan:
+w.aws.2,Hayır
+w.aws.3,Evet
+w.aws.4,AOCS kısıtlı kanallarının listesi:
+w.aws.5,LDPC Kullan:
+w.aws.6,Hayır
+w.aws.7,Evet
+w.aws.8,Gizli SSID Kullan:
+w.aws.9,Hayır
+w.aws.10,Evet
+w.aws.11,ERP Koruma Türü:
+w.aws.12,Yok
+w.aws.13,RTS/CTS
+w.aws.14,CTS2Self
+w.aws.15,Çakışan BSS Korumasını Kullan:
+w.aws.16,Hayır
+w.aws.17,Evet
+w.aws.18,11n Koruma Türü:
+w.aws.19,Yok
+w.aws.20,RTS/CTS
+w.aws.21,CTS2Self
+w.aws.22,AP iletimini etkinleştir:
+w.aws.23,Hayır
+w.aws.24,Evet
+w.aws.25,Güvenilir çok noktaya yayını kullan:
+w.aws.26,Hayır
+w.aws.27,Evet
+w.aws.28,STBC Kullan:
+w.aws.29,Hayır
+w.aws.30,Evet
+w.aws.31,Maksimum Aktarım Gücü Yüzdesi:
+w.aws.32,QoS Sınıflantırma Türü:
+w.aws.38,Kablosuz Bağlantıyı Başlatırken Ethernet Bağlantısını Yeniden Kur:
+w.aws.save,Ayarları Kaydet
+w.aws.cancel,Değişiklikleri İptal Et
+func.js.1,İşleniyor, lütfen bekleyin......
+func.js.2,Yeniden başlatılıyor, lütfen bekleyin......
+u-media.js.1,SSID en fazla 32 karakter uzunluğunda olabilir!
+u-media.js.2,Parola 8 - 63 ASCII karakteri arasında olmalıdır.
+u-media.js.3-1,Hata
+u-media.js.3-2, boş!
+u-media.js.4-1, 
+u-media.js.4-2,[0-9] arasında bir rakam olmalıdır.
+u-media.js.5, 
+u-media.js.6,Vaz geçiliyor :( Bir XMLHTTP kopyası oluşturulamıyor
+u-media.js.7,Lütfen 64 Onaltılı karakter uzunluğunda ön paylaştırılmış anahtarı girin!
+u-media.js.8,Parola 8 ile 63 ASCII karakteri arasında olmalıdır!
+adm.waitpage.1,İşleniyor
+w.bws.2-35,Bağlı
+HT.confirm,UYARI: Kablosuz-N aygıtlarınız, seçtiğiniz şifreleme türüyle sadece Kablosuz-G veri hızlarında çalışır. Kablosuz-N aygıtlarınızın tam veri hızlarında çalışmasını istiyorsanız, WPA2-Kişisel şifreleme yöntemini seçin. Bu seçimi korumak için Tamam'ı veya başka bir şifreleme türü seçmek için İptal'i tıklatın.

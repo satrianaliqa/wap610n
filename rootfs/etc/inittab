@@ -39,6 +39,9 @@
 ttyS0::askfirst:-/bin/sh
 console::askfirst:-/bin/sh
 
+# Automatically respawn GoAhead Web Server if it crashes or restarts
+::respawn:/root/mtlk/web/run_webs.sh
+
 # Logging junk
 #null::sysinit:/bin/touch /var/log/messages
 #null::respawn:/sbin/syslogd -n -m 0

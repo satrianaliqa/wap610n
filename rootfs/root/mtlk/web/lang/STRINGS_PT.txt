@@ -1,0 +1,318 @@
+Templates.1,Versão do firmware:
+Templates.2,Adaptador de vídeo para jogos Sem fios N com dual band
+Templates.WES610N,Switch Ethernet Sem Fios N com dual band
+mainmenu.1,Sem fios
+mainmenu.2,Configurar
+mainmenu.3,Administração
+mainmenu.4,Estado
+mainmenutitle.1,Sem fios
+mainmenutitle.2,Configurar
+mainmenutitle.3,Administração
+mainmenutitle.4,Estado
+mainmenutitle.5,Avançadas
+adm.submenu.1,Gestão
+adm.submenu.2,Predefinições de fábrica
+adm.submenu.3,Actualização do firmware
+adm.waitpage.title,Reinicialização do sistema
+adm.man.title,Gestão
+adm.man.0,Idioma
+adm.man.0-1,Seleccione o idioma:
+adm.man.1,Acesso à ponte
+adm.man.1-1,Palavra-passe
+adm.man.1-2,Introduza novamente para confirmar:
+adm.man.1-3,Tempo limite de inactividade:
+adm.man.1-4,(60-3600 segundos)
+adm.man.2,Acesso de gestão local
+adm.man.2-1,Acesso sem fios
+adm.man.2-2,Activado
+adm.man.2-3,Desactivado
+adm.man.3,Cópia de segurança e restauro
+adm.man.3-1,Cópia de segurança:
+adm.man.3-2,Cópia de segurança de configurações
+adm.man.3-3,Restaurar:
+adm.man.3-4,Restaurar configurações
+adm.man.4,Reinicialização do sistema
+adm.man.4-1,Reiniciar:
+adm.man.4-2,Iniciar a reinicialização
+adm.man.save,Guardar definições
+adm.man.cancel,Cancelar alterações
+adm.man.alert.1,Seleccione um ficheiro de configuração para restaurar.
+adm.man.alert.2,A palavra-passe não pode ter mais de 64 caracteres!
+adm.man.alert.3,Os campos Palavra-passe e Verificar palavra-passe não correspondem. Confirme novamente a palavra-passe de administração.
+adm.man.alert.4,O Tempo limite de inactividade tem de ser superior a 60 segundos e inferior a 3600 segundos.
+adm.man.confirm.1,Tem a certeza de que pretende reiniciar o dispositivo?
+adm.fd.title,Predefinições de fábrica
+adm.fd.1,Restaurar todas as definições
+adm.fd.confirm.1,Aviso! Se clicar em OK, as predefinições de fábrica do dispositivo serão repostas e todas as definições anteriores serão apagadas.
+adm.fu.title,Actualização do firmware
+adm.fu.1,Seleccione um ficheiro para actualizar o firmware:
+adm.fu.2,Iniciar actualização
+adm.fu.3,Aviso:
+adm.fu.4,A actualização do firmware pode demorar alguns minutos; não desligue
+adm.fu.5,a alimentação nem prima o botão de reposição.
+adm.fu.6,A actualização NÃO pode ser interrompida!
+adm.fu.alert.1,A desistir. Não é possível criar uma instância de XMLHTTP
+adm.fu.alert.2,Houve um problema com o pedido.
+adm.fu.alert.3,Este ficheiro de imagem é incorrecto.
+nets.submenu.1,Configuração básica
+nets.bns.title,Configuração básica
+nets.bns.nct.1,IP da ponte
+nets.bns.nct.1-1,Configuração automática - DHCP
+nets.bns.nct.1-2,IP estático
+nets.bns.nct.1-3,Nome do sistema anfitrião:
+nets.bns.nct.1-4,Endereço IP estático:
+nets.bns.nct.1-5,Máscara de sub-rede:
+nets.bns.nct.1-6,Gateway predefinido:
+nets.bns.nct.save,Guardar definições
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Endereço IP da rede
+nets.bns.check.2,Máscara de sub-rede
+nets.bns.check.3,Gateway predefinido
+status.submenu.1,Ponte
+status.submenu.2,Rede sem fios
+status.submenu.3,Acerca de
+status.b.1,Informações da ponte
+status.b.1-1,Versão do firmware:
+status.b.2,Rede local
+status.b.2-1,Endereço MAC local:
+status.b.2-2,Endereço IP da ponte:
+status.b.2-3,Máscara de sub-rede:
+status.b.2-4,Gateway predefinido:
+status.wn.1,Rede sem fios
+status.wn.1-1,Estado da ligação:
+status.wn.1-2,Endereço MAC:
+status.wn.1-3,Nome da rede (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Banda de rádio:
+status.wn.1-6,Largura do canal:
+status.wn.1-7,Canal de banda larga:
+status.wn.1-8,Canal padrão:
+status.wn.1-9,Velocidade de bits:
+status.wn.1-10,Sinal:
+status.wn.1-11,Segurança:
+status.wait,Aguarde
+status.a.title,Acerca de
+status.a.1,Servidor Web
+status.a.1-1,Powered By:
+w.submenu.1,Definições sem fios básicas
+w.submenu.2,Pesquisa de sites de redes sem fios
+w.submenu.3,WMM®
+w.submenu.4,Definições sem fios avançadas
+w.bws.1,Definições sem fios básicas
+w.bws.1-1,Vista da configuração:
+w.bws.1-2,Manual
+w.bws.1-3,Wi-Fi Protected Setup
+w.bws.1-4,Banda de frequências:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Ambos
+w.bws.1-8,Nome da rede (SSID):
+w.bws.2,Segurança sem fios
+w.bws.2-1,Modo de segurança:
+w.bws.2-2,Desactivado
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Encriptação:
+w.bws.2-7,104/128 bits (26 dígitos hexadecimais)
+w.bws.2-8,40/64 bits (10 dígitos hexadecimais)
+w.bws.2-9,Frase-passe:
+w.bws.2-10,Chave 1:
+w.bws.2-11,Chave 2:
+w.bws.2-12,Chave 3:
+w.bws.2-13,Chave 4:
+w.bws.2-14,Chave TX:
+w.bws.2-15,Chave 1
+w.bws.2-16,Autenticação:
+w.bws.2-17,Aberto
+w.bws.2-18,Partilhada
+w.bws.2-19,Automático
+w.bws.2-20,Encriptação:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP ou AES
+w.bws.2-24,Frase-passe:
+w.bws.2-25,Wi-Fi Protected Setup
+w.bws.2-26,Utilize um dos seguintes métodos se o router (ou ponto de acesso) suportar Wi-Fi Protected Setup:
+w.bws.2-27,1. Se o router tiver um botão Wi-Fi Protected Setup, clique ou prima esse botão e, em seguida, clique no botão à direita.
+w.bws.2-28,OU
+w.bws.2-29,2. Se o router pedir o número PIN do dispositivo cliente, introduza o número
+w.bws.2-30,no router e, em seguida, clique em
+w.bws.2-31,Estado da ligação:
+w.bws.2-32,Desligado
+w.bws.2-33,Nome da rede (SSID):
+w.bws.2-34,Segurança:
+w.bws.save,Guardar definições
+w.bws.cancel,Cancelar alterações
+w.bws.alert.1,Introduza uma chave com 10 caracteres hexadecimais 
+w.bws.alert.2,Introduza uma chave com 26 caracteres hexadecimais 
+w.bws.asp.1,A ligar a
+w.bws.asp.2,Aguarde
+w.bws.asp.3,A inicializar Wi-Fi Protected Setup
+w.bws.asp.4,Aguarde
+w.bws.asp.5,A repor Wi-Fi Protected Setup. Aguarde; esta operação poderá demorar alguns segundos
+w.bws.asp.6,WPS a parar....
+w.bws.asp.7,[Em curso]
+w.bws.asp.8,FICTÍCIO
+w.bws.asp.9,A guardar definições. Aguarde
+w.bws.asp.10,Parabéns!
+w.bws.asp.11,Estabeleceu com êxito a ligação ao SSID:
+w.bws.asp.12,A procurar o router (ou ponto de acesso).
+w.bws.asp.13,Aguarde...
+w.bws.asp.14,Se não clicou no botão Wi-Fi Protected Setup no router (ou ponto de acesso), faça-o agora.
+w.bws.asp.15,O número PIN da ponte é:
+w.bws.asp.16,A procurar o router (ou ponto de acesso).
+w.bws.asp.17,Aguarde...
+w.bws.asp.18,Em curso
+w.bws.asp.19,Erro
+w.bws.asp.20,OK
+w.bws.asp.21,Selecção manual do PA
+w.bws.asp.22,Erro; ocorreu uma sobreposição.
+w.bws.asp.23,Erro do código PIN.
+w.bws.asp.24,Estado de espera
+w.bws.asp.25,Tempo limite
+w.bws.asp.26,A escutar ligações de recepção
+w.bws.asp.27,A procurar PAs
+w.bws.asp.28,A registar no STA de recepção
+w.bws.asp.29,A registar no PA
+w.bws.asp.30,A ligar ao STA
+w.bws.asp.31,A ligar ao PA
+w.bws.js.1,Falha na ligação!
+w.bws.js.2,Esta ponte sem fios não conseguiu estabelecer ligação ao router (ou ponto de acesso).
+w.bws.js.3,Volte ao router e tente novamente.
+w.bws.js.4,A parar. Aguarde.......
+w.bws.js.5,Fechar
+w.bws.js.6,O dispositivo não consegue obter o endereço IP actual. Por favor, tente encontrá-lo no PA!
+w.wnss.1,Pesquisa de sites de redes sem fios
+w.wnss.1-1,Actualizar
+w.wnss.1-2,Ligar
+w.wnss.2,Segurança sem fios
+w.wnss.2-1,Nome da rede (SSID):
+w.wnss.2-2,Modo de segurança:
+w.wnss.2-3,Encriptação:
+w.wnss.2-4,104/128 bits (26 dígitos hexadecimais)
+w.wnss.2-5,40/64 bits (10 dígitos hexadecimais)
+w.wnss.2-6,Frase-passe:
+w.wnss.2-7,Chave 1:
+w.wnss.2-8,Chave 2:
+w.wnss.2-9,Chave 3:
+w.wnss.2-10,Chave 4:
+w.wnss.2-11,Chave TX:
+w.wnss.2-12,Chave 1
+w.wnss.2-13,Autenticação:
+w.wnss.2-14,Aberto
+w.wnss.2-15,Partilhada
+w.wnss.2-16,Automático
+w.wnss.2-17,Encriptação:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP ou AES
+w.wnss.2-21,Frase-passe:
+w.wnss.2-22,Actualizar
+w.wnss.2-23,Ligar
+w.wnss.2-24,Número de redes sem fios:
+w.wnss.2-25,Selec.
+w.wnss.2-26,Nome da rede sem fios
+w.wnss.2-27,GHz
+w.wnss.2-28,Sinal
+w.wnss.2-29,Segurança
+w.wnss.2-30,Desactivado
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA Personal
+w.wnss.2-33,WPA Enterprise
+w.wnss.alert.1,Não é possível obter o modo.
+w.wnss.alert.2,Introduza uma chave com 10 caracteres hexadecimais 
+w.wnss.alert.3,Introduza uma chave com 26 caracteres hexadecimais 
+w.wnss.alert.4,Seleccione o PA/Router que pretende ligar e prima novamente Ligar.
+w.wnss.alert.5,O modo de segurança WPA-Enterprise não é suportado!
+w.wnss.alert.6,O modo de segurança WPA2-Enterprise não é suportado!
+w.wnss.alert.7,O modo de segurança WPA2-Enterprise não é suportado!
+w.wmm.title,WMM®
+w.wmm.1,Modo de acesso
+w.wmm.1-1,Segundo plano
+w.wmm.1-2,Melhor esforço
+w.wmm.1-3,Vídeo
+w.wmm.1-4,Voz
+w.wmm.1-5,Utilizar agregação:
+w.wmm.1-6,Não
+w.wmm.1-7,Sim
+w.wmm.1-8,Aceitar agregação:
+w.wmm.1-9,Não
+w.wmm.1-10,Sim
+w.wmm.1-11,Número máx. de pacotes na agregação:
+w.wmm.1-12,Tamanho máx. da agregação:
+w.wmm.1-13,Intervalo de tempo limite:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Tamanho mín. dos pacotes na agregação:
+w.wmm.1-15,Tempo limite de ADDBA:
+w.wmm.1-16,Tamanho da janela de agregação:
+w.wmm.1-17,CWmin para o STA:
+w.wmm.1-18,CWmax para o STA:
+w.wmm.1-19,AIFSN para o STA:
+w.wmm.1-20,TXOP para o STA:
+w.wmm.1-21,CWmin para o PA:
+w.wmm.1-22,CWmax para o PA:
+w.wmm.1-23,AIFSN para o PA:
+w.wmm.1-24,TXOP para o PA:
+w.wmm.save,Guardar definições
+w.wmm.cancel,Cancelar alterações
+w.wmm.alert.1,Não é possível obter o modo.
+w.wmm.alert.2,O Número máx. de pacotes na agregação tem de ser entre
+w.wmm.alert.3,O Número máx. de pacotes na agregação tem de ser entre
+w.wmm.alert.4,O Número máx. de pacotes na agregação tem de ser entre
+w.wmm.alert.5,O Tamanho máx. da agregação tem de ser entre
+w.wmm.alert.6,O Tamanho máx. da agregação tem de ser entre
+w.wmm.alert.7,O Tamanho máx. da agregação tem de ser entre
+w.wmm.alert.8,O Tamanho mín. dos pacotes na agregação tem de ser entre 0 e 1500!
+w.wmm.alert.9,O valor do tempo limite de ADDBA tem de ser entre 0 e 65535!
+w.wmm.alert.10,O Tamanho da janela de agregação tem de ser entre 0 e 64!
+w.wmm.alert.11,O valor do intervalo de tempo limite deve ser entre
+w.aws.title,Definições sem fios avançadas
+w.aws.1,Utilizar detecção por radar:
+w.aws.2,Não
+w.aws.3,Sim
+w.aws.4,Lista de canais restritos de AOCS:
+w.aws.5,Utilizar LDPC:
+w.aws.6,Não
+w.aws.7,Sim
+w.aws.8,Utilizar SSID oculto:
+w.aws.9,Não
+w.aws.10,Sim
+w.aws.11,Tipo de protecção ERP:
+w.aws.12,Nenhum
+w.aws.13,RTS/CTS
+w.aws.14,CTS2Self
+w.aws.15,Utilizar protecção de BSS sobreposto:
+w.aws.16,Não
+w.aws.17,Sim
+w.aws.18,Tipo de protecção 11n:
+w.aws.19,Nenhum
+w.aws.20,RTS/CTS
+w.aws.21,CTS2Self
+w.aws.22,Activar reencaminhamento do PA:
+w.aws.23,Não
+w.aws.24,Sim
+w.aws.25,Utilizar multicast fiável:
+w.aws.26,Não
+w.aws.27,Sim
+w.aws.28,Utilizar STBC:
+w.aws.29,Não
+w.aws.30,Sim
+w.aws.31,Percentagem da potência de transmissão máxima:
+w.aws.32,Tipo de classificação de QoS:
+w.aws.38,Restabelecer a ligação Ethernet ao iniciar a ligação sem fios:
+w.aws.save,Guardar definições
+w.aws.cancel,Cancelar alterações
+func.js.1,A processar. Aguarde......
+func.js.2,A reiniciar. Aguarde......
+u-media.js.1,O SSID não pode ter mais de 32 caracteres!
+u-media.js.2,A chave da frase-passe tem de ter entre 8 e 63 caracteres ASCII!
+u-media.js.3,Erro. " + msg + " está vazio!
+u-media.js.4," + msg + " deve ser um número de 0 a 9.
+u-media.js.5,O valor de " + msg + " é ilegal!
+u-media.js.6,A desistir. Não é possível criar uma instância de XMLHTTP
+u-media.js.7,Por favor, introduza a chave pré-partilhada de 64 caracteres hexadecimais!
+u-media.js.8,A chave da frase-passe tem de ter entre 8 e 63 caracteres ASCII!
+adm.waitpage.1,A processar
+w.bws.2-35,Ligado
+HT.confirm,AVISO: Os seus dispositivos Sem fios N apenas funcionam a velocidades de transferências de dados Sem fios G com o tipo de encriptação que seleccionar.  Seleccione a encriptação WPA2-Personal se pretender que os seus dispositivos Sem fios N funcionem às velocidades máximas de transferência de dados.  Clique em OK para continuar com esta selecção ou Cancelar para seleccionar outro tipo de encriptação.

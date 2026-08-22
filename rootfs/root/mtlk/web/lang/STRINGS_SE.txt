@@ -1,0 +1,318 @@
+Templates.1,Version av fast programvara:
+Templates.2,Dual-Band Wireless-N spel- och videoadapter
+Templates.WES610N,Wireless-N Ethernet-switch med dualband
+mainmenu.1,Trådlöst
+mainmenu.2,Ställ in
+mainmenu.3,Administration
+mainmenu.4,Status
+mainmenutitle.1,Trådlöst
+mainmenutitle.2,Ställ in
+mainmenutitle.3,Administration
+mainmenutitle.4,Status
+mainmenutitle.5,Avancerad installation
+adm.submenu.1,Hantering
+adm.submenu.2,Fabriksinställningar
+adm.submenu.3,Uppgradera fast programvara
+adm.waitpage.title,Omstart av system
+adm.man.title,Hantering
+adm.man.0,Språk
+adm.man.0-1,Välj språk:
+adm.man.1,Åtkomst till brygga
+adm.man.1-1,Bryggans lösenord
+adm.man.1-2,Ange det på nytt för att bekräfta:
+adm.man.1-3,Överskriden tidsgräns:
+adm.man.1-4,(60–3 600 sekunder)
+adm.man.2,Åtkomst till lokal hantering
+adm.man.2-1,Åtkomst via trådlöst
+adm.man.2-2,Aktivera
+adm.man.2-3,Avaktiverad
+adm.man.3,Säkerhetskopiering och återställning
+adm.man.3-1,Säkerhetskopiera:
+adm.man.3-2,Säkerhetskopiera konfiguration
+adm.man.3-3,Återställ:
+adm.man.3-4,Återställ konfiguration
+adm.man.4,Omstart av system
+adm.man.4-1,Omstart:
+adm.man.4-2,Påbörja omstart
+adm.man.save,Spara inställningar
+adm.man.cancel,Avbryt ändringar
+adm.man.alert.1,Välj en konfigurationsfil för återställning.
+adm.man.alert.2,Lösenordet får inte vara längre än 64 tecken.
+adm.man.alert.3,Lösenord och Bekräfta lösenord stämmer inte överens. Bekräfta administratörslösenord igen.
+adm.man.alert.4,Inaktivitetstidsgränsen måste vara över 60 sekunder och under 3 600 sekunder.
+adm.man.confirm.1,Vill du fortsätta att starta om enheten?
+adm.fd.title,Fabriksinställningar
+adm.fd.1,Återställ alla inställningar
+adm.fd.confirm.1,Varning! Om du klickar på OK återställs fabriksinställningarna och alla tidigare inställningar raderas.
+adm.fu.title,Uppgradera fast programvara
+adm.fu.1,Välj en fil för att uppgradera den fasta programvaran:
+adm.fu.2,Påbörja uppdatering
+adm.fu.3,Varning!
+adm.fu.4,Uppgraderingen av fast programvara kan ta ett par minuter. Stäng inte av
+adm.fu.5,strömmen eller tryck på återställningsknappen.
+adm.fu.6,Du får INTE avbryta uppgraderingen!
+adm.fu.alert.1,Ger upp: ( Kunde inte skapa en XML HTTP-förekomst
+adm.fu.alert.2,Det är ett problem med begäran.
+adm.fu.alert.3,Den här bildfilen är felaktig.
+nets.submenu.1,Grundläggande inställningar
+nets.bns.title,Grundläggande inställningar
+nets.bns.nct.1,Bryggans IP
+nets.bns.nct.1-1,Automatisk konfiguration - DHCP
+nets.bns.nct.1-2,Statisk IP
+nets.bns.nct.1-3,Värdnamn:
+nets.bns.nct.1-4,Statisk IP-adress:
+nets.bns.nct.1-5,Nätmask:
+nets.bns.nct.1-6,Standardgateway:
+nets.bns.nct.save,Spara inställningar
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Nätverkets IP-adress
+nets.bns.check.2,Nätmask
+nets.bns.check.3,Standard-gateway
+status.submenu.1,Brygga
+status.submenu.2,Trådlöst nätverk
+status.submenu.3,Om
+status.b.1,Information om brygga
+status.b.1-1,Version av fast programvara:
+status.b.2,Lokalt nätverk
+status.b.2-1,Lokal MAC-adress:
+status.b.2-2,Bryggans IP-adress
+status.b.2-3,Nätmask:
+status.b.2-4,Standardgateway:
+status.wn.1,Trådlöst nätverk
+status.wn.1-1,Länkstatus:
+status.wn.1-2,MAC-adress:
+status.wn.1-3,Nätverksnamn (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Radiofrekvensband:
+status.wn.1-6,Kanalbredd:
+status.wn.1-7,Bred kanal:
+status.wn.1-8,Standardkanal:
+status.wn.1-9,Bithastighet:
+status.wn.1-10,Signal:
+status.wn.1-11,Säkerhet:
+status.wait,Vänta...
+status.a.title,Om
+status.a.1,Webbserver
+status.a.1-1,Använder:
+w.submenu.1,Grundläggande trådlösa inställningar
+w.submenu.2,Översikt över trådlös nätverksplats
+w.submenu.3,WMM®
+w.submenu.4,Avancerade trådlösa inställningar
+w.bws.1,Grundläggande trådlösa inställningar
+w.bws.1-1,Konfigurationsvy:
+w.bws.1-2,Manuellt
+w.bws.1-3,WPS (Wi-Fi Protected Setup)
+w.bws.1-4,Frekvensband:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Båda
+w.bws.1-8,Nätverksnamn (SSID):
+w.bws.2,Trådlös säkerhet
+w.bws.2-1,Säkerhetsläge:
+w.bws.2-2,Avaktiverad
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Kryptering:
+w.bws.2-7,104/128-bitars (26 hexadecimala siffror)
+w.bws.2-8,40/64-bitars (10 hexadecimala siffror)
+w.bws.2-9,Lösenord:
+w.bws.2-10,Nyckel 1:
+w.bws.2-11,Nyckel 2:
+w.bws.2-12,Nyckel 3:
+w.bws.2-13,Nyckel 4:
+w.bws.2-14,Tx-nyckel:
+w.bws.2-15,Nyckel 1
+w.bws.2-16,Autentisering:
+w.bws.2-17,Öppen
+w.bws.2-18,Delad
+w.bws.2-19,Automatiskt
+w.bws.2-20,Kryptering:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP eller AES
+w.bws.2-24,Lösenord:
+w.bws.2-25,WPS (Wi-Fi Protected Setup)
+w.bws.2-26,Använd en av följande metoder om din router (eller accesspunkt) har stöd för Wi-Fi Protected Setup:
+w.bws.2-27,1. Om routern har en WPS-knapp klickar eller trycker du på den knappen och sedan på knappen till höger.
+w.bws.2-28,ELLER
+w.bws.2-29,2. Om du uppmanas ange klientenhetens PIN-kod anger du det här numret
+w.bws.2-30,i routern och klickar sedan på
+w.bws.2-31,Länkstatus:
+w.bws.2-32,Frånkopplad
+w.bws.2-33,Nätverksnamn (SSID):
+w.bws.2-34,Säkerhet:
+w.bws.save,Spara inställningar
+w.bws.cancel,Avbryt ändringar
+w.bws.alert.1,Ange 10 hexadecimala tecken 
+w.bws.alert.2,Ange 26 hexadecimala tecken 
+w.bws.asp.1,Ansluter till
+w.bws.asp.2,Vänta...
+w.bws.asp.3,Initierar Wi-Fi Protected Setup
+w.bws.asp.4,Vänta...
+w.bws.asp.5,Återställer Wi-Fi Protected Setup Vänta. Det kan ta några sekunder
+w.bws.asp.6,WPS avslutas....
+w.bws.asp.7,[Pågår]
+w.bws.asp.8,DUMMY
+w.bws.asp.9,Sparar inställningar. Vänta
+w.bws.asp.10,Klart!
+w.bws.asp.11,Du är ansluten till SSID:
+w.bws.asp.12,Söker efter routern (eller accesspunkt).
+w.bws.asp.13,Vänta...
+w.bws.asp.14,Om du inte har klickat på WPS-knappen (Wi-Fi Protected Setup) på routern (eller accesspunkten) gör du det nu.
+w.bws.asp.15,PIN-koden till din brygga är:
+w.bws.asp.16,Söker efter routern (eller accesspunkt).
+w.bws.asp.17,Vänta...
+w.bws.asp.18,Pågår
+w.bws.asp.19,Fel
+w.bws.asp.20,OK
+w.bws.asp.21,Manuell AP-markering
+w.bws.asp.22,Fel. Överlappning har uppstått.
+w.bws.asp.23,Fel. PIN-kodsfel.
+w.bws.asp.24,Väntstatus
+w.bws.asp.25,Överskriden tidsgräns
+w.bws.asp.26,Lyssnar efter inkommande anslutningar
+w.bws.asp.27,Söker efter AP
+w.bws.asp.28,Registrering med inkommande STA
+w.bws.asp.29,Registrering med AP
+w.bws.asp.30,Ansluter med STA
+w.bws.asp.31,Ansluter till AP
+w.bws.js.1,Anslutningsfel.
+w.bws.js.2,Den trådlösa bryggan misslyckades med att ansluta till routern (eller accesspunkten).
+w.bws.js.3,Sök information i routern och försök igen.
+w.bws.js.4,Avslutar. Vänta...
+w.bws.js.5,Stäng
+w.bws.js.6,Enheten kan inte hämta aktuell ip-adress. Försök hitta den på åtkomstpunkten!
+w.wnss.1,Översikt över trådlös nätverksplats
+w.wnss.1-1,Uppdatera
+w.wnss.1-2,Anslut
+w.wnss.2,Trådlös säkerhet
+w.wnss.2-1,Nätverksnamn (SSID):
+w.wnss.2-2,Säkerhetsläge:
+w.wnss.2-3,Kryptering:
+w.wnss.2-4,104/128-bitars (26 hexadecimala siffror)
+w.wnss.2-5,40/64-bitars (10 hexadecimala siffror)
+w.wnss.2-6,Lösenord:
+w.wnss.2-7,Nyckel 1:
+w.wnss.2-8,Nyckel 2:
+w.wnss.2-9,Nyckel 3:
+w.wnss.2-10,Nyckel 4:
+w.wnss.2-11,Tx-nyckel:
+w.wnss.2-12,Nyckel 1
+w.wnss.2-13,Autentisering:
+w.wnss.2-14,Öppen
+w.wnss.2-15,Delad
+w.wnss.2-16,Automatiskt
+w.wnss.2-17,Kryptering:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP eller AES
+w.wnss.2-21,Lösenord:
+w.wnss.2-22,Uppdatera
+w.wnss.2-23,Anslut
+w.wnss.2-24,Antal trådlösa nätverk:
+w.wnss.2-25,Välj
+w.wnss.2-26,Namn på trådlöst nätverk
+w.wnss.2-27,GHz
+w.wnss.2-28,Signal
+w.wnss.2-29,Säkerhet
+w.wnss.2-30,Avaktiverad
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA Personal
+w.wnss.2-33,WPA Enterprise
+w.wnss.alert.1,Hittar inte läge.
+w.wnss.alert.2,Ange 10 hexadecimala tecken 
+w.wnss.alert.3,Ange 26 hexadecimala tecken 
+w.wnss.alert.4,Markera en AP/router som du vill ansluta och tryck på Anslut igen.
+w.wnss.alert.5,Vi har inte stöd för WPA-Enterprise-säkerhetsläge.
+w.wnss.alert.6,Vi har inte stöd för WPA2-Enterprise-säkerhetsläge.
+w.wnss.alert.7,Vi har inte stöd för WPA2-Enterprise-säkerhetsläge.
+w.wmm.title,WMM®
+w.wmm.1,Åtkomstläge
+w.wmm.1-1,Bakgrund
+w.wmm.1-2,Bästa försök
+w.wmm.1-3,Video
+w.wmm.1-4,Röst
+w.wmm.1-5,Använd aggregering:
+w.wmm.1-6,Nej
+w.wmm.1-7,Ja
+w.wmm.1-8,Acceptera aggregering:
+w.wmm.1-9,Nej
+w.wmm.1-10,Ja
+w.wmm.1-11,Max. Antal paket i aggregering:
+w.wmm.1-12,Max. Aggregeringsstorlek:
+w.wmm.1-13,Tidsgränsintervall:
+w.wmm.1-13d,(0–100 ms)
+w.wmm.1-14,min. Storlek på paket i aggregering:
+w.wmm.1-15,ADDBA-tidsgräns:
+w.wmm.1-16,Storlek på aggregeringsfönster:
+w.wmm.1-17,CW-min för STA:
+w.wmm.1-18,CW-max för STA:
+w.wmm.1-19,AIFSN för STA:
+w.wmm.1-20,TXOP för STA:
+w.wmm.1-21,CW-minimum för AP:
+w.wmm.1-22,CW-maximum för AP:
+w.wmm.1-23,AIFSN för AP:
+w.wmm.1-24,TXOP för AP:
+w.wmm.save,Spara inställningar
+w.wmm.cancel,Avbryt ändringar
+w.wmm.alert.1,Hittar inte läge.
+w.wmm.alert.2,Max. antal paket i aggregering måste vara mellan
+w.wmm.alert.3,Max. antal paket i aggregering måste vara mellan
+w.wmm.alert.4,Max. antal paket i aggregering måste vara mellan
+w.wmm.alert.5,Max. aggregeringsstorlek måste vara mellan
+w.wmm.alert.6,Max. aggregeringsstorlek måste vara mellan
+w.wmm.alert.7,Max. aggregeringsstorlek måste vara mellan
+w.wmm.alert.8,Min. storlek på paket i aggregering måste vara mellan 0 och 1 500.
+w.wmm.alert.9,ADDBA-tidsgränsvärdet måste vara mellan 0 och 65 535.
+w.wmm.alert.10,Storleken på aggregeringsfönstret måste vara mellan 0 och 64.
+w.wmm.alert.11,Värdet för tidsgränsintervallet måste vara mellan
+w.aws.title,Avancerade trådlösa inställningar
+w.aws.1,Använd radarigenkänning:
+w.aws.2,Nej
+w.aws.3,Ja
+w.aws.4,List of AOCS restricted channels:
+w.aws.5,Använd LDPC:
+w.aws.6,Nej
+w.aws.7,Ja
+w.aws.8,Använd dolda SSID:
+w.aws.9,Nej
+w.aws.10,Ja
+w.aws.11,ERP-skyddstyp:
+w.aws.12,Inget
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-self
+w.aws.15,Använd överlappande BSS-skydd:
+w.aws.16,Nej
+w.aws.17,Ja
+w.aws.18,11n-skyddstyp:
+w.aws.19,Inget
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-self
+w.aws.22,Aktivera AP-vidarebefordran:
+w.aws.23,Nej
+w.aws.24,Ja
+w.aws.25,Använd pålitlig multicast:
+w.aws.26,Nej
+w.aws.27,Ja
+w.aws.28,Använd STBC:
+w.aws.29,Nej
+w.aws.30,Ja
+w.aws.31,Procent av maximal överföringseffekt:
+w.aws.32,QoS-klassificeringstyp:
+w.aws.38,Återupprätta Ethernet-anslutningen när den trådlösa anslutningen aktiveras:
+w.aws.save,Spara inställningar
+w.aws.cancel,Avbryt ändringar
+func.js.1,Bearbetar. Vänta...
+func.js.2,Startar om. Vänta...
+u-media.js.1,SSID-längden får inte vara över 32 tecken.
+u-media.js.2,Lösenordsfrasen måste vara mellan 8 och 63 ASCII-tecken.
+u-media.js.3,Fel. " + msg + " är tom!
+u-media.js.4," + msg + " bör vara ett nummer mellan 0 och 9
+u-media.js.5," + msg + " är ett ogiltigt värde.
+u-media.js.6,Ger upp: ( Kunde inte skapa en XML HTTP-förekomst
+u-media.js.7,Ange för-delad nyckel med 64 hexadecimala tecken!
+u-media.js.8,Lösenordsfrasen måste vara mellan 8 och 63 ASCII-tecken.
+adm.waitpage.1,Bearbetar
+w.bws.2-35,Ansluten
+HT.confirm,VARNING: Dina Wireless-N-enheter kommer endast att fungera med Wireless-G-datahastighet för den krypteringstyp du har valt. Välj WPA2-Personal som kryptering om du vill att dina Wireless-N-enheter ska fungera med full hastighet. Klicka på OK om du vill fortsätta med ditt val, eller på Avbryt om du vill välja en annan kryptering.
