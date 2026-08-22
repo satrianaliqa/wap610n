@@ -18,6 +18,7 @@
 /********************************** Includes **********************************/
 
 #include	"ejIntrn.h"
+#include	"mt_api.h"
 #include	"mt_validation.h"
 
 #ifdef CE

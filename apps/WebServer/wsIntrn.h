@@ -238,6 +238,11 @@ extern char_t			*websHostUrl;		/* URL for this host */
 extern char_t			*websIpaddrUrl;		/* URL for this host */
 extern int				websPort;			/* Port number */
 
+#define MT_MAX_PATH_LENGTH 256
+extern char MT_WebTmpDir[];
+extern char MT_WebVirtualTmpDir[];
+extern char MT_WebRootDir[];
+
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
 extern int waitOtherProcess;
 

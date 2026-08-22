@@ -19,7 +19,6 @@
 /********************************* Includes ***********************************/
 
 #include	"wsIntrn.h"
-#include	"mt_api.h"
 /********************************** Locals ************************************/
 
 sym_fd_t	websAspFunctions = -1;	/* Symbol table of functions */

@@ -25,7 +25,6 @@
 #else
 	#include	"basic/basicInternal.h"
 #endif
-#include	"mt_api.h"
 
 /************************************ Locals **********************************/
 typedef struct {				/* Struct for CGI tasks which have completed */
