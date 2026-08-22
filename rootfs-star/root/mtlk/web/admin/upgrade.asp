@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -323,28 +323,6 @@ function page_load() {
 						<td class="upgradeFirmware"></td>
 						<td>
 							<input type="button" value="<!--#tr id=\"adm.fu.2\" -->Start to Upgrade<!--#endtr-->" onclick="checkFW();" />
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="blankContent" colspan="2"><hr></td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="upgradeFirmware"><b>Dump / Backup Firmware:</b></td>
-						<td>
-							<input type="button" value="Download Full Flash Dump (4 MB .bin)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=full';" />
-							<input type="button" value="Download Kernel &amp; RootFS (.bin)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=kernel';" />
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="upgradeFirmware"></td>
-						<td class="small" style="color: #666; font-size: 11px;">
-							Real-time bit-exact dump of live NOR flash partitions.
 						</td>
 					</tr>
 					<tr>

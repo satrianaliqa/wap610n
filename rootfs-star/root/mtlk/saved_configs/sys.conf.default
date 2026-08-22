@@ -1,0 +1,20 @@
+BridgeMode = 1
+
+ip_lan = 192.168.1.1
+
+subnet_lan = 255.255.255.0
+
+mac_lan = 00:00:84:00:50:99
+
+mac_wan = 00:00:84:28:50:99
+
+mac_usb = 00:00:84:48:50:99
+
+ip_wlan = 192.0.0.1
+
+subnet_wlan = 255.255.255.0
+
+mac_wlan = 00:09:86:02:00:01
+
+MacCloningAddr = 00:00:00:00:00:00
+

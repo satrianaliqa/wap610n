@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -413,7 +413,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?(loopCount+1) + "!");
+						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
 							//alert(_("w.bws.alert.1") + (defaultWEPKeyValue+1) + "!");
@@ -471,7 +471,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?(loopCount+1) + "!");
+						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
 							//alert(_("w.bws.alert.2") + (defaultWEPKeyValue+1));
@@ -711,13 +711,15 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><!--#tr id="w.submenu.1" -->Basic Wireless Settings<!--#endtr--></td>
+									<td class="subMenuOption">Basic Wireless Settings</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp"><!--#tr id="w.submenu.2" -->Wireless Network Site Survey<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wps_status.asp">Wi-Fi Protected Setup™</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp"><!--#tr id="w.submenu.3" -->WMMÂ®<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp">Wireless Network Site Survey</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp"><!--#tr id="w.submenu.4" -->Advanced Wireless Settings<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp">WMM®</a></font></td>
+									<td class="subMenuDIV">|</td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>
@@ -759,8 +761,8 @@ function page_load() {
 						<td class="tdLabel"><!--#tr id="w.bws.1-1" -->Configuration View:<!--#endtr--></td>
 						<td class="tdContent">
 							<input type="hidden" id="wirelessConfigType" name="wirelessConfigType">
-							<input type="radio" id="selectManual" name="configType" onclick="selectConfigType('');"><!--#tr id="w.bws.1-2" -->Manual<!--#endtr-->
-							<input type="radio" id="selectWPS"  name="configType" onclick="selectConfigType('');"><!--#tr id="w.bws.1-3" -->Wi-Fi Protected Setup<!--#endtr--><sup style="font-size: 6pt;">TM</sup>
+							<input type="radio" id="selectManual" name="configType" onclick="selectConfigType('submit');"><!--#tr id="w.bws.1-2" -->Manual<!--#endtr-->
+							<input type="radio" id="selectWPS"  name="configType" onclick="selectConfigType('submit');"><!--#tr id="w.bws.1-3" -->Wi-Fi Protected Setup<!--#endtr--><sup style="font-size: 6pt;">TM</sup>
 						</td>
 					</tr>
 					</form>

@@ -1,0 +1,318 @@
+Templates.1,Firmwareversion:
+Templates.2,Dual-Band Trådløs-N spil- og videokort
+Templates.WES610N,Dual-Band Trådløs-N Ethernet-switch
+mainmenu.1,Trådløs
+mainmenu.2,Konfiguration
+mainmenu.3,Administration
+mainmenu.4,Status
+mainmenutitle.1,Trådløs
+mainmenutitle.2,Konfiguration
+mainmenutitle.3,Administration
+mainmenutitle.4,Status
+mainmenutitle.5,Avanceret
+adm.submenu.1,Styring
+adm.submenu.2,Fabriksindstillinger
+adm.submenu.3,Firmwareopgradering
+adm.waitpage.title,Genstart af system
+adm.man.title,Styring
+adm.man.0,Sprog
+adm.man.0-1,Vælg sprog:
+adm.man.1,Adgang til bridge
+adm.man.1-1,Bridge-adgangskode
+adm.man.1-2,Genindtast for at bekræfte:
+adm.man.1-3,Timeout pga. inaktivitet:
+adm.man.1-4,(60-3600 sekunder)
+adm.man.2,Adgang til lokal styring
+adm.man.2-1,Adgang via trådløs
+adm.man.2-2,Aktiveret
+adm.man.2-3,Deaktiveret
+adm.man.3,Sikkerhedskopiering og gendannelse
+adm.man.3-1,Sikkerhedskopiering:
+adm.man.3-2,Sikkerhedskopier konfigurationer
+adm.man.3-3,Gendannelse:
+adm.man.3-4,Gendan konfigurationer
+adm.man.4,Genstart af system
+adm.man.4-1,Genstart:
+adm.man.4-2,Påbegynd genstart
+adm.man.save,Gem indstillinger
+adm.man.cancel,Annuller ændringer
+adm.man.alert.1,Vælg den konfigurationsfil, der skal gendannes.
+adm.man.alert.2,Adgangskoden må ikke være længere end 64 tegn!
+adm.man.alert.3,Adgangskode og Bekræft adgangskode stemmer ikke overens. Bekræft administrator-adgangskoden igen.
+adm.man.alert.4,Timeout pga. inaktivitet skal være mellem 60 sekunder og 3600 sekunder.
+adm.man.confirm.1,Er du sikker på, at du vil genstarte enheden?
+adm.fd.title,Fabriksindstillinger
+adm.fd.1,Gendan alle indstillinger
+adm.fd.confirm.1,Advarsel! Hvis du klikker på OK, nulstilles enheden til fabriksindstillingerne, og alle tidligere indstillinger slettes.
+adm.fu.title,Firmwareopgradering
+adm.fu.1,Vælg en fil til opgradering af firmwaren:
+adm.fu.2,Start opgradering
+adm.fu.3,Advarsel:
+adm.fu.4,Det kan tage et par minutter at opgradere firmwaren. Du må ikke slukke for
+adm.fu.5,strømmen eller trykke på nulstillingsknappen.
+adm.fu.6,Opgraderingen må IKKE afbrydes!!
+adm.fu.alert.1,Giver op: (kan ikke oprette et XML HTTP-eksempel
+adm.fu.alert.2,Der er et problem med anmodningen.
+adm.fu.alert.3,Denne billedfil er forkert.
+nets.submenu.1,Grundlæggende konfiguration
+nets.bns.title,Grundlæggende konfiguration
+nets.bns.nct.1,Bridge-IP
+nets.bns.nct.1-1,Automatisk konfiguration - DHCP
+nets.bns.nct.1-2,Statisk IP
+nets.bns.nct.1-3,Værtsnavn:
+nets.bns.nct.1-4,Statisk IP-adresse:
+nets.bns.nct.1-5,Undernetmaske:
+nets.bns.nct.1-6,Standardgateway:
+nets.bns.nct.save,Gem indstillinger
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,IP-adresse for netværk
+nets.bns.check.2,Undernetmaske
+nets.bns.check.3,Standardgateway
+status.submenu.1,Bridge
+status.submenu.2,Trådløst netværk
+status.submenu.3,Om
+status.b.1,Bridge-oplysninger
+status.b.1-1,Firmwareversion:
+status.b.2,Lokalt netværk
+status.b.2-1,Lokal MAC-adresse:
+status.b.2-2,IP-adresse for bridge:
+status.b.2-3,Undernetmaske:
+status.b.2-4,Standardgateway:
+status.wn.1,Trådløst netværk
+status.wn.1-1,Status for link:
+status.wn.1-2,MAC-adresse:
+status.wn.1-3,Netværksnavn (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Frekvensområde:
+status.wn.1-6,Kanalbredde:
+status.wn.1-7,Bred kanal:
+status.wn.1-8,Standardkanal:
+status.wn.1-9,Bithastighed:
+status.wn.1-10,Signal:
+status.wn.1-11,Sikkerhed:
+status.wait,Vent
+status.a.title,Om
+status.a.1,Webserver
+status.a.1-1,Leveret af:
+w.submenu.1,Basisindstillinger for trådløs
+w.submenu.2,Områdesøgning for trådløst netværk
+w.submenu.3,WMM®
+w.submenu.4,Avancerede trådløse indstillinger
+w.bws.1,Basisindstillinger for trådløs
+w.bws.1-1,Se konfiguration:
+w.bws.1-2,Manuel
+w.bws.1-3,Wi-Fi Protected Setup (WPS)
+w.bws.1-4,Frekvensområde:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Begge
+w.bws.1-8,Netværksnavn (SSID):
+w.bws.2,Trådløs sikkerhed
+w.bws.2-1,Sikkerhedstilstand:
+w.bws.2-2,Deaktiveret
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Kryptering:
+w.bws.2-7,104/128 bit (26 hexadecimale tal)
+w.bws.2-8,40/64 bit (10 hexadecimale tal)
+w.bws.2-9,Adgangsord:
+w.bws.2-10,Nøgle 1:
+w.bws.2-11,Nøgle 2:
+w.bws.2-12,Nøgle 3:
+w.bws.2-13,Nøgle 4:
+w.bws.2-14,TX-nøgle:
+w.bws.2-15,Nøgle 1
+w.bws.2-16,Godkendelse:
+w.bws.2-17,Åben
+w.bws.2-18,Fælles
+w.bws.2-19,Automatisk
+w.bws.2-20,Kryptering:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP eller AES
+w.bws.2-24,Adgangsord:
+w.bws.2-25,Wi-Fi Protected Setup (WPS)
+w.bws.2-26,Brug en af følgende metoder, hvis din router (eller dit access point) understøtter Wi-Fi Protected Setup (WPS):
+w.bws.2-27,1. Hvis din router har en WPS-knap, skal du trykke på den og derefter trykke på knappen til højre.
+w.bws.2-28,ELLER
+w.bws.2-29,2. Hvis din router beder om klientenhedens PIN-kode, skal du indtaste dette tal
+w.bws.2-30,på din router og derefter klikke på
+w.bws.2-31,Status for link:
+w.bws.2-32,Forbindelse afbrudt
+w.bws.2-33,Netværksnavn (SSID):
+w.bws.2-34,Sikkerhed:
+w.bws.save,Gem indstillinger
+w.bws.cancel,Annuller ændringer
+w.bws.alert.1,Indtast 10 hexadecimale tegn 
+w.bws.alert.2,Indtast 26 hexadecimale tegn 
+w.bws.asp.1,Opretter forbindelse til
+w.bws.asp.2,Vent
+w.bws.asp.3,Initialiserer Wi-Fi Protected Setup
+w.bws.asp.4,Vent
+w.bws.asp.5,Nulstilling af Wi-Fi Protected Setup. Vent, dette kan tage et par sekunder
+w.bws.asp.6,WPS stopper....
+w.bws.asp.7,[I gang]
+w.bws.asp.8,DUMMY
+w.bws.asp.9,Gemmer indstillinger. Vent et øjeblik
+w.bws.asp.10,Tillykke!
+w.bws.asp.11,Du har oprettet forbindelse til SSID:
+w.bws.asp.12,Søger efter din router (eller dit access point).
+w.bws.asp.13,Vent...
+w.bws.asp.14,Hvis du ikke har klikket på WPS-knappen på din router (eller dit access point), skal du gøre det nu.
+w.bws.asp.15,PIN-koden til bridgen er:
+w.bws.asp.16,Søger efter din router (eller dit access point).
+w.bws.asp.17,Vent...
+w.bws.asp.18,I gang
+w.bws.asp.19,Fejl
+w.bws.asp.20,OK
+w.bws.asp.21,Manuelt AP-valg
+w.bws.asp.22,Fejl, der opstod en overlapning.
+w.bws.asp.23,Fejl, forkert PIN-kode.
+w.bws.asp.24,Vent-status
+w.bws.asp.25,Timeout
+w.bws.asp.26,Lytter efter indgående forbindelser
+w.bws.asp.27,Søger efter AP's
+w.bws.asp.28,Registrerer med indgående STA
+w.bws.asp.29,Registrerer med AP
+w.bws.asp.30,Opretter forbindelse til STA
+w.bws.asp.31,Opretter forbindelse til AP
+w.bws.js.1,Tilslutningsfejl!
+w.bws.js.2,Denne trådløse bridge kunne ikke oprette forbindelse til din router (eller et access point).
+w.bws.js.3,Gå tilbage til din router, og prøv igen.
+w.bws.js.4,Stopper, vent et øjeblik.......
+w.bws.js.5,Luk
+w.bws.js.6,Enheden kan ikke hente den aktuelle IP-adresse, prøv at finde den på AP'et!
+w.wnss.1,Områdesøgning for trådløst netværk
+w.wnss.1-1,Opdater
+w.wnss.1-2,Opret forbindelse
+w.wnss.2,Trådløs sikkerhed
+w.wnss.2-1,Netværksnavn (SSID):
+w.wnss.2-2,Sikkerhedstilstand:
+w.wnss.2-3,Kryptering:
+w.wnss.2-4,104/128 bit (26 hexadecimale tal)
+w.wnss.2-5,40/64 bit (10 hexadecimale tal)
+w.wnss.2-6,Adgangsord:
+w.wnss.2-7,Nøgle 1:
+w.wnss.2-8,Nøgle 2:
+w.wnss.2-9,Nøgle 3:
+w.wnss.2-10,Nøgle 4:
+w.wnss.2-11,TX-nøgle:
+w.wnss.2-12,Nøgle 1
+w.wnss.2-13,Godkendelse:
+w.wnss.2-14,Åben
+w.wnss.2-15,Fælles
+w.wnss.2-16,Automatisk
+w.wnss.2-17,Kryptering:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP eller AES
+w.wnss.2-21,Adgangsord:
+w.wnss.2-22,Opdater
+w.wnss.2-23,Opret forbindelse
+w.wnss.2-24,Antal trådløse netværk:
+w.wnss.2-25,Vælg
+w.wnss.2-26,Navn på trådløst netværk:
+w.wnss.2-27,GHz
+w.wnss.2-28,Signal
+w.wnss.2-29,Sikkerhed
+w.wnss.2-30,Deaktiveret
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA Personal
+w.wnss.2-33,WPA Enterprise
+w.wnss.alert.1,Kan ikke hente tilstand.
+w.wnss.alert.2,Indtast 10 hexadecimale tegn 
+w.wnss.alert.3,Indtast 26 hexadecimale tegn 
+w.wnss.alert.4,Vælg et AP/en router, som du vil tilslutte, og tryk igen på Connect (Opret forbindelse).
+w.wnss.alert.5,Vi understøtter ikke WPA-Enterprise-sikkerhedstilstand!
+w.wnss.alert.6,Vi understøtter ikke WPA2-Enterprise-sikkerhedstilstand!
+w.wnss.alert.7,Vi understøtter ikke WPA2-Enterprise-sikkerhedstilstand!
+w.wmm.title,WMM®
+w.wmm.1,Adgangstilstand
+w.wmm.1-1,Baggrund
+w.wmm.1-2,Bedste forsøg
+w.wmm.1-3,Video
+w.wmm.1-4,Voice
+w.wmm.1-5,Brug sammenlægning:
+w.wmm.1-6,Nej
+w.wmm.1-7,Ja
+w.wmm.1-8,Accepter sammenlægning:
+w.wmm.1-9,Nej
+w.wmm.1-10,Ja
+w.wmm.1-11,Maks. Antal pakker i sammenlægning:
+w.wmm.1-12,Maks. Sammenlægningsstørrelse:
+w.wmm.1-13,Timeout-interval:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Min. Størrelse af pakker i sammenlægning:
+w.wmm.1-15,ADDBA-timeout:
+w.wmm.1-16,Vinduesstørrelse for sammenlægning:
+w.wmm.1-17,CW min. til STA:
+w.wmm.1-18,CW maks. til STA:
+w.wmm.1-19,AIFSN til STA:
+w.wmm.1-20,TXOP til STA:
+w.wmm.1-21,CW min. til AP:
+w.wmm.1-22,CW maks. til AP:
+w.wmm.1-23,AIFSN til AP:
+w.wmm.1-24,TXOP til AP:
+w.wmm.save,Gem indstillinger
+w.wmm.cancel,Annuller ændringer
+w.wmm.alert.1,Kan ikke hente tilstand.
+w.wmm.alert.2,Det maksimale antal pakker i sammenlægningen skal være mellem
+w.wmm.alert.3,Det maksimale antal pakker i sammenlægningen skal være mellem
+w.wmm.alert.4,Det maksimale antal pakker i sammenlægningen skal være mellem
+w.wmm.alert.5,Det maksimale Sammenlægningsstørrelsen skal være mellem
+w.wmm.alert.6,Det maksimale Sammenlægningsstørrelsen skal være mellem
+w.wmm.alert.7,Det maksimale Sammenlægningsstørrelsen skal være mellem
+w.wmm.alert.8,Den minimale størrelse pakker i sammenlægningen skal være mellem 0 og 1500!
+w.wmm.alert.9,ADDBA-timeoutværdien skal være mellem 0 og 65535!
+w.wmm.alert.10,Vinduesstørrelsen for sammenlægningen skal være mellem 0 og 64!
+w.wmm.alert.11,Timeout-intervallet skal være mellem
+w.aws.title,Avancerede trådløse indstillinger
+w.aws.1,Brug radarregistrering:
+w.aws.2,Nej
+w.aws.3,Ja
+w.aws.4,Liste over AOCS-begrænsede kanaler:
+w.aws.5,Brug LDPC:
+w.aws.6,Nej
+w.aws.7,Ja
+w.aws.8,Brug skjult SSID:
+w.aws.9,Nej
+w.aws.10,Ja
+w.aws.11,ERP-beskyttelsestype:
+w.aws.12,Ingen
+w.aws.13,RTS/CTS
+w.aws.14,CTS2Self
+w.aws.15,Brug overlappende BSS-beskyttelse:
+w.aws.16,Nej
+w.aws.17,Ja
+w.aws.18,11n-beskyttelsestype:
+w.aws.19,Ingen
+w.aws.20,RTS/CTS
+w.aws.21,CTS2Self
+w.aws.22,Aktiver AP-viderestilling:
+w.aws.23,Nej
+w.aws.24,Ja
+w.aws.25,Brug pålidelig multicast:
+w.aws.26,Nej
+w.aws.27,Ja
+w.aws.28,Brug STBC:
+w.aws.29,Nej
+w.aws.30,Ja
+w.aws.31,Procent af maksimal transmissionsstyrke:
+w.aws.32,QoS-klassificeringstype:
+w.aws.38,Genopret Ethernet-forbindelse, når trådløs forbindelse startes:
+w.aws.save,Gem indstillinger
+w.aws.cancel,Annuller ændringer
+func.js.1,Behandler, vent......
+func.js.2,Genstarter, vent......
+u-media.js.1,SSID'et må ikke være længere end 32 tegn!
+u-media.js.2,Adgangsordsnøglen skal være på mellem 8 og 63 ASCII-tegn!
+u-media.js.3,Fejl. " + msg + " er tom!
+u-media.js.4," + msg + " skal være et tal fra [0-9].
+u-media.js.5," + msg + " er en ugyldig værdi!
+u-media.js.6,Giver op: (kan ikke oprette et XML HTTP-eksempel
+u-media.js.7,Indtast de 64 hexadecimale tegn i den foruddelte nøgle!
+u-media.js.8,Adgangsordsnøglen skal være på mellem 8 og 63 ASCII-tegn!
+adm.waitpage.1,Behandler
+w.bws.2-35,Forbindelse oprettet
+HT.confirm,ADVARSEL: Dine Trådløs-N-enheder fungerer kun ved Trådløs-G-datahastigheder med den krypteringsform, du har valgt. Vælg krypteringen WPA2-Personal, hvis dine Trådløs-N-enheder skal fungere ved fulde datahastigheder. Klik på OK for at fortsætte med denne indstilling, eller klik på Annuller for at vælge en anden krypteringsform.

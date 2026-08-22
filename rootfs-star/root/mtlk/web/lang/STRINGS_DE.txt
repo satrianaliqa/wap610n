@@ -1,0 +1,318 @@
+Templates.1,Firmware-Version:
+Templates.2,Dual-Band Wireless-N Gaming- und Video-Adapter
+Templates.WES610N,Dual-Band Wireless-N Ethernet-Switch
+mainmenu.1,Wireless
+mainmenu.2,Einrichtung
+mainmenu.3,Verwaltung
+mainmenu.4,Status
+mainmenutitle.1,Wireless
+mainmenutitle.2,Einrichtung
+mainmenutitle.3,Verwaltung
+mainmenutitle.4,Status
+mainmenutitle.5,Erweitert
+adm.submenu.1,Verwaltungsfunktionen
+adm.submenu.2,Werkseinstellungen
+adm.submenu.3,Firmware-Aktualisierung
+adm.waitpage.title,Neustart des Systems
+adm.man.title,Verwaltungsfunktionen
+adm.man.0,Sprache
+adm.man.0-1,Sprache wählen:
+adm.man.1,Bridge-Zugriff
+adm.man.1-1,Bridge-Passwort
+adm.man.1-2,Zur Bestätigung erneut eingeben:
+adm.man.1-3,Leerlauf-Zeitüberschreitung:
+adm.man.1-4,(60-3600 Sekunden)
+adm.man.2,Zugriff auf lokale Verwaltung
+adm.man.2-1,Wireless-Zugriff
+adm.man.2-2,Aktiviert
+adm.man.2-3,Deaktiviert
+adm.man.3,Sichern und Wiederherstellen
+adm.man.3-1,Sicherung:
+adm.man.3-2,Konfigurationen sichern
+adm.man.3-3,Wiederherstellen:
+adm.man.3-4,Konfigurationen wiederherstellen
+adm.man.4,Neustart des Systems
+adm.man.4-1,Neustart:
+adm.man.4-2,Neu starten
+adm.man.save,Einstellungen speichern
+adm.man.cancel,Änderungen verwerfen
+adm.man.alert.1,Wählen Sie eine Konfigurationsdatei für die Wiederherstellung aus.
+adm.man.alert.2,Das Passwort darf nicht mehr als 64 Zeichen enthalten.
+adm.man.alert.3,Das Passwort und die Bestätigung stimmen nicht überein. Bestätigen Sie das Admin-Passwort erneut.
+adm.man.alert.4,Der Wert für die Leerlauf-Zeitüberschreitung muss zwischen 60 und 3600 Sekunden liegen.
+adm.man.confirm.1,Möchten Sie das Gerät wirklich neu starten?
+adm.fd.title,Werkseinstellungen
+adm.fd.1,Alle Einstellungen wiederherstellen
+adm.fd.confirm.1,Warnung! Wenn Sie auf 'OK' klicken, wird das Gerät auf die Werkseinstellungen zurückgesetzt, und alle bisherigen Einstellungen werden gelöscht.
+adm.fu.title,Firmware-Aktualisierung
+adm.fu.1,Wählen Sie eine Datei für die Firmware-Aktualisierung aus:
+adm.fu.2,Aktualisierung starten
+adm.fu.3,Warnung:
+adm.fu.4,Die Aktualisierung der Firmware kann einige Minuten dauern. Schalten Sie das Gerät nicht aus,
+adm.fu.5,und drücken Sie nicht die Reset-Taste.
+adm.fu.6,Der Aktualisierungsvorgang darf NICHT unterbrochen werden.
+adm.fu.alert.1,Fehler: XMLHTTP-Instanz kann nicht erstellt werden.
+adm.fu.alert.2,Bei der Anforderung ist ein Problem aufgetreten.
+adm.fu.alert.3,Falsche Bilddatei.
+nets.submenu.1,Grundlegende Einrichtung
+nets.bns.title,Grundlegende Einrichtung
+nets.bns.nct.1,Bridge-IP
+nets.bns.nct.1-1,Automatische Konfiguration – DHCP
+nets.bns.nct.1-2,Statische IP-Adresse
+nets.bns.nct.1-3,Hostname:
+nets.bns.nct.1-4,Statische IP-Adresse:
+nets.bns.nct.1-5,Subnetzmaske:
+nets.bns.nct.1-6,Standard-Gateway:
+nets.bns.nct.save,Einstellungen speichern
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Netzwerk-IP-Adresse
+nets.bns.check.2,Subnetzmaske
+nets.bns.check.3,Standard-Gateway
+status.submenu.1,Bridge
+status.submenu.2,Wireless-Netzwerk
+status.submenu.3,Info
+status.b.1,Bridge-Informationen
+status.b.1-1,Firmware-Version:
+status.b.2,Lokales Netzwerk
+status.b.2-1,Lokale MAC-Adresse:
+status.b.2-2,Bridge-IP-Adresse:
+status.b.2-3,Subnetzmaske:
+status.b.2-4,Standard-Gateway:
+status.wn.1,Wireless-Netzwerk
+status.wn.1-1,Verbindungsstatus:
+status.wn.1-2,MAC-Adresse:
+status.wn.1-3,Netzwerkname (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Frequenzband:
+status.wn.1-6,Bandbreite:
+status.wn.1-7,Zusatzkanal:
+status.wn.1-8,Standardkanal:
+status.wn.1-9,Bitrate:
+status.wn.1-10,Signal:
+status.wn.1-11,Sicherheit:
+status.wait,Bitte warten
+status.a.title,Info
+status.a.1,Webserver
+status.a.1-1,Powered By:
+w.submenu.1,Grundlegende Wireless-Einstellungen
+w.submenu.2,Wireless-Netzwerksuche
+w.submenu.3,WMM®
+w.submenu.4,Erweiterte Wireless-Einstellungen
+w.bws.1,Grundlegende Wireless-Einstellungen
+w.bws.1-1,Konfigurationsansicht:
+w.bws.1-2,Manuell
+w.bws.1-3,Wi-Fi Protected Setup
+w.bws.1-4,Frequenzband:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Beide
+w.bws.1-8,Netzwerkname (SSID):
+w.bws.2,Wireless-Sicherheit
+w.bws.2-1,Sicherheitsmodus:
+w.bws.2-2,Deaktiviert
+w.bws.2-3,WEP
+w.bws.2-4,WPA-Personal
+w.bws.2-5,WPA2-Personal
+w.bws.2-6,Verschlüsselung:
+w.bws.2-7,104/128-Bit (26 Hexadezimalziffern)
+w.bws.2-8,40/64-Bit (10 Hexadezimalziffern)
+w.bws.2-9,Passphrase:
+w.bws.2-10,Schlüssel 1:
+w.bws.2-11,Schlüssel 2:
+w.bws.2-12,Schlüssel 3:
+w.bws.2-13,Schlüssel 4:
+w.bws.2-14,Tx-Schlüssel:
+w.bws.2-15,Schlüssel 1
+w.bws.2-16,Authentifizierung:
+w.bws.2-17,Offen
+w.bws.2-18,Freigegeben
+w.bws.2-19,Auto
+w.bws.2-20,Verschlüsselung:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP oder AES
+w.bws.2-24,Passphrase:
+w.bws.2-25,Wi-Fi Protected Setup
+w.bws.2-26,Verwenden Sie eine der folgenden Methoden, wenn Ihr Router (oder Access Point) Wi-Fi Protected Setup unterstützt:
+w.bws.2-27,1. Wenn der Router über eine Wi-Fi Protected Setup-Taste verfügt, drücken/klicken Sie auf diese Schaltfläche. Klicken Sie anschließend auf die Schaltfläche auf der rechten Seite.
+w.bws.2-28,ODER
+w.bws.2-29,2. Wenn Sie vom Router zur Eingabe der PIN-Nummer des Clientgeräts aufgefordert werden, geben Sie diese Nummer
+w.bws.2-30,ein und klicken Sie dann auf
+w.bws.2-31,Verbindungsstatus:
+w.bws.2-32,Nicht verbunden
+w.bws.2-33,Netzwerkname (SSID):
+w.bws.2-34,Sicherheit:
+w.bws.save,Einstellungen speichern
+w.bws.cancel,Änderungen verwerfen
+w.bws.alert.1,Geben Sie 10 Hexadezimalzeichen ein. 
+w.bws.alert.2,Geben Sie 26 Hexadezimalzeichen ein. 
+w.bws.asp.1,Verbinden mit
+w.bws.asp.2,Bitte warten
+w.bws.asp.3,Wi-Fi Protected Setup wird initialisiert.
+w.bws.asp.4,Bitte warten
+w.bws.asp.5,Wi-Fi Protected Setup wird zurückgesetzt. Bitte warten, dieser Vorgang kann einige Sekunden dauern.
+w.bws.asp.6,WPS wird beendet...
+w.bws.asp.7,[Wird ausgeführt]
+w.bws.asp.8,DUMMY
+w.bws.asp.9,Einstellungen werden gespeichert. Bitte warten.
+w.bws.asp.10,Herzlichen Glückwunsch!
+w.bws.asp.11,Die Verbindung mit folgender SSID wurde erfolgreich hergestellt:
+w.bws.asp.12,Router (Access Point) wird gesucht.
+w.bws.asp.13,Bitte warten...
+w.bws.asp.14,Falls Sie noch nicht auf die Wi-Fi Protected Setup-Taste geklickt haben, tun Sie dies bitte jetzt.
+w.bws.asp.15,Die PIN-Nummer der Bridge lautet:
+w.bws.asp.16,Router (Access Point) wird gesucht.
+w.bws.asp.17,Bitte warten...
+w.bws.asp.18,Wird ausgeführt
+w.bws.asp.19,Fehler
+w.bws.asp.20,OK
+w.bws.asp.21,Manuelle AP-Wahl
+w.bws.asp.22,Fehler: Überschneidung.
+w.bws.asp.23,Fehler: PIN-Code-Fehler.
+w.bws.asp.24,Wartestatus
+w.bws.asp.25,Zeitüberschreitung
+w.bws.asp.26,Warten auf eingehende Verbindungen ...
+w.bws.asp.27,APs werden gesucht
+w.bws.asp.28,Registrieren mit eingehender STA ...
+w.bws.asp.29,Registrieren mit AP ...
+w.bws.asp.30,Verbinden mit STA ...
+w.bws.asp.31,Verbinden mit AP ...
+w.bws.js.1,Verbindungsfehler.
+w.bws.js.2,Diese Wireless Bridge konnte keine Verbindung zum Router (Access Point) herstellen.
+w.bws.js.3,Befolgen Sie die Anweisungen des Routers, und versuchen Sie es erneut.
+w.bws.js.4,Wird beendet, bitte warten ...
+w.bws.js.5,Schließen
+w.bws.js.6,Das Gerät kann die aktuelle IP-Adresse nicht abrufen. Versuchen Sie, die IP-Adresse über den AP zu ermitteln.
+w.wnss.1,Wireless-Netzwerksuche
+w.wnss.1-1,Aktualisieren
+w.wnss.1-2,Verbinden
+w.wnss.2,Wireless-Sicherheit
+w.wnss.2-1,Netzwerkname (SSID):
+w.wnss.2-2,Sicherheitsmodus:
+w.wnss.2-3,Verschlüsselung:
+w.wnss.2-4,104/128-Bit (26 Hexadezimalziffern)
+w.wnss.2-5,40/64-Bit (10 Hexadezimalziffern)
+w.wnss.2-6,Passphrase:
+w.wnss.2-7,Schlüssel 1:
+w.wnss.2-8,Schlüssel 2:
+w.wnss.2-9,Schlüssel 3:
+w.wnss.2-10,Schlüssel 4:
+w.wnss.2-11,Tx-Schlüssel:
+w.wnss.2-12,Schlüssel 1
+w.wnss.2-13,Authentifizierung:
+w.wnss.2-14,Offen
+w.wnss.2-15,Freigegeben
+w.wnss.2-16,Auto
+w.wnss.2-17,Verschlüsselung:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP oder AES
+w.wnss.2-21,Passphrase:
+w.wnss.2-22,Aktualisieren
+w.wnss.2-23,Verbinden
+w.wnss.2-24,Anzahl der Wireless-Netzwerke:
+w.wnss.2-25,Wählen
+w.wnss.2-26,Wireless-Netzwerkname
+w.wnss.2-27,GHz
+w.wnss.2-28,Signal
+w.wnss.2-29,Sicherheit
+w.wnss.2-30,Deaktiviert
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA-Personal
+w.wnss.2-33,WPA-Enterprise
+w.wnss.alert.1,Modus kann nicht abgerufen werden.
+w.wnss.alert.2,Geben Sie 10 Hexadezimalzeichen ein. 
+w.wnss.alert.3,Geben Sie 26 Hexadezimalzeichen ein. 
+w.wnss.alert.4,Wählen Sie einen Access Point/Router, mit dem eine Verbindung hergestellt werden soll, und drücken Sie erneut auf Verbinden.
+w.wnss.alert.5,Der Sicherheitsmodus WPA-Enterprise wird nicht unterstützt.
+w.wnss.alert.6,Der Sicherheitsmodus WPA2-Enterprise wird nicht unterstützt.
+w.wnss.alert.7,Der Sicherheitsmodus WPA2-Enterprise wird nicht unterstützt.
+w.wmm.title,WMM®
+w.wmm.1,Zugriffsmodus
+w.wmm.1-1,Hintergrund
+w.wmm.1-2,Beste Bemühung
+w.wmm.1-3,Video
+w.wmm.1-4,Voice
+w.wmm.1-5,Aggregation verwenden:
+w.wmm.1-6,Nein
+w.wmm.1-7,Ja
+w.wmm.1-8,Aggregation annehmen:
+w.wmm.1-9,Nein
+w.wmm.1-10,Ja
+w.wmm.1-11,Max. Anzahl der Pakete in der Aggregation:
+w.wmm.1-12,Max. Größe der Aggregation:
+w.wmm.1-13,Zeitüberschreitungs-Intervall:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Min. Größe der Pakete in der Aggregation:
+w.wmm.1-15,ADDBA-Zeitüberschreitung:
+w.wmm.1-16,Größe des Aggregations-Fensters:
+w.wmm.1-17,Min. CW für STA:
+w.wmm.1-18,Max. CW für STA:
+w.wmm.1-19,AIFSN für STA:
+w.wmm.1-20,TXOP für STA:
+w.wmm.1-21,Min. CW für AP:
+w.wmm.1-22,Max. CW für AP:
+w.wmm.1-23,AIFSN für AP:
+w.wmm.1-24,TXOP für AP:
+w.wmm.save,Einstellungen speichern
+w.wmm.cancel,Änderungen verwerfen
+w.wmm.alert.1,Modus kann nicht abgerufen werden.
+w.wmm.alert.2,Die maximale Anzahl der Pakete in der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.3,Die maximale Anzahl der Pakete in der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.4,Die maximale Anzahl der Pakete in der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.5,Die maximale Größe der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.6,Die maximale Größe der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.7,Die maximale Größe der Aggregation muss zwischen folgenden Werten liegen:
+w.wmm.alert.8,Die minimale Größe der Pakete in der Aggregation muss zwischen 0 und 1500 liegen.
+w.wmm.alert.9,Der Wert für die ADDBA-Zeitüberschreitung muss zwischen 0 und 65535 liegen.
+w.wmm.alert.10,Die Größe des Aggregations-Fensters muss zwischen 0 und 64 liegen.
+w.wmm.alert.11,Der Wert für die Zeitüberschreitung muss in folgendem Bereich liegen: 
+w.aws.title,Erweiterte Wireless-Einstellungen
+w.aws.1,Radarerkennung verwenden:
+w.aws.2,Nein
+w.aws.3,Ja
+w.aws.4,List of AOCS restricted channels:
+w.aws.5,LDPC verwenden:
+w.aws.6,Nein
+w.aws.7,Ja
+w.aws.8,Verborgene SSID verwenden:
+w.aws.9,Nein
+w.aws.10,Ja
+w.aws.11,ERP-Schutztyp:
+w.aws.12,Keiner
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-Self
+w.aws.15,Überschneidenden BSS-Schutz verwenden:
+w.aws.16,Nein
+w.aws.17,Ja
+w.aws.18,11n-Schutztyp:
+w.aws.19,Keiner
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-Self
+w.aws.22,AP-Weiterleitung aktivieren:
+w.aws.23,Nein
+w.aws.24,Ja
+w.aws.25,Zuverlässiges Multicast verwenden:
+w.aws.26,Nein
+w.aws.27,Ja
+w.aws.28,STBC verwenden:
+w.aws.29,Nein
+w.aws.30,Ja
+w.aws.31,Anteil der maximalen Übertragungsleistung:
+w.aws.32,QoS-Klassifizierungstyp:
+w.aws.38,Stellen Sie nach Aufbau der Wireless-Verbindung erneut eine Ethernet-Verbindung her:
+w.aws.save,Einstellungen speichern
+w.aws.cancel,Änderungen verwerfen
+func.js.1,Der Vorgang wird bearbeitet, bitte warten ...
+func.js.2,Neustart, bitte warten ...
+u-media.js.1,Die SSID darf nicht mehr als 32 Zeichen enthalten.
+u-media.js.2,Die Schlüsselpassphrase muss aus 8 bis 63 ASCII-Zeichen bestehen.
+u-media.js.3,Fehler. " + msg + " ist leer.
+u-media.js.4," + msg + " muss eine Zahl zwischen 0 und 9 sein.
+u-media.js.5," + msg + " ist ein unzulässiger Wert.
+u-media.js.6,Fehler: XMLHTTP-Instanz kann nicht erstellt werden.
+u-media.js.7,Geben Sie die 64 Hexadezimalziffern des vorläufigen gemeinsamen Schlüssels ein.
+u-media.js.8,Die Schlüsselpassphrase muss zwischen 8 und 63 ASCII-Zeichen enthalten.
+adm.waitpage.1,Vorgang wird bearbeitet
+w.bws.2-35,Verbunden
+HT.confirm,WARNUNG: Ihre Wireless-N-Geräte arbeiten bei dem von Ihnen ausgewählten Verschlüsselungstyp nur mit Wireless-G-Datenraten. Wählen Sie die Verschlüsselung WPA2-Personal, wenn Sie möchten, dass Ihre Wireless-N-Geräte mit voller Datenrate arbeiten. Klicken Sie auf 'OK', um mit der Auswahl fortzufahren. Klicken Sie auf 'Abbrechen', um einen anderen Verschlüsselungstyp auszuwählen.

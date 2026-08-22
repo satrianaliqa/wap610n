@@ -1,0 +1,318 @@
+Templates.1,Firmwareversie:
+Templates.2,Dual-Band Wireless-N Game- en video-adapter
+Templates.WES610N,Dual-Band Wireless-N Ethernetswitch
+mainmenu.1,Draadloos
+mainmenu.2,Instellingen
+mainmenu.3,Beheer
+mainmenu.4,Status
+mainmenutitle.1,Draadloos
+mainmenutitle.2,Instellingen
+mainmenutitle.3,Beheer
+mainmenutitle.4,Status
+mainmenutitle.5,Geavanceerd
+adm.submenu.1,Beheer
+adm.submenu.2,Fabrieksinstellingen
+adm.submenu.3,Firmware-upgrade
+adm.waitpage.title,Systeem opnieuw opstarten
+adm.man.title,Beheer
+adm.man.0,Taal
+adm.man.0-1,Taal selecteren:
+adm.man.1,Toegang tot bridge
+adm.man.1-1,Wachtwoord van bridge
+adm.man.1-2,Voer het wachtwoord opnieuw in ter bevestiging:
+adm.man.1-3,Time-out bij inactiviteit:
+adm.man.1-4,(60-3600 seconden)
+adm.man.2,Toegang voor lokaal beheer
+adm.man.2-1,Toegang via WLAN
+adm.man.2-2,Ingeschakeld
+adm.man.2-3,Uitgeschakeld
+adm.man.3,Back-up en herstel
+adm.man.3-1,Back-up maken:
+adm.man.3-2,Back-up van configuraties maken
+adm.man.3-3,Herstellen:
+adm.man.3-4,Configuraties herstellen
+adm.man.4,Systeem opnieuw opstarten
+adm.man.4-1,Opnieuw opstarten:
+adm.man.4-2,Nu opnieuw opstarten
+adm.man.save,Instellingen opslaan
+adm.man.cancel,Wijzigingen annuleren
+adm.man.alert.1,Selecteer een configuratiebestand voor herstel.
+adm.man.alert.2,Wachtwoord mag niet langer zijn dan 64 tekens.
+adm.man.alert.3,Wachtwoord en bevestiging komen niet overeen. Bevestig het beheerderswachtwoord opnieuw.
+adm.man.alert.4,Time-out bij inacitiviteit moet tussen de 60 en 3600 seconden liggen.
+adm.man.confirm.1,Weet u zeker dat u het apparaat opnieuw wilt opstarten?
+adm.fd.title,Fabrieksinstellingen
+adm.fd.1,Alle instellingen herstellen
+adm.fd.confirm.1,Waarschuwing! Als u op OK klikt, worden de fabrieksinstellingen hersteld en gaan uw huidige instellingen verloren.
+adm.fu.title,Firmware-upgrade
+adm.fu.1,Selecteer het bestand dat de upgrade voor de firmware bevat:
+adm.fu.2,Upgrade starten
+adm.fu.3,Waarschuwing:
+adm.fu.4,Het upgraden kan enkele minuten duren. Schakel
+adm.fu.5,de netstroom niet uit en druk niet op de resetknop.
+adm.fu.6,De upgrade mag niet worden onderbroken!
+adm.fu.alert.1,Gestopt: XML HTTP-instantie kan niet worden gemaakt
+adm.fu.alert.2,Er is een probleem met de aanvraag.
+adm.fu.alert.3,Dit afbeeldingsbestand is onjuist.
+nets.submenu.1,Basisinstellingen
+nets.bns.title,Basisinstellingen
+nets.bns.nct.1,IP van bridge
+nets.bns.nct.1-1,Automatische configuratie DHCP
+nets.bns.nct.1-2,Vast IP-adres
+nets.bns.nct.1-3,Hostnaam:
+nets.bns.nct.1-4,Vast IP-adres:
+nets.bns.nct.1-5,Subnetmasker:
+nets.bns.nct.1-6,Standaardgateway:
+nets.bns.nct.save,Instellingen opslaan
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Netwerk-IP-adres
+nets.bns.check.2,Subnetmasker
+nets.bns.check.3,Standaardgateway
+status.submenu.1,Bridge
+status.submenu.2,Draadloos netwerk
+status.submenu.3,Info
+status.b.1,Bridge-informatie
+status.b.1-1,Firmwareversie:
+status.b.2,Lokaal netwerk
+status.b.2-1,Lokaal MAC-adres:
+status.b.2-2,Bridge-IP-adres:
+status.b.2-3,Subnetmasker:
+status.b.2-4,Standaardgateway:
+status.wn.1,Draadloos netwerk
+status.wn.1-1,Verbindingsstatus:
+status.wn.1-2,MAC-adres:
+status.wn.1-3,Netwerknaam (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Radioband:
+status.wn.1-6,Kanaalbreedte:
+status.wn.1-7,Breed kanaal:
+status.wn.1-8,Standaardkanaal:
+status.wn.1-9,Bitsnelheid:
+status.wn.1-10,Signaal:
+status.wn.1-11,Beveiliging:
+status.wait,Een ogenblik geduld...
+status.a.title,Info
+status.a.1,Webserver
+status.a.1-1,Aangestuurd door:
+w.submenu.1,Standaardinstellingen WLAN
+w.submenu.2,Site-onderzoek over draadloze netwerken
+w.submenu.3,WMM®
+w.submenu.4,Geavanceerde instellingen WLAN
+w.bws.1,Standaardinstellingen WLAN
+w.bws.1-1,Configuratieweergave:
+w.bws.1-2,Handmatig
+w.bws.1-3,Wi-Fi Protected Setup
+w.bws.1-4,Frequentieband:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Beide
+w.bws.1-8,Netwerknaam (SSID):
+w.bws.2,WLAN-beveiliging
+w.bws.2-1,Beveiligingsmodus:
+w.bws.2-2,Uitgeschakeld
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Versleuteling:
+w.bws.2-7,104 / 128-bits (26 hex-cijfers)
+w.bws.2-8,40 / 64-bits (10 hex-cijfers)
+w.bws.2-9,Wachtzin:
+w.bws.2-10,Sleutel 1:
+w.bws.2-11,Sleutel 2:
+w.bws.2-12,Sleutel 3:
+w.bws.2-13,Sleutel 4:
+w.bws.2-14,Tx-sleutel:
+w.bws.2-15,Sleutel 1
+w.bws.2-16,Verificatie:
+w.bws.2-17,Openen
+w.bws.2-18,Gedeeld
+w.bws.2-19,Automatisch
+w.bws.2-20,Versleuteling:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP of AES
+w.bws.2-24,Wachtzin:
+w.bws.2-25,Wi-Fi Protected Setup
+w.bws.2-26,Gebruik een van de volgende methoden als uw router (of access point) Wi-Fi Protected Setup ondersteunt:
+w.bws.2-27,1. Als de router over een knop Wi-Fi Protected Setup beschikt, klik of druk dan op die knop en klik vervolgens op de knop aan de rechterkant.
+w.bws.2-28,OF
+w.bws.2-29,2. Als de router vraagt om de PIN-code van het clientapparaat, voer dan dit nummer
+w.bws.2-30,in uw router in en klik daarna op
+w.bws.2-31,Verbindingsstatus:
+w.bws.2-32,Niet verbonden
+w.bws.2-33,Netwerknaam (SSID):
+w.bws.2-34,Beveiliging:
+w.bws.save,Instellingen opslaan
+w.bws.cancel,Wijzigingen annuleren
+w.bws.alert.1,Voer een sleutel van 10 hexadecimale tekens in 
+w.bws.alert.2,Voer een sleutel van 26 hexadecimale tekens in 
+w.bws.asp.1,Verbinding maken met 
+w.bws.asp.2,Een ogenblik geduld...
+w.bws.asp.3,Wi-Fi Protected Setup initialiseren...
+w.bws.asp.4,Een ogenblik geduld...
+w.bws.asp.5,Wi-Fi Protected Setup resetten... Een ogenblik geduld, dit kan een paar seconden in beslag nemen
+w.bws.asp.6,WPS stoppen....
+w.bws.asp.7,[Bezig]
+w.bws.asp.8,DUMMY
+w.bws.asp.9,Instellingen opslaan... Een ogenblik geduld
+w.bws.asp.10,Gefeliciteerd!
+w.bws.asp.11,U bent verbonden met SSID:
+w.bws.asp.12,Zoeken naar router (of access point)...
+w.bws.asp.13,Een ogenblik geduld...
+w.bws.asp.14,Klik op de knop Wi-Fi Protected Setup op uw router (of access point) als u dit nog niet hebt gedaan.
+w.bws.asp.15,De PIN-code van uw bridge is:
+w.bws.asp.16,Zoeken naar router (of access point)...
+w.bws.asp.17,Een ogenblik geduld...
+w.bws.asp.18,Bezig
+w.bws.asp.19,Fout
+w.bws.asp.20,OK
+w.bws.asp.21,Access point handmatig selecteren
+w.bws.asp.22,Fout, overlap.
+w.bws.asp.23,Fout, PIN-codefout.
+w.bws.asp.24,Wachtstatus
+w.bws.asp.25,Time-out
+w.bws.asp.26,Inkomende verbindingen detecteren...
+w.bws.asp.27,Zoeken naar access points...
+w.bws.asp.28,Registreren bij inkomend STA...
+w.bws.asp.29,Registreren bij AP...
+w.bws.asp.30,Verbinding maken met STA...
+w.bws.asp.31,Verbinding maken met AP...
+w.bws.js.1,Verbinding mislukt!
+w.bws.js.2,Er kan geen verbinding tot stand worden gebracht tussen deze draadloze bridge en uw router (of access point).
+w.bws.js.3,Controleer uw router en probeer het opnieuw.
+w.bws.js.4,Stoppen, een ogenblik geduld...
+w.bws.js.5,Sluiten
+w.bws.js.6,Het apparaat kan het huidige IP-adres niet vinden. Probeer het te vinden op het access point.
+w.wnss.1,Site-onderzoek over draadloze netwerken
+w.wnss.1-1,Vernieuwen
+w.wnss.1-2,Verbinding maken
+w.wnss.2,WLAN-beveiliging
+w.wnss.2-1,Netwerknaam (SSID):
+w.wnss.2-2,Beveiligingsmodus:
+w.wnss.2-3,Versleuteling:
+w.wnss.2-4,104 / 128-bits (26 hex-cijfers)
+w.wnss.2-5,40 / 64-bits (10 hex-cijfers)
+w.wnss.2-6,Wachtzin:
+w.wnss.2-7,Sleutel 1:
+w.wnss.2-8,Sleutel 2:
+w.wnss.2-9,Sleutel 3:
+w.wnss.2-10,Sleutel 4:
+w.wnss.2-11,Tx-sleutel:
+w.wnss.2-12,Sleutel 1
+w.wnss.2-13,Verificatie:
+w.wnss.2-14,Openen
+w.wnss.2-15,Gedeeld
+w.wnss.2-16,Automatisch
+w.wnss.2-17,Versleuteling:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP of AES
+w.wnss.2-21,Wachtzin:
+w.wnss.2-22,Vernieuwen
+w.wnss.2-23,Verbinding maken
+w.wnss.2-24,Aantal draadloze netwerken:
+w.wnss.2-25,Sel.
+w.wnss.2-26,Naam WLAN
+w.wnss.2-27,GHz
+w.wnss.2-28,Signaal
+w.wnss.2-29,Beveiliging
+w.wnss.2-30,Uitgeschakeld
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA Personal
+w.wnss.2-33,WPA Enterprise
+w.wnss.alert.1,Kan methode niet gebruiken.
+w.wnss.alert.2,Voer een sleutel van 10 hexadecimale tekens in 
+w.wnss.alert.3,Voer een sleutel van 26 hexadecimale tekens in 
+w.wnss.alert.4,Selecteer één access point/router waarmee u verbinding wilt maken en druk nogmaals op Verbinding maken.
+w.wnss.alert.5,De WPA-Enterprise-beveiligingsmethode wordt niet ondersteund.
+w.wnss.alert.6,De WPA2-Enterprise-beveiligingsmethode wordt niet ondersteund.
+w.wnss.alert.7,De WPA2-Enterprise-beveiligingsmethode wordt niet ondersteund.
+w.wmm.title,WMM®
+w.wmm.1,Toegangsmethode
+w.wmm.1-1,Achtergrond
+w.wmm.1-2,Beste poging
+w.wmm.1-3,Video
+w.wmm.1-4,Spraak
+w.wmm.1-5,Aggregatie gebruiken:
+w.wmm.1-6,Nee
+w.wmm.1-7,Ja
+w.wmm.1-8,Aggregatie accepteren:
+w.wmm.1-9,Nee
+w.wmm.1-10,Ja
+w.wmm.1-11,Max. aantal pakketten in aggregatie:
+w.wmm.1-12,Max. grootte aggregatie:
+w.wmm.1-13,Time-outinterval:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Min. grootte van pakketten in aggregatie:
+w.wmm.1-15,ADDBA-time-out:
+w.wmm.1-16,Grootte aggregatievenster:
+w.wmm.1-17,CW-min. voor STA:
+w.wmm.1-18,CW-max. voor STA:
+w.wmm.1-19,AIFSN voor STA:
+w.wmm.1-20,TXOP voor STA:
+w.wmm.1-21,CW-min. voor AP:
+w.wmm.1-22,CW-max. voor AP:
+w.wmm.1-23,AIFSN voor AP:
+w.wmm.1-24,TXOP voor AP:
+w.wmm.save,Instellingen opslaan
+w.wmm.cancel,Wijzigingen annuleren
+w.wmm.alert.1,Kan methode niet gebruiken.
+w.wmm.alert.2,Het max. aantal pakketten in aggregatie moet liggen tussen
+w.wmm.alert.3,Het max. aantal pakketten in aggregatie moet liggen tussen
+w.wmm.alert.4,Het max. aantal pakketten in aggregatie moet liggen tussen
+w.wmm.alert.5,De max. aggregatiegrootte moet liggen tussen
+w.wmm.alert.6,De max. aggregatiegrootte moet liggen tussen
+w.wmm.alert.7,De max. aggregatiegrootte moet liggen tussen
+w.wmm.alert.8,De min. pakketgrootte in aggregatie moet tussen 0 en 1500 liggen.
+w.wmm.alert.9,De waarde voor ADDBA-time-out moet tussen 0 en 65535 liggen.
+w.wmm.alert.10,De grootte van het aggregatievenster moet tussen 0 en 64 liggen.
+w.wmm.alert.11,Het time-outinterval moet tussen de volgende waarden liggen:
+w.aws.title,Geavanceerde instellingen WLAN
+w.aws.1,Radardetectie gebruiken:
+w.aws.2,Nee
+w.aws.3,Ja
+w.aws.4,List of AOCS restricted channels:
+w.aws.5,LDPC gebruiken:
+w.aws.6,Nee
+w.aws.7,Ja
+w.aws.8,Verborgen SSID gebruiken:
+w.aws.9,Nee
+w.aws.10,Ja
+w.aws.11,Type ERP-beveiliging:
+w.aws.12,Geen
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-self
+w.aws.15,Overlappende BSS-beveiliging gebruiken:
+w.aws.16,Nee
+w.aws.17,Ja
+w.aws.18,Type 11n-beveiliging:
+w.aws.19,Geen
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-self
+w.aws.22,Doorsturen van AP inschakelen:
+w.aws.23,Nee
+w.aws.24,Ja
+w.aws.25,Betrouwbare multicast gebruiken:
+w.aws.26,Nee
+w.aws.27,Ja
+w.aws.28,STBC gebruiken:
+w.aws.29,Nee
+w.aws.30,Ja
+w.aws.31,Percentage van maximaal verzendvermogen:
+w.aws.32,Type QoS-classificatie:
+w.aws.38,Ethernetverbinding opnieuw tot stand brengen wanneer u draadloos verbinding maakt:
+w.aws.save,Instellingen opslaan
+w.aws.cancel,Wijzigingen annuleren
+func.js.1,Bezig met verwerken, een ogenblik geduld...
+func.js.2,Opnieuw opstarten, een ogenblik geduld...
+u-media.js.1,De SSID kan niet langer zijn dan 32 tekens.
+u-media.js.2,De wachtzin moet tussen de 8 en 63 ASCII-tekens bevatten.
+u-media.js.3,Fout. " + msg + " is leeg.
+u-media.js.4," + msg + " moet een getal van [0-9] zijn.
+u-media.js.5," + msg + " is een ongeldige waarde.
+u-media.js.6,Gestopt: XML HTTP-instantie kan niet worden gemaakt
+u-media.js.7,Voer een vooraf gedeelde sleutel van 64 hexadecimale tekens in.
+u-media.js.8,De wachtzin moet tussen de 8 en 63 ASCII-tekens bevatten.
+adm.waitpage.1,Verwerken
+w.bws.2-35,Verbonden
+HT.confirm,WAARSCHUWING: uw Wireless-N apparaten werken alleen met Wireless-G gegevenssnelheden met het door u gekozen versleutelingstype. Selecteer WPA2-Personal als versleuteling als u uw Wireless-N apparaten wilt gebruiken met hoge gegevenssnelheden. Klik op OK als u wilt doorgaan met deze selectie of klik op Annuleren als u een ander versleutelingstype wilt kiezen.

@@ -1,0 +1,318 @@
+Templates.1,Versione firmware:
+Templates.2,Adattatore per giochi e video Dual-Band Wireless-N
+Templates.WES610N,Switch Ethernet Wireless-N Dual-Band
+mainmenu.1,Wireless
+mainmenu.2,Configurazione
+mainmenu.3,Amministrazione
+mainmenu.4,Stato
+mainmenutitle.1,Wireless
+mainmenutitle.2,Configurazione
+mainmenutitle.3,Amministrazione
+mainmenutitle.4,Stato
+mainmenutitle.5,Avanzate
+adm.submenu.1,Gestione
+adm.submenu.2,Impostazioni predefinite
+adm.submenu.3,Aggiornamento firmware
+adm.waitpage.title,Riavvio sistema
+adm.man.title,Gestione
+adm.man.0,Lingua
+adm.man.0-1,Seleziona lingua:
+adm.man.1,Accesso bridge
+adm.man.1-1,Password Bridge
+adm.man.1-2,Conferma password:
+adm.man.1-3,Timeout inattività:
+adm.man.1-4,(60-3600 secondi)
+adm.man.2,Accesso a gestione locale
+adm.man.2-1,Accesso via wireless
+adm.man.2-2,Attivato
+adm.man.2-3,Disattivato
+adm.man.3,Backup e ripristino
+adm.man.3-1,Backup:
+adm.man.3-2,Backup configurazioni
+adm.man.3-3,Ripristina:
+adm.man.3-4,Ripristino configurazioni
+adm.man.4,Riavvio sistema
+adm.man.4-1,Riavvia:
+adm.man.4-2,Inizio riavvio
+adm.man.save,Salva impostazioni
+adm.man.cancel,Annulla modifiche
+adm.man.alert.1,Selezionare un file di configurazione da ripristinare.
+adm.man.alert.2,La password non può contenere più di 64 caratteri.
+adm.man.alert.3,La password e la password di conferma non corrispondono. Confermare la password admin.
+adm.man.alert.4,Il tempo massimo di inattività deve essere superiore a 60 secondi e inferiore a 3600 secondi.
+adm.man.confirm.1,Riavviare il dispositivo?
+adm.fd.title,Impostazioni predefinite
+adm.fd.1,Ripristina tutte le impostazioni
+adm.fd.confirm.1,Avvertenza: facendo clic su OK, verranno ripristinate le impostazioni predefinite del dispositivo e tutte le impostazioni precedenti andranno perse.
+adm.fu.title,Aggiornamento firmware
+adm.fu.1,Selezionare un file per aggiornare il firmware:
+adm.fu.2,Avvio aggiornamento
+adm.fu.3,Avvertenza:
+adm.fu.4,l'aggiornamento del firmware può richiedere alcuni minuti. Non spegnere
+adm.fu.5,il sistema né premere il pulsante di ripristino.
+adm.fu.6,L'aggiornamento NON deve essere interrotto.
+adm.fu.alert.1,Interruzione: impossibile creare un'istanza XML HTTP
+adm.fu.alert.2,Si è verificato un problema con la richiesta.
+adm.fu.alert.3,File immagine errato.
+nets.submenu.1,Configurazione di base
+nets.bns.title,Configurazione di base
+nets.bns.nct.1,IP Bridge
+nets.bns.nct.1-1,Configurazione automatica - DHCP
+nets.bns.nct.1-2,IP statico
+nets.bns.nct.1-3,Nome host:
+nets.bns.nct.1-4,Indirizzo IP statico:
+nets.bns.nct.1-5,Maschera di sottorete:
+nets.bns.nct.1-6,Gateway predefinito:
+nets.bns.nct.save,Salva impostazioni
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Indirizzo IP di rete
+nets.bns.check.2,Maschera di sottorete
+nets.bns.check.3,Gateway predefinito
+status.submenu.1,Bridge
+status.submenu.2,Rete wireless
+status.submenu.3,Informazioni
+status.b.1,Informazioni sul bridge
+status.b.1-1,Versione firmware:
+status.b.2,Rete locale
+status.b.2-1,Indirizzo MAC locale:
+status.b.2-2,Indirizzo IP bridge:
+status.b.2-3,Maschera di sottorete:
+status.b.2-4,Gateway predefinito:
+status.wn.1,Rete wireless
+status.wn.1-1,Stato collegamento:
+status.wn.1-2,Indirizzo MAC:
+status.wn.1-3,Nome di rete (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Banda radio:
+status.wn.1-6,Ampiezza canale:
+status.wn.1-7,Canale ampio:
+status.wn.1-8,Canale standard:
+status.wn.1-9,Velocità in bit:
+status.wn.1-10,Segnale:
+status.wn.1-11,Protezione:
+status.wait,Attendere
+status.a.title,Informazioni
+status.a.1,Server Web
+status.a.1-1,Powered by:
+w.submenu.1,Impostazioni wireless di base
+w.submenu.2,Ricerca sito su rete wireless
+w.submenu.3,WMM®
+w.submenu.4,Impostazioni wireless avanzate
+w.bws.1,Impostazioni wireless di base
+w.bws.1-1,Vista Configurazione:
+w.bws.1-2,Manuale
+w.bws.1-3,Wi-Fi Protected Setup
+w.bws.1-4,Banda di frequenza:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Entrambi
+w.bws.1-8,Nome di rete (SSID):
+w.bws.2,Protezione wireless
+w.bws.2-1,Modalità di protezione:
+w.bws.2-2,Disattivata
+w.bws.2-3,WEP
+w.bws.2-4,WPA-Personal
+w.bws.2-5,WPA2-Personal
+w.bws.2-6,Cifratura:
+w.bws.2-7,104/128 bit (26 cifre esadecimali)
+w.bws.2-8,40/64 bit (10 cifre esadecimali)
+w.bws.2-9,Passphrase:
+w.bws.2-10,Chiave 1:
+w.bws.2-11,Chiave 2:
+w.bws.2-12,Chiave 3:
+w.bws.2-13,Chiave 4:
+w.bws.2-14,Chiave Tx:
+w.bws.2-15,Chiave 1
+w.bws.2-16,Autenticazione:
+w.bws.2-17,Aperta
+w.bws.2-18,Condivisa
+w.bws.2-19,Automatica
+w.bws.2-20,Cifratura:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP o AES
+w.bws.2-24,Passphrase:
+w.bws.2-25,Wi-Fi Protected Setup
+w.bws.2-26,Utilizzare uno dei seguenti metodi se il router (o il punto di accesso) supporta Wi-Fi Protected Setup:
+w.bws.2-27,1. Se il router è dotato di un pulsante Wi-Fi Protected Setup, selezionare o premere questo pulsante, quindi fare clic sul pulsante a destra.
+w.bws.2-28,OPPURE
+w.bws.2-29,2. Se il router richiede il codice PIN del dispositivo client, immettere il numero
+w.bws.2-30,nel router quindi fare clic su
+w.bws.2-31,Stato collegamento:
+w.bws.2-32,Disconnesso
+w.bws.2-33,Nome di rete (SSID):
+w.bws.2-34,Protezione:
+w.bws.save,Salva impostazioni
+w.bws.cancel,Annulla modifiche
+w.bws.alert.1,Immettere una chiave composta da 10 caratteri esadecimali 
+w.bws.alert.2,Immettere una chiave composta da 26 caratteri esadecimali 
+w.bws.asp.1,Connessione in corso a
+w.bws.asp.2,Attendere
+w.bws.asp.3,Inizializzazione di Wi-Fi Protected Setup in corso
+w.bws.asp.4,Attendere
+w.bws.asp.5,Ripristino di Wi-Fi Protected Setup in corso. Attendere, questa operazione potrebbe richiedere alcuni secondi.
+w.bws.asp.6,Arresto di WPS in corso...
+w.bws.asp.7,[In corso]
+w.bws.asp.8,FITTIZIO
+w.bws.asp.9,Salvataggio impostazioni in corso. Attendere
+w.bws.asp.10,Congratulazioni!
+w.bws.asp.11,Connessione riuscita a SSID:
+w.bws.asp.12,Ricerca del router (o del punto di accesso) in corso.
+w.bws.asp.13,Attendere...
+w.bws.asp.14,Fare clic sul pulsante Wi-Fi Protected Setup del router (o del punto di accesso), se questa operazione non è stata già eseguita.
+w.bws.asp.15,Il numero PIN del bridge è:
+w.bws.asp.16,Ricerca del router (o del punto di accesso) in corso.
+w.bws.asp.17,Attendere...
+w.bws.asp.18,In corso
+w.bws.asp.19,Errore
+w.bws.asp.20,OK
+w.bws.asp.21,Selezione AP manuale
+w.bws.asp.22,Errore: si è verificata una sovrapposizione.
+w.bws.asp.23,Errore codice PIN.
+w.bws.asp.24,Stato di attesa
+w.bws.asp.25,Timeout
+w.bws.asp.26,Ascolto connessioni in ingresso
+w.bws.asp.27,Ricerca di AP in corso
+w.bws.asp.28,Registrazione di STA in entrata
+w.bws.asp.29,Registrazione di AP
+w.bws.asp.30,Connessione a STA
+w.bws.asp.31,Connessione ad AP
+w.bws.js.1,Connessione non riuscita!
+w.bws.js.2,Il bridge wireless non ha stabilito la connessione con il router (o il punto di accesso).
+w.bws.js.3,Fare riferimento al router e riprovare.
+w.bws.js.4,Arresto in corso, attendere...
+w.bws.js.5,Chiudi
+w.bws.js.6,Il dispositivo non riesce a trovare l'indirizzo IP. Cercarlo sul punto di accesso.
+w.wnss.1,Ricerca sito su rete wireless
+w.wnss.1-1,Aggiorna
+w.wnss.1-2,Connetti
+w.wnss.2,Protezione wireless
+w.wnss.2-1,Nome di rete (SSID):
+w.wnss.2-2,Modalità di protezione:
+w.wnss.2-3,Cifratura:
+w.wnss.2-4,104/128 bit (26 cifre esadecimali)
+w.wnss.2-5,40/64 bit (10 cifre esadecimali)
+w.wnss.2-6,Passphrase:
+w.wnss.2-7,Chiave 1:
+w.wnss.2-8,Chiave 2:
+w.wnss.2-9,Chiave 3:
+w.wnss.2-10,Chiave 4:
+w.wnss.2-11,Chiave Tx:
+w.wnss.2-12,Chiave 1
+w.wnss.2-13,Autenticazione:
+w.wnss.2-14,Aperta
+w.wnss.2-15,Condivisa
+w.wnss.2-16,Automatica
+w.wnss.2-17,Cifratura:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP o AES
+w.wnss.2-21,Passphrase:
+w.wnss.2-22,Aggiorna
+w.wnss.2-23,Connetti
+w.wnss.2-24,Numero di reti wireless:
+w.wnss.2-25,Selez.
+w.wnss.2-26,Nome della rete wireless
+w.wnss.2-27,GHz
+w.wnss.2-28,Segnale
+w.wnss.2-29,Protezione
+w.wnss.2-30,Disattivata
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA-Personal
+w.wnss.2-33,WPA-Enterprise
+w.wnss.alert.1,Impossibile rilevare la modalità.
+w.wnss.alert.2,Immettere una chiave composta da 10 caratteri esadecimali 
+w.wnss.alert.3,Immettere una chiave composta da 26 caratteri esadecimali 
+w.wnss.alert.4,Selezionare un AP/Router che si desidera connettere e premere nuovamente Connetti.
+w.wnss.alert.5,Modalità di protezione WPA-Enterprise non supportata.
+w.wnss.alert.6,Modalità di protezione WPA2-Enterprise non supportata.
+w.wnss.alert.7,Modalità di protezione WPA2-Enterprise non supportata.
+w.wmm.title,WMM®
+w.wmm.1,Modalità di accesso
+w.wmm.1-1,Sfondo
+w.wmm.1-2,In base al traffico
+w.wmm.1-3,Video
+w.wmm.1-4,Voce
+w.wmm.1-5,Utilizza aggregazione:
+w.wmm.1-6,No
+w.wmm.1-7,Sì
+w.wmm.1-8,Accetta aggregazione:
+w.wmm.1-9,No
+w.wmm.1-10,Sì
+w.wmm.1-11,Numero massimo di pacchetti in aggregazione:
+w.wmm.1-12,Dimensione massima aggregazione:
+w.wmm.1-13,Intervallo timeout:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Minuti Dimensione pacchetti in aggregazione:
+w.wmm.1-15,Timeout ADDBA:
+w.wmm.1-16,Dimensioni finestra di aggregazione:
+w.wmm.1-17,CW min per STA:
+w.wmm.1-18,CW max per STA:
+w.wmm.1-19,AIFSN per STA:
+w.wmm.1-20,TXOP per STA:
+w.wmm.1-21,CW min per AP:
+w.wmm.1-22,CW max per AP:
+w.wmm.1-23,AIFSN per AP:
+w.wmm.1-24,TXOP per AP:
+w.wmm.save,Salva impostazioni
+w.wmm.cancel,Annulla modifiche
+w.wmm.alert.1,Impossibile rilevare la modalità.
+w.wmm.alert.2,Il numero massimo di pacchetti in aggregazione deve essere compreso tra
+w.wmm.alert.3,Il numero massimo di pacchetti in aggregazione deve essere compreso tra
+w.wmm.alert.4,Il numero massimo di pacchetti in aggregazione deve essere compreso tra
+w.wmm.alert.5,La dimensione massima dell'aggregazione deve essere compresa tra
+w.wmm.alert.6,La dimensione massima dell'aggregazione deve essere compresa tra
+w.wmm.alert.7,La dimensione massima dell'aggregazione deve essere compresa tra
+w.wmm.alert.8,La dimensione minima dei pacchetti in aggregazione deve essere compresa tra 0 e 1500.
+w.wmm.alert.9,Il valore di timeout ADDBA deve essere compreso tra 0 e 65535.
+w.wmm.alert.10,La dimensione della finestra di aggregazione deve essere compresa tra 0 e 64.
+w.wmm.alert.11,Il valore dell'intervallo timeout deve essere compreso tra
+w.aws.title,Impostazioni wireless avanzate
+w.aws.1,Utilizza rilevamento radar:
+w.aws.2,No
+w.aws.3,Sì
+w.aws.4,Elenco dei canali limitati AOCS:
+w.aws.5,Utilizza LDPC:
+w.aws.6,No
+w.aws.7,Sì
+w.aws.8,Utilizza SSID nascosto:
+w.aws.9,No
+w.aws.10,Sì
+w.aws.11,Tipo di protezione ERP:
+w.aws.12,Nessuno
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-self
+w.aws.15,Utilizzare protezione BSS sovrapposta:
+w.aws.16,No
+w.aws.17,Sì
+w.aws.18,Tipo di protezione 11n:
+w.aws.19,Nessuno
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-self
+w.aws.22,Attiva inoltro AP:
+w.aws.23,No
+w.aws.24,Sì
+w.aws.25,Utilizza multicast affidabile:
+w.aws.26,No
+w.aws.27,Sì
+w.aws.28,Utilizza STBC:
+w.aws.29,No
+w.aws.30,Sì
+w.aws.31,Percentuale di potenza di trasmissione massima:
+w.aws.32,Tipo di classificazione QoS:
+w.aws.38,Ristabilisci connessione Ethernet all'avvio della connessione wireless:
+w.aws.save,Salva impostazioni
+w.aws.cancel,Annulla modifiche
+func.js.1,Elaborazione in corso, attendere...
+func.js.2,Riavvio in corso, attendere...
+u-media.js.1,Il SSID non può contenere più di 32 caratteri.
+u-media.js.2,La passphrase deve contenere un numero compreso tra 8 e 63 di caratteri ASCII.
+u-media.js.3,Errore. " + msg + " è vuoto.
+u-media.js.4,Il " + msg + " deve essere un numero compreso nell'intervallo [0-9].
+u-media.js.5,Il valore " + msg + " non è valido.
+u-media.js.6,Interruzione: impossibile creare un'istanza XML HTTP
+u-media.js.7,Immettere una chiave precondivisa composta da 64 caratteri esadecimali.
+u-media.js.8,La passphrase deve contenere un numero compreso tra 8 e 63 di caratteri ASCII.
+adm.waitpage.1,Elaborazione in corso
+w.bws.2-35,Connesso
+HT.confirm,AVVERTENZA: i dispositivi Wireless-N funzioneranno alla velocità di trasferimento dati di Wireless-G con il tipo di cifratura selezionato. Selezionare la cifratura WPA2-Personal se si desidera che i dispositivi Wireless-N funzionino a velocità piena. Fare clic su OK per continuare con la selezione corrente o su Annulla per scegliere un altro tipo di cifratura.

@@ -1,0 +1,318 @@
+Templates.1,Version du micrologiciel :
+Templates.2,Adaptateur de vidéo et de jeu sans fil - N double bande
+Templates.WES610N,Commutateur  Ethernet sans fil N double bande
+mainmenu.1,Sans fil
+mainmenu.2,Configuration
+mainmenu.3,Administration
+mainmenu.4,Etat
+mainmenutitle.1,Sans fil
+mainmenutitle.2,Configuration
+mainmenutitle.3,Administration
+mainmenutitle.4,Etat
+mainmenutitle.5,Avancé
+adm.submenu.1,Gestion
+adm.submenu.2,Paramètres d'usine
+adm.submenu.3,Mise à niveau du micrologiciel
+adm.waitpage.title,Redémarrage système
+adm.man.title,Gestion
+adm.man.0,Langue
+adm.man.0-1,Sélectionner la langue :
+adm.man.1,Accès au pont
+adm.man.1-1,Mot de passe du pont
+adm.man.1-2,Confirmation du mot de passe :
+adm.man.1-3,Délai d'inactivité :
+adm.man.1-4,(60-3 600 secondes)
+adm.man.2,Accès à la gestion locale
+adm.man.2-1,Accès sans fil
+adm.man.2-2,Activé
+adm.man.2-3,Désactivé
+adm.man.3,Sauvegarde et restauration
+adm.man.3-1,Sauvegarde :
+adm.man.3-2,Sauvegarder les configurations
+adm.man.3-3,Restauration :
+adm.man.3-4,Restaurer les configurations
+adm.man.4,Redémarrage système
+adm.man.4-1,Redémarrage :
+adm.man.4-2,Lancer le redémarrage
+adm.man.save,Enregistrer les paramètres
+adm.man.cancel,Annuler les modifications
+adm.man.alert.1,Sélectionnez un fichier de configuration pour la restauration.
+adm.man.alert.2,La longueur du mot de passe ne peut pas être supérieure à 64 caractères.
+adm.man.alert.3,Le mot de passe et le mot de passe saisi pour vérification ne correspondent pas. Veuillez de nouveau confirmer le mot de passe administrateur.
+adm.man.alert.4,Le délai d'inactivité doit être supérieur à 60 secondes et inférieur à 3 600 secondes.
+adm.man.confirm.1,Souhaitez-vous vraiment redémarrer ce périphérique ?
+adm.fd.title,Paramètres d'usine
+adm.fd.1,Restaurer tous les paramètres
+adm.fd.confirm.1,Avertissement ! Si vous cliquez sur OK, les paramètres d'usine du périphérique seront restaurés et les paramètres précédents seront écrasés.
+adm.fu.title,Mise à niveau du micrologiciel
+adm.fu.1,Sélectionnez un fichier pour la mise à niveau du micrologiciel :
+adm.fu.2,Lancer la mise à niveau
+adm.fu.3,Avertissement :
+adm.fu.4,La mise à niveau du micrologiciel peut prendre quelques minutes. Ne coupez pas l'alimentation
+adm.fu.5,et n'appuyez pas sur le bouton de réinitialisation.
+adm.fu.6,La mise à niveau NE DOIT PAS être interrompue.
+adm.fu.alert.1,Echec : impossible de créer une instance XML HTTP
+adm.fu.alert.2,Un problème s'est produit concernant la demande.
+adm.fu.alert.3,Ce fichier image est incorrect.
+nets.submenu.1,Configuration de base
+nets.bns.title,Configuration de base
+nets.bns.nct.1,IP du pont
+nets.bns.nct.1-1,Configuration automatique - DHCP
+nets.bns.nct.1-2,Adresse IP statique
+nets.bns.nct.1-3,Nom d'hôte :
+nets.bns.nct.1-4,Adresse IP statique :
+nets.bns.nct.1-5,Masque de sous-réseau :
+nets.bns.nct.1-6,Passerelle par défaut :
+nets.bns.nct.save,Enregistrer les paramètres
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Adresse IP réseau
+nets.bns.check.2,Masque de sous-réseau
+nets.bns.check.3,Passerelle par défaut
+status.submenu.1,Pont
+status.submenu.2,Réseau sans fil
+status.submenu.3,A propos de
+status.b.1,Informations concernant le pont
+status.b.1-1,Version du micrologiciel :
+status.b.2,Réseau local (LAN)
+status.b.2-1,Adresse MAC locale :
+status.b.2-2,Adresse IP du pont :
+status.b.2-3,Masque de sous-réseau :
+status.b.2-4,Passerelle par défaut :
+status.wn.1,Réseau sans fil
+status.wn.1-1,Etat de la liaison :
+status.wn.1-2,Adresse MAC :
+status.wn.1-3,Nom du réseau (SSID) :
+status.wn.1-4,BSSID :
+status.wn.1-5,Bande radio :
+status.wn.1-6,Largeur du canal :
+status.wn.1-7,Canal à large bande :
+status.wn.1-8,Canal standard :
+status.wn.1-9,Nombre de bits :
+status.wn.1-10,Signal :
+status.wn.1-11,Sécurité :
+status.wait,Veuillez patienter
+status.a.title,A propos de
+status.a.1,Serveur Web
+status.a.1-1,Optimisé par :
+w.submenu.1,Paramètres sans fil de base
+w.submenu.2,Recherche de site de réseau sans fil
+w.submenu.3,WMM®
+w.submenu.4,Paramètres sans fil avancés
+w.bws.1,Paramètres sans fil de base
+w.bws.1-1,Affichage de la configuration:
+w.bws.1-2,Manuel
+w.bws.1-3,Wi-Fi Protected Setup
+w.bws.1-4,Bande de fréquences :
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Les deux
+w.bws.1-8,Nom du réseau (SSID) :
+w.bws.2,Sécurité sans fil
+w.bws.2-1,Mode de sécurité :
+w.bws.2-2,Désactivé
+w.bws.2-3,WEP
+w.bws.2-4,WPA personnel
+w.bws.2-5,WPA2 personnel
+w.bws.2-6,Cryptage :
+w.bws.2-7,104 / 128 bits (26 chiffres hexadécimaux)
+w.bws.2-8,40 / 64 bits (10 chiffres hexadécimaux)
+w.bws.2-9,Phrase de passe :
+w.bws.2-10,Clé 1 :
+w.bws.2-11,Clé 2 :
+w.bws.2-12,Clé 3 :
+w.bws.2-13,Clé 4 :
+w.bws.2-14,Clé de transmission :
+w.bws.2-15,Clé 1
+w.bws.2-16,Authentification :
+w.bws.2-17,Ouvert
+w.bws.2-18,Partagé
+w.bws.2-19,Auto
+w.bws.2-20,Cryptage :
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP ou AES
+w.bws.2-24,Phrase de passe :
+w.bws.2-25,Wi-Fi Protected Setup
+w.bws.2-26,Utilisez l'une des méthodes suivantes si votre routeur (ou point d'accès) prend en charge le Wi-Fi Protected Setup :
+w.bws.2-27,1. Si votre routeur est équipé d'un bouton Wi-Fi Protected Setup, cliquez sur ce bouton, puis cliquez sur le bouton à droite.
+w.bws.2-28,OU
+w.bws.2-29,2. Si votre routeur vous invite à indiquer le code PIN du périphérique client, saisissez-le,
+w.bws.2-30,puis cliquez sur
+w.bws.2-31,Etat de la liaison :
+w.bws.2-32,Déconnecté
+w.bws.2-33,Nom du réseau (SSID) :
+w.bws.2-34,Sécurité :
+w.bws.save,Enregistrer les paramètres
+w.bws.cancel,Annuler les modifications
+w.bws.alert.1,Saisissez 10 caractères hexadécimaux pour la clé 
+w.bws.alert.2,Saisissez 26 caractères hexadécimaux pour la clé 
+w.bws.asp.1,Connexion à
+w.bws.asp.2,Veuillez patienter
+w.bws.asp.3,Initialisation de la fonction Wi-Fi Protected Setup
+w.bws.asp.4,Veuillez patienter
+w.bws.asp.5,Réinitialisation de la fonction Wi-Fi Protected Setup. Veuillez patienter, cette opération peut prendre quelques secondes
+w.bws.asp.6,Arrêt du WPS....
+w.bws.asp.7,[En cours]
+w.bws.asp.8,FACTICE
+w.bws.asp.9,Enregistrement des paramètres en cours. Veuillez patienter
+w.bws.asp.10,Félicitations !
+w.bws.asp.11,Vous êtes connecté au SSID :
+w.bws.asp.12,Recherche de votre routeur(ou point d'accès) en cours.
+w.bws.asp.13,Veuillez patienter...
+w.bws.asp.14,Si vous n'avez pas cliqué sur le bouton Wi-Fi Protected Setup de votre routeur (ou point d'accès), faites-le maintenant.
+w.bws.asp.15,Le code PIN de votre pont est :
+w.bws.asp.16,Recherche de votre routeur(ou point d'accès) en cours.
+w.bws.asp.17,Veuillez patienter...
+w.bws.asp.18,En cours
+w.bws.asp.19,Erreur
+w.bws.asp.20,OK
+w.bws.asp.21,Sélection manuelle du PA
+w.bws.asp.22,Erreur : chevauchement de numéros.
+w.bws.asp.23,Erreur de code PIN.
+w.bws.asp.24,Etat : en attente
+w.bws.asp.25,Délai
+w.bws.asp.26,Ecoute des connexions entrantes
+w.bws.asp.27,Recherche de PA
+w.bws.asp.28,Enregistrement auprès du STA entrant
+w.bws.asp.29,Enregistrement auprès du PA
+w.bws.asp.30,Connexion au STA
+w.bws.asp.31,Connexion au PA
+w.bws.js.1,Echec de la connexion !
+w.bws.js.2,Echec de la connexion du pont sans fil à votre routeur (ou point d'accès).
+w.bws.js.3,Vérifiez votre routeur et réessayez.
+w.bws.js.4,Arrêt en cours, veuillez patienter...
+w.bws.js.5,Fermer
+w.bws.js.6,Impossible d'obtenir l'adresse IP actuelle, veuillez la rechercher sur le point d'accès
+w.wnss.1,Recherche de site de réseau sans fil
+w.wnss.1-1,Actualiser
+w.wnss.1-2,Connexion
+w.wnss.2,Sécurité sans fil
+w.wnss.2-1,Nom du réseau (SSID) :
+w.wnss.2-2,Mode de sécurité :
+w.wnss.2-3,Cryptage :
+w.wnss.2-4,104 / 128 bits (26 chiffres hexadécimaux)
+w.wnss.2-5,40 / 64 bits (10 chiffres hexadécimaux)
+w.wnss.2-6,Phrase de passe :
+w.wnss.2-7,Clé 1 :
+w.wnss.2-8,Clé 2 :
+w.wnss.2-9,Clé 3 :
+w.wnss.2-10,Clé 4 :
+w.wnss.2-11,Clé de transmission :
+w.wnss.2-12,Clé 1
+w.wnss.2-13,Authentification :
+w.wnss.2-14,Ouvert
+w.wnss.2-15,Partagé
+w.wnss.2-16,Auto
+w.wnss.2-17,Cryptage :
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP ou AES
+w.wnss.2-21,Phrase de passe :
+w.wnss.2-22,Actualiser
+w.wnss.2-23,Connexion
+w.wnss.2-24,Nombre de réseaux sans fil :
+w.wnss.2-25,Sélec.
+w.wnss.2-26,Nom du réseau sans fil
+w.wnss.2-27,GHz
+w.wnss.2-28,Signal
+w.wnss.2-29,Sécurité
+w.wnss.2-30,Désactivé
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA personnel
+w.wnss.2-33,WPA entreprise
+w.wnss.alert.1,Impossible d'obtenir le mode.
+w.wnss.alert.2,Saisissez 10 caractères hexadécimaux pour la clé 
+w.wnss.alert.3,Saisissez 26 caractères hexadécimaux pour la clé 
+w.wnss.alert.4,Sélectionnez un PA/routeur à connecter et appuyez une nouvelle fois sur Connexion.
+w.wnss.alert.5,Mode de sécurité WPA entreprise non pris en charge
+w.wnss.alert.6,Mode de sécurité WPA2 entreprise non pris en charge
+w.wnss.alert.7,Mode de sécurité WPA2 entreprise non pris en charge
+w.wmm.title,WMM®
+w.wmm.1,Mode d'accès
+w.wmm.1-1,Arrière-plan
+w.wmm.1-2,Best Effort
+w.wmm.1-3,Vidéo
+w.wmm.1-4,Voix
+w.wmm.1-5,Utiliser l'agrégation :
+w.wmm.1-6,Non
+w.wmm.1-7,Oui
+w.wmm.1-8,Accepter l'agrégation :
+w.wmm.1-9,Non
+w.wmm.1-10,Oui
+w.wmm.1-11,Nombre max. de paquets dans l'agrégation :
+w.wmm.1-12,Taille max. de l'agrégation :
+w.wmm.1-13,Délai :
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Taille min. des paquets dans l'agrégation :
+w.wmm.1-15,Délai ADDBA :
+w.wmm.1-16,Taille de la fenêtre d'agrégation :
+w.wmm.1-17,CW min. pour STA :
+w.wmm.1-18,CW max. pour STA :
+w.wmm.1-19,AIFSN pour STA :
+w.wmm.1-20,TXOP pour STA :
+w.wmm.1-21,CW min pour PA :
+w.wmm.1-22,CW max pour PA :
+w.wmm.1-23,AIFSN pour PA :
+w.wmm.1-24,TXOP pour PA :
+w.wmm.save,Enregistrer les paramètres
+w.wmm.cancel,Annuler les modifications
+w.wmm.alert.1,Impossible d'obtenir le mode.
+w.wmm.alert.2,Le nombre maximal de paquets dans l'agrégation doit être compris entre
+w.wmm.alert.3,Le nombre maximal de paquets dans l'agrégation doit être compris entre
+w.wmm.alert.4,Le nombre maximal de paquets dans l'agrégation doit être compris entre
+w.wmm.alert.5,La taille maximale de l'agrégation doit être comprise entre
+w.wmm.alert.6,La taille maximale de l'agrégation doit être comprise entre
+w.wmm.alert.7,La taille maximale de l'agrégation doit être comprise entre
+w.wmm.alert.8,La taille minimale des paquets de l'agrégation doit être comprise entre 0 et 1 500.
+w.wmm.alert.9,La valeur correspondant au délai ADDBA doit être comprise entre 0 et 65 535.
+w.wmm.alert.10,La taille de la fenêtre d'agrégation doit être comprise entre 0 et 64.
+w.wmm.alert.11,Le délai doit être compris entre
+w.aws.title,Paramètres sans fil avancés
+w.aws.1,Utiliser la détection par radar :
+w.aws.2,Non
+w.aws.3,Oui
+w.aws.4,List of AOCS restricted channels:
+w.aws.5,Utiliser LDPC :
+w.aws.6,Non
+w.aws.7,Oui
+w.aws.8,Utiliser un SSID masqué :
+w.aws.9,Non
+w.aws.10,Oui
+w.aws.11,Type de protection ERP :
+w.aws.12,Aucun
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-self
+w.aws.15,Utiliser la protection BSS contre les chevauchements :
+w.aws.16,Non
+w.aws.17,Oui
+w.aws.18,Type de protection 11n :
+w.aws.19,Aucun
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-self
+w.aws.22,Activer le transfert de PA :
+w.aws.23,Non
+w.aws.24,Oui
+w.aws.25,Utiliser la multidiffusion fiable :
+w.aws.26,Non
+w.aws.27,Oui
+w.aws.28,Utiliser STBC :
+w.aws.29,Non
+w.aws.30,Oui
+w.aws.31,Pourcentage de la puissance maximale d'émission :
+w.aws.32,Type de classification QS :
+w.aws.38,Rétablir la connexion Ethernet au lancement de la connexion sans fil :
+w.aws.save,Enregistrer les paramètres
+w.aws.cancel,Annuler les modifications
+func.js.1,Traitement en cours, veuillez patienter...
+func.js.2,Redémarrage en cours, veuillez patienter...
+u-media.js.1,La longueur du SSID ne doit pas être supérieure à 32 caractères.
+u-media.js.2,La longueur de la phrase de passe doit être comprise entre 8 et 63 caractères ASCII.
+u-media.js.3,Erreur. + msg + est vide.
+u-media.js.4,+ msg + doit être un nombre entre 0 et 9.
+u-media.js.5,La valeur correspondant à + msg + est incorrecte.
+u-media.js.6,Echec : impossible de créer une instance XML HTTP
+u-media.js.7,Saisissez 64 caractères hexadécimaux pour la clé pré-partagée
+u-media.js.8,La longueur de la phrase de passe doit être comprise entre 8 et 63 caractères ASCII.
+adm.waitpage.1,En cours
+w.bws.2-35,Connecté
+HT.confirm,AVERTISSEMENT : le type de cryptage choisi permet à vos périphériques sans fil N de fonctionner seulement avec un taux de transfert de données pour périphérique sans fil G. Sélectionnez le cryptage WPA2 personnel si vous souhaitez que vos périphériques sans fil N fonctionnent avec un taux de transfert optimal. Cliquez sur OK pour continuer avec cette sélection ou sur Annuler pour choisir un autre type de cryptage.

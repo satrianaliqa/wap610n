@@ -1,9 +1,15 @@
 #!/bin/sh
 
-HOSTNAME=$1
+# Check if $1 was specified. If not, use Drango as default hostname
+if [ -z "$1" ]
+then
+	HOSTNAME=Dorango
+else
+	HOSTNAME=$1
+fi
 
-hostname $1
+hostname $HOSTNAME
 
-echo $1 > /etc/hostname
+echo $HOSTNAME > /etc/hostname
 
-export HOSTNAME=$1
+export HOSTNAME=`/bin/hostname`

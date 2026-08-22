@@ -1,0 +1,318 @@
+Templates.1,Versión del firmware:
+Templates.2,Adaptador para vídeo y juegos Wireless-N de doble banda
+Templates.WES610N,Switch Ethernet Wireless-N de doble banda 
+mainmenu.1,Inalámbrico
+mainmenu.2,Configuración
+mainmenu.3,Administración
+mainmenu.4,Estado
+mainmenutitle.1,Inalámbrico
+mainmenutitle.2,Configuración
+mainmenutitle.3,Administración
+mainmenutitle.4,Estado
+mainmenutitle.5,Parámetros avanzados
+adm.submenu.1,Administración
+adm.submenu.2,Parámetros predeterminados de fábrica
+adm.submenu.3,Actualización del firmware
+adm.waitpage.title,Reinicio del sistema
+adm.man.title,Administración
+adm.man.0,Idioma
+adm.man.0-1,Seleccionar idioma:
+adm.man.1,Acceso al puente
+adm.man.1-1,Contraseña del puente
+adm.man.1-2,Confirmar contraseña:
+adm.man.1-3,Ha finalizado el tiempo de espera:
+adm.man.1-4,(60-3600 segundos)
+adm.man.2,Acceso a administración local
+adm.man.2-1,Acceso de forma inalámbrica
+adm.man.2-2,Activado
+adm.man.2-3,Desactivado
+adm.man.3,Copia de seguridad y restauración
+adm.man.3-1,Copia de seguridad:
+adm.man.3-2,Copia de seguridad de la configuración.
+adm.man.3-3,Restaurar:
+adm.man.3-4,Restauración de la configuración.
+adm.man.4,Reinicio del sistema
+adm.man.4-1,Reinicio:
+adm.man.4-2,Comenzar reinicio
+adm.man.save,Guardar parámetros
+adm.man.cancel,Cancelar cambios
+adm.man.alert.1,Seleccione un archivo de configuración para restaurar.
+adm.man.alert.2,La longitud de la contraseña no puede superar los 64 caracteres.
+adm.man.alert.3,Los campos Contraseña y Verificar contraseña no coinciden. Confirme la contraseña de administrador.
+adm.man.alert.4,El tiempo de inactividad debe ser superior a 60 segundos e inferior a 3600 segundos.
+adm.man.confirm.1,¿Está seguro de que desea reiniciar el dispositivo?
+adm.fd.title,Parámetros predeterminados de fábrica
+adm.fd.1,Restaurar todos los parámetros
+adm.fd.confirm.1,Advertencia: Si hace clic en Aceptar, se restablecerán los parámetros predeterminados de fábrica del dispositivo y los parámetros existentes se borrarán.
+adm.fu.title,Actualización del firmware
+adm.fu.1,Seleccione un archivo para actualizar el firmware:
+adm.fu.2,Iniciar actualización
+adm.fu.3,Advertencia:
+adm.fu.4,La actualización del firmware puede tardar unos minutos. No apague el
+adm.fu.5,equipo ni pulse el botón de reinicio.
+adm.fu.6,NO se debe interrumpir la actualización.
+adm.fu.alert.1,Abandonando :( no se puede crear un elemento XML HTTP
+adm.fu.alert.2,Se ha producido un problema con la solicitud.
+adm.fu.alert.3,El archivo de imagen es incorrecto.
+nets.submenu.1,Configuración básica
+nets.bns.title,Configuración básica
+nets.bns.nct.1,IP del puente
+nets.bns.nct.1-1,Configuración automática: DHCP
+nets.bns.nct.1-2,IP estática
+nets.bns.nct.1-3,Nombre del host:
+nets.bns.nct.1-4,Dirección IP estática:
+nets.bns.nct.1-5,Máscara de subred:
+nets.bns.nct.1-6,Puerta de enlace predeterminada:
+nets.bns.nct.save,Guardar parámetros
+nets.bns.nct.cancel,Cancel Changes
+nets.bns.check.1,Dirección IP de red
+nets.bns.check.2,Máscara de subred
+nets.bns.check.3,Puerta de enlace predeterminada
+status.submenu.1,Puente
+status.submenu.2,Red inalámbrica
+status.submenu.3,Acerca de
+status.b.1,Información del puente
+status.b.1-1,Versión del firmware:
+status.b.2,Red local
+status.b.2-1,Dirección MAC local:
+status.b.2-2,Dirección IP del puente:
+status.b.2-3,Máscara de subred:
+status.b.2-4,Puerta de enlace predeterminada:
+status.wn.1,Red inalámbrica
+status.wn.1-1,Estado de la conexión:
+status.wn.1-2,Dirección MAC:
+status.wn.1-3,Nombre de la red (SSID):
+status.wn.1-4,BSSID:
+status.wn.1-5,Banda de radio:
+status.wn.1-6,Ancho de canal:
+status.wn.1-7,Canal ancho:
+status.wn.1-8,Canal estándar:
+status.wn.1-9,Tasa de bits:
+status.wn.1-10,Señal:
+status.wn.1-11,Seguridad:
+status.wait,Espere
+status.a.title,Acerca de
+status.a.1,Servidor Web
+status.a.1-1,Desarrollado por:
+w.submenu.1,Parámetros inalámbricos básicos
+w.submenu.2,Sondeo del sitio inalámbrico
+w.submenu.3,WMM®
+w.submenu.4,Parámetros inalámbricos avanzados
+w.bws.1,Parámetros inalámbricos básicos
+w.bws.1-1,Vista de configuración:
+w.bws.1-2,Manual
+w.bws.1-3,Configuración Wi-Fi protegida
+w.bws.1-4,Banda de frecuencia:
+w.bws.1-5,5 GHz
+w.bws.1-6,2,4 GHz
+w.bws.1-7,Ambos
+w.bws.1-8,Nombre de la red (SSID):
+w.bws.2,Seguridad inalámbrica
+w.bws.2-1,Modo de seguridad:
+w.bws.2-2,Desactivado
+w.bws.2-3,WEP
+w.bws.2-4,WPA Personal
+w.bws.2-5,WPA2 Personal
+w.bws.2-6,Encriptación:
+w.bws.2-7,104 / 128 bits (26 dígitos hexadecimales)
+w.bws.2-8,40 / 64 bits (10 dígitos hexadecimales)
+w.bws.2-9,Frase de paso:
+w.bws.2-10,Clave 1:
+w.bws.2-11,Clave 2:
+w.bws.2-12,Clave 3:
+w.bws.2-13,Clave 4:
+w.bws.2-14,Clave de transmisión:
+w.bws.2-15,Clave 1
+w.bws.2-16,Autenticación:
+w.bws.2-17,Abrir
+w.bws.2-18,Compartido
+w.bws.2-19,Automático
+w.bws.2-20,Encriptación:
+w.bws.2-21,TKIP
+w.bws.2-22,AES
+w.bws.2-23,TKIP o AES
+w.bws.2-24,Frase de paso:
+w.bws.2-25,Configuración Wi-Fi protegida
+w.bws.2-26,Utilice uno de los métodos siguientes si el router (o punto de acceso) es compatible con la configuración Wi-Fi protegida:
+w.bws.2-27,1. Si el router tiene un botón de configuración Wi-Fi protegida, haga clic en él o púlselo y, a continuación, haga clic en el botón de la derecha.
+w.bws.2-28,O
+w.bws.2-29,2. Si el router solicita el número PIN del dispositivo del cliente, introdúzcalo
+w.bws.2-30,en el router y, seguidamente, haga clic en
+w.bws.2-31,Estado de la conexión:
+w.bws.2-32,Desconectado
+w.bws.2-33,Nombre de la red (SSID):
+w.bws.2-34,Seguridad:
+w.bws.save,Guardar parámetros
+w.bws.cancel,Cancelar cambios
+w.bws.alert.1,Introduzca los 10 caracteres hexadecimales de la clave 
+w.bws.alert.2,Introduzca los 26 caracteres hexadecimales de la clave 
+w.bws.asp.1,Conectando a
+w.bws.asp.2,Espere
+w.bws.asp.3,Inicializando configuración Wi-Fi protegida
+w.bws.asp.4,Espere
+w.bws.asp.5,Reiniciando configuración Wi-Fi protegida. Espere, esta operación puede tardar varios segundos
+w.bws.asp.6,Deteniendo WPS....
+w.bws.asp.7,[En curso]
+w.bws.asp.8,FICTICIO
+w.bws.asp.9,Guardando parámetros. Espere
+w.bws.asp.10,Enhorabuena
+w.bws.asp.11,Se ha conectado correctamente a SSID:
+w.bws.asp.12,Buscando router (o punto de acceso).
+w.bws.asp.13,Espere...
+w.bws.asp.14,Si no ha hecho clic en el botón Configuración Wi-Fi protegida del router (o punto de acceso), hágalo ahora.
+w.bws.asp.15,El código PIN de su puente es:
+w.bws.asp.16,Buscando router (o punto de acceso).
+w.bws.asp.17,Espere...
+w.bws.asp.18,En curso
+w.bws.asp.19,Error
+w.bws.asp.20,Aceptar
+w.bws.asp.21,Selección manual del punto de acceso
+w.bws.asp.22,Error, se ha producido una superposición.
+w.bws.asp.23,Error de código PIN.
+w.bws.asp.24,Estado de espera
+w.bws.asp.25,Tiempo de espera
+w.bws.asp.26,Recibiendo conexiones entrantes
+w.bws.asp.27,Buscando puntos de acceso
+w.bws.asp.28,Registrando con estación entrante
+w.bws.asp.29,Registrando con punto de acceso
+w.bws.asp.30,Conectando con estación
+w.bws.asp.31,Conectando al punto de acceso
+w.bws.js.1,Fallo en la conexión
+w.bws.js.2,El puente inalámbrico no ha podido conectarse al router (o punto de acceso).
+w.bws.js.3,Vuelva al router y e inténtelo de nuevo.
+w.bws.js.4,Deteniendo, espere.......
+w.bws.js.5,Cerrar
+w.bws.js.6,El dispositivo no puede obtener la dirección IP actual correctamente. Vuelva a intentarlo en el punto de acceso.
+w.wnss.1,Sondeo del sitio inalámbrico
+w.wnss.1-1,Actualizar
+w.wnss.1-2,Conectar
+w.wnss.2,Seguridad inalámbrica
+w.wnss.2-1,Nombre de la red (SSID):
+w.wnss.2-2,Modo de seguridad:
+w.wnss.2-3,Encriptación:
+w.wnss.2-4,104 / 128 bits (26 dígitos hexadecimales)
+w.wnss.2-5,40 / 64 bits (10 dígitos hexadecimales)
+w.wnss.2-6,Frase de paso:
+w.wnss.2-7,Clave 1:
+w.wnss.2-8,Clave 2:
+w.wnss.2-9,Clave 3:
+w.wnss.2-10,Clave 4:
+w.wnss.2-11,Clave de transmisión:
+w.wnss.2-12,Clave 1
+w.wnss.2-13,Autenticación:
+w.wnss.2-14,Abrir
+w.wnss.2-15,Compartido
+w.wnss.2-16,Automático
+w.wnss.2-17,Encriptación:
+w.wnss.2-18,TKIP
+w.wnss.2-19,AES
+w.wnss.2-20,TKIP o AES
+w.wnss.2-21,Frase de paso:
+w.wnss.2-22,Actualizar
+w.wnss.2-23,Conectar
+w.wnss.2-24,Número de redes inalámbricas:
+w.wnss.2-25,Selec.
+w.wnss.2-26,Nombre de la red inalámbrica
+w.wnss.2-27,GHz
+w.wnss.2-28,Señal
+w.wnss.2-29,Seguridad
+w.wnss.2-30,Desactivado
+w.wnss.2-31,WEP
+w.wnss.2-32,WPA Personal
+w.wnss.2-33,WPA Enterprise
+w.wnss.alert.1,No se puede acceder al mERPodo.
+w.wnss.alert.2,Introduzca los 10 caracteres hexadecimales de la clave 
+w.wnss.alert.3,Introduzca los 26 caracteres hexadecimales de la clave 
+w.wnss.alert.4,Seleccione el punto de acceso o router al que quiera conectarse y vuelva a pulsar Conectar.
+w.wnss.alert.5,No admite modo de seguridad WPA-Enterprise.
+w.wnss.alert.6,No admite modo de seguridad WPA2-Enterprise.
+w.wnss.alert.7,No admite modo de seguridad WPA2-Enterprise.
+w.wmm.title,WMM®
+w.wmm.1,Modo acceso
+w.wmm.1-1,Fondo
+w.wmm.1-2,Mayor esfuerzo
+w.wmm.1-3,Vídeo
+w.wmm.1-4,Voz
+w.wmm.1-5,Utilizar adición:
+w.wmm.1-6,No
+w.wmm.1-7,Sí
+w.wmm.1-8,Aceptar adición:
+w.wmm.1-9,No
+w.wmm.1-10,Sí
+w.wmm.1-11,Máximo Número de paquetes en adición:
+w.wmm.1-12,Máximo Tamaño de adición:
+w.wmm.1-13,Periodo de espera:
+w.wmm.1-13d,(0-100 ms)
+w.wmm.1-14,Min. Tamaño de paquetes en adición:
+w.wmm.1-15,Tiempo de espera ADDBA:
+w.wmm.1-16,Tamaño de la ventana de adición:
+w.wmm.1-17,CW mínimo para estación:
+w.wmm.1-18,CW máximo para estación:
+w.wmm.1-19,AIFSN para estación:
+w.wmm.1-20,TXOP para estación:
+w.wmm.1-21,CW mínimo para punto de acceso:
+w.wmm.1-22,CW máximo para punto de acceso:
+w.wmm.1-23,AIFSN para punto de acceso:
+w.wmm.1-24,TXOP para punto de acceso:
+w.wmm.save,Guardar parámetros
+w.wmm.cancel,Cancelar cambios
+w.wmm.alert.1,No se puede acceder al mERPodo.
+w.wmm.alert.2,El número máximo de paquetes en adición debe encontrarse entre
+w.wmm.alert.3,El número máximo de paquetes en adición debe encontrarse entre
+w.wmm.alert.4,El número máximo de paquetes en adición debe encontrarse entre
+w.wmm.alert.5,El tamaño máximo de adición debe encontrarse entre
+w.wmm.alert.6,El tamaño máximo de adición debe encontrarse entre
+w.wmm.alert.7,El tamaño máximo de adición debe encontrarse entre
+w.wmm.alert.8,El tamaño mínimo de paquetes en adición debe encontrarse entre 0 y 1500.
+w.wmm.alert.9,El valor de tiempo de espera ADDBA debe encontrarse entre 0 y 65 535.
+w.wmm.alert.10,El tamaño de la ventana de adición debe encontrarse entre 0 y 64.
+w.wmm.alert.11,El valor del periodo de espera debe tener entre
+w.aws.title,Parámetros inalámbricos avanzados
+w.aws.1,Utilizar detección por radar:
+w.aws.2,No
+w.aws.3,Sí
+w.aws.4,List of AOCS restricted channels:
+w.aws.5,Utilizar LDPC:
+w.aws.6,No
+w.aws.7,Sí
+w.aws.8,Utilizar SSID oculto:
+w.aws.9,No
+w.aws.10,Sí
+w.aws.11,Tipo de protección ERP:
+w.aws.12,Ninguna
+w.aws.13,RTS/CTS
+w.aws.14,CTS-to-self
+w.aws.15,Utilizar protección BSS superpuesta:
+w.aws.16,No
+w.aws.17,Sí
+w.aws.18,Tipo de protección 11n:
+w.aws.19,Ninguna
+w.aws.20,RTS/CTS
+w.aws.21,CTS-to-self
+w.aws.22,Activar reenvío de punto de acceso:
+w.aws.23,No
+w.aws.24,Sí
+w.aws.25,Utilizar multidifusión fiable:
+w.aws.26,No
+w.aws.27,Sí
+w.aws.28,Utilizar STBC:
+w.aws.29,No
+w.aws.30,Sí
+w.aws.31,Porcentaje de potencia de transmisión máxima:
+w.aws.32,Tipo de clasificación QoS:
+w.aws.38,Restablecer la conexión a Internet al iniciar la conexión inalámbrica:
+w.aws.save,Guardar parámetros
+w.aws.cancel,Cancelar cambios
+func.js.1,Procesando, espere...
+func.js.2,Reiniciando, espere...
+u-media.js.1,La longitud SSID no puede ser superior a 32 caracteres.
+u-media.js.2,La frase de paso debe contener entre 8 y 63 caracteres ASCII.
+u-media.js.3,Error. " + msg + " está vacío
+u-media.js.4, " + msg + " debe ser un número entre [0-9].
+u-media.js.5, " + msg + " no es un valor válido.
+u-media.js.6,Abandonando :( no se puede crear un elemento XML HTTP
+u-media.js.7,Introduzca una clave precompartida de 64 caracteres hexadecimales.
+u-media.js.8,La frase de paso debe contener entre 8 y 63 caracteres ASCII.
+adm.waitpage.1,Procesando
+w.bws.2-35,Conectado
+HT.confirm,ADVERTENCIA: Los dispositivos Wireless-N sólo funcionarán a velocidades de datos Wireless-G con el tipo de encriptación que haya elegido.  Seleccione la encriptación WPA2-Personal si desea que los dispositivos Wireless-N funcionen a velocidades de datos completas.  Haga clic en Aceptar para continuar con esta selección o en Cancelar para seleccionar una encriptación distinta.

@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -49,12 +49,6 @@ function template_load() {
 </script>
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
-
-function applyRemote() {
-	var sshVal = document.getElementById("sshEnabled").checked ? "1" : "0";
-	var telnetVal = document.getElementById("telnetEnabled").checked ? "1" : "0";
-	location.href = "/cgi-bin/remote_access.cgi?ssh=" + sshVal + "&telnet=" + telnetVal;
-}
 
 function checkConfFile() {
 	if (document.getElementById("configFilePathe").value == "") {
@@ -137,47 +131,6 @@ function page_load() {
 		document.getElementById("wirelessMgmtEnabled").checked = true;
 	else if (wirelessMgmt == 0)
 		document.getElementById("wirelessMgmtDisabled").checked = true;
-}
-
-function applyRemote() {
-	var sshVal = document.getElementById("ssh_en").checked ? "1" : "0";
-	var telnetVal = document.getElementById("telnet_en").checked ? "1" : "0";
-	var statusDiv = document.getElementById("remote_status");
-	statusDiv.innerHTML = "<span style='color: #0000ff;'>Applying settings...</span>";
-	
-	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "/cgi-bin/remote_access.cgi?ssh=" + sshVal + "&telnet=" + telnetVal + "&t=" + new Date().getTime(), true);
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			if (xhr.status == 200) {
-				statusDiv.innerHTML = "<span style='color: #008800; font-weight: bold;'>Settings applied successfully!</span>";
-			} else {
-				statusDiv.innerHTML = "<span style='color: #ff0000;'>Failed to apply settings.</span>";
-			}
-			setTimeout(function() { statusDiv.innerHTML = ""; }, 4000);
-		}
-	};
-	xhr.send(null);
-}
-
-function runCommand(customCmd) {
-	var cmd = customCmd ? customCmd : document.getElementById("terminal_cmd").value;
-	if (!cmd || cmd.trim() === "") return;
-	document.getElementById("terminal_cmd").value = cmd;
-	var outBox = document.getElementById("terminal_out");
-	outBox.innerHTML += "\n> " + cmd + "\n[Executing...]";
-	outBox.scrollTop = outBox.scrollHeight;
-	
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", "/cgi-bin/shell.cgi", true);
-	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			outBox.innerHTML = xhr.responseText;
-			outBox.scrollTop = outBox.scrollHeight;
-		}
-	};
-	xhr.send("cmd=" + encodeURIComponent(cmd));
 }
 </script>
 <!-- InstanceEndEditable -->
@@ -311,30 +264,7 @@ function runCommand(customCmd) {
 						<td class="tdLabel"><!--#tr id="adm.man.2-1" -->Access via Wireless:<!--#endtr--></td>
 						<td class="tdContent">
 							<input type="radio" id="wirelessMgmtEnabled" name="wirelessMgmt" value="1"><!--#tr id="adm.man.2-2" -->Enabled<!--#endtr-->
-					<tr>
-						<td class="subMenuSubContent">Remote Access</td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"><b>SSH Server (Port 22):</b></td>
-						<td class="tdContent">
-							<input type="radio" id="sshEnabled" name="sshServer" value="1" checked> Enabled
-							<input type="radio" id="sshDisabled" name="sshServer" value="0"> Disabled
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"><b>Telnet Server (Port 23):</b></td>
-						<td class="tdContent">
-							<input type="radio" id="telnetEnabled" name="telnetServer" value="1" checked> Enabled
-							<input type="radio" id="telnetDisabled" name="telnetServer" value="0"> Disabled
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"></td>
-						<td class="tdContent">
-							<input type="button" value="Apply Remote Access" onclick="applyRemote();" />
+							<input type="radio" id="wirelessMgmtDisabled"  name="wirelessMgmt" value="0"><!--#tr id="adm.man.2-3" -->Disabled<!--#endtr-->
 						</td>
 					</tr>
 					</form>
@@ -373,69 +303,6 @@ function runCommand(customCmd) {
 							<input type="hidden" value="1" name="configurationfile">						</td>
 					</tr>
 					</form>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="blankContent" colspan="2"><hr></td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent">Remote Access</td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel">SSH Service (Dropbear):</td>
-						<td class="tdContent">
-							<input type="radio" id="ssh_en" name="ssh_toggle" checked> Enabled
-							<input type="radio" id="ssh_dis" name="ssh_toggle"> Disabled (Port 22)
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel">Telnet Service:</td>
-						<td class="tdContent">
-							<input type="radio" id="telnet_en" name="telnet_toggle" checked> Enabled
-							<input type="radio" id="telnet_dis" name="telnet_toggle"> Disabled (Port 23)
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"></td>
-						<td class="tdContent">
-							<input type="button" value="Apply Remote Access" onclick="applyRemote();">
-							<span id="remote_status" style="margin-left: 10px;"></span>
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="blankContent" colspan="2"><hr></td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent">Web Terminal</td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel">Command:</td>
-						<td class="tdContent">
-							<input type="text" id="terminal_cmd" size="36" placeholder="e.g. ps, ifconfig, cat /proc/mtd" onkeydown="if(event.keyCode==13){runCommand();}">
-							<input type="button" value="Run" onclick="runCommand();"><br>
-							<div style="margin-top: 5px; font-size: 8pt;">
-								Quick: 
-								<a href="javascript:void(0)" onclick="runCommand('cat /proc/uptime; cat /proc/loadavg')">Uptime</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('ps')">Processes</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('ifconfig')">Interfaces</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('free')">Memory</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('cat /proc/mtd')">Flash MTD</a> |
-								<a href="javascript:void(0)" onclick="runCommand('iwconfig wlan0')">Wireless</a>
-							</div>
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel" style="vertical-align: top;">Terminal Output:</td>
-						<td class="tdContent">
-							<pre id="terminal_out" style="background: #111; color: #00ff00; font-family: monospace; font-size: 9pt; padding: 8px; width: 420px; height: 160px; overflow: auto; border: 1px solid #333; margin: 0;">Linux WAP610N Web Terminal Ready. Click Quick command or type above.</pre>
-						</td>
-					</tr>
 					<tr>
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
