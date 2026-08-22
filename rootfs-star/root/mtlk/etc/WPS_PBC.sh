@@ -42,32 +42,17 @@ then
 	then
 		while [ 1 ]
 		do
+			# Wait for physical WPS button press
 			cat $WPS_PBC_GPIO > /dev/null
-			#Jacky.Yang 1-Dec-2008, Remove set unconfigured flag to mtlk_wps_cmd.tcl when we success get correct wps status.
-			/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID ''
-			# Jacky.Yang 30-Nov-2008, for GUI
-			kill `ps |grep 'wpsCleanTempClock.sh'|grep -v 'grep'|awk '{print $1}'`
-			/root/mtlk/web/gui_wps_init.sh start
-			#/root/mtlk/etc/wps_config_flash.sh
-			echo pbc > /var/wps_type
-
-			#Add for active WPS monitor of HNAP - Ricky Cao on Nov. 24 2008
-			if [ -e /tmp/hnap_wps_status ]; then
-				HNAP_WPS_STATUS='cat /tmp/hnap_wps_status'
-				if [ $HNAP_WPS_STATUS = '0' ]; then
-					echo "Abort previous WPS progress.."
-					/root/mtlk/etc/mtlk_wps_cmd.tcl abort
-				fi
-			fi
-			killall -SIGUSR1 hnap_wps_status_monitor
-			if [ -e /tmp/wps_current_status ]; then
-				echo "Delete /tmp/wps_current_status for start hnap_wps_monitor.."
-				rm /tmp/wps_current_status
-			fi
-			echo 0 > /tmp/hnap_wps_status
-			/root/mtlk/etc/hnap_wps_status_monitor &
-			#Ricky Cao on Nov. 24 2008
-			./mtlk_wps_cmd.tcl $action_type
+			echo "[HARDWARE EVENT] WPS Button Pressed! Executing Safe System Shutdown..." > /dev/console
+			
+			# Turn off activity LEDs
+			echo 0 > /dev/led0 2>/dev/null || true
+			echo 0 > /dev/led1 2>/dev/null || true
+			
+			# Sync storage buffers and safely halt CPU
+			sync
+			poweroff
 		done
 	fi
 fi
