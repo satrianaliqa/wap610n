@@ -124,20 +124,7 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		return 1;
 	}
 	
-	debug_printf("websDefaultHandler: Jacky.Yang 11-Feb-2009, Start - for limitation apply process.\n");
-	//Jacky.Yang 11-Feb-2009, Start - for limitation apply process.
-	//printf("lpath:%s\n", lpath);
-	//if (!waitOtherProcess || ((strstr(lpath, WIATPPAGEPATH) != 0) || (strstr(lpath, SCRPITNAME) != 0)))CSSNAME
-	if (waitOtherProcess && (strstr(lpath, "goform") == 0) && (strstr(lpath, WAITPAGEPATH) == 0) && (strstr(lpath, SCRIPTNAME) == 0) && (strstr(lpath, PICNAME) == 0) && (strstr(lpath, CSSNAME) == 0))
-	{
-		//printf("websDefaultHandler: return to wait_page.asp\n");
-		nchars = gstrlen(WAITPAGEPATH) + 2;
-		fmtAlloc(&tmp, nchars, T("/%s"), WAITPAGEPATH);
-		websRedirect(wp, tmp);
-		bfreeSafe(B_L, tmp);
-		return 1;
-	}
-	//Jacky.Yang 11-Feb-2009, End - for limitation apply process.
+	/* Disable legacy waitOtherProcess blocking */
 
 /*
  *	Open the document. Stat for later use.
@@ -236,9 +223,7 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 	websWrite(wp, T("Content-type: %s\r\n"), websGetRequestType(wp));
 
-	if ((flags & WEBS_KEEP_ALIVE) && !(flags & WEBS_ASP)) {
-		websWrite(wp, T("Connection: keep-alive\r\n"));
-	}
+	websWrite(wp, T("Connection: close\r\n"));
 	websWrite(wp, T("\r\n"));
 
 	debug_printf("websDefaultHandler: All done if the browser did a HEAD request\n");

@@ -1626,9 +1626,7 @@ void websResponse(webs_t wp, int code, char_t *message, char_t *redirect)
 			}
 		}
 
-		if (wp->flags & WEBS_KEEP_ALIVE) {
-			websWrite(wp, T("Connection: keep-alive\r\n"));
-		}
+		websWrite(wp, T("Connection: close\r\n"));
 
 		websWrite(wp, T("Pragma: no-cache\r\nCache-Control: no-cache\r\n"));
 		websWrite(wp, T("Content-Type: text/html\r\n"));
