@@ -94,7 +94,9 @@ ensure_rootfs_dirs() {
 	         "$base/bin" "$base/sbin" "$base/lib" "$base/usr/bin" "$base/usr/sbin" \
 	         "$base/dev" "$base/dev/pts" "$base/dev/shm" "$base/dev/net" "$base/dev/input"
 	chmod 1777 "$base/tmp" 2>/dev/null || true
-	chmod 755 "$base/proc" "$base/sys" "$base/mnt" "$base/var" "$base/root" 2>/dev/null || true
+	chmod 755 "$base/proc" "$base/sys" "$base/mnt" "$base/var" 2>/dev/null || true
+	chmod 700 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
+	chown -R 0:0 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
 }
 
 ensure_rootfs_dirs "${ROOTFS_DIR}"

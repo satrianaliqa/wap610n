@@ -9,6 +9,12 @@ ln -s /mnt/jffs2 /tmp/jffs2
 
 . ./mtlk_init.sh
 
-# Jacky.Yang 28-Nov-2008, We don't want auto init telnet daemon.
-# Start the telnetd server that is missing by default on STAR
-#telnetd -f /etc/issue
+# Enable auto-start Telnet daemon with direct root shell (Port 23)
+telnetd -l /bin/sh &
+
+# Enable auto-start Dropbear SSH daemon (Port 22)
+if [ -x /usr/sbin/dropbear ]; then
+	mkdir -p /etc/dropbear
+	chmod 700 /etc/dropbear 2>/dev/null || true
+	/usr/sbin/dropbear -p 22 -B &
+fi
