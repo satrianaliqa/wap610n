@@ -73,9 +73,9 @@ jobs:
               ./make_nv.sh build wlan.tar.gz "$TARGET"
 
               # Normalize output binary names
-              [ -f output/bootpImage ] && cp -vf output/bootpImage output/WAP610N_v1.0.05.bin || true
-              [ -f output/WAP610N_v1.0.05_build_0 ] && cp -vf output/WAP610N_v1.0.05_build_0 output/WAP610N_v1.0.05.bin || true
-              [ -f output/WAP610N_v1.0.05.bin ] && cp -vf output/WAP610N_v1.0.05.bin output/bootpImage || true
+              [ -f output/bootpImage ] && cp -vf output/bootpImage output/WAP610N_v1.0.08.bin || true
+              [ -f output/WAP610N_v1.0.08_build_0 ] && cp -vf output/WAP610N_v1.0.08_build_0 output/WAP610N_v1.0.08.bin || true
+              [ -f output/WAP610N_v1.0.08.bin ] && cp -vf output/WAP610N_v1.0.08.bin output/bootpImage || true
 
               # Fix permissions for runner user
               chmod -R 777 output/ 2>/dev/null || true
@@ -87,14 +87,14 @@ jobs:
 
       - name: Audit & Verify Firmware Integrity
         run: |
-          ./docker/verify-firmware.sh output/WAP610N_v1.0.05.bin
+          ./docker/verify-firmware.sh output/WAP610N_v1.0.08.bin
 
       - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: WAP610N-Firmware-v1.0.05-${{ github.sha }}
+          name: WAP610N-Firmware-v1.0.08-${{ github.sha }}
           path: |
-            output/WAP610N_v1.0.05.bin
+            output/WAP610N_v1.0.08.bin
             output/bootpImage
             output/ramdisk_2.6.16.img.lzma
             output/System.map

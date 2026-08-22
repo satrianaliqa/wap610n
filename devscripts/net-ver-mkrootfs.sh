@@ -41,8 +41,8 @@ if [ -n "$1" ]; then
 		echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
 		cat << 'EOF' > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
-FIRMWARE_VERSION="1.0.05"
-ProjectFirmwareVersionDate="1.0.05 build 0, Aug 17, 2026"
+FIRMWARE_VERSION="1.0.08"
+ProjectFirmwareVersionDate="1.0.08 build 0, Aug 22, 2026"
 EOF
 		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"

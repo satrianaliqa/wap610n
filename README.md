@@ -91,10 +91,25 @@ Jika ingin mengompilasi secara lokal di Linux (menggunakan Docker atau Podman):
 ```
 
 Hasil biner firmware akan tersedia di folder `output/`:
-- `output/WAP610N_v1.0.05.bin` (~3.01 MB) - Binary firmware utama siap flash.
-- `output/bootpImage` (~3.01 MB) - File standar bootloader U-Boot TFTP.
-- `output/ramdisk_2.6.16.img.lzma` (1.97 MB) - Root filesystem ramdisk.
+- `output/WAP610N_v1.0.08.bin` (~2.71 MB) - Binary firmware utama siap flash via Web UI pabrikan.
+- `output/bootpImage` (~2.71 MB) - File standar bootloader U-Boot TFTP.
+- `output/ramdisk_2.6.16.img.lzma` (~2.0 MB) - Root filesystem ramdisk.
 - `output/System.map` (384 KB) - Simbol fungsi kernel.
+
+---
+
+## 🚀 Fitur Unggulan Firmware v1.0.08 Enhanced
+
+1. **🔐 Remote Terminal Diagnostics (SSH & Telnet)**:
+   - **Dropbear SSH Server v0.52** otomatis aktif di port `22` lengkap dengan dukungan transfer file aman `scp`.
+   - **Telnet Daemon** aktif di port `23` untuk akses diagnostik cepat.
+2. **🧰 BusyBox 1.8.1 Power Applets**:
+   - Dilengkapi tools diagnostik bawaan: `dd`, `df`, `du`, `hexdump`, dan text editor `vi`.
+3. **💾 One-Click Live MTD Flash Dumper di Web UI**:
+   - Menu **Administration -> Firmware Upgrade** menyediakan tombol instant download biner dump partisi fisik NOR Flash (`/dev/mtdblock0` 4MB dan `/dev/mtdblock1` Kernel/RootFS).
+4. **⚡ Hardware & Memory Tuning untuk RAM 32MB**:
+   - Optimasi TCP/UDP socket buffer (`256 KB`), antrian paket (`netdev_max_backlog = 1000`), dan VFS cache pressure (`50`) untuk streaming stabil tanpa packet loss.
+   - Perbaikan manajemen GPIO LED untuk indikator hijau stabil.
 
 ---
 
@@ -103,7 +118,7 @@ Hasil biner firmware akan tersedia di folder `output/`:
 Jalankan sanity check kapan saja terhadap biner yang dihasilkan:
 
 ```bash
-./docker/verify-firmware.sh output/WAP610N_v1.0.05.bin
+./docker/verify-firmware.sh output/WAP610N_v1.0.08.bin
 ```
 
 Pemeriksaan meliputi:
@@ -114,6 +129,9 @@ Pemeriksaan meliputi:
 ---
 
 ## ⚡ Metode Flashing & Unbricking
+
+### Flashing via Web GUI (Paling Mudah)
+Masuk ke `http://192.168.1.1` (atau `http://192.168.1.226`) -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.08.bin`.
 
 ### Flashing via U-Boot TFTP (LAN)
 ```text
@@ -130,15 +148,12 @@ reset
 ### Flashing via UART Serial Kermit (`loadb`)
 ```text
 loadb 0x100000
-# Kirim WAP610N_v1.0.05.bin via Kermit Protocol
+# Kirim WAP610N_v1.0.08.bin via Kermit Protocol
 erase 0x10040000 +0x2DFD00
 cp.b 0x100000 0x10040000 0x2DFD00
 cksum 0x10040000
 reset
 ```
-
-### Flashing via Web GUI
-Masuk ke `http://192.168.1.1` -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.05.bin`.
 
 ---
 

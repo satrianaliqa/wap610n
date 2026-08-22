@@ -64,16 +64,9 @@ sudo $CONTAINER_CMD run --rm \
         echo '--> Fixing permissions for workspace output...'
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/output 2>/dev/null || true
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/images 2>/dev/null || true
-
-        echo '=========================================================="
-        echo ' Compilation Succeeded!'
-        echo ' Output firmware:'
-        ls -lh output/
-        echo '=========================================================="
     "
 
-echo ""
-echo "=========================================================="
-echo " Running Automated QA / Sanity Check..."
-echo "=========================================================="
-"$DIR/verify-firmware.sh" "$ROOT_DIR/output/WAP610N_v1.0.05.bin"
+# Audit & Verifikasi hasil compile otomatis
+if [ -f "$ROOT_DIR/output/WAP610N_v1.0.08.bin" ]; then
+    "$DIR/verify-firmware.sh" "$ROOT_DIR/output/WAP610N_v1.0.08.bin"
+fi

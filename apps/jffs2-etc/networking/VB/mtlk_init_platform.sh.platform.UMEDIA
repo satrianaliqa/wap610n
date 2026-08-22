@@ -23,8 +23,8 @@ LEDMAN=0
 # STAR platforms have pushbutton for WPS
 WPS_PB=1
 
-# Lower memory usage - use smaller net queues
-LOWER_MEM_USAGE=1
+# Lower memory usage - use smaller net queues (disabled for 32MB RAM)
+LOWER_MEM_USAGE=0
 
 # Enable tc queues
 CONFIGURE_TC=1

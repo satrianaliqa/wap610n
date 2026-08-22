@@ -8,6 +8,8 @@ ROOT_DIR="$(cd "$DIR/.." && pwd)"
 # Find firmware binary dynamically
 if [ -n "$1" ] && [ -f "$1" ]; then
     BIN_PATH="$1"
+elif [ -f "$ROOT_DIR/output/WAP610N_v1.0.08.bin" ]; then
+    BIN_PATH="$ROOT_DIR/output/WAP610N_v1.0.08.bin"
 elif [ -f "$ROOT_DIR/output/WAP610N_v1.0.05.bin" ]; then
     BIN_PATH="$ROOT_DIR/output/WAP610N_v1.0.05.bin"
 elif [ -f "$ROOT_DIR/output/bootpImage" ]; then
