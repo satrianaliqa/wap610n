@@ -59,6 +59,14 @@ EOF
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
+		[ -f "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
+			cp -af "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
+		[ -f "rootfs-star/root/mtlk/web/run_webs.sh" ] && \
+			cp -af "rootfs-star/root/mtlk/web/run_webs.sh" "${ROOTFS_DIR}/root/mtlk/web/"
+		[ -f "rootfs-star/root/mtlk/saved_configs/default_admin.conf" ] && \
+			cp -af "rootfs-star/root/mtlk/saved_configs/default_admin.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/"
+		[ -f "rootfs-star/root/mtlk/etc/sys.conf" ] && \
+			cp -af "rootfs-star/root/mtlk/etc/sys.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default"
 		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
 			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" 2>/dev/null || true
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
