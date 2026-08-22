@@ -413,7 +413,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?�(loopCount+1) + "!");
+						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
 							//alert(_("w.bws.alert.1") + (defaultWEPKeyValue+1) + "!");
@@ -471,7 +471,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?�(loopCount+1) + "!");
+						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
 							//alert(_("w.bws.alert.2") + (defaultWEPKeyValue+1));
@@ -715,7 +715,7 @@ function page_load() {
 									<td class="subMenuDIV">|</td>
 									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp"><!--#tr id="w.submenu.2" -->Wireless Network Site Survey<!--#endtr--></a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp"><!--#tr id="w.submenu.3" -->WMM®<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp"><!--#tr id="w.submenu.3" -->WMMÂ®<!--#endtr--></a></font></td>
 									<td class="subMenuDIV">|</td>
 									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp"><!--#tr id="w.submenu.4" -->Advanced Wireless Settings<!--#endtr--></a></font></td>
 									<!-- InstanceEndEditable -->

@@ -36,7 +36,7 @@ fi
 # Make sure there is an assigned IP, if not, assign the default.
 if [ ! $IP_LAN ] 
 then 
-	IP_LAN=192.168.1.227
+	IP_LAN=192.168.1.1
 	IP_NETMASK=255.255.255.0
 fi
 
