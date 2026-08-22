@@ -55,6 +55,7 @@ EOF
 		ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/lang"
 		touch "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_EN.txt"
+		ln -sf STRINGS_EN.txt "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_.txt" 2>/dev/null || true
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
