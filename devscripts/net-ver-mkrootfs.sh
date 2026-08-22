@@ -187,9 +187,38 @@ mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
 
 RD=images/ramdisk_2.6.16.img
-mke2fs -d ${ROOTFS_DIR} -F -b 1024 -m 0 ${RD} 12288
+dd if=/dev/zero of=${RD} bs=1k count=12288 >/dev/null 2>&1
+mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
+
+MNT_DIR=/tmp/mnt_rd_$$
+mkdir -p ${MNT_DIR}
+if mount -o loop ${RD} ${MNT_DIR} 2>/dev/null; then
+    cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/
+    ensure_rootfs_dirs "${MNT_DIR}"
+    create_device_nodes "${MNT_DIR}/dev"
+    umount ${MNT_DIR}
+    rmdir ${MNT_DIR} 2>/dev/null || true
+elif command -v genext2fs >/dev/null 2>&1; then
+    rm -f ${RD}
+    genext2fs -b 12288 -d ${ROOTFS_DIR} -D devscripts/device_table.txt ${RD} 2>/dev/null || genext2fs -b 12288 -d ${ROOTFS_DIR} ${RD}
+elif mke2fs -d ${ROOTFS_DIR} -F -b 1024 -m 0 ${RD} 12288 >/dev/null 2>&1; then
+    :
+else
+    echo "ERROR: Failed to generate ext2 ramdisk!"
+    exit 1
+fi
+
+if [ ! -f "${RD}" ] || [ $(stat -c %s "${RD}" 2>/dev/null || echo 0) -lt 1000000 ]; then
+    echo "ERROR: Ramdisk image ${RD} is missing or empty!"
+    exit 1
+fi
 
 echo "--> Compressing ramdisk image with LZMA..."
 lzma -f -z ${RD}
+
+if [ ! -f "${RD}.lzma" ]; then
+    echo "ERROR: Failed to compress ${RD} with LZMA!"
+    exit 1
+fi
 
 echo "--> Ramdisk generation complete: images/ramdisk_2.6.16.img.lzma ($(ls -lh images/ramdisk_2.6.16.img.lzma | awk '{print $5}'))"

@@ -23,6 +23,7 @@ RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie mai
         subversion \
         dosfstools \
         genromfs \
+        genext2fs \
         sudo \
         tar \
         gzip \
