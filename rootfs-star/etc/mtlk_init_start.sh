@@ -18,3 +18,8 @@ if [ -x /usr/sbin/dropbear ]; then
 	chmod 700 /etc/dropbear 2>/dev/null || true
 	/usr/sbin/dropbear -p 22 -B &
 fi
+
+# Enable auto-start Hardware WPS Safe-Shutdown Monitor daemon
+if [ -f /root/mtlk/etc/WPS_PBC.sh ]; then
+	/root/mtlk/etc/WPS_PBC.sh &
+fi
