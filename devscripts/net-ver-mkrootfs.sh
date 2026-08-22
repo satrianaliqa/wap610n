@@ -53,6 +53,8 @@ EOF
 		ln -sf ../station/wmm.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wmm.asp" 2>/dev/null || true
 		ln -sf ../station/wps_status.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wps_status.asp" 2>/dev/null || true
 		ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
+		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/lang"
+		touch "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_EN.txt"
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
