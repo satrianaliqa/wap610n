@@ -674,8 +674,8 @@ function page_load() {
 	</table>
 	
 	<!-- InstanceBeginEditable name="Main Content" -->
-	<table class="mainTable" cellspacing="0">
 	<form method="post" name="accessControl" action="/goform/accessControl">
+	<table class="mainTable" cellspacing="0">
 		<tr>
 			<td class="noSPACE">
 				<table class="mainTableContent" cellspacing="0">

@@ -772,7 +772,7 @@ function page_load() {
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
 					<form method="post" name="modeOption" action="/goform/wirelessBasic">
-					<tr id="freqBand" style="display:none">
+					<tr id="freqBand">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.1-4" -->Frequency Band:<!--#endtr--></td>
@@ -785,7 +785,7 @@ function page_load() {
 								<option id="both" value="both">Both</option>
 							</select>						</td>
 					</tr>
-					<tr id="ESSIDFeild" style="display:none">
+					<tr id="ESSIDFeild">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.1-8" -->Network Name (SSID):<!--#endtr--></td>
@@ -794,16 +794,16 @@ function page_load() {
 							<input type="text" id="display_ESSID" name="ESSID" size="33" maxlength="32" value="">
 						</td>
 					</tr>
-					<tr id="RFSetSeparate" style="display:none">
+					<tr id="RFSetSeparate">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
-					<tr id="manualTitle" style="display:none">
+					<tr id="manualTitle">
 						<td class="subMenuMainContent" colspan="2"><!--#tr id="w.bws.2" -->Wireless Security<!--#endtr--></td>
 						<td colspan="2" class="blankContent"></td>
 					</tr>
-					<tr id="securityModeField" style="display:none">
+					<tr id="securityModeField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-1" -->Security Mode:<!--#endtr--></td>
@@ -885,7 +885,7 @@ function page_load() {
 								<option value="3" selected><!--#tr id="w.bws.2-19" -->Auto<!--#endtr--></option>
 							</select>						</td>
 					</tr>
-					<tr id="WPAPersonalEncryptionField" style="display:none">
+					<tr id="WPAPersonalEncryptionField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-20" -->Encryption:<!--#endtr--></td>
@@ -896,7 +896,7 @@ function page_load() {
 								<option value="2" selected><!--#tr id="w.bws.2-23" -->TKIP or AES<!--#endtr--></option>
 							</select>						</td>
 					</tr>
-					<tr id="WPAPSKField" style="display:none">
+					<tr id="WPAPSKField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-24" -->Passphrase:<!--#endtr--></td>
@@ -909,7 +909,7 @@ function page_load() {
 					</form>
 					<!-- WPS -->
 					<form method="get" name="startWPS" action="/goform/startWPS">
-					<tr id="WPSTitleField">
+					<tr id="WPSTitleField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="WPSTitle" colSpan="2">
@@ -918,19 +918,19 @@ function page_load() {
 							<!--#tr id="w.bws.2-25" -->Wi-Fi Protected Setup<!--#endtr--><sup style="font-size: 8pt;">TM</sup>
 						</td>
 					</tr>
-					<tr id="WPSContentField">
+					<tr id="WPSContentField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">
 							<!--#tr id="w.bws.2-26" -->Use one of the following methods if your router (or access point) supports Wi-Fi Protected Setup:<!--#endtr-->
 						</td>
 					</tr>
-					<tr id="WPSSapceField1">
+					<tr id="WPSSapceField1" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">&nbsp;</td>
 					</tr>
-					<tr id="WPSAPPBCField">
+					<tr id="WPSAPPBCField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">
@@ -944,17 +944,17 @@ function page_load() {
 							</tr></table>
 						</td>
 					</tr>
-					<tr id="WPSORField1">
+					<tr id="WPSORField1" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="WPSOR" colSpan="2"><!--#tr id="w.bws.2-28" -->OR<!--#endtr--></td>
 					</tr>
-					<tr id="WPSSapceField2">
+					<tr id="WPSSapceField2" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">&nbsp;</td>
 					</tr>
-					<tr id="WPSAPPINField">
+					<tr id="WPSAPPINField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">

@@ -331,6 +331,21 @@ function page_load() {
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
 					</form>
+					<tr>
+						<td class="subMenuSubContent">Backup Firmware</td>
+						<td class="subMenuLeftSide"></td>
+						<td class="upgradeFirmware">Download NOR Flash Dump:</td>
+						<td>
+							<input type="button" value="Dump Full Flash (4MB .bin)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=full';" />
+							<input type="button" value="Dump Kernel+RootFS (3.68MB)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=kernel';" style="margin-left: 5px;" />
+							<div style="font-size: 8pt; color: #555; margin-top: 4px;">Directly dumps physical flash partitions to your PC for complete offline recovery and backup.</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="blankContent" colspan="2"><hr></td>
+					</tr>
 					<!--</tbody>-->
 				</table>
 				<table id="upgradeProgress" class="mainTableContent" cellspacing="0">
