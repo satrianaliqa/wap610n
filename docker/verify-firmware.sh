@@ -1,11 +1,12 @@
 #!/bin/bash
 # Automated QA / Sanity-Check Tool untuk Memvalidasi Firmware sebelum Handover ke Flasher
+# Enhancements: Comprehensive binary validation, ramdisk integrity, and compatibility checks
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$DIR/.." && pwd)"
 
-# Find firmware binary dynamically
+# Check if BIN_PATH argument provided, else auto-discover
 if [ -n "$1" ] && [ -f "$1" ]; then
     BIN_PATH="$1"
 elif [ -f "$ROOT_DIR/output/bootpImage" ]; then
@@ -31,15 +32,41 @@ else
     CONTAINER_CMD="podman"
 fi
 
+echo ""
 echo "=========================================================="
-echo " 🔍 AUDIT & QUALITY ASSURANCE FIRMWARE WAP610N"
+echo " 🔍 AUDIT & QUALITY ASSURANCE - FIRMWARE VALIDATION"
+echo "=========================================================="
 echo " Target: $BIN_PATH"
+echo " Ramdisk: $RAMDISK_LZMA"
 echo "=========================================================="
+echo ""
 
 if [ ! -f "$BIN_PATH" ]; then
     echo "❌ ERROR: File firmware $BIN_PATH belum di-compile!"
+    echo "Locations checked:"
+    [ -d "$ROOT_DIR/output" ] && ls -lh "$ROOT_DIR/output/" 2>/dev/null || echo "  (output directory not found)"
     exit 1
 fi
+
+# Color codes for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Binary format validation
+echo "Performing binary format validation..."
+FILE_FORMAT=$(file "$BIN_PATH" 2>/dev/null || echo "unknown")
+echo "  File Type: $FILE_FORMAT"
+
+# Check for ELF or ARM binary markers
+if hexdump -C "$BIN_PATH" | head -1 | grep -q "0000 000.*4142 4300"; then
+    echo "  Binary Header: ✅ Valid bootpImage header detected (ABC marker)"
+else
+    echo "  Binary Header: ⚠️  Custom header format (checking continued...)"
+fi
+
+echo ""
 
 # 1. Check file size
 FILE_SIZE=$(stat -c %s "$BIN_PATH")

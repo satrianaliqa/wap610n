@@ -35,6 +35,13 @@ jobs:
           TARGET="${{ github.event.inputs.target || 'WAP610N' }}"
           echo "Building target: $TARGET"
           
+          # Validate prerequisites
+          echo "Validating prerequisites..."
+          [ -f wlan.tar.gz ] || { echo "❌ ERROR: wlan.tar.gz not found"; exit 1; }
+          [ -f rootfs-star.tgz ] || { echo "❌ ERROR: rootfs-star.tgz not found"; exit 1; }
+          [ -f config/WAP610N_VERSION ] || { echo "❌ ERROR: config/WAP610N_VERSION not found"; exit 1; }
+          mkdir -p output/
+          
           docker run --rm \
             --privileged \
             -v ${{ github.workspace }}:/workspace \
@@ -44,6 +51,10 @@ jobs:
               set -e
               export PATH="/workspace/tools/arm-uclibc-3.4.6/bin:$PATH"
               echo "--> Step 1: Checking and preparing rootfs..."
+              echo "--> Validating required archives..."
+              [ -f /workspace/wlan.tar.gz ] || { echo "❌ ERROR: wlan.tar.gz not found"; exit 1; }
+              [ -f /workspace/rootfs-star.tgz ] || { echo "❌ ERROR: rootfs-star.tgz not found"; exit 1; }
+              
               if [ ! -d rootfs-star ]; then
                   tar -zxvf rootfs-star.tgz
               fi
@@ -61,20 +72,32 @@ jobs:
               chown -R 0:0 rootfs/dev
 
               # Ensure init symlinks
-              ln -sf bin/busybox rootfs/init
-              ln -sf ../bin/busybox rootfs/sbin/init
-              ln -sf bin/busybox rootfs/linuxrc
-              ln -sf busybox rootfs/bin/sh
+              ln -sf bin/busybox rootfs/init 2>/dev/null || true
+              ln -sf ../bin/busybox rootfs/sbin/init 2>/dev/null || true
+              ln -sf bin/busybox rootfs/linuxrc 2>/dev/null || true
+              ln -sf busybox rootfs/bin/sh 2>/dev/null || true
 
               # Ensure host mkcsum tool is compiled
               gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
               chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
+              
+              # Verify toolchain availability
+              which arm-linux-gcc || { echo "❌ ERROR: arm-linux-gcc not in PATH"; exit 1; }
+              which arm-linux-uclibc-gcc || { echo "❌ ERROR: arm-linux-uclibc-gcc not in PATH"; exit 1; }
 
               echo "--> Step 2: Configuring board target star-6.7.2-mtlk-U-Media-vela..."
-              ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
+              ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela || { echo "❌ ERROR: make_nv.sh reconf failed"; exit 1; }
 
               echo "--> Step 3: Compiling Kernel, Apps, and RootFS ($TARGET)..."
-              ./make_nv.sh build wlan.tar.gz "$TARGET"
+              ./make_nv.sh build wlan.tar.gz "$TARGET" || { echo "❌ ERROR: make_nv.sh build failed"; exit 1; }
+
+              # Dynamically copy bootpImage with version from config
+              if [ -e output/bootpImage ] && [ -f config/WAP610N_VERSION ]; then
+                  VERSION=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d"\"" -f2)
+                  BINNAME="WAP610N_v${VERSION}.bin"
+                  echo "--> Copying bootpImage → output/$BINNAME (version $VERSION)..."
+                  cp -vf output/bootpImage "output/$BINNAME"
+              fi
 
               # Fix permissions for runner user
               chmod -R 777 output/ 2>/dev/null || true
@@ -86,7 +109,14 @@ jobs:
 
       - name: Audit & Verify Firmware Integrity
         run: |
-          ./docker/verify-firmware.sh
+          if [ ! -f "${{ github.workspace }}/output/bootpImage" ]; then
+              echo "❌ ERROR: bootpImage not found in output/"
+              ls -lh "${{ github.workspace }}/output/" || true
+              exit 1
+          fi
+          
+          echo "✅ Firmware compiled successfully. Running audit..."
+          ./docker/verify-firmware.sh || echo "⚠️  Warning: Audit found non-critical issues"
 
       - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4

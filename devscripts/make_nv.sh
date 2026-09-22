@@ -51,7 +51,7 @@ function display_usage()
  echo "              install default - use default IP 172.16.20.39 for NFS server"
  echo "              install 10.1.2.3 - use IP 10.1.2.3 as NFS server"
  echo "              install local /tmp/path/to/local_directory - given path and install there debugfs"
- exit
+ exit 1 1
 }
 
 function check_params()
@@ -164,7 +164,7 @@ function svn_update ()
 	if [ 0 != $? ]
 	then
 		echo "Failed to set svn:externals"
-		exit
+		exit 1
 	fi
 
 	echo "Updating sources ..."
@@ -181,7 +181,7 @@ function svn_update ()
 	if [ 0 != $? ]
 	then
 		echo "Failed to svn update"
-		exit
+		exit 1
 	fi
 	cd ${ROOTFS_DIR}
 	sudo tar xzf dev.tgz
@@ -336,7 +336,7 @@ then
 				then
 					echo Error on NFS mounting. Stop.
 					sudo rmdir ${LOCAL_NFS_DIR}
-					exit
+					exit 1
 				fi
 				# Now run installation of the debugfs with custom parameters of the 
 				pushd ${DEBUGFS_DIR}
@@ -368,10 +368,8 @@ then
 			shift 1
 		fi
 	done
-	exit
+exit 0
 fi
-
-
 
 
 #####
@@ -388,7 +386,7 @@ then
  if [ 0 != $? ]
  then
    echo "Failed to build kernel zImage" | tee -a $LOGFILE
-   exit
+   exit 1
  fi
  popd > /dev/null
 
@@ -402,7 +400,7 @@ then
  if [ 0 != $? ]
  then
    echo "Failed to build applications" | tee -a $LOGFILE
-   exit
+   exit 1
  fi
  popd > /dev/null
 # pushd rootfs > /dev/null
@@ -447,7 +445,7 @@ then
  if [ 0 != $? ]
  then
    echo "Failed to build kernel image" | tee -a $LOGFILE
-   exit
+   exit 1
  fi
 cd - > /dev/null
 
@@ -486,4 +484,4 @@ fi
 # Jacky.Yang 19-Mar-2009, delete log file for svn commit.
 rm -f $LOGFILE
 
-exit
+exit 0

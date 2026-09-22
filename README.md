@@ -187,4 +187,3 @@ reset
 - [x] **Fase 1 (Selesai)**: Baseline WAP610N stabil, unbricked, kernel 2.6.16 + uClibc + Web GUI.
 - [ ] **Fase 2**: Integrasi Dropbear SSH Server, upgrade applet BusyBox (`curl`, `htop`, `tcpdump`), interactive serial shell.
 - [ ] **Fase 3**: Tuning driver Metalink `mtlk.ko` (Unlocking DFS 5GHz channel & TX power override).
-- [ ] **Fase 4**: Riset porting OpenWrt / modern kernel pada sub-arsitektur STR8132.

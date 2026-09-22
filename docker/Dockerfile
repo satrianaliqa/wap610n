@@ -50,8 +50,8 @@ ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ENV PATH="/workspace/tools/arm-uclibc-3.4.6/bin:${PATH}"
 
-# Allow passwordless sudo for root / any user
-RUN echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# Allow passwordless sudo for root / any user (idempotent check)
+RUN grep -q "NOPASSWD: ALL" /etc/sudoers || echo "ALL ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 WORKDIR /workspace
 
