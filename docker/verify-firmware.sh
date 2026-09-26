@@ -60,7 +60,7 @@ FILE_FORMAT=$(file "$BIN_PATH" 2>/dev/null || echo "unknown")
 echo "  File Type: $FILE_FORMAT"
 
 # Check for ELF or ARM binary markers
-if hexdump -C "$BIN_PATH" | head -1 | grep -q "0000 000.*4142 4300"; then
+if head -c 256 "$BIN_PATH" 2>/dev/null | hexdump -C 2>/dev/null | head -1 | grep -q "0000 000.*4142 4300"; then
     echo "  Binary Header: ✅ Valid bootpImage header detected (ABC marker)"
 else
     echo "  Binary Header: ⚠️  Custom header format (checking continued...)"
@@ -148,12 +148,17 @@ sudo $CONTAINER_CMD run --rm --privileged \
 # 5. Check Critical Shell Scripts Syntax
 echo -n "5. Pengecekan Sintaks Seluruh Skrip Shell Kritis: "
 SCRIPTS_OK=1
-for s in "$ROOT_DIR"/rootfs-star/bin/config_*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh; do
+for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh "$ROOT_DIR"/rootfs-star/etc/*.sh; do
     if [ -f "$s" ]; then
-        if ! bash -n "$s" 2>/dev/null; then
-            echo "❌ ERROR: Syntax error in $s"
-            SCRIPTS_OK=0
-        fi
+        FIRST_LINE=$(head -n 1 "$s" 2>/dev/null)
+        case "$FIRST_LINE" in
+            *bin/sh*|*bin/bash*)
+                if ! bash -n "$s" 2>/dev/null; then
+                    echo "❌ ERROR: Syntax error in $s"
+                    SCRIPTS_OK=0
+                fi
+                ;;
+        esac
     fi
 done
 if [ $SCRIPTS_OK -eq 1 ]; then
