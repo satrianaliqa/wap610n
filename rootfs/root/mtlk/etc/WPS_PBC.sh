@@ -1,5 +1,4 @@
 #!/bin/sh
-# A pushbutton daemon for dorango
 # Hardware Safe-Shutdown button monitor daemon for WAP610N
 
 # The monitor can be started by both early boot and WPS initialization.
@@ -40,21 +39,42 @@ if [ -z "$WPS_PBC_GPIO" ] || [ "$WPS_PBC_GPIO" = "null" ]; then
 	done
 fi
 
+# Wait for gpio kernel module to be loaded before accessing GPIO character device
+wait_gpio=0
+while [ $wait_gpio -lt 30 ]; do
+	if grep -q "^gpio " /proc/modules 2>/dev/null; then
+		break
+	fi
+	wait_gpio=`expr $wait_gpio + 1`
+	sleep 1
+done
+
 if [ -n "$WPS_PBC_GPIO" ] && [ -e "$WPS_PBC_GPIO" ]; then
 	echo "--> [Hardware Daemon] WPS Safe-Shutdown Monitor started on $WPS_PBC_GPIO" > /dev/console
 	while true
 	do
-		# Wait for physical WPS button press
-		cat $WPS_PBC_GPIO > /dev/null
-		echo "[HARDWARE EVENT] WPS Button Pressed! Executing Safe System Shutdown..." > /dev/console
-		
-		# Turn off activity LEDs
-		echo 0 > /dev/led0 2>/dev/null || true
-		echo 0 > /dev/led1 2>/dev/null || true
-		
-		# Sync storage buffers and safely halt CPU
-		sync
-		poweroff
+		# Wait for physical WPS button press (blocking read)
+		# Only trigger shutdown if cat succeeds (button pressed and released, returning EOF)
+		if cat "$WPS_PBC_GPIO" > /dev/null 2>&1; then
+			echo "[HARDWARE EVENT] WPS Button Pressed! Executing Safe System Shutdown..." > /dev/console
+			
+			# Save configuration before shutdown if available
+			if [ -x /bin/config_save.sh ]; then
+				/bin/config_save.sh 2>/dev/null || true
+			fi
+
+			# Turn off activity LEDs
+			echo 0 > /dev/led0 2>/dev/null || true
+			echo 0 > /dev/led1 2>/dev/null || true
+			
+			# Sync storage buffers and safely halt CPU
+			sync
+			poweroff
+			exit 0
+		else
+			# If read failed (driver not ready, signal interrupted, etc.), avoid busy loop
+			sleep 2
+		fi
 	done
 else
 	echo "WPS pushbutton: not active (GPIO device not found)" > /dev/console

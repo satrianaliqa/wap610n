@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -52,7 +52,7 @@ function template_load() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var mode = "<% getParam(1, "network_type"); %>";
 	var IPandMask = "<% getCurrectLanIP(); %>";
@@ -131,9 +131,9 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><!--#tr id="status.submenu.1" -->Bridge<!--#endtr--></td>
+									<td class="subMenuOption">Access Point</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a id="linkStatusTag" href="/status/link_status.asp"><!--#tr id="status.submenu.2" -->Wireless Network<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a id="linkStatusTag" href="/status/about.asp">About</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>
@@ -155,7 +155,7 @@ function page_load() {
 			<td class="noSPACE">
 				<table class="mainTableContent" cellspacing="0">
 					<tr>
-						<td class="subMenuMainContent" colspan="2"><!--#tr id="status.b.1" -->Bridge Information<!--#endtr--></td>
+						<td class="subMenuMainContent" colspan="2">Access Point Information</td>
 						<td colspan="2" class="blankContent"></td>
 					</tr>
 					<tr>

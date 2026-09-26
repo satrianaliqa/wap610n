@@ -23,22 +23,25 @@ fi
 nice -n 18 upnpd &
 
 # Start Telnet and Dropbear SSH daemons in background for remote diagnostics
-if [ -x /usr/sbin/telnetd ]; then
+if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then
 	echo "Starting Telnet daemon (port 23)..." > /dev/console
 	telnetd -l /bin/sh &
 fi
 
-if [ -x /usr/sbin/dropbear ]; then
+if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
 	(
 		mkdir -p /etc/dropbear
-		if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
+		chmod 700 /etc/dropbear 2>/dev/null || true
+		if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] && [ -x /usr/bin/dropbearkey ]; then
 			/usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
 		fi
-		if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
+		if [ ! -f /etc/dropbear/dropbear_dss_host_key ] && [ -x /usr/bin/dropbearkey ]; then
 			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
 		fi
-		echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
-		/usr/sbin/dropbear -B
+		if ! pidof dropbear >/dev/null 2>&1; then
+			echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
+			/usr/sbin/dropbear -B
+		fi
 	) &
 fi
 

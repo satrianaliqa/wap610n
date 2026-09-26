@@ -54,7 +54,7 @@ A:hover { COLOR:#00ffff }
 
 TD{
 	font-size:8pt;
-	font-family:Arial,
+	font-family: Arial, Helvetica, sans-serif;
 }
 
 .noSPACE
@@ -68,7 +68,6 @@ HR
 {
 	border: solid 1px #cccccc;
 	height:1px;
-	
 }
 
 .HR_S
@@ -79,13 +78,13 @@ HR
 }
 .RADIO
 {
-        font-weight: bold;
+    font-weight: bold;
 	padding-right:5px;
 }
 
 .RADIONOR
 {
-        font-weight: normal;
+    font-weight: normal;
 	padding-right:5px;
 }
 
@@ -105,25 +104,43 @@ TABLE
 	border-collapse:collapse;
 }
 
-HR
-{
-	border:0;
-	border-top: solid 1px #b5b5e6;
-	
-}
-
 .bottonClass
 {
-	width:103px;
+	display: inline-block;
 	font-size:8pt;
 	font-weight:700;
 	background-color:#446DA5;
-	padding-top:2px;
-	padding-bottom:2px;
-	padding-left:12px;
-	padding-right:12px;
-	margin-left:10px;
+	color: #ffffff !important;
+	padding: 4px 14px;
+	margin-left:8px;
 	white-space:nowrap;
+	border-radius: 3px;
+	cursor: pointer;
+	text-decoration: none;
+	border: 1px solid #2b4b75;
+}
+
+.bottonClass:hover
+{
+	background-color: #2f568a;
+	color: #00ffff !important;
+}
+
+input[type="button"], input[type="submit"] {
+	font-size: 8pt;
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	background: #446DA5;
+	color: #ffffff;
+	border: 1px solid #2b4b75;
+	border-radius: 3px;
+	padding: 3px 10px;
+	cursor: pointer;
+}
+
+input[type="button"]:hover, input[type="submit"]:hover {
+	background: #2f568a;
+	color: #00ffff;
 }
 
 li
@@ -139,14 +156,14 @@ B
 }
 
 INPUT {
-        FONT: 8pt Arial
+    FONT: 8pt Arial, Helvetica, sans-serif;
 }
 
 SELECT {
-        FONT: 8pt Arial;
+    FONT: 8pt Arial, Helvetica, sans-serif;
 }
 
-#ssidField{word-break:break-all; width:200px:}
+#ssidField{word-break:break-all; width:200px;}
 
 .headerTABLE
 {
@@ -398,18 +415,21 @@ SELECT {
 	vertical-align:top;
 }
 
-.tdLabel
-{
-	padding-top:5px;
-	padding-bottom:5px;
-	text-align:left;
-	padding-left:20px;
-	width:130px;
+.tdLabel {
+	padding-top: 5px;
+	padding-bottom: 5px;
+	text-align: left;
+	padding-left: 20px;
+	width: 170px;
+	vertical-align: top;
+	word-wrap: break-word;
 }
 
-.tdContent
-{
-	width:300px;
+.tdContent {
+	padding-top: 3px;
+	padding-bottom: 3px;
+	width: 290px;
+	vertical-align: top;
 }
 
 .fwUpgradeLabel

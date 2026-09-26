@@ -54,14 +54,20 @@ then
 fi
 
 # Mount the existing or newly created config fs
-mount $CONFIG_FILE $CONFIG_MNT -o loop
+mount $CONFIG_FILE $CONFIG_MNT -o loop,rw
 
 # Check if mount failed - if so, restore configuration sector and defaults.
 if [ $? -ne 0 ]
 then
 	echo " ($$) No valid config filesystem found. Copying factory defaults"
 	gunzip -c $CONFIG_DEFAULT > $CONFIG_FILE
-	mount $CONFIG_FILE $CONFIG_MNT -o loop
+	if ! mount $CONFIG_FILE $CONFIG_MNT -o loop,rw
+	then
+		echo " ($$) Failed mounting factory default configuration filesystem"
+		logger -t $$ "Failed mounting factory default configuration filesystem"
+		config_unlock.sh $$
+		exit 1
+	fi
 	RESTORE_DEFAULTS=1
 fi
 

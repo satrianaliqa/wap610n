@@ -10,6 +10,7 @@ CONFIG_BLOCK=/dev/mtdblock4
 CONFIG_FILE=/tmp/fs.img
 CONFIG_GZ=${CONFIG_FILE}.gz
 CONFIG_MNT=/mnt/jffs2
+CONFIG_MAX_SIZE=131072
 
 
 # First get a lock - to prevent parallel execution of config_mount/umount scripts
@@ -56,10 +57,35 @@ if [ -e $CONFIG_GZ ]
 then 
 	rm $CONFIG_GZ
 fi
-gzip $CONFIG_FILE
+if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
+then
+	echo " ($$) Failed compressing configuration filesystem"
+	logger -t $$ "Failed compressing configuration filesystem"
+	config_unlock.sh $$
+	exit 1
+fi
+
+# Never start an erase/write cycle with an image larger than mtdblock4.
+CONFIG_SIZE=`wc -c < $CONFIG_GZ`
+if [ $CONFIG_SIZE -gt $CONFIG_MAX_SIZE ]
+then
+	echo " ($$) Configuration image is too large: $CONFIG_SIZE bytes (max $CONFIG_MAX_SIZE)"
+	logger -t $$ "Configuration image is too large: $CONFIG_SIZE bytes"
+	rm $CONFIG_GZ
+	config_unlock.sh $$
+	exit 1
+fi
 
 # Copy to flash
-cp $CONFIG_GZ $CONFIG_BLOCK
+if ! cp $CONFIG_GZ $CONFIG_BLOCK
+then
+	echo " ($$) Failed writing configuration filesystem to flash"
+	logger -t $$ "Failed writing configuration filesystem to flash"
+	rm $CONFIG_GZ
+	config_unlock.sh $$
+	exit 1
+fi
+sync
 
 # Validate image integrity - do a binary diff of tmp file and flash
 CP_RETRY_COUNT=0
@@ -80,7 +106,14 @@ do
 	fi
 
 	# Try copying again
-	cp $CONFIG_GZ $CONFIG_BLOCK
+	if ! cp $CONFIG_GZ $CONFIG_BLOCK
+	then
+		echo " ($$) Retry failed writing configuration filesystem to flash"
+		logger -t $$ "Retry failed writing configuration filesystem to flash"
+		config_unlock.sh $$
+		exit 1
+	fi
+	sync
 	simpdiff -s $CONFIG_GZ $CONFIG_BLOCK
 done
 echo " ($$) Configuration saved (in $CP_RETRY_COUNT retry attempts)"

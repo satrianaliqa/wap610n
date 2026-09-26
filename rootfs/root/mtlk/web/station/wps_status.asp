@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -695,13 +695,15 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><!--#tr id="w.submenu.1" -->Basic Wireless Settings<!--#endtr--></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_basic.asp">Basic Wireless Settings</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp"><!--#tr id="w.submenu.2" -->Wireless Network Site Survey<!--#endtr--></a></font></td>
+									<td class="subMenuOption">Wi-Fi Protected Setup™</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp"><!--#tr id="w.submenu.3" -->WMM®<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp">Wireless Network Site Survey</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp"><!--#tr id="w.submenu.4" -->Advanced Wireless Settings<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp">WMM®</a></font></td>
+									<td class="subMenuDIV">|</td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>

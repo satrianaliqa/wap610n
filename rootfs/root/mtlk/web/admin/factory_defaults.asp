@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -89,7 +89,7 @@ function checkValue() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 }
 </script>
 <!-- InstanceEndEditable -->

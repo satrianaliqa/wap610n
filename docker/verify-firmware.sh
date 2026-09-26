@@ -134,9 +134,33 @@ sudo $CONTAINER_CMD run --rm --privileged \
             exit 1
         fi
 
+        # Check Dropbear and Web Server
+        if [ -x /tmp/mnt_chk/usr/sbin/dropbear ] && [ -x /tmp/mnt_chk/root/mtlk/web/webs ]; then
+            echo '   - Dropbear SSH & WebServer      : ✅ ADA & EXECUTABLE'
+        else
+            echo '   - Dropbear / WebServer          : ⚠️  WARNING (Missing daemon)'
+        fi
+
         umount /tmp/mnt_chk
         rm -rf /tmp/chk_rd /tmp/mnt_chk
     "
+
+# 5. Check Critical Shell Scripts Syntax
+echo -n "5. Pengecekan Sintaks Seluruh Skrip Shell Kritis: "
+SCRIPTS_OK=1
+for s in "$ROOT_DIR"/rootfs-star/bin/config_*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh; do
+    if [ -f "$s" ]; then
+        if ! bash -n "$s" 2>/dev/null; then
+            echo "❌ ERROR: Syntax error in $s"
+            SCRIPTS_OK=0
+        fi
+    fi
+done
+if [ $SCRIPTS_OK -eq 1 ]; then
+    echo "✅ VALID (Semua skrip shell bebas syntax error)"
+else
+    exit 1
+fi
 
 echo "=========================================================="
 echo " 🎉 KESIMPULAN: FIRMWARE 100% SIAP DAN AMAN DI-FLASH!"

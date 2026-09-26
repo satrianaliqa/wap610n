@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -68,15 +68,8 @@ function page_load() {
 	totalWaitTime = "<% totalWaitTime(); %>";
 	redirectURL = "http://" + currentIP + urlPath;
 	document.getElementById("waitPad").style.display="block";
-	if (HWType == "Linksys WET610N"){
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WET610N";
-	}
-	else if (HWType == "Linksys WES610N"){
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WES610N";
-	}
-	else{
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WAP610N";
-	}
+	document.getElementById("modelNameDisplay").innerHTML="WAP610N";
+	document.getElementById("descriptionDisplay").innerHTML="Dual-Band Wireless-N Access Point";
 	//Jacky.Yang 11-Nov-2008, the totalWaitTime value get from url link http://xx/wait_page.asp?totalWaitTime=30
 	if (urlPath.indexOf("wireless_basic.asp") != -1) //wireless_basic.asp
 	{

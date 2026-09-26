@@ -5,7 +5,15 @@
 echo "Saving configuration filesystem"
 
 # Unmount the config fs and copy it to flash
-config_umount.sh
+if ! config_umount.sh
+then
+	echo "Configuration filesystem was not saved"
+	exit 1
+fi
 
 # Remount the config fs so that it is available again
-config_mount.sh
+if ! config_mount.sh
+then
+	echo "Configuration filesystem was saved but could not be remounted"
+	exit 1
+fi

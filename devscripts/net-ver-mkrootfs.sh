@@ -39,10 +39,14 @@ if [ -n "$1" ]; then
 	# Force ProjectName to WAP610N (Access Point mode with SSID linksys)
 	if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
 		echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
-		cat << 'EOF' > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
+		CURR_VER="1.0.05"
+		if [ -f "config/WAP610N_VERSION" ]; then
+			CURR_VER=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d'"' -f2 2>/dev/null || echo "1.0.05")
+		fi
+		cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
-FIRMWARE_VERSION="1.0.08"
-ProjectFirmwareVersionDate="1.0.08 build 0, Aug 22, 2026"
+FIRMWARE_VERSION="${CURR_VER}"
+ProjectFirmwareVersionDate="${CURR_VER} build 0, $(date '+%b %d, %Y')"
 EOF
 		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"
@@ -82,6 +86,13 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
+		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh; do
+			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
+		done
+		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
+		[ -f "rootfs-star/etc/inittab" ] && cp -af "rootfs-star/etc/inittab" "${ROOTFS_DIR}/etc/"
+		[ -f "rootfs-star/etc/sysctl.conf" ] && cp -af "rootfs-star/etc/sysctl.conf" "${ROOTFS_DIR}/etc/"
+		[ -f "rootfs-star/etc/mtlk_init_start.sh" ] && cp -af "rootfs-star/etc/mtlk_init_start.sh" "${ROOTFS_DIR}/etc/"
 	fi
 fi
 

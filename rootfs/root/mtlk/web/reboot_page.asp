@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -65,23 +65,17 @@ function checkValue() {
 
 function page_load() {
 	var HWType = "<% checkHW(); %>"
-	//redirectURL = "/basic/mode.asp";
-	if (mode == 0) //STA mode
-		totalWaitTime = 130; //second
-	else if (mode == 2) //AP mode
-		totalWaitTime = 90; //second
+	if (mode == 0) { //STA mode
+		totalWaitTime = 45; //second
+		redirectURL = "http://" + currentIP + "/station/wireless_basic.asp";
+	} else { //AP mode
+		totalWaitTime = 30; //second
+		redirectURL = "http://" + currentIP + "/wireless/security.asp";
+	}
 		
-	redirectURL = "http://" + currentIP + "/station/wireless_basic.asp";
 	document.getElementById("waitPad").style.display="block";
-	if (HWType == "Linksys WET610N"){
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WET610N";
-	}
-	else if (HWType == "Linksys WES610N"){
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WES610N";
-	}
-	else{
-		document.getElementById("modelNameDisplay").innerHTML="Linksys WAP610N";
-	}
+	document.getElementById("modelNameDisplay").innerHTML="WAP610N";
+	document.getElementById("descriptionDisplay").innerHTML="Dual-Band Wireless-N Access Point";
 	reboot_page();
 	startToWait = "<% startToWait(); %>";
 }

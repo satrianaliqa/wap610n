@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -56,7 +56,7 @@ var redirectUrlPath;
 function basicDisplay(value) {
 	//objectDisplay("configTypeField", value);
 	//objectDisplay("configTypeSeparate", value);
-	objectDisplay("freqBand", "none");
+	objectDisplay("freqBand", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -83,7 +83,7 @@ function mainDisplay(value) {
 	objectDisplay("outputField", value);
 	objectDisplay("configTypeField", value);
 	objectDisplay("configTypeSeparate", value);
-	objectDisplay("freqBand", "none");
+	objectDisplay("freqBand", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -187,56 +187,36 @@ function selectSecurityMode(mode) {
 }
 
 function selectRFBand() {
-	var channelList;
-	var value = document.getElementById("frequencyBand").value;
-	var origIndex = document.getElementById("channel").selectedIndex;
-	//alert("jacky - origIndex:"+origIndex);
+	var chElem = document.getElementById("channel");
+	if (!chElem) return;
+	var value = document.getElementById("frequencyBand") ? document.getElementById("frequencyBand").value : "1";
+	var origIndex = chElem.selectedIndex;
 	removeAllOption("channel");
 
+	var channelList = pvChannel24FCCnoCB;
+	var cbElem = document.getElementById("channelBounding") || document.getElementById("channelBonding");
+	var cb = cbElem ? cbElem.value : 0;
+	var ulElem = document.getElementById("upperLower") || document.getElementById("upperLowerChannelBonding");
+	var ul = ulElem ? ulElem.value : 0;
+
 	if (value == "0") {
-		if ((document.getElementById("channelBounding").value == 0)) {
-			//channelList = pvChannel52FCCnoCB;
-			channelList = pvChannel52FCCnoCB;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 0)) {
-			//channelList = pvChannel52FCCCBU;
-			channelList = pvChannel52FCCCBU;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 1)) {
-			//channelList = pvChannel52FCCCBL;
-			channelList = pvChannel52FCCCBL;
-		}
-	
-		for (loopCount=0; loopCount<channelList.length; loopCount=loopCount+2)
-		{
-			addNewOption("channel", channelList[loopCount], channelList[loopCount], channelList[loopCount], channelList[loopCount+1]);
-		}
-		if (origIndex != -1)
-			document.getElementById("channel").options[origIndex].selected = true;
+		if (cb == 0) channelList = pvChannel52FCCnoCB;
+		else if (cb == 1 && ul == 0) channelList = pvChannel52FCCCBU;
+		else if (cb == 1 && ul == 1) channelList = pvChannel52FCCCBL;
 	}
 	else if (value == "1") {
-		if ((document.getElementById("channelBounding").value == 0)) {
-			//channelList = pvChannel24ETCInoCB;
-			channelList = pvChannel24FCCnoCB;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 0)) {
-			//channelList = pvChannel24ETCICBU;
-			channelList = pvChannel24FCCCBU;
-		}
-		else if ((document.getElementById("channelBounding").value == 1) && (document.getElementById("upperLower").value == 1)) {
-			//channelList = pvChannel24ETCICBL;
-			channelList = pvChannel24FCCCBL;
-		}
-	
-		for (loopCount=0; loopCount<channelList.length; loopCount=loopCount+2)
-		{
+		if (cb == 0) channelList = pvChannel24FCCnoCB;
+		else if (cb == 1 && ul == 0) channelList = pvChannel24FCCCBU;
+		else if (cb == 1 && ul == 1) channelList = pvChannel24FCCCBL;
+	}
+
+	if (channelList) {
+		for (var loopCount=0; loopCount<channelList.length; loopCount=loopCount+2) {
 			addNewOption("channel", channelList[loopCount], channelList[loopCount], channelList[loopCount], channelList[loopCount+1]);
 		}
-		if (origIndex != -1)
-			document.getElementById("channel").options[origIndex].selected = true;
-	}
-	else if (value == "both") {
-		//alert("both");
+		if (origIndex != -1 && origIndex < chElem.options.length) {
+			chElem.options[origIndex].selected = true;
+		}
 	}
 }
 
@@ -413,7 +393,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?€(loopCount+1) + "!");
+						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
 							//alert(_("w.bws.alert.1") + (defaultWEPKeyValue+1) + "!");
@@ -471,7 +451,7 @@ function checkValue() {
 					}
 					else
 					{
-						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?€(loopCount+1) + "!");
+						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?(loopCount+1) + "!");
 						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
 							alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
 							//alert(_("w.bws.alert.2") + (defaultWEPKeyValue+1));
@@ -603,15 +583,16 @@ function page_load() {
 		WPSDisplay("none");
 		basicDisplay("block");
 
-		if (mode*1 == 0) //STA mode
+		if (mode*1 == 0 || mode*1 == 2) // Both STA and AP mode (WAP610N)
 		{
-			document.modeOption.nowMode.value = "stationMode";
-			selectMode(0);
+			document.modeOption.nowMode.value = (mode*1 == 2) ? "apMode" : "stationMode";
+			selectMode(mode*1);
 			removeAllOption("frequencyBand");
 			addNewOption("frequencyBand", "", "", "0", "5GHz");
 			addNewOption("frequencyBand", "", "", "1", "2.4GHz");
 			addNewOption("frequencyBand", "", "", "2", "Both");
-			document.getElementById("frequencyBand").options[FrequencyBand].selected = true;
+			if (FrequencyBand && document.getElementById("frequencyBand").options[FrequencyBand])
+				document.getElementById("frequencyBand").options[FrequencyBand].selected = true;
 		}
 		document.getElementById("display_ESSID").value = transSSID(ESSID);
 	}
@@ -711,13 +692,15 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><!--#tr id="w.submenu.1" -->Basic Wireless Settings<!--#endtr--></td>
+									<td class="subMenuOption">Basic Wireless Settings</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp"><!--#tr id="w.submenu.2" -->Wireless Network Site Survey<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wps_status.asp">Wi-Fi Protected Setupâ„¢</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp"><!--#tr id="w.submenu.3" -->WMMÂ®<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp">Wireless Network Site Survey</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp"><!--#tr id="w.submenu.4" -->Advanced Wireless Settings<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp">WMMÂ®</a></font></td>
+									<td class="subMenuDIV">|</td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>
@@ -770,7 +753,7 @@ function page_load() {
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
 					<form method="post" name="modeOption" action="/goform/wirelessBasic">
-					<tr id="freqBand" style="display:none">
+					<tr id="freqBand">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.1-4" -->Frequency Band:<!--#endtr--></td>
@@ -783,7 +766,7 @@ function page_load() {
 								<option id="both" value="both">Both</option>
 							</select>						</td>
 					</tr>
-					<tr id="ESSIDFeild" style="display:none">
+					<tr id="ESSIDFeild">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.1-8" -->Network Name (SSID):<!--#endtr--></td>
@@ -792,16 +775,16 @@ function page_load() {
 							<input type="text" id="display_ESSID" name="ESSID" size="33" maxlength="32" value="">
 						</td>
 					</tr>
-					<tr id="RFSetSeparate" style="display:none">
+					<tr id="RFSetSeparate">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
-					<tr id="manualTitle" style="display:none">
+					<tr id="manualTitle">
 						<td class="subMenuMainContent" colspan="2"><!--#tr id="w.bws.2" -->Wireless Security<!--#endtr--></td>
 						<td colspan="2" class="blankContent"></td>
 					</tr>
-					<tr id="securityModeField" style="display:none">
+					<tr id="securityModeField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-1" -->Security Mode:<!--#endtr--></td>
@@ -883,7 +866,7 @@ function page_load() {
 								<option value="3" selected><!--#tr id="w.bws.2-19" -->Auto<!--#endtr--></option>
 							</select>						</td>
 					</tr>
-					<tr id="WPAPersonalEncryptionField" style="display:none">
+					<tr id="WPAPersonalEncryptionField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-20" -->Encryption:<!--#endtr--></td>
@@ -894,7 +877,7 @@ function page_load() {
 								<option value="2" selected><!--#tr id="w.bws.2-23" -->TKIP or AES<!--#endtr--></option>
 							</select>						</td>
 					</tr>
-					<tr id="WPAPSKField" style="display:none">
+					<tr id="WPAPSKField">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel"><!--#tr id="w.bws.2-24" -->Passphrase:<!--#endtr--></td>
@@ -907,7 +890,7 @@ function page_load() {
 					</form>
 					<!-- WPS -->
 					<form method="get" name="startWPS" action="/goform/startWPS">
-					<tr id="WPSTitleField">
+					<tr id="WPSTitleField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="WPSTitle" colSpan="2">
@@ -916,19 +899,19 @@ function page_load() {
 							<!--#tr id="w.bws.2-25" -->Wi-Fi Protected Setup<!--#endtr--><sup style="font-size: 8pt;">TM</sup>
 						</td>
 					</tr>
-					<tr id="WPSContentField">
+					<tr id="WPSContentField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">
 							<!--#tr id="w.bws.2-26" -->Use one of the following methods if your router (or access point) supports Wi-Fi Protected Setup:<!--#endtr-->
 						</td>
 					</tr>
-					<tr id="WPSSapceField1">
+					<tr id="WPSSapceField1" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">&nbsp;</td>
 					</tr>
-					<tr id="WPSAPPBCField">
+					<tr id="WPSAPPBCField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">
@@ -942,17 +925,17 @@ function page_load() {
 							</tr></table>
 						</td>
 					</tr>
-					<tr id="WPSORField1">
+					<tr id="WPSORField1" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="WPSOR" colSpan="2"><!--#tr id="w.bws.2-28" -->OR<!--#endtr--></td>
 					</tr>
-					<tr id="WPSSapceField2">
+					<tr id="WPSSapceField2" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">&nbsp;</td>
 					</tr>
-					<tr id="WPSAPPINField">
+					<tr id="WPSAPPINField" style="display:none;">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colSpan="2">

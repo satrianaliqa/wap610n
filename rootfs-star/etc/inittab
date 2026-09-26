@@ -51,8 +51,8 @@ console::askfirst:-/bin/sh
 ::ctrlaltdel:/sbin/reboot
 
 # Stuff to do before rebooting
-#null::shutdown:/usr/bin/killall klogd
-#null::shutdown:/usr/bin/killall syslogd
+null::shutdown:/bin/config_save.sh
+null::shutdown:/bin/sync
 null::shutdown:/bin/umount -a -r
 null::shutdown:/sbin/swapoff -a
 

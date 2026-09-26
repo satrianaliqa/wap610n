@@ -40,7 +40,7 @@ function template_load() {
 	}
 	else if (mode == 2) //AP mode
 	{
-		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -563,7 +563,7 @@ function apMode() {
 
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
-	wpsStatus("<% getWPSStatus(); %>", "");
+	// wpsStatus()
 	
 	var mode = "<% getParam(1, "network_type"); %>";
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
@@ -649,13 +649,15 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><font class="small"><a id="wpsMode" href="/station/wireless_basic.asp"><!--#tr id="w.submenu.1" -->Basic Wireless Settings<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_basic.asp">Basic Wireless Settings</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp"><!--#tr id="w.submenu.2" -->Wireless Network Site Survey<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wps_status.asp">Wi-Fi Protected Setup™</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><!--#tr id="w.submenu.3" -->WMM®<!--#endtr--></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp">Wireless Network Site Survey</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp"><!--#tr id="w.submenu.4" -->Advanced Wireless Settings<!--#endtr--></a></font></td>
+									<td class="subMenuOption">WMM®</td>
+									<td class="subMenuDIV">|</td>
+									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>
@@ -672,8 +674,8 @@ function page_load() {
 	</table>
 	
 	<!-- InstanceBeginEditable name="Main Content" -->
-	<table class="mainTable" cellspacing="0">
 	<form method="post" name="accessControl" action="/goform/accessControl">
+	<table class="mainTable" cellspacing="0">
 		<tr>
 			<td class="noSPACE">
 				<table class="mainTableContent" cellspacing="0">

@@ -57,7 +57,7 @@ if [ -e $CONFIG_GZ ]
 then 
 	rm $CONFIG_GZ
 fi
-if ! gzip $CONFIG_FILE
+if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
 then
 	echo " ($$) Failed compressing configuration filesystem"
 	logger -t $$ "Failed compressing configuration filesystem"

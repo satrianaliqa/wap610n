@@ -41,17 +41,30 @@ cp -af /mnt/jffs2/sys.conf /tmp/sys.conf 2>/dev/null || true
 if [ "$SSH_VAL" = "0" ]; then
     killall dropbear 2>/dev/null || true
 else
-    if ! ps | grep -v grep | grep -q dropbear; then
-        /usr/sbin/dropbear -B &
+    mkdir -p /etc/dropbear
+    chmod 700 /etc/dropbear 2>/dev/null || true
+    if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
+        /usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
+    fi
+    if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
+        /usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
+    fi
+    if ! pidof dropbear >/dev/null 2>&1; then
+        /usr/sbin/dropbear -p 22 -B &
     fi
 fi
 
 if [ "$TELNET_VAL" = "0" ]; then
     killall telnetd 2>/dev/null || true
 else
-    if ! ps | grep -v grep | grep -q telnetd; then
+    if ! pidof telnetd >/dev/null 2>&1; then
         telnetd -l /bin/sh &
     fi
+fi
+
+# Persist changes to physical flash in background without blocking HTTP response
+if [ -x /bin/config_save.sh ]; then
+    /bin/config_save.sh >/dev/null 2>&1 &
 fi
 
 printf "HTTP/1.0 200 OK\r\n"
