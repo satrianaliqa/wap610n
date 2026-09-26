@@ -85,6 +85,7 @@ then
 	config_unlock.sh $$
 	exit 1
 fi
+sync
 
 # Validate image integrity - do a binary diff of tmp file and flash
 CP_RETRY_COUNT=0
@@ -105,7 +106,14 @@ do
 	fi
 
 	# Try copying again
-	cp $CONFIG_GZ $CONFIG_BLOCK
+	if ! cp $CONFIG_GZ $CONFIG_BLOCK
+	then
+		echo " ($$) Retry failed writing configuration filesystem to flash"
+		logger -t $$ "Retry failed writing configuration filesystem to flash"
+		config_unlock.sh $$
+		exit 1
+	fi
+	sync
 	simpdiff -s $CONFIG_GZ $CONFIG_BLOCK
 done
 echo " ($$) Configuration saved (in $CP_RETRY_COUNT retry attempts)"

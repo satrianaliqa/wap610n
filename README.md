@@ -1,11 +1,11 @@
-# 📡 Cisco Linksys WAP610N / WET610N Firmware & BSP Restoration
+# 📡 Cisco Linksys WAP610N Firmware & BSP Restoration
 
 [![Build Firmware](https://github.com/satrianaliqa/wap610n/actions/workflows/compile.yml/badge.svg)](https://github.com/satrianaliqa/wap610n/actions/workflows/compile.yml)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
 [![Target: Cavium STR8132](https://img.shields.io/badge/SoC-Cavium_STR8132_(ARM922T)-orange.svg)](#hardware-specifications)
 [![Compiler: GCC 3.4.6](https://img.shields.io/badge/Toolchain-GCC_3.4.6_uClibc-green.svg)](#compiler-engine)
 
-Master repository untuk restorasi source code resmi, rekonstruksi bitstream BSP, perbaikan driver kernel Linux 2.6.16, serta engine kompilasi berbasis Docker / GitHub Actions untuk **Cisco Linksys WAP610N (Access Point)** dan **WET610N (Wireless Ethernet Bridge)**.
+Master repository untuk restorasi source code resmi, rekonstruksi bitstream BSP, perbaikan driver kernel Linux 2.6.16, serta engine kompilasi berbasis Docker / GitHub Actions untuk **Cisco Linksys WAP610N (Access Point)**. Source historis berasal dari codebase BSP gabungan, tetapi target hardware dan validasi proyek ini adalah WAP610N.
 
 ---
 
@@ -27,7 +27,7 @@ Master repository untuk restorasi source code resmi, rekonstruksi bitstream BSP,
 Arsip GPL resmi Linksys (`WAP610N_v1.0.04_build_7_update2.tar.gz`) mengalami kerusakan bitstream kompresi gzip dari rilis vendor asli:
 - **Lokasi Kerusakan**: Byte biner offset `0x014F8000` s.d. `0x0303C000`.
 - **Anatomi Kerusakan**: Terdapat **28.590.080 bytes (~27.27 MB)** blok zero-fill (`0x00`) yang memutus dekompresi tar pada entry `kernel/linux-2.6.16-star/drivers/usb/serial/ti_fw_3410.h`.
-- **Rekonstruksi Presisi**: Pabrikan OEM (U-Media Taiwan) merancang WAP610N dan WET610N pada arsitektur board terpadu (*unified codebase*). Celah 27MB pada kernel Star Semiconductor BSP 6.7.2 berhasil direkonstruksi 100% menggunakan cross-reference branch rilis WET610N yang identik.
+- **Rekonstruksi Presisi**: Pabrikan OEM (U-Media Taiwan) merancang produk jaringan ini pada arsitektur board terpadu (*unified codebase*). Celah 27MB pada kernel Star Semiconductor BSP 6.7.2 direkonstruksi menggunakan source historis yang tersedia.
 
 ---
 
@@ -40,7 +40,7 @@ Arsip GPL resmi Linksys (`WAP610N_v1.0.04_build_7_update2.tar.gz`) mengalami ker
 | **Flash ROM** | CFeon EN29LV320BB-70TIP, 32 Mbit = 4 MiB NOR | Memory map: `0x10000000 - 0x10400000`; ukuran dikonfirmasi dari PCB |
 | **Ethernet PHY** | Realtek RTL8201CP (Single 10/100 Fast Ethernet) | `rtl8201cp_init(0)` di `umedia_vela.h` |
 | **Wireless** | Metalink (MTLK) 802.11a/b/g/n PCIe/Host | Driver: `mtlk.ko` (Dual-band 2.4GHz / 5GHz) |
-| **Device ID** | `0x0012` (WAP610N) / `0x0011` (WET610N) | Header Identifier U-Boot |
+| **Device ID** | `0x0012` (WAP610N) | Header Identifier U-Boot |
 | **UART Serial** | 38400 baud, 8N1 (3.3V TTL - VCC Jangan Dicolok) | Port `/dev/ttyS0` |
 | **Reset GPIO** | GPIO 3 (Active Low, tahan 3 detik) | `apps/gpio_driver/` |
 

@@ -13,7 +13,7 @@ elif [ -f "$ROOT_DIR/output/bootpImage" ]; then
     BIN_PATH="$ROOT_DIR/output/bootpImage"
 else
     # Dynamically find whatever firmware binary was produced regardless of version name
-    BIN_PATH=$(find "$ROOT_DIR/output" -maxdepth 1 -type f \( -name "*WAP610N*" -o -name "*WET610N*" -o -name "bootpImage*" \) 2>/dev/null | grep -v "\.map\|\.lzma\|\.gz\|\.o" | head -n 1 || true)
+    BIN_PATH=$(find "$ROOT_DIR/output" -maxdepth 1 -type f \( -name "*WAP610N*" -o -name "bootpImage*" \) 2>/dev/null | grep -v "\.map\|\.lzma\|\.gz\|\.o" | head -n 1 || true)
 fi
 
 # Detect ramdisk relative to BIN_PATH or repo output

@@ -94,36 +94,29 @@ static time_t	dateParse(time_t tip, char_t *cmd);
 //Tom.Hung 2009-7-21, getFlashSize from /proc/mtd
 int getFlashSize(void)
 {
-#define FLASH_2M_SIZE 0x1b0000 // 2M flash
-#define FLASH_4M_SIZE 0x3b0000 // 4M flash
-#define FLASH_8M_SIZE 0x7b0000 // 8M flash
-#define MAX_FREE_MEMORY 0x500000 // free memory, upload size should small then this
-
-	int rc=-1;
+	unsigned int flash_size;
 	FILE *fp;
-	char buf[1024];
-	char *pos;
+	char line[128];
 
-	if((fp = popen("cat /proc/mtd", "r")) == NULL){
+	fp = fopen("/proc/mtd", "r");
+	if (fp == NULL)
 		return -1;
-	}
-	rc = fread(buf, 1, 1024, fp);
-	pclose(fp);
-	if(rc == -1){
-		return -1;
-	}else{
-		// get Link status
-		if((pos = strstr(buf, "mtd0: 00")) != NULL){
-			pos += strlen("mtd0: 00");
-			if(*pos == '8')
-				//return FLASH_8M_SIZE;
-				return MAX_FREE_MEMORY;
-			else if (*pos == '4')
-				return FLASH_4M_SIZE;
-			else
-				return FLASH_2M_SIZE;
+
+	while (fgets(line, sizeof(line), fp) != NULL)
+	{
+		if (sscanf(line, "mtd0: %x", &flash_size) == 1)
+		{
+			fclose(fp);
+			if (flash_size >= 0x400000)
+				return KERNEL_MTD_PARTITION_SIZE;
+			if (flash_size >= 0x200000)
+				return 0x1b0000;
+			return -1;
 		}
 	}
+
+	fclose(fp);
+	return -1;
 }
 //Tom.Hung 2009-7-21
 
