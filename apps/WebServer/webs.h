@@ -12,8 +12,10 @@
 #define _h_WEBS 1
 
 
-/* max size is 6MB */
+/* Global upload ceiling; firmware is additionally limited by its MTD partition. */
 #define IMAGE_MAX_SIZE 0x600000
+/* mtdblock2: 0x3E0000 end offset minus 0x40000 start offset. */
+#define KERNEL_MTD_PARTITION_SIZE 0x3A0000
 /* amount of bytes to write to file in a single action, to allow progress response */
 #define FILE_SINGLE_WRITE 65536
 

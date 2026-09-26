@@ -337,7 +337,7 @@ function page_load() {
 						<td class="upgradeFirmware">Download NOR Flash Dump:</td>
 						<td>
 							<input type="button" value="Dump Full Flash (4MB .bin)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=full';" />
-							<input type="button" value="Dump Kernel+RootFS (3.68MB)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=kernel';" style="margin-left: 5px;" />
+							<input type="button" value="Dump Kernel+RootFS (3.625MB max)" onclick="location.href='/cgi-bin/dump_firmware.cgi?type=kernel';" style="margin-left: 5px;" />
 							<div style="font-size: 8pt; color: #555; margin-top: 4px;">Directly dumps physical flash partitions to your PC for complete offline recovery and backup.</div>
 						</td>
 					</tr>

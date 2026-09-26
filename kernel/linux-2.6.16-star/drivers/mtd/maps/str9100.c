@@ -38,7 +38,7 @@
 #endif
 
 #define WINDOW_ADDR	0x10000000
-#define WINDOW_SIZE	0x00800000
+#define WINDOW_SIZE	0x00400000
 #define BUSWIDTH	2
 
 static struct map_info str9100_map = {
@@ -79,10 +79,11 @@ static unsigned long crc32(unsigned long crc, const char *buf, int len);
  * param_name - string, the name of the desired param.
  * If the names match, return the index for the value2, else NULL.
  */
-char *get_boot_env_param (char *param_name)
+static char *get_boot_env_param (char *param_name)
 {
 	env_t *env_ptr;
 	void __iomem *virt = ioremap(WINDOW_ADDR, (CFG_ENV_ADDR+CFG_ENV_SIZE));
+	static char param_value[32];
 	int i, nxt;
 	unsigned long crc_value;
 
@@ -97,26 +98,30 @@ char *get_boot_env_param (char *param_name)
 	if (crc_value != env_ptr->crc)
 	{
 		printk ("get_boot_env_param: invalid crc, using defaults\n");
+		iounmap(virt);
 		return NULL;
 	}
-
-	// Make sure the sector ends up with 00
-	env_ptr->data[CFG_ENV_DATA_SIZE - 2] = '\0';
-	env_ptr->data[CFG_ENV_DATA_SIZE - 1] = '\0';
 
 	for (i=0; env_get_char(i, env_ptr) != '\0'; i=nxt+1) {
 		int val;
 
-		for (nxt=i; env_get_char(nxt, env_ptr) != '\0'; ++nxt) {
-			if (nxt >= CFG_ENV_SIZE) {
-				return (NULL);
-			}
+		for (nxt=i; nxt < CFG_ENV_DATA_SIZE &&
+			env_get_char(nxt, env_ptr) != '\0'; ++nxt) {
+		}
+		if (nxt >= CFG_ENV_DATA_SIZE) {
+			iounmap(virt);
+			return (NULL);
 		}
 		if ((val=envmatch((unsigned char *)param_name, i, env_ptr, strlen(param_name))) < 0)
 			continue;
-		return ((char *)env_get_addr(val, env_ptr));
+		strncpy(param_value, (char *)env_get_addr(val, env_ptr),
+			sizeof(param_value) - 1);
+		param_value[sizeof(param_value) - 1] = '\0';
+		iounmap(virt);
+		return param_value;
 	}
 
+	iounmap(virt);
 	return (NULL);
 }
 
@@ -215,6 +220,14 @@ static int get_config_part_offset (void)
 	if ((tmp = get_boot_env_param ("config_offset")) != NULL)
 	{
 		config_part_offset = simple_strtol(tmp, (char **)NULL, 16) & 0x00FFFFFF;
+		if (config_part_offset < CONFIG_KERNEL_OFFSET ||
+			config_part_offset > WINDOW_SIZE - CFG_ENV_SIZE ||
+			(config_part_offset & (CFG_ENV_SIZE - 1)))
+		{
+			printk (KERN_WARNING "invalid config_offset=0x%x, using 0x%x\n",
+				config_part_offset, CONFIG_CFG_OFFSET);
+			config_part_offset = CONFIG_CFG_OFFSET;
+		}
 	}
 	else
 	{

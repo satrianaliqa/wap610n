@@ -5,13 +5,13 @@ QUERY_STRING="${QUERY_STRING:-type=full}"
 
 case "$QUERY_STRING" in
     *type=kernel*)
-        DEV="/dev/mtdblock1"
-        [ ! -e "$DEV" ] && DEV="/dev/mtd1"
+        DEV="/dev/mtdblock2"
+        [ ! -e "$DEV" ] && DEV="/dev/mtd2"
         FILENAME="WAP610N_kernel_rootfs_dump.bin"
         ;;
     *type=config*)
-        DEV="/dev/mtdblock2"
-        [ ! -e "$DEV" ] && DEV="/dev/mtd2"
+        DEV="/dev/mtdblock4"
+        [ ! -e "$DEV" ] && DEV="/dev/mtd4"
         FILENAME="WAP610N_config_dump.bin"
         ;;
     *)

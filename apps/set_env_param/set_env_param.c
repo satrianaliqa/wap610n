@@ -30,15 +30,20 @@ int main(int argc, char* argv[])
 {
 	FILE *f, *tmp_f;
 	unsigned long *crc;
+	char *verify_buf;
 	char *param_name, *param_value=NULL, *curr_str;
+	char *data_end;
 	int curr_char;
 	int curr_str_idx=0, param_found=0, out_of_space=0;
+	size_t value_len;
 	list_elem params_arr[500];
 	
 	if ((argc > 3) || (argc < 2))
     	return 1;
 
 	param_name = argv[1];
+	if (param_name[0] == '\0' || strchr(param_name, '=') != NULL)
+		return 1;
 	if (argc == 3)
 		param_value = argv[2];
 
@@ -59,25 +64,31 @@ printf("\nCannot malloc 0x10000\n");
 
 	/* Skip the 4 bytes of crc */
 	crc = (unsigned long *)curr_str;
-    fread(curr_str, ENV_HEADER_SIZE, 1, f);
+	if (fread(curr_str, ENV_HEADER_SIZE, 1, f) != 1)
+	{
+		fclose(f);
+		free(crc);
+		return 1;
+	}
 
 	curr_str += ENV_HEADER_SIZE;
+	data_end = curr_str + ENV_SIZE;
 	params_arr[0].name_ptr = curr_str;
 	params_arr[0].name_ptr[0] = 0;
 
 	// Create a copy of the env partition in the memory; if the specified parameter already exists, overwrite it
-	while (!feof(f))
+	while ((curr_char = fgetc(f)) != EOF)
 	{
 		// Check the memory resources
-		if ((curr_str_idx >= 500) || (curr_str >= (params_arr[0].name_ptr+0x10000)))
+		if ((curr_str_idx >= 500) || (curr_str >= data_end))
 		{
-			*(curr_str++) = 0;
+			if (curr_str < data_end)
+				*(curr_str++) = 0;
 			out_of_space = 1;
 			break;
 		}
 
 		/* Read the param string in format name=value*/
-		curr_char = fgetc(f);
 		*(curr_str++) = curr_char;
 		if (curr_char=='=') // End of name, move to read the value
 		{
@@ -90,16 +101,22 @@ printf("\nCannot malloc 0x10000\n");
 			if (params_arr[curr_str_idx].name_ptr[0] != 0)
 			{
 //printf("\nFound string %s\n", params_arr[curr_str_idx].name_ptr);
-				if (!strncmp(params_arr[curr_str_idx].name_ptr, param_name, strlen(param_name)))
+				if (!strcmp(params_arr[curr_str_idx].name_ptr, param_name))
 				{
 					// We've found the parameter, overwrite it or delete
 //printf("\nFound param %s\n", param_name);
 					param_found = 1;
 					if (param_value != NULL)
 					{
+						value_len = strlen(param_value);
+						if (params_arr[curr_str_idx].value_ptr + value_len + 1 > data_end)
+						{
+							out_of_space = 1;
+							break;
+						}
 //printf("\New param value %s\n", param_value);
 						strcpy (params_arr[curr_str_idx].value_ptr, param_value);
-						curr_str = params_arr[curr_str_idx].value_ptr + strlen(param_value) + 1;
+						curr_str = params_arr[curr_str_idx].value_ptr + value_len + 1;
 					}	
 					else
 					{
@@ -121,10 +138,21 @@ printf("\nCannot malloc 0x10000\n");
 		}
 	}
 	fclose(f);
+	if (out_of_space)
+	{
+		free(crc);
+		return 1;
+	}
 
 	// In case the parameter is new, add it to the memory picture
-	if ((!param_found) && (param_value != NULL) && (!out_of_space))
+	if ((!param_found) && (param_value != NULL))
 	{
+		value_len = strlen(param_value);
+		if (curr_str + strlen(param_name) + value_len + 2 > data_end)
+		{
+			free(crc);
+			return 1;
+		}
 		params_arr[curr_str_idx].name_ptr = curr_str;
 		strcpy (curr_str, param_name);
 		curr_str += strlen(param_name);
@@ -132,7 +160,7 @@ printf("\nCannot malloc 0x10000\n");
 
 		params_arr[curr_str_idx].value_ptr = curr_str;
 		strcpy (curr_str, param_value);
-		curr_str += strlen(param_value) + 1;
+		curr_str += value_len + 1;
 		curr_str_idx++;
 	}
 
@@ -145,8 +173,32 @@ printf("\nCannot open /dev/mtdblock3\n");
 		free (crc);
 		return 1;
 	}
-	fwrite(crc, CFG_ENV_SIZE, 1, tmp_f);
+	if (fwrite(crc, CFG_ENV_SIZE, 1, tmp_f) != 1 || fflush(tmp_f) != 0)
+	{
+		fclose(tmp_f);
+		free(crc);
+		return 1;
+	}
 	fclose(tmp_f);
+
+	verify_buf = malloc(CFG_ENV_SIZE);
+	if (verify_buf == NULL)
+	{
+		free(crc);
+		return 1;
+	}
+	tmp_f = fopen("/dev/mtdblock3", "r");
+	if (!tmp_f || fread(verify_buf, CFG_ENV_SIZE, 1, tmp_f) != 1 ||
+		memcmp(verify_buf, crc, CFG_ENV_SIZE) != 0)
+	{
+		if (tmp_f)
+			fclose(tmp_f);
+		free(verify_buf);
+		free(crc);
+		return 1;
+	}
+	fclose(tmp_f);
+	free(verify_buf);
 
 	free (crc);
 	return 0;

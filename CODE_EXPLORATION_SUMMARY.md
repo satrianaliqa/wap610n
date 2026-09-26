@@ -37,7 +37,7 @@ Ini adalah **master repository restorasi firmware resmi** untuk Access Point Cis
 ││  Flash   │  │Realtek  │   │ Metalink │  │  UART    │     │
 ││ ROM (4MB)│  │RTL8201CP│   │  MTLK    │  │ Console  │     │
 ││ EON      │  │10/100   │   │802.11a/n │  │38400 baud│     │
-││EN29LV640B│  │PHY      │   │Dual-band │  │8N1,3.3V  │     │
+││EN29LV320BB│  │PHY      │   │Dual-band │  │8N1,3.3V  │     │
 │└──────────┘  └──────────┘   └──────────┘  └──────────┘     │
 │                                                              │
 │  GPIO-3: WPS Button (Active Low, hold 3s to reset)         │
@@ -52,19 +52,19 @@ Ini adalah **master repository restorasi firmware resmi** untuk Access Point Cis
 ┌──────────────────────┬──────────────────────────────────────┐
 │ Address Range        │ Partition (MTD)                      │
 ├──────────────────────┼──────────────────────────────────────┤
-│ 0x10000000-0x1003FFFF│ mtdblock1: U-Boot Bootloader (256KB) │
-│ [READ-ONLY HW PROT]  │ • Hardware write-protected           │
-│                      │ • NEVER overwritten during flash     │
+│ 0x10000000-0x1001FFFF│ mtdblock1: U-Boot Bootloader (128KB) │
+│ [BOOT AREA]          │ • Do not target from firmware upgrade │
+│                      │ • Upgrade starts at 0x10040000       │
 ├──────────────────────┼──────────────────────────────────────┤
 │ 0x10040000-0x103DFFFF│ mtdblock2: Kernel + Ramdisk (3.6MB) │
 │ [RE-WRITABLE]        │ • bootpImage (LZMA compressed)      │
 │                      │ • Max size: 3,801,088 bytes (CRITICAL)│
 ├──────────────────────┼──────────────────────────────────────┤
-│ 0x103E0000-0x103EFFFF│ mtdblock3: NVRAM / Environment (64KB)│
-│ [RE-WRITABLE]        │ • Parameter table & config           │
+│ 0x10020000-0x1002FFFF│ mtdblock3: U-Boot Environment (64KB)│
+│ [RE-WRITABLE]        │ • Write with CRC-aware updater       │
 ├──────────────────────┼──────────────────────────────────────┤
-│ 0x103F0000-0x103FFFFF│ mtdblock4: Configfs / Calibration   │
-│ [RE-WRITABLE]        │ • Factory calibration data (64KB)    │
+│ 0x103E0000-device end│ mtdblock4: Config image             │
+│ [RE-WRITABLE]        │ • Size follows actual MTD device     │
 └──────────────────────┴──────────────────────────────────────┘
 
 ⚠️  WARNING: bootpImage > 3,801,088 bytes = BRICK DEVICE

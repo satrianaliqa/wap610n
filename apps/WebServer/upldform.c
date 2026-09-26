@@ -917,6 +917,14 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			printf("%s\n",gMTBurnParams.errorMessage);
 
 		}
+		else if ((!strcmp(targetFile, "/dev/mtdblock2") ||
+				  !strcmp(targetFile, "/dev/mtd2")) &&
+				 wp->FileContentLen > KERNEL_MTD_PARTITION_SIZE)
+		{
+			sprintf(gMTBurnParams.errorMessage,T("Error : Firmware is larger than the kernel MTD partition<br>"));
+			gMTBurnParams.precentComplete = -1;
+			printf("%s\n",gMTBurnParams.errorMessage);
+		}
 		else if (wp->FileContentLen == 0 || fileNameValid == 0)
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : Invalid image file specified.<br>"));
@@ -991,17 +999,17 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 	const char *outName = "WAP610N_full_flash_dump.bin";
 
 	if (strcmp(dumpType, "kernel") == 0) {
-		devPath = "/dev/mtdblock1";
+		devPath = "/dev/mtdblock2";
 		outName = "WAP610N_kernel_rootfs_dump.bin";
 	} else if (strcmp(dumpType, "config") == 0) {
-		devPath = "/dev/mtdblock2";
+		devPath = "/dev/mtdblock4";
 		outName = "WAP610N_config_dump.bin";
 	}
 
 	fp = fopen(devPath, "rb");
 	if (!fp) {
-		if (strcmp(dumpType, "kernel") == 0) devPath = "/dev/mtd1";
-		else if (strcmp(dumpType, "config") == 0) devPath = "/dev/mtd2";
+		if (strcmp(dumpType, "kernel") == 0) devPath = "/dev/mtd2";
+		else if (strcmp(dumpType, "config") == 0) devPath = "/dev/mtd4";
 		else devPath = "/dev/mtd0";
 		fp = fopen(devPath, "rb");
 	}

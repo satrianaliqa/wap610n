@@ -37,7 +37,7 @@ Arsip GPL resmi Linksys (`WAP610N_v1.0.04_build_7_update2.tar.gz`) mengalami ker
 | :--- | :--- | :--- |
 | **SoC / CPU** | Cavium / Star Semi STR8132 (CNS2132) | ARM922T Core (ARMv4T), 200 MHz |
 | **RAM** | 32 MB SDRAM | Memory map: `0x00000000 - 0x02000000` |
-| **Flash ROM** | 4 MB SPI Flash (EON EN29LV640B / ENLV320B) | Memory map: `0x10000000 - 0x10400000` |
+| **Flash ROM** | CFeon EN29LV320BB-70TIP, 32 Mbit = 4 MiB NOR | Memory map: `0x10000000 - 0x10400000`; ukuran dikonfirmasi dari PCB |
 | **Ethernet PHY** | Realtek RTL8201CP (Single 10/100 Fast Ethernet) | `rtl8201cp_init(0)` di `umedia_vela.h` |
 | **Wireless** | Metalink (MTLK) 802.11a/b/g/n PCIe/Host | Driver: `mtlk.ko` (Dual-band 2.4GHz / 5GHz) |
 | **Device ID** | `0x0012` (WAP610N) / `0x0011` (WET610N) | Header Identifier U-Boot |
@@ -46,27 +46,27 @@ Arsip GPL resmi Linksys (`WAP610N_v1.0.04_build_7_update2.tar.gz`) mengalami ker
 
 ---
 
-## 🗺️ Flash Memory Map
+## 🗺️ Flash Memory Map (NOR FLASH)
 
 ```
 +---------------------+---------------------+-----------------------------------------------+
 | Flash Memory Range  | MTD Device Name     | Keterangan & Proteksi                         |
 +---------------------+---------------------+-----------------------------------------------+
-| 0x10000000 -        | mtdblock1 (ARMBOOT) | U-Boot 1.1.4 Bootloader (256 KB)              |
-| 0x1003FFFF          |                     | [STATUS: READ-ONLY HARDWARE PROTECTED]        |
+| 0x10000000 -        | mtdblock1 (ARMBOOT) | U-Boot 1.1.4 Bootloader (128 KiB)             |
+| 0x1001FFFF          |                     | Jangan ditulis dari firmware upgrade           |
 +---------------------+---------------------+-----------------------------------------------+
 | 0x10040000 -        | mtdblock2 (Kernel)  | bootpImage (Kernel + Ramdisk LZMA + Header)   |
 | 0x103DFFFF          |                     | [STATUS: RE-WRITABLE] Max size: ~3.625 MB     |
 +---------------------+---------------------+-----------------------------------------------+
-| 0x103E0000 -        | mtdblock3 (Disk1)   | NVRAM / Environment Parameter Table (64 KB)   |
-| 0x103EFFFF          |                     | [STATUS: RE-WRITABLE]                         |
+| 0x10020000 -        | mtdblock3 (Disk1)   | U-Boot environment / parameter table (64 KiB) |
+| 0x1002FFFF          |                     | Writable melalui `set_env_param` + CRC         |
 +---------------------+---------------------+-----------------------------------------------+
-| 0x103F0000 -        | mtdblock4 (Disk2)   | Configfs / Factory Calibration Data (64 KB)   |
-| 0x103FFFFF          |                     | config_offset=0x103F0000                      |
+| 0x103E0000 -        | mtdblock4 (Disk2)   | Config image; ukuran mengikuti MTD aktual      |
+| device end           |                     | `config_offset=0x3E0000`, bukan filesystem raw |
 +---------------------+---------------------+-----------------------------------------------+
 ```
 
-> **Proteksi Anti-Brick**: Sektor `0x10000000` s.d. `0x1003FFFF` (U-Boot) **tidak pernah ditimpa** saat flashing firmware baru (selalu mulai dari `0x10040000`).
+> **Proteksi Anti-Brick**: Firmware upgrade hanya menargetkan `mtdblock2`, mulai offset `0x10040000`. Validasi ukuran image wajib memastikan ukuran tidak melebihi `0x3A0000` (3,801,088 bytes). Gunakan `cat /proc/mtd` untuk memverifikasi layout perangkat nyata.
 
 ---
 
@@ -106,7 +106,7 @@ Hasil biner firmware akan tersedia di folder `output/`:
 2. **🧰 BusyBox 1.8.1 Power Applets**:
    - Dilengkapi tools diagnostik bawaan: `dd`, `df`, `du`, `hexdump`, dan text editor `vi`.
 3. **💾 One-Click Live MTD Flash Dumper di Web UI**:
-   - Menu **Administration -> Firmware Upgrade** menyediakan tombol instant download biner dump partisi fisik NOR Flash (`/dev/mtdblock0` 4MB dan `/dev/mtdblock1` Kernel/RootFS).
+   - Menu **Administration -> Firmware Upgrade** menyediakan dump `/dev/mtdblock0` untuk seluruh NOR, `/dev/mtdblock2` untuk kernel+ramdisk, dan `/dev/mtdblock4` untuk config.
 4. **⚡ Hardware & Memory Tuning untuk RAM 32MB**:
    - Optimasi TCP/UDP socket buffer (`256 KB`), antrian paket (`netdev_max_backlog = 1000`), dan VFS cache pressure (`50`) untuk streaming stabil tanpa packet loss.
    - Perbaikan manajemen GPIO LED untuk indikator hijau stabil.
