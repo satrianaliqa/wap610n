@@ -56,6 +56,7 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	int			n, envpsize, argpsize, pHandle, cid, i;
 	int			randFileId = 0;
 	int			cgiWebVarsFile;
+	int			tempFd = -1;
 	a_assert(websValid(wp));
 	a_assert(url && *url);
 	a_assert(path && *path == '/');
@@ -110,18 +111,16 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		To allow it to update web parameters. File format is varname=varvalue, each var in new line. The file is deleted when 
 		the cgi process is done.
 	*/
-	srand ( time(NULL) );
-	while (gstrlen(cgiWebVars)==0)
-	{
-		
+
+	sprintf(cgiWebVars, "%s/cgivarsXXXXXX", MT_WebTmpDir);
+	tempFd = mkstemp(cgiWebVars);
+	if (tempFd >= 0) {
+		close(tempFd);
+	} else {
+		/* Fallback just in case mkstemp fails */
+		srand(time(NULL));
 		randFileId = rand() % 10000;
-		sprintf(cgiWebVars,"%s/cgivars%d",MT_WebTmpDir,randFileId);
-		cgiWebVarsFile = gopen(cgiWebVars, O_RDONLY | O_BINARY, 0444 );
-		if (cgiWebVarsFile>=0)
-		{
-			gclose(cgiWebVarsFile);
-			gstrcpy(cgiWebVars,"");
-		}
+		sprintf(cgiWebVars, "%s/cgivars%d", MT_WebTmpDir, randFileId);
 	}
          
 /*

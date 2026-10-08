@@ -509,7 +509,13 @@ void websReadEvent(webs_t wp)
                     while (wp->clen >0)
                     {
                         nbytes = socketRead(wp->sid,tmp, MAX_LINE);
-                        wp->clen -= nbytes;
+                        if (nbytes > 0) {
+                            wp->clen -= nbytes;
+                        } else if (nbytes < 0) {
+                            socketSelect(wp->sid, 100);
+                        } else {
+                            break;
+                        }
                     }
                     
                     
@@ -1231,7 +1237,7 @@ static void websParseRequest(webs_t wp)
 				if ((p = gstrstr(value, BOUNDARY_KWD)) != NULL) {
 					/* skip over the 'boundary=' part */
 					p+= gstrlen(BOUNDARY_KWD);
-					wp->multiPartBoundary = balloc(B_L, gstrlen(p) + 2);
+					wp->multiPartBoundary = balloc(B_L, gstrlen(p) + 3);
 					gsprintf(wp->multiPartBoundary , "--%s", p);
 				}
 			}

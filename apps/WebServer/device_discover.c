@@ -1015,6 +1015,9 @@ char *dd_set_ip_settings(xml_tree request)
 
 	device_set_string_value(CONFIG_SYS_LAN_IP_CONFIG_METHOD, strcmp( lanIPConfigureMode, "DHCP" )?STATIC_LAN_IP: DHCP_LAN_IP);
 	if(!strcmp( lanIPConfigureMode, "Static" )){
+		if (lanGateway == NULL) {
+			lanGateway = "0.0.0.0";
+		}
 		device_set_string_value(CONFIG_SYS_LAN_IP, lanIP);
 		device_set_string_value(CONFIG_SYS_LAN_NETMASK, netmask);
 		device_set_string_value(CONFIG_SYS_LAN_GATEWAY, lanGateway);
@@ -1027,7 +1030,9 @@ char *dd_set_ip_settings(xml_tree request)
 	if(!strcmp( lanIPConfigureMode, "Static" )){
 		hnap_doSystem("ifconfig br0 %s netmask %s", lanIP, netmask);
 		hnap_doSystem("route del default");
-		hnap_doSystem("route add default gw %s", lanGateway);
+		if (strcmp(lanGateway, "0.0.0.0") != 0) {
+			hnap_doSystem("route add default gw %s", lanGateway);
+		}
 	}else{
 		hnap_doSystem("/etc/udhcpc/dhcp.tcl startup &");
 	}

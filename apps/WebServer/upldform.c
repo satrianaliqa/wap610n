@@ -64,6 +64,7 @@ void *MT_BurnAndVerifyImage(void* data)
 {
 	debug_printf("MT_BurnAndVerifyImage:Into MT_BurnAndVerifyImage function.(pid=%d)\n", getpid());
 	int locWrite = 0;
+	int ferror_val = 0;
 	int locVerify = 0;
 	int numLeft = 0;
 	int numWrite = 0;
@@ -175,7 +176,7 @@ void *MT_BurnAndVerifyImage(void* data)
                 fflush(fp);
 				if (!numWrite) 
 				{
-					sprintf(gMTBurnParams.errorMessage,T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror(fp), locWrite, numLeft, numWrite, gMTBurnParams.imageSize);
+					sprintf(gMTBurnParams.errorMessage,T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror_val, locWrite, numLeft, numWrite, gMTBurnParams.imageSize);
 					gMTBurnParams.precentComplete = -1;
 					gMTBurnParams.burnState = error_e;
 					printf("Error numWrite=0");
@@ -290,6 +291,7 @@ void *MT_BurnAndVerifyImage(void* data)
 				}
 				debug_printf("MT_BurnAndVerifyImage: Closing\n");
 				printf ("Closing\n");
+				ferror_val = ferror_val;
 				fclose(fp);
 			}
 			
@@ -316,7 +318,7 @@ void *MT_BurnAndVerifyImage(void* data)
 		debug_printf("MT_BurnAndVerifyImage: verifiedOk != 1\n");
 		gMTBurnParams.precentComplete = -1;
 		gMTBurnParams.burnState = error_e;
-		sprintf(gMTBurnParams.errorMessage,T("Error : Error verifying image at location %d<br>ferror=%d"), locVerify, ferror(fp));
+		sprintf(gMTBurnParams.errorMessage,T("Error : Error verifying image at location %d<br>ferror=%d"), locVerify, ferror_val);
 	}
 	else
 	{
@@ -520,15 +522,15 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 					if (configurationfile)
 					{
 						//Jacky.Yang redirect to management.asp for u-media.
-						//sprintf(redirectPage,T("importexport.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
-						sprintf(redirectPage,T("admin/management.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
+						//sprintf(redirectPage,T("importexport.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
+						sprintf(redirectPage,T("admin/management.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
 						MT_WriteRedirectScript(wp, redirectPage);
 					}
 					else
 					{
 						//sprintf(redirectPage,T("upload.asp?error=Could+Not+Write+File&size=%d&lf=%s&rf=%s"),wp->FileContentLen,fn,targetFile);
 						//MT_WriteRedirectScript(wp, redirectPage);
-						websWrite(wp, T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
+						websWrite(wp, T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
 					}
 
 					break;

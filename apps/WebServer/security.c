@@ -53,6 +53,8 @@ static int		debugSecurity = 0;
 
 
 
+static int cached_wls_port = -1;
+
 int getWLSBridgePort()
 {
 	FILE* tmpFile = NULL;
@@ -61,16 +63,17 @@ int getWLSBridgePort()
 	int portNum = 1;
 	int found = 0;
 
+	if (cached_wls_port != -1)
+		return cached_wls_port;
+
 	system ("brctl show br0 > /tmp/brctl_show");
 	tmpFile = fopen ("/tmp/brctl_show","rt");
 
 	if (tmpFile)
 	{
 		// get all lines from file
-		while (!feof(tmpFile) && !ferror(tmpFile))
+		while (fgets(buff, sizeof(buff), tmpFile))
 		{
-			fgets(buff,255,tmpFile);
-
 			if (strstr(buff,"bridge name")!= NULL) // skip headers
 				continue;
 
@@ -84,9 +87,10 @@ int getWLSBridgePort()
 		}
 		fclose(tmpFile);
 	}
-	if (found == 1)
+	if (found == 1) {
+		cached_wls_port = portNum;
 		return portNum;
-	else
+	} else
 		return -1;
 }
 
@@ -95,9 +99,12 @@ int GetBridgPortForMAC(const char* mac)
 	FILE* tmpFile = NULL;
 	char buff[256];
 
-	char port [20];
+	char port[20];
 	int portNum = -1;
 	char macaddr[30];
+
+	memset(port, 0, sizeof(port));
+	memset(macaddr, 0, sizeof(macaddr));
 
 	system ("brctl showmacs br0 >/tmp/brctl_showmacs");
 	tmpFile = fopen ("/tmp/brctl_showmacs","rt");
@@ -105,18 +112,17 @@ int GetBridgPortForMAC(const char* mac)
 	if (tmpFile)
 	{
 		// get all lines from file
-		while (!feof(tmpFile) && !ferror(tmpFile))
+		while (fgets(buff, sizeof(buff), tmpFile))
 		{
-			fgets(buff,255,tmpFile);
-
 			if (strstr(buff,"port no mac addr")!= NULL) // skip headers
 				continue;
 
-			sscanf(buff,"%s %s",port,macaddr);
-			if (macaddr[0] != '\0' && strcmp(macaddr,mac) == 0)
-			{
-				portNum = atoi(port);
-				break;
+			if (sscanf(buff, "%19s %29s", port, macaddr) == 2) {
+				if (macaddr[0] != '\0' && strcmp(macaddr, mac) == 0)
+				{
+					portNum = atoi(port);
+					break;
+				}
 			}
 		}
 		fclose(tmpFile);
@@ -130,28 +136,32 @@ int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
 	FILE* tmpFile = NULL;
 	char buff[256];
 
-	char ipaddr [30];
+	char ipaddr[30];
 	char tmp1[30];
 	char tmp2[30];
 	char macaddr[30];
+
+	memset(ipaddr, 0, sizeof(ipaddr));
+	memset(tmp1, 0, sizeof(tmp1));
+	memset(tmp2, 0, sizeof(tmp2));
+	memset(macaddr, 0, sizeof(macaddr));
 
 	tmpFile = fopen ("/proc/net/arp","rt");
 
 	if (tmpFile)
 	{
 		// get all lines from file
-		while (!feof(tmpFile) && !ferror(tmpFile))
+		while (fgets(buff, sizeof(buff), tmpFile))
 		{
-			fgets(buff,255,tmpFile);
-
 			if (strstr(buff,"IP address")!= NULL) // skip headers
 				continue;
 
-			sscanf(buff,"%s %s %s %s",ipaddr,tmp1,tmp2,macaddr);
-
-			if (ipaddr[0] != '\0' && strcmp(ipaddr,ip) == 0)
-			{
-				strncpy(mac,macaddr,mac_len-1); // In case we have multiple entries, we take the last which is the most updated.
+			if (sscanf(buff, "%29s %29s %29s %29s", ipaddr, tmp1, tmp2, macaddr) == 4) {
+				if (ipaddr[0] != '\0' && strcmp(ipaddr, ip) == 0)
+				{
+					strncpy(mac, macaddr, mac_len - 1); // In case we have multiple entries, we take the last which is the most updated.
+					mac[mac_len - 1] = '\0';
+				}
 			}
 		}
 		fclose(tmpFile);
@@ -160,12 +170,13 @@ int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
 	return 0;
 }
 
-
 int isIPFromWLS(const char* ip)
 {
-	char mac[256] = "";
-	int i=0;
+	char mac[256];
+	int i = 0;
 	int port = 0;
+
+	memset(mac, 0, sizeof(mac));
 
 	IPtoMAC(ip,mac,255);
 
@@ -298,7 +309,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	{
 		MT_Get_Param("WirelessMgmtEnabled",wirelessMgmtDisabled,10);
 
-		if (strstr("0",wirelessMgmtDisabled) != NULL && isIPFromWLS(wp->ipaddr))
+		if (strcmp(wirelessMgmtDisabled, "0") == 0 && isIPFromWLS(wp->ipaddr))
 		{
 			websError(wp, 403, T("Access Denied\nWireless management is fordidden"));
 			return 1;
@@ -309,7 +320,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	else{
 		MT_Get_Param("WirelessMgmtEnabled",wirelessMgmtDisabled,10);
 
-		if (strstr("0",wirelessMgmtDisabled) != NULL && isIPFromWLS(wp->ipaddr))
+		if (strcmp(wirelessMgmtDisabled, "0") == 0 && isIPFromWLS(wp->ipaddr))
 		{
 			websError(wp, 403, T("Access Denied\nWireless management is fordidden"));
 			return 1;
