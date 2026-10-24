@@ -24,7 +24,7 @@ clean:
 
 comp: 
 	for dir in $(MTLK_APPS); do \
-        $(MAKE) -f Makefile.MTLK COMP -C $(TOPDIR)/$$dir; \
+        $(MAKE) -f Makefile.MTLK COMP -C $(TOPDIR)/$$dir || exit 1; \
         done
 
 config: 
@@ -33,7 +33,7 @@ config:
         done
 strip: 
 	for dir in $(MTLK_APPS); do \
-        $(MAKE) -f Makefile.MTLK STRIP -C $(TOPDIR)/$$dir; \
+        $(MAKE) -f Makefile.MTLK STRIP -C $(TOPDIR)/$$dir || exit 1; \
         done
 
 $(MTLK_APPS):
@@ -47,7 +47,7 @@ install_:
 	@install -m 755 -d $(E_DEST)
 	cp -a $(E_SRC)/. $(E_DEST)/
 	for dir in $(MTLK_APPS); do \
-        $(MAKE) -f Makefile.MTLK INSTALL -C $(TOPDIR)/$$dir; \
+        $(MAKE) -f Makefile.MTLK INSTALL -C $(TOPDIR)/$$dir || exit 1; \
         done
 	cp -a $(E_TOPDIR)/scripts/devel.sh $(E_DEST)/bin/
 

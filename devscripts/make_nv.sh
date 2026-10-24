@@ -1,3 +1,4 @@
+#!/bin/bash
 UPDATE_SRC=0
 RECONFIGURE_PLATFORM=0
 MAKE_CLEAN=0
@@ -377,6 +378,11 @@ fi
 #####
 if [ $MAKE_BUILD -eq 1 ]
 then
+ # Every build step below is piped through "| tee", so without pipefail the
+ # "if [ 0 != $? ]" checks only see tee's exit status and real failures of
+ # zImage, apps, WebServer or mkbootp were silently ignored.
+ set -o pipefail
+
  # Make for kernel and applications
 
  # First compile zImage in order to be able to compile gpio driver

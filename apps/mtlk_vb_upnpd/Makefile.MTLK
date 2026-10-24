@@ -1,0 +1,24 @@
+######### Metalink (c) #####################
+# mtlk_vb_upnpd: the UPnP daemon source code is not part of this tree (only the
+# md5/uuid/sysdep helpers are present). The firmware ships the prebuilt binary
+# rootfs-star/bin/upnpd, which is copied into rootfs by the apps "install_"
+# step (cp -a $(E_SRC)/. $(E_DEST)/).
+#
+# This no-op Makefile only exists so that the MTLK_APPS loops in
+# apps/scripts/Makefile.MTLK no longer fail with
+# "Makefile.MTLK: No such file or directory" for this directory, which used to
+# hide real build failures of other applications.
+############################################
+
+STRIP:
+
+CLEAN:
+
+COMP:
+	@echo "mtlk_vb_upnpd: using prebuilt rootfs-star/bin/upnpd (no source to compile)"
+
+CONF:
+
+INSTALL:
+
+.PHONY: STRIP CLEAN COMP CONF INSTALL
