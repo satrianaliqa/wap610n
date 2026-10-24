@@ -11,20 +11,22 @@ if ! pidof telnetd >/dev/null 2>&1; then
 	telnetd -l /bin/sh &
 fi
 
-# 2. Start Dropbear SSH daemon (Port 22)
+# 2. Start Dropbear SSH daemon (Port 22) in background so keygen never blocks boot
 if [ -x /usr/sbin/dropbear ]; then
-	mkdir -p /etc/dropbear
-	chmod 700 /etc/dropbear 2>/dev/null || true
-	if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-		/usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
-	fi
-	if [ ! -f /etc/dropbear/dropbear_dss_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-		/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
-	fi
-	if ! pidof dropbear >/dev/null 2>&1; then
-		echo "--> [Early Boot] Starting Dropbear SSH daemon on Port 22..." > /dev/console
-		/usr/sbin/dropbear -p 22 &
-	fi
+	(
+		mkdir -p /etc/dropbear
+		chmod 700 /etc/dropbear 2>/dev/null || true
+		if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] && [ -x /usr/bin/dropbearkey ]; then
+			/usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
+		fi
+		if [ ! -f /etc/dropbear/dropbear_dss_host_key ] && [ -x /usr/bin/dropbearkey ]; then
+			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
+		fi
+		if ! pidof dropbear >/dev/null 2>&1; then
+			echo "--> [Early Boot] Starting Dropbear SSH daemon on Port 22..." > /dev/console
+			/usr/sbin/dropbear -p 22 &
+		fi
+	) &
 fi
 
 # 3. Start Hardware WPS Safe-Shutdown Monitor daemon

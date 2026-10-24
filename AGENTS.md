@@ -472,6 +472,10 @@ Comprehensive audit and parallel remediation across all core firmware domains:
 | 44 | Set Env Param Fsync | `apps/set_env_param/set_env_param.c` | Added `flock(fileno(f), LOCK_EX)` on `/dev/mtdblock3` and `fsync(fileno(tmp_f))` after write, preventing corrupt NVRAM environment. | ✅ VERIFIED |
 | 45 | Pgrep Preservation | `apps/scripts/Makefile.MTLK.files` | Removed `/usr/bin/pgrep` from `FILES_UNUSED` so it is preserved in rootfs across builds. | ✅ VERIFIED |
 | 46 | Stale Files Cleanup | `rootfs-star/.../web/crc`<br>`rootfs-star/usr/local/lib/iptables`<br>`apps/scripts/Makefile.MTLK` (`devel.sh`) | Removed unstripped 12KB `crc` from web root, removed dangling `iptables` symlink, and stopped copying internal test script `devel.sh`. | ✅ VERIFIED |
+| 47 | Dropbear Boot Freeze | `rootfs-star/etc/mtlk_init_start.sh`<br>`rootfs/etc/mtlk_init_start.sh` | Backgrounded Dropbear host key generation `( ... ) &`, eliminating 10-minute early boot freeze on ARM9 200MHz. | ✅ VERIFIED |
+| 48 | Console Shell Conflict | `rootfs-star/etc/inittab`<br>`rootfs/etc/inittab` | Removed duplicate `console::askfirst:-/bin/sh` from inittab, leaving a single clean `ttyS0::respawn:-/bin/sh` listener. | ✅ VERIFIED |
+| 49 | Platform Path Missing | `rootfs-star/root/mtlk/etc/mtlk_init_platform.sh` | Restored missing `mtlk_init_platform.sh` to `rootfs-star`, defining `$CONFIGS_PATH` and config locations. | ✅ VERIFIED |
+| 50 | Wi-Fi ESSID & Radio Beacon | `rootfs-star/.../driver_api.ini`<br>`rootfs-star/.../mtlk_init.sh`<br>`rootfs-star/.../mtlk_init_wls.sh`<br>`rootfs-star/.../mtlk_init_route.sh` | Mapped `NonProc_ESSID` in `driver_api.ini`, added default AP config restore fallback, and executed `ifconfig wlan0 up` for AP mode, restoring live 802.11n beacon transmission. | ✅ VERIFIED |
 
 ---
 

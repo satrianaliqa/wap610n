@@ -47,6 +47,7 @@ else
 		# This is the first time the route script is run
 		# Add wlan0 to the bridge
 		ifconfig wlan0 0.0.0.0 
+		ifconfig wlan0 up
 		brctl addif br0 wlan0
 	else 
 		# This is the second pass - set up MAC addr for mac cloning

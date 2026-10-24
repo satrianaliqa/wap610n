@@ -36,7 +36,6 @@
 
 # Put a shell on the serial port
 ttyS0::respawn:-/bin/sh
-console::askfirst:-/bin/sh
 
 # Automatically respawn GoAhead Web Server if it crashes or restarts
 ::respawn:/root/mtlk/web/run_webs.sh

@@ -172,6 +172,7 @@ reset
 ├── boards/                        # Konfigurasi platform board U-Media / Star Semi
 ├── config/                        # Kernel & board config profile
 ├── devscripts/                    # Helper scripts pembuatan rootfs & packing
+├── firmware-flasher/               # Toolkit flashing, serial recovery, TFTP, dan audit biner
 ├── kernel/                        # Linux Kernel 2.6.16-star source
 ├── rootfs-star/                   # Template base root filesystem
 ├── tools/                         # Cross-compiler GCC 3.4.6 ARM uClibc

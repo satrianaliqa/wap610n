@@ -43,16 +43,16 @@ then
 	dos2unix -u $CONFIGS_PATH/sys.conf
 fi
 
-#if [ ! -e $CONFIGS_PATH/wlan0.conf ]
-#then
-#	echo Restoring wlan0.conf
-#	cp $SAVED_CONFIG_PATH/xAP-wls.conf $CONFIGS_PATH/wlan0.conf 
-#	dos2unix -u $CONFIGS_PATH/wlan0.conf
-	# apply changes
-#	cd $WEB_PATH
-#	./init_security.tcl
-#	cd -
-#fi
+if [ ! -e "$CONFIGS_PATH/wlan0.conf" ]
+then
+	echo "Restoring default wlan0.conf..."
+	if [ -f "$SAVED_CONFIG_PATH/default_ap_WAP610N.conf" ]; then
+		cp "$SAVED_CONFIG_PATH/default_ap_WAP610N.conf" "$CONFIGS_PATH/wlan0.conf"
+	elif [ -f "$SAVED_CONFIG_PATH/default_ap.conf" ]; then
+		cp "$SAVED_CONFIG_PATH/default_ap.conf" "$CONFIGS_PATH/wlan0.conf"
+	fi
+	dos2unix -u "$CONFIGS_PATH/wlan0.conf" 2>/dev/null || true
+fi
 
 
 # Copy the config files to /tmp

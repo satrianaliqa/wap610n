@@ -236,17 +236,19 @@ setCountry ()
 # 11) ifconfig
 ifconfig_up ()
 {
-	#if is an AP, hostapd will up wlan0 interface
-	if [ $NETWORK_TYPE = 0 ]
+	if [ "$NETWORK_TYPE" = "0" ]
 	then
-		if [ $IP_WLAN ] && [ $SUBNET_WLAN ]
+		if [ "$IP_WLAN" ] && [ "$SUBNET_WLAN" ]
 		then
 			ifconfig wlan0 $IP_WLAN netmask $SUBNET_WLAN > /dev/null
 		else
 			ifconfig wlan0 up
 		fi
-		echo END IFCONFIG UP
+	else
+		# In AP mode, bring up wlan0 so MAC transmitter begins beaconing ESSID
+		ifconfig wlan0 up
 	fi
+	echo END IFCONFIG UP
 }
 
 
