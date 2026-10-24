@@ -51,24 +51,11 @@ function template_load() {
 <script language="JavaScript" type="text/javascript">
 
 function restoreToAP() {
-	document.getElementById("restoreTag").value = "AP";
-	/*totalWaitTime = 10; //second
-	wait_page();
-		document.getElementById("waitPad").style.display="block";*/
-	//resetToDefault.submit();
-	//Jacky.Yang 13-Dec-2007 - waitting page and redirect url
-	/*if (mode == 0) //STA mode
-	{
-		totalWaitTime = 70; //second
-		redirectURL = "http://" + "192.168.1.227" + "/basic/mode.asp";
+	if (confirm("<!--#tr id=\"adm.fd.confirm.1\" -->Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.<!--#endtr-->")){
+		document.getElementById("restoreTag").value = "AP";
+		document.getElementById("waitPad").style.display="block";
+		document.resetToDefault.submit();
 	}
-	else if (mode == 2) //AP mode
-	{
-		totalWaitTime = 70; //second
-		redirectURL = "http://" + "192.168.1.226" + "/basic/mode.asp";
-	}
-	reboot_page();*/
-	document.resetToDefault.submit();
 }
 
 function restoreToSTA() {
@@ -202,7 +189,7 @@ function page_load() {
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colspan="2">
-							<input type="button" value="<!--#tr id=\"adm.fd.1\" -->Restore All Settings<!--#endtr-->" onclick="restoreToSTA();">
+							<input type="button" value="<!--#tr id=\"adm.fd.1\" -->Restore All Settings<!--#endtr-->" onclick="restoreToAP();">
 						</td>
 					</tr>
 				</table>

@@ -2232,7 +2232,7 @@ void websDone(webs_t wp, int code)
 		}
 	} else {
 		websTimeoutCancel(wp);
-		socketSetBlock(wp->sid, 1);
+		/* Keep socket non-blocking during flush to prevent hangs on client disconnect */
 		socketFlush(wp->sid);
 		socketCloseConnection(wp->sid);
 	}

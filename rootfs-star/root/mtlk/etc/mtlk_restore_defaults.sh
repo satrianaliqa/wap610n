@@ -15,19 +15,8 @@ TMP_CONF_FILE=/tmp/load_config_tmp.conf
 is_ap=$1
 is_Reboot=$2
 
-# Jacky.Yang 30-Jun-2009, Get HW type.
-if [ "$ProjectName" != "WAP610N" ]; then
-	REGISTER3=`echo "read_phy" >> /proc/str9100/reg_debug ; cat /proc/str9100/reg_debug | awk -F= '/reg/ {str = $5;  print str}'`
-
-	#echo "@@@@@ reg3 in /proc/str9100/reg_debug is $REGISTER3 @@@@@" > /dev/console
-	if [ "$REGISTER3" = "0xc852" ]; then
-		#echo "ProjectName:${ProjectName}"
-		ProjectName="WES610N"
-	else
-		#echo "ProjectName:${ProjectName}"
-		ProjectName="WET610N"
-	fi
-fi
+# Enforce WAP610N Access Point identity
+ProjectName="WAP610N"
 
 
 
@@ -44,20 +33,14 @@ then
 fi
 
 echo "ProjectName:${ProjectName}"
-if [ "${ProjectName}" = "WAP610N" ]; then
-	AP_FILE="$SAVED_CONFIG_PATH/default_ap_WAP610N.conf"
-	[ ! -f "$AP_FILE" ] && AP_FILE="$SAVED_CONFIG_PATH/$AP_CONF"
-	cat "$AP_FILE" $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
-elif [ "${ProjectName}" = "WET610N" ]; then
-	STA_FILE="$SAVED_CONFIG_PATH/default_sta_WET610N.conf"
-	[ ! -f "$STA_FILE" ] && STA_FILE="$SAVED_CONFIG_PATH/$STA_CONF"
-	cat "$STA_FILE" $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
-elif [ "${ProjectName}" = "WES610N" ]; then
-	STA_FILE="$SAVED_CONFIG_PATH/default_sta_WES610N.conf"
+if [ "$is_ap" = "0" ]; then
+	STA_FILE="$SAVED_CONFIG_PATH/default_sta_WAP610N.conf"
 	[ ! -f "$STA_FILE" ] && STA_FILE="$SAVED_CONFIG_PATH/$STA_CONF"
 	cat "$STA_FILE" $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
 else
-	cat $SAVED_CONFIG_PATH/$AP_CONF $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_ON_CONF > $TMP_CONF_FILE
+	AP_FILE="$SAVED_CONFIG_PATH/default_ap_WAP610N.conf"
+	[ ! -f "$AP_FILE" ] && AP_FILE="$SAVED_CONFIG_PATH/$AP_CONF"
+	cat "$AP_FILE" $SAVED_CONFIG_PATH/$ADMIN_CONF $SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF > $TMP_CONF_FILE
 fi
 
 
@@ -74,9 +57,13 @@ $ETC_PATH/mtlk_set_config.tcl $TMP_CONF_FILE
 cp $CONFIGS_PATH/sys.conf /tmp/sys.conf
 cp $CONFIGS_PATH/wlan0.conf /tmp/wlan0.conf
 
+# Persist restored configuration to physical flash partition (/dev/mtdblock4)
+if [ -x /bin/config_save.sh ]; then
+	/bin/config_save.sh
+fi
+sync
 
-if [ "$is_Reboot" == "1" ]
-then
-	killall -SIGINT upnpd
+if [ "$is_Reboot" = "1" ] || [ "$is_Reboot" = 1 ]; then
+	killall -SIGINT upnpd 2>/dev/null || true
 	reboot
 fi

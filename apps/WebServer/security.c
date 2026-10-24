@@ -96,6 +96,8 @@ int getWLSBridgePort()
 
 int GetBridgPortForMAC(const char* mac)
 {
+	static time_t last_brctl_time = 0;
+	time_t now;
 	FILE* tmpFile = NULL;
 	char buff[256];
 
@@ -106,7 +108,11 @@ int GetBridgPortForMAC(const char* mac)
 	memset(port, 0, sizeof(port));
 	memset(macaddr, 0, sizeof(macaddr));
 
-	system ("brctl showmacs br0 >/tmp/brctl_showmacs");
+	time(&now);
+	if (now - last_brctl_time > 5 || last_brctl_time == 0) {
+		system ("brctl showmacs br0 >/tmp/brctl_showmacs");
+		last_brctl_time = now;
+	}
 	tmpFile = fopen ("/tmp/brctl_showmacs","rt");
 
 	if (tmpFile)

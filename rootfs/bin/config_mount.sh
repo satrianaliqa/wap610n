@@ -78,7 +78,7 @@ config_unlock.sh $$
 # Copy default params if needed
 if [ "$RESTORE_DEFAULTS" = "1" ]
 then
-	$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh
+	$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh 1 0
 fi
 
 # Jacky.Yang 28-Jul-2009, it seems will cause racing condition, because killall -HUP webs will update mapping cache.
@@ -99,7 +99,7 @@ do
 		fi
 	else
 		echo "U-Media, mount_config.sh: Missing wlan0.conf! Restoring factory defaults now..." > /dev/console
-		$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh
+		$RESTORE_DEFAULTS_PATH/mtlk_restore_defaults.sh 1 0
 		break
 	fi
 done

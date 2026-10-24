@@ -378,9 +378,9 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		memset(network_type, '\0', sizeof(network_type));
 		MT_Get_Param("network_type", network_type, sizeof(network_type));
 		
-		if (atoi(network_type) == 0) //STA mode
+		if (atoi(network_type) == 0)
 			websRedirect(wp, T("/network/sta_network.asp"));
-		else if (atoi(network_type) == 2) //STA mode
+		else
 			websRedirect(wp, T("/network/ap_network.asp"));
 		
 		return 1;

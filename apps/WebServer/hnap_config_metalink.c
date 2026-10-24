@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <signal.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
@@ -375,6 +376,14 @@ int hnap_getClientGateway(char *gateway)
 	return 0;
 }
 
+int MT_detect_link_with_ping(char *gateway)
+{
+	char command[128];
+	if (!gateway || !*gateway || strcmp(gateway, "0.0.0.0") == 0) return 0;
+	snprintf(command, sizeof(command), "/bin/ping -c 1 -W 1 %s >/dev/null 2>&1", gateway);
+	return (system(command) == 0) ? 1 : 0;
+}
+
 /*int hnap_detect_link_by_packets(void)
 {
 	char	gateway[16]={0};
@@ -393,34 +402,14 @@ int hnap_getClientGateway(char *gateway)
 	//printf("Current LAN Gateway = %s\n", gateway);		
 
 	memset(command, 0, 128);
-	sprintf(command, "/bin/ping %s", gateway);
-	fptr = popen(command, "r");
-	if(fptr!=NULL){
-		if(fgets(pingResult, 128, fptr)!=NULL){
-			charPtr=strchr(pingResult, '\n');
-			if(charPtr){
-				*charPtr='\0';
-			}
-			sprintf(checkResult, "%s is alive!", gateway);
-			//printf("The result of ping is %s\nThe string for check result is %s\n", pingResult, checkResult);
-			if(!strcmp(pingResult, checkResult)){
-				printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
-				pclose(fptr);
-				return 1;
-			}else{
-				printf("The Gateway %s is unreachable, wireless link is DOWN\n", gateway);
-				pclose(fptr);
-				return 0;
-			}
-		}else{
-			printf("ERROR: Get ping result fail !!\n");
-		}
-		pclose(fptr);
-	}else{
-		printf("ERROR: ping fail !!\n");
+	snprintf(command, sizeof(command), "/bin/ping -c 1 -W 1 %s >/dev/null 2>&1", gateway);
+	if (system(command) == 0) {
+		printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
+		return 1;
+	} else {
+		printf("The Gateway %s is unreachable, wireless link is DOWN\n", gateway);
+		return 0;
 	}
-
-	return 0;
 }
 
 int hnap_detect_link_by_dhcp(void)

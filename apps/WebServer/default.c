@@ -240,19 +240,8 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
  *	Evaluate ASP requests
  */
 	if (flags & WEBS_ASP) {
-		//Jacky.Yang 11-Feb-2009, for limitation apply process.
-		//printf("lpath:%s\n", lpath);
-		if (!waitOtherProcess || ((strstr(lpath, WAITPAGEPATH) != 0) || (strstr(lpath, SCRIPTNAME) != 0)))
-		{
-			if (websAspRequest(wp, lpath) < 0) {
-				return 1;
-			}
-		}
-		else
-		{
-			websWrite(wp, T("<head>"));
-			websWrite(wp, T("<meta http-equiv=\"refresh\" content=\"0;url=%s\" />"), WAITPAGEPATH);
-			websWrite(wp, T("</head>"));
+		if (websAspRequest(wp, lpath) < 0) {
+			return 1;
 		}
 		websDone(wp, 200);
 		return 1;

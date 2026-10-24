@@ -688,7 +688,7 @@ if {[info exists ::argv]} {
 		log "current IP:$currentip / static IP:$static_ip / ip_config:$ip_config"
 
 		# On failure, don't replace IP if it was already set
-		if { $currentip != "" } {
+		if { $currentip != "" && $currentip != "0.0.0.0" } {
 			log "DHCP failed. Keeping current IP: $currentip"
 			exit_function
 		}
@@ -717,13 +717,8 @@ if {[info exists ::argv]} {
 				log "Nothing has changed."
 			}
 		} else {
-		
-			if {$currentip != "" && $currentip != "0.0.0.0"} {
-				# Reset bridge IP Assignment
-				catch {exec echo "dhcp.tcl: Reset bridge IP Assignment"  > /dev/console}
-				config_nic $interface "0.0.0.0" "0.0.0.0" "" "" "" "" ""
-				set config_changed 1
-			}
+			# Static IP mode active - never reset bridge IP to 0.0.0.0
+			log "dhcp.tcl: Static IP mode, keeping interface IP intact"
 		}
 	
 		if {$config_changed == 1} {

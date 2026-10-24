@@ -12,7 +12,7 @@ if [ -n "$PBC_REBOOT_GPIO" ]; then
 				echo "Reset button pressed! Restoring factory defaults..." > /dev/console
 				echo 2 > /dev/gpio2 2>/dev/null || true
 				if [ -x /root/mtlk/etc/mtlk_restore_defaults.sh ]; then
-					/root/mtlk/etc/mtlk_restore_defaults.sh 0 1
+					/root/mtlk/etc/mtlk_restore_defaults.sh 1 1
 				else
 					reboot
 				fi
