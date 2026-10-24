@@ -18,14 +18,15 @@ fi
 	
 
 if [ ! -e /tmp/init_failed ]; then (./drvhlpr -a eth0 -a eth1 -r 1 -i wlan0); fi
+rc=$?
 
-if [ $? == 1 ]
+if [ $rc -eq 1 ]
   then
   echo drvhlpr return MAC HANG
   reboot
   #drvhlpr will reboot the system while we have bug in SW Watchdog mechanism
   #(. ./reload_mtlk_driver.sh > /dev/null);
-elif [ $? == 2 ]
+elif [ $rc -eq 2 ]
   then
   echo drvhlpr return rmmod
 else

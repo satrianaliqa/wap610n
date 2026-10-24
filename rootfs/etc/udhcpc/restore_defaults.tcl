@@ -16,7 +16,11 @@ if { [file exists /mnt/jffs2/web/web_config.tcl] } {
 
 puts "Restoring defaults"
 
-exec /root/mtlk/bcl/bcl_util.tcl loadconfig ${g_web_saved_configs_folder}/restore_defaults.conf 0
+set conf_file "/etc/udhcpc/restore_defaults.conf"
+if {![file exists $conf_file]} {
+	set conf_file "${g_web_saved_configs_folder}/restore_defaults.conf"
+}
+exec tclsh /root/mtlk/bcl/bcl_util.tcl loadconfig $conf_file 0
 
 if {[catch {set ret [exec which config_umount.sh]}] == 0 && $ret != "" } {
 	exec config_umount.sh

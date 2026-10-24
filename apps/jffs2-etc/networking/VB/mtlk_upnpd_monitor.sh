@@ -22,16 +22,20 @@ cat /proc/uptime | awk '{print $1}' >> $DEBUG_LOG
 
 while [ 1 ]
 do
-	UPNPD_MEM_USAGE=`ps | grep " upnpd" | grep -v grep | awk '{print $3}'`
-	if [ $UPNPD_MEM_USAGE ]	
+	UPNPD_MEM_USAGE=`ps | grep " upnpd" | grep -v grep | awk 'NR==1 {print $3}'`
+	case "$UPNPD_MEM_USAGE" in
+		''|*[!0-9]*)
+			sleep $SLEEP_TIME
+			continue
+			;;
+	esac
+	if [ "$UPNPD_MEM_USAGE" -gt "$UPNPD_MEM_LIMIT" ]
 	then
 		# DEBUG:
 		##echo upnpd mem usage:  $UPNPD_MEM_USAGE >> $DEBUG_LOG
 
-		if [ $UPNPD_MEM_USAGE -gt $UPNPD_MEM_LIMIT ]
-		then
-			# DEBUG: Log restart operation
-			echo Restarting upnpd. mem usage:  $UPNPD_MEM_USAGE  >> $DEBUG_LOG
+		# DEBUG: Log restart operation
+		echo Restarting upnpd. mem usage:  $UPNPD_MEM_USAGE  >> $DEBUG_LOG
 			cat /proc/uptime | awk '{print $1}'  >> $DEBUG_LOG
 
 			# First try to kill upnpd nicely
@@ -43,8 +47,9 @@ do
 			sleep 1
 
 			# Restart upnpd server
-			nice -n 18 upnpd &
-		fi
+			if ! pidof upnpd >/dev/null 2>&1; then
+				nice -n 18 upnpd &
+			fi
 	fi
 	sleep $SLEEP_TIME
 done

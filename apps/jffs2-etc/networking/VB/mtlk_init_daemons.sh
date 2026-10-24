@@ -19,8 +19,10 @@ then
 	nice -n 15 ./mtlk_ledman.sh &
 fi
 
-# Start the upnp Daemon
-nice -n 18 upnpd &
+# Start the upnp Daemon once
+if ! pidof upnpd >/dev/null 2>&1; then
+	nice -n 18 upnpd &
+fi
 
 # Start Telnet and Dropbear SSH daemons in background for remote diagnostics
 if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then

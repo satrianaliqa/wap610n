@@ -129,9 +129,9 @@ then
 		then
 				NW_KEY2=`echo $NW_KEY2 | awk -F "0x" '{print $2}'`
 		fi
-		if [ $NW_KEY3 ] && [ ${#NW_KEY3} = 12 ] || [ ${#NW_KEY3} = 28 ]
+		if [ -n "$NW_KEY3" ] && { [ ${#NW_KEY3} = 12 ] || [ ${#NW_KEY3} = 28 ]; }
 		then
-				NW_KEY3=`echo $NW_KEY2 | awk -F "0x" '{print $2}'`
+				NW_KEY3=`echo "$NW_KEY3" | awk -F "0x" '{print $2}'`
 		fi
 	fi
 fi

@@ -25,22 +25,21 @@ then
 		
 		
 		# change passphrase in hostapd if setup is WPA
-		old_passphrase=`cat $CONFIGS_PATH/hostapd0.conf | grep wpa_passphrase`
-		if [ $old_passphrase ]
-		then
-			cat $CONFIGS_PATH/hostapd0.conf | sed "s/$old_passphrase/wpa_passphrase=$newPass/" > /tmp/tmphostapd.conf
-			mv /tmp/tmphostapd.conf $CONFIGS_PATH/hostapd0.conf
-		else
-			# Insert new passphrase in correct location
-			cat $CONFIGS_PATH/hostapd0.conf | sed "/wpa_group_rekey/ i\wpa_passphrase=$newPass" > /tmp/tmphostapd.conf
-			mv /tmp/tmphostapd.conf $CONFIGS_PATH/hostapd0.conf
-		fi
-		
-		verify_pass=`cat $CONFIGS_PATH/hostapd0.conf | grep  wpa_passphrase | awk -F "=" '{print $2}'`
-		if [ "$verify_pass" != "$newPass" ]
-		then
-			echo ERROR: Writing passphrase into the hostapd0.conf is failed
-			return			
+		if [ -f "$CONFIGS_PATH/hostapd0.conf" ]; then
+			old_passphrase=`grep wpa_passphrase "$CONFIGS_PATH/hostapd0.conf"`
+			if [ -n "$old_passphrase" ]
+			then
+				sed "s/$old_passphrase/wpa_passphrase=$newPass/" "$CONFIGS_PATH/hostapd0.conf" > /tmp/tmphostapd.conf
+			else
+				# Insert new passphrase in correct location
+				sed "/wpa_group_rekey/ i\wpa_passphrase=$newPass" "$CONFIGS_PATH/hostapd0.conf" > /tmp/tmphostapd.conf
+			fi
+			mv /tmp/tmphostapd.conf "$CONFIGS_PATH/hostapd0.conf"
+			verify_pass=`grep wpa_passphrase "$CONFIGS_PATH/hostapd0.conf" | awk -F "=" '{print $2}'`
+			if [ "$verify_pass" != "$newPass" ]; then
+				echo ERROR: Writing passphrase into the hostapd0.conf is failed
+				return
+			fi
 		fi
 		
 		# Files will be saved only once in init process, Flag will down by the mtlk_init.sh

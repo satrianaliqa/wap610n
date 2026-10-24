@@ -79,7 +79,7 @@ uint8_t *get_option(struct dhcpMessage *packet, int code)
 	i = 0;
 	length = 308;
 	while (!done) {
-		if (i >= length) {
+		if (i + OPT_LEN >= length) {
 			bb_error_msg("bogus packet, option fields too long");
 			return NULL;
 		}
@@ -100,7 +100,7 @@ uint8_t *get_option(struct dhcpMessage *packet, int code)
 				return NULL;
 			}
 			over = optionptr[i + 3];
-			i += optionptr[OPT_LEN] + 2;
+			i += optionptr[i + OPT_LEN] + 2;
 			break;
 		case DHCP_END:
 			if (curr == OPTION_FIELD && over & FILE_FIELD) {
@@ -124,13 +124,16 @@ uint8_t *get_option(struct dhcpMessage *packet, int code)
 
 
 /* return the position of the 'end' option (no bounds checking) */
-int end_option(uint8_t *optionptr)
+int end_option(uint8_t *optionptr, int maxlen)
 {
 	int i = 0;
 
-	while (optionptr[i] != DHCP_END) {
+	while (i < maxlen && optionptr[i] != DHCP_END) {
 		if (optionptr[i] == DHCP_PADDING) i++;
-		else i += optionptr[i + OPT_LEN] + 2;
+		else if (i + OPT_LEN < maxlen && i + optionptr[i + OPT_LEN] + 2 <= maxlen)
+			i += optionptr[i + OPT_LEN] + 2;
+		else
+			return maxlen;
 	}
 	return i;
 }
@@ -140,7 +143,7 @@ int end_option(uint8_t *optionptr)
  * length, then data) */
 int add_option_string(uint8_t *optionptr, uint8_t *string)
 {
-	int end = end_option(optionptr);
+	int end = end_option(optionptr, 308);
 
 	/* end position + string length + option code/length + end option */
 	if (end + string[OPT_LEN] + 2 + 1 >= 308) {

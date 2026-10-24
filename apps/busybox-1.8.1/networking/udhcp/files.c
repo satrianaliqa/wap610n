@@ -256,19 +256,31 @@ static int read_staticlease(const char *const_line, void *arg)
 	uint32_t *ip;
 
 	/* Allocate memory for addresses */
-	mac_bytes = xmalloc(sizeof(unsigned char) * 8);
+	mac_bytes = xmalloc(sizeof(unsigned char) * 6);
 	ip = xmalloc(sizeof(uint32_t));
 
 	/* Read mac */
 	line = (char *) const_line;
 	mac_string = strtok(line, " \t");
-	read_mac(mac_string, mac_bytes);
+	if (mac_string == NULL || !read_mac(mac_string, mac_bytes)) {
+		free(mac_bytes);
+		free(ip);
+		return 0;
+	}
 
 	/* Read ip */
 	ip_string = strtok(NULL, " \t");
-	read_ip(ip_string, ip);
+	if (ip_string == NULL || !read_ip(ip_string, ip)) {
+		free(mac_bytes);
+		free(ip);
+		return 0;
+	}
 
-	addStaticLease(arg, mac_bytes, ip);
+	if (!addStaticLease(arg, mac_bytes, ip)) {
+		free(mac_bytes);
+		free(ip);
+		return 0;
+	}
 
 	if (ENABLE_FEATURE_UDHCP_DEBUG) printStaticLeases(arg);
 

@@ -57,16 +57,21 @@ static void init_packet(struct dhcpMessage *packet, char type)
  * goes towards the head of the packet. */
 static void add_requests(struct dhcpMessage *packet)
 {
-	int end = end_option(packet->options);
+	int end = end_option(packet->options, 308);
 	int i, len = 0;
+	int max_len;
 
+	if (end + 3 >= 308)
+		return;
+
+	max_len = 308 - end - 3;
 	packet->options[end + OPT_CODE] = DHCP_PARAM_REQ;
-	for (i = 0; dhcp_options[i].code; i++)
-		if (dhcp_options[i].flags & OPTION_REQ)
+	for (i = 0; dhcp_options[i].code; i++) {
+		if ((dhcp_options[i].flags & OPTION_REQ) && len < max_len)
 			packet->options[end + OPT_DATA + len++] = dhcp_options[i].code;
+	}
 	packet->options[end + OPT_LEN] = len;
 	packet->options[end + OPT_DATA + len] = DHCP_END;
-
 }
 
 

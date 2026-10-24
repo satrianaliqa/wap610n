@@ -493,14 +493,28 @@ if {[info exists ::argv]} {
 		init_log
 		log "action==startup"
 
-		regexp {^.* = (.*)} [exec cat /mnt/jffs2/sys.conf | grep ip_lan] dummy current_ip
+		set current_ip ""
+		set current_netmask ""
+		if {[catch {set ip_lan_line [exec cat /mnt/jffs2/sys.conf | grep ip_lan]}] == 0} {
+			regexp {^.* = (.*)} $ip_lan_line dummy current_ip
+		}
+		if {$current_ip == ""} {
+			catch {set current_ip [get_parameter ip_lan]}
+		}
 		#Jacky.Yang 21-Nov-2008, start - For GUI redirect to correct ip address when we renew ip.
-		regexp {^.* = (.*)} [exec cat /mnt/jffs2/sys.conf | grep subnet_lan] dummy current_netmask
-		catch {exec echo WET610N will roll-back to default IP and netmask setting, IP: $current_ip, netmask: $current_netmask > /dev/console}
+		if {[catch {set subnet_lan_line [exec cat /mnt/jffs2/sys.conf | grep subnet_lan]}] == 0} {
+			regexp {^.* = (.*)} $subnet_lan_line dummy current_netmask
+		}
+		if {$current_netmask == ""} {
+			catch {set current_netmask [get_parameter subnet_lan]}
+		}
+		catch {exec echo WAP610N will roll-back to default IP and netmask setting, IP: $current_ip, netmask: $current_netmask > /dev/console}
 		catch {exec echo $current_ip,$current_netmask > /var/Get_IPInfo_From_DHCP}
 
 		if {[catch {open /var/webCommit r} checkCommit ]} {
-			update_web_ip $current_ip
+			if {$current_ip != ""} {
+				update_web_ip $current_ip
+			}
 			call_generic_event_script
 		} else {
 			close $checkCommit

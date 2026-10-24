@@ -17,7 +17,7 @@
 if [ -e /tmp/init_done ]; then rm /tmp/init_done; fi
 
 
-if [ ! $NETWORK_TYPE ]
+if [ -z "$NETWORK_TYPE" ]
 then
 	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf`
 fi
@@ -31,13 +31,24 @@ A=`ps | grep drvhlpr | grep -v grep | awk '{print $1}'`
 	for a in $A ; do kill -9 $a ; done
 	
 echo kill WPS_PBC
-killall WPS_PBC.sh
+killall WPS_PBC.sh 2>/dev/null || true
 A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
-	for a in $A ; do kill -9 $a ; done
+	for a in $A ; do kill $a 2>/dev/null || true ; done
+	sleep 1
+	A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
+	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
+	rm -rf /tmp/WPS_PBC_monitor.lock 2>/dev/null || true
 	
 B=`awk -F "=" '/^WPS_PB/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/HW.ini`
-A=`ps | grep "cat ${B}" | grep -v grep | awk '{print $1}'`
-	for a in $A ; do kill -9 $a ; done
+case "$B" in
+	''|null) B=/dev/gpio13 ;;
+	*[!0-9]*) : ;;
+	*) B=/dev/gpio$B ;;
+esac
+if [ -n "$B" ]; then
+	A=`ps | grep "cat ${B}" | grep -v grep | awk '{print $1}'`
+	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
+fi
 
 # wsccmd needs to be killed properly (no -9) in order to clean up properly.	
 echo kill WPS
@@ -45,8 +56,11 @@ killall wsccmd
 A=`ps | grep wsccmd | grep -v grep | awk '{print $1}'`
 for a in $A ; do kill -9 $a ; done
 #Delete fifo
-A=`ls /tmp/WPS* | grep -v WPS_DEVICE_PIN`
-rm $A
+for A in /tmp/WPS*; do
+	[ -e "$A" ] || continue
+	[ "$A" = /tmp/WPS_DEVICE_PIN ] && continue
+	rm -rf "$A"
+done
 
 #kill mtlk_wps_msgloop.tcl process
 A=`ps | grep mtlk_wps_msgloop.tcl | grep -v grep | awk '{print $1}'`

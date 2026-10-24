@@ -9,9 +9,13 @@ then
 	BRIDGE_MODE=`awk -F "=" '/^BridgeMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' $CONFIGS_PATH/sys.conf`
 fi
 
-if [ ! $NETWORK_TYPE ]
+if [ -z "$NETWORK_TYPE" ]
 then
 	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' $CONFIGS_PATH/wlan0.conf`
+fi
+
+if [ -z "$NETWORK_TYPE" ]; then
+	NETWORK_TYPE=2
 fi
 
 # Usage Func
@@ -98,7 +102,7 @@ make_device_pin ()
 insmod_driver ()
 {
 	cd /tmp
-	if [ $NETWORK_TYPE = 2 ]
+	if [ "$NETWORK_TYPE" = 2 ]
 	then
 		insmod mtlk.ko ap=1
 	else

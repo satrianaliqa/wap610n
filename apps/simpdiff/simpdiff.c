@@ -38,6 +38,10 @@ int main(int argc, char* argv[])
 		ignoreSize = 1;
 		nameParam++;
 	}
+	if (nameParam + 1 >= (unsigned int)argc) {
+		usage(argv[0]);
+		return -1;
+	}
 	// argv 1 and 2 contain the filenames, unless -s was the first arg.
 	filename1 = argv[nameParam++];
 	filename2 = argv[nameParam];
@@ -51,6 +55,7 @@ int main(int argc, char* argv[])
 	file2 = open(filename2, O_RDONLY);
 	if (file2 < 0) {
 		printf ("Unable to open %s\n", filename2);
+		close(file1);
 		return -1;
 	}
 	
@@ -60,6 +65,8 @@ int main(int argc, char* argv[])
 		if (numRead1 > 0 && numRead2 > 0) {
 			if (*buf1 != *buf2) {
 				printf("Files are different. (%d vs. %d at offset %d)\n", *buf1, *buf2, offset);
+				close(file1);
+				close(file2);
 				return 1;
 			}
 		}
@@ -69,8 +76,12 @@ int main(int argc, char* argv[])
 	if (numRead1 > 0 || numRead2 > 0) {
 		if (!ignoreSize) {
 			printf("Files have different size.\n");
+			close(file1);
+			close(file2);
 			return 2;
 		}
 	}
+	close(file1);
+	close(file2);
 	return 0;
 }

@@ -151,6 +151,12 @@ while {$i < $argc} {
 		set ::_domain $val
 		continue
 	}
+	if {$current_arg == "subnet"} {
+		incr i
+		set val [lindex $::argv $i]
+		set ::_subnet $val
+		continue
+	}
 }
 
 save_cfg 

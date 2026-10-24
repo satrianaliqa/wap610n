@@ -4,4 +4,4 @@
 # common initialization first, especially if more dhcp event notifications
 # are added.
 
-exec /etc/udhcpc/default.$1
+exec /etc/udhcpc/dhcp.tcl "$@"

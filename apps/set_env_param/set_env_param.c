@@ -125,6 +125,10 @@ printf("\nCannot malloc 0x10000\n");
 						continue;
 					}
 				}
+				if (curr_str_idx + 1 >= 500) {
+					out_of_space = 1;
+					break;
+				}
 				curr_str_idx++;
 				params_arr[curr_str_idx].name_ptr = curr_str;
 				params_arr[curr_str_idx].name_ptr[0] = 0;
@@ -147,6 +151,11 @@ printf("\nCannot malloc 0x10000\n");
 	// In case the parameter is new, add it to the memory picture
 	if ((!param_found) && (param_value != NULL))
 	{
+		if (curr_str_idx + 1 >= 500)
+		{
+			free(crc);
+			return 1;
+		}
 		value_len = strlen(param_value);
 		if (curr_str + strlen(param_name) + value_len + 2 > data_end)
 		{

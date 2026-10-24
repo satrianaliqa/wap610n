@@ -87,9 +87,12 @@ int getClientGateway(char *gateway, int isDHCP)
 		while (fgets(buff, sizeof(buff), fp) != NULL) {
 			if (nl) {
 				int ifl = 0;
-				while (buff[ifl]!=' ' && buff[ifl]!='\t' && buff[ifl]!='\0')
+				while (buff[ifl] != ' ' && buff[ifl] != '\t' && buff[ifl] != '\0' && ifl < (int)sizeof(buff) - 1)
 					ifl++;
-				buff[ifl]=0; 
+				if (buff[ifl] == '\0') {
+					continue;
+				}
+				buff[ifl] = '\0';
 				
 				if (sscanf(buff+ifl+1, "%lx%lx%X%d%d%d%lx%d%d%d",
 							&d, &g, &flgs, &ref, &use, &metric, &m, &mtu, &window, &irtt)!=10) {
@@ -174,14 +177,14 @@ int check_gateway_in_arptable(char *gateway)
 {
 	FILE *arp_table;
 	char buf[512]={0};
-	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[8]={0};
+	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[16]={0};
 	arp_table=popen("cat /proc/net/arp", "r");
 	if(arp_table == NULL)
 		return 0;
 	fgets(buf, 512, arp_table);
 	memset(buf, 0, 512);
 	while(fgets(buf, 512, arp_table)!=NULL){
-		if(sscanf(buf, "%s %s %s %s %s %s", ip, hw_type, flags, hw_addr, mask, device)==6){
+		if(sscanf(buf, "%15s %15s %15s %23s %15s %15s", ip, hw_type, flags, hw_addr, mask, device)==6){
 			printf("gateway=%s, arp record: %s %s %s %s %s %s\n", gateway, ip, hw_type, flags, hw_addr, mask, device);
 			if(!strcmp(gateway, ip) && strcmp(hw_addr, "00:00:00:00:00:00") && strcmp(flags, "0x0")){
 				printf("Found gateway in ARP table\n");

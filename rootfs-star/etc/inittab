@@ -17,9 +17,8 @@
 ::sysinit:/bin/mount -t proc proc /proc
 ::sysinit:/bin/mount -a
 ::sysinit:/bin/mount -o remount,rw /
-::sysinit:/bin/mkdir /tmp/var
-::sysinit:/bin/mkdir /tmp/var/run
-::sysinit:/bin/ln -s /tmp/var /var
+::sysinit:/bin/mkdir -p /tmp/var/run /tmp/var/log /tmp/var/lock
+::sysinit:/bin/mount -o bind /tmp/var /var
 ::sysinit:/bin/hostname -F /etc/hostname
 ::sysinit:/sbin/ifconfig lo 127.0.0.1 up
 ::sysinit:/sbin/route add -net 127.0.0.0 netmask 255.0.0.0 lo

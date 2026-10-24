@@ -36,7 +36,7 @@ int get_station_link_status(void)
 			continue;
 		}
 		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		paramCount = sscanf(tmpBuf, "%15s %d %15s %15s %15s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 		//printf("paramCount=%d, link_status=%d\n", paramCount, link_status);
 		if(paramCount == 11)
 			printf("=====> link status of wlan is %d\n", link_status);
@@ -57,7 +57,7 @@ int expose_wps_status(int statusCode)
 
 /*int get_config(char *config_value, char *config_name, char *config_file)
 {
-	FILE *fptr;
+	FILE *fptr = NULL;
 	char command[256]={0};
 
 	sprintf(command, "awk -F \"=\" '/^%s/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' %s", config_name, config_file);
@@ -102,7 +102,7 @@ int recover_wildcardssid(void)
 int main(int argc, char *argv[])
 {
 	struct stat statBuf;
-	FILE *fptr;
+	FILE *fptr = NULL;
 	char buf[128]={0}, *bufptr;
 	int result;
 	int wps_status=0;
@@ -249,8 +249,10 @@ int main(int argc, char *argv[])
 		}
 		delay_exit=60; //Waitting 60 seconds for indicate fail connect to AP after WPS successful
 		printf("Fail connect to AP within 60 seconds after WPS successful\n");
-		wps_status = 14;
-		expose_wps_status(wps_status);
+		if (wps_status != 99) {
+			wps_status = 14;
+			expose_wps_status(wps_status);
+		}
 		while(1){
 			if(gotSignal){
 				goto End;

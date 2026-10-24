@@ -115,9 +115,7 @@ if {$action =="stop" } {
 	foreach line $ps {
 		set process_num [lindex $line 0]
 		
-		# TODO : Why OK ?
-		set ok [lindex $line 6] 
-		if {$ok!=""} {
+		if {[regexp {^[0-9]+$} $process_num] && $process_num != [pid]} {
 			catch {exec kill -9 $process_num}
 		}
 	}
@@ -136,9 +134,13 @@ if {$action =="start_msg" } {
 
 			set MSG [read $msg_file $msg_length]
 			close $msg_file
-			debug_puts "$::WPS_MSG_LOOP_TCL:msg($eventCount)=$MSG"
-			catch {exec echo "WPS_LastMessage = $MSG" > $::g_web_tmp_folder/wps_last_msg}
-			incr eventCount
+			if {$MSG == ""} {
+				after 200
+			} else {
+				debug_puts "$::WPS_MSG_LOOP_TCL:msg($eventCount)=$MSG"
+				catch {exec echo "WPS_LastMessage = $MSG" > $::g_web_tmp_folder/wps_last_msg}
+				incr eventCount
+			}
 		}
 	}
 	
@@ -153,8 +155,13 @@ if {$action =="start_code" } {
 			puts $err
 			sleep 1
 		} else {
-			set results [expr [read $results_file ${::cmd_length}]]
+			set results_raw [read $results_file ${::cmd_length}]
 			close $results_file
+			if {$results_raw == ""} {
+				after 200
+				continue
+			}
+			set results [expr $results_raw]
 				debug_puts "$::WPS_MSG_LOOP_TCL:code($eventCount)=$results"
 			incr eventCount
 		}

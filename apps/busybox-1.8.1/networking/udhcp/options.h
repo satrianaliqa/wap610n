@@ -107,7 +107,7 @@ extern const struct dhcp_option dhcp_options[];
 extern const unsigned char option_lengths[];
 
 uint8_t *get_option(struct dhcpMessage *packet, int code);
-int end_option(uint8_t *optionptr);
+int end_option(uint8_t *optionptr, int maxlen);
 int add_option_string(uint8_t *optionptr, uint8_t *string);
 int add_simple_option(uint8_t *optionptr, uint8_t code, uint32_t data);
 #if ENABLE_FEATURE_RFC3397
