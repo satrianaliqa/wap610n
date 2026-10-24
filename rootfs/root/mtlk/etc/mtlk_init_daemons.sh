@@ -51,14 +51,15 @@ fi
 DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 
-if [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
+if [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
+	# DHCP Client Mode: Obtain dynamic IP from upstream router
+	echo "Starting DHCP client (udhcpc)..." > /dev/console
+	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
+elif [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
+	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
 	echo "Starting DHCP server (udhcpd) for Access Point..." > /dev/console
 	./mtlk_init_dhcpd.sh
 	nice -n 18 udhcpd /tmp/udhcpd.conf &
-elif [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
-	# Start DHCP Client only when DHCP Server is disabled and DHCP client mode is configured
-	echo "Starting DHCP client (udhcpc)..." > /dev/console
-	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
 fi
 
 # Start the upnp Daemon
