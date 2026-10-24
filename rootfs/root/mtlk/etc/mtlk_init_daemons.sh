@@ -52,9 +52,9 @@ nice -n 18 /etc/udhcpc/dhcp.tcl startup &
 
 # Start the DHCP Server
 DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-if [ $DHCPD_ENABLED ]
+if [ "$DHCPD_ENABLED" ]
 then
-	if [ $DHCPD_ENABLED == 1 ]
+	if [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]
 	then
 		./mtlk_init_dhcpd.sh 
 		nice -n 18 udhcpd /tmp/udhcpd.conf

@@ -36,11 +36,15 @@ echo "dump 0x7000000c" >> /proc/str9100/reg_debug; cat /proc/str9100/reg_debug
 
 # TODO: Delete the following file restore code - it should never need to be called on the VB
 # check if config files exists. if not create them
-if [ ! -e $CONFIGS_PATH/sys.conf ]
+if [ ! -e "$CONFIGS_PATH/sys.conf" ]
 then
-	echo Restoring sys.conf
-	cp $SAVED_CONFIG_PATH/sys.conf.default $CONFIGS_PATH/sys.conf 
-	dos2unix -u $CONFIGS_PATH/sys.conf
+	echo "Restoring default sys.conf..."
+	if [ -f "$ETC_PATH/sys.conf" ]; then
+		cp "$ETC_PATH/sys.conf" "$CONFIGS_PATH/sys.conf"
+	elif [ -f "$SAVED_CONFIG_PATH/sys.conf.default" ]; then
+		cp "$SAVED_CONFIG_PATH/sys.conf.default" "$CONFIGS_PATH/sys.conf"
+	fi
+	dos2unix -u "$CONFIGS_PATH/sys.conf" 2>/dev/null || true
 fi
 
 if [ ! -e "$CONFIGS_PATH/wlan0.conf" ]

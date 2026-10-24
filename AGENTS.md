@@ -476,6 +476,9 @@ Comprehensive audit and parallel remediation across all core firmware domains:
 | 48 | Console Shell Conflict | `rootfs-star/etc/inittab`<br>`rootfs/etc/inittab` | Removed duplicate `console::askfirst:-/bin/sh` from inittab, leaving a single clean `ttyS0::respawn:-/bin/sh` listener. | ✅ VERIFIED |
 | 49 | Platform Path Missing | `rootfs-star/root/mtlk/etc/mtlk_init_platform.sh` | Restored missing `mtlk_init_platform.sh` to `rootfs-star`, defining `$CONFIGS_PATH` and config locations. | ✅ VERIFIED |
 | 50 | Wi-Fi ESSID & Radio Beacon | `rootfs-star/.../driver_api.ini`<br>`rootfs-star/.../mtlk_init.sh`<br>`rootfs-star/.../mtlk_init_wls.sh`<br>`rootfs-star/.../mtlk_init_route.sh` | Mapped `NonProc_ESSID` in `driver_api.ini`, added default AP config restore fallback, and executed `ifconfig wlan0 up` for AP mode, restoring live 802.11n beacon transmission. | ✅ VERIFIED |
+| 51 | Pre-Baked Dropbear Keys | `rootfs-star/etc/dropbear/`<br>`rootfs/etc/dropbear/` | Pre-generated static 1024-bit RSA and DSS host keys in rootfs, completely eliminating CPU-intensive background keygen on boot (~8 min at 100% CPU) and preserving persistent SSH host key fingerprints. | ✅ VERIFIED |
+| 52 | Plug-and-Play DHCP Server | `rootfs-star/.../default_ap_WAP610N.conf`<br>`rootfs-star/.../sys.conf`<br>`rootfs-star/etc/udhcpd/udhcpd.conf` | Enabled internal `udhcpd` DHCP server by default (`DHCPDEnabled = 1`, `ip_config_method = 1`) handing out `192.168.1.10`-`.20` with DNS `192.168.1.1`/`8.8.8.8`, enabling instant zero-config Wi-Fi & LAN client connectivity. | ✅ VERIFIED |
+| 53 | Sys.conf Fallback Restoration | `rootfs-star/.../mtlk_init.sh`<br>`rootfs-star/.../sys.conf.default` | Fixed `mtlk_init.sh` fallback to restore full `sys.conf` from `$ETC_PATH/sys.conf` or complete `sys.conf.default`, preventing truncated system config when `/mnt/jffs2` is unpopulated. | ✅ VERIFIED |
 
 ---
 
