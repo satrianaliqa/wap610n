@@ -135,6 +135,7 @@ int main(int argc, char** argv)
  */
 	bopen(NULL, (60 * 1024), B_USE_MALLOC);
 	signal(SIGPIPE, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
 
 /*
  *	Initialize the web server
@@ -198,7 +199,12 @@ int main(int argc, char** argv)
 		//Jacky.Yang 25-Mar-2008, end detect wan port ip address change.
 		if (ReParseOnLoad == 1) {
 			ReParseOnLoad = 0;
+			loadConfigFromFile("/mnt/jffs2/wlan0.conf");
+			loadConfigFromFile("/mnt/jffs2/sys.conf");
 			MT_ParseOnLoad();
+			websInitRealm();
+			lang_init();
+			waitOtherProcess = 0;
 		}
 		//Jacky.Yang 27-Nov-2008, drop it
 		//MT_TaskScheduler(pStatTask); // Will do nothing without #define USE_MT_STAT_TASK

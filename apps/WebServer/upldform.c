@@ -522,15 +522,15 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 					if (configurationfile)
 					{
 						//Jacky.Yang redirect to management.asp for u-media.
-						//sprintf(redirectPage,T("importexport.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
-						sprintf(redirectPage,T("admin/management.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
+						//sprintf(redirectPage,T("importexport.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
+						sprintf(redirectPage,T("admin/management.asp?error=File+write+failed.<br>+ferror=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
 						MT_WriteRedirectScript(wp, redirectPage);
 					}
 					else
 					{
 						//sprintf(redirectPage,T("upload.asp?error=Could+Not+Write+File&size=%d&lf=%s&rf=%s"),wp->FileContentLen,fn,targetFile);
 						//MT_WriteRedirectScript(wp, redirectPage);
-						websWrite(wp, T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror_val, locWrite, numLeft, numWrite, wp->FileContentLen);
+						websWrite(wp, T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror(fp), locWrite, numLeft, numWrite, wp->FileContentLen);
 					}
 
 					break;
@@ -790,7 +790,7 @@ static int MT_ValidateImage(const char_t* imageBuf, int imageSize)
 		{
 //june.chen, 2011-01-17, support Device ID for both WES610N (0x13) and WET610N (0x11). This is because WET610N and WES610N fw is interchangeable
 #if 1
-			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x13))){
+			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x12) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x12) || (mtdDeviceID == 0x13))){
 			}
 			else{
 				gsprintf(gMTBurnParams.errorMessage,T("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)<br>"), imageHeader.deviceID, mtdDeviceID);

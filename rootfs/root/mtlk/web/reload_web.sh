@@ -1,6 +1,4 @@
 #!/bin/sh
 
 sleep 2
-killall webs
-cd /root/mtlk/web
-/root/mtlk/web/webs&
+killall -HUP webs 2>/dev/null || true

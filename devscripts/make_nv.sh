@@ -421,8 +421,13 @@ then
 	# Keep intact Linksys GUI assets from wlan.tar.gz
 	echo "--> Keeping full Linksys GUI web assets for ${MODENAME}..."
 	
-	#cd ${WEBSERVER_PATH}
-	#./release.sh
+	echo "--> Building GoAhead WebServer (apps/WebServer)..."
+	cd ${WEBSERVER_PATH}
+	./release.sh 2>&1 | tee -a $LOGFILE
+	if [ 0 != $? ]; then
+		echo "Failed to build WebServer" | tee -a $LOGFILE
+		exit 1
+	fi
 	cd ${ROOTDIR}
 	#Jacky.Yang 21-Jul-2008, create build number and re-name firmware file name.
 	sed -i '/ProjectName/d' ${ENV_CONF}

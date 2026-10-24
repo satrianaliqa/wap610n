@@ -1597,7 +1597,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 
 	if (verifiedOk != 1){
 		precentComplete = -1;
-		printf("Error : Error verifying image at location %d\n ferror=%d....\n", ferror(fp), locVerify);
+		printf("Error : Error verifying image at location %d\n", locVerify);
 		printf("Firmware upgrade fail.. Orz..\n");
 		return -1;
 	}else{
@@ -1669,7 +1669,7 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 		{
 //june.chen, 2011-01-17, support Device ID for both WES610N (0x13) and WET610N (0x11). This is because WET610N and WES610N fw is interchangeable
 #if 1
-			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x13))){
+			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x12) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x12) || (mtdDeviceID == 0x13))){
 			}
 			else{
 				printf("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)", imageHeader.deviceID, mtdDeviceID);

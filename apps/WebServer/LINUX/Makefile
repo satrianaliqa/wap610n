@@ -68,7 +68,9 @@ PLATFORM_CFLAGS ?= -mlittle-endian -mapcs-32 -march=armv4 -mtune=arm9tdmi -msoft
 # SNAPGEAR = /home/arnonm/Desktop/svn/wl/linux/trunk/snapgear/dongle-2.0
 SNAPGEAR ?= /tools/dongle-2.0
 CROSS_COMPILE ?= $(SNAPGEAR)/tools/ucfront-gcc arm-linux-
-CC ?= $(CROSS_COMPILE)gcc
+CC = $(CROSS_COMPILE)gcc
+AR = $(CROSS_COMPILE)ar
+ARFLAGS = rvs
 ADDITIONAL_LIBS ?= -lpthread -lz
 ADDITIONAL_OBJS ?=
 ############### END Settings for Snapgear ################
@@ -103,7 +105,7 @@ $(NAME): Makefile $(ARCH)
 		$(CFLAGS) $(IFLAGS) \
 		main.o $(ARCH) $(LDFLAGS) $(ADDITIONAL_OBJS) 
 
-PROPRIETARY_BLOBS = ../mt_api.o ../mt_task.o ../mt_validation.o
+PROPRIETARY_BLOBS = ../mt_api.o ../mt_task.o ../mt_validation.o ../wireless.o ../wps.o ../utils.o ../hnap_implementation.o
 CLEAN_FILES = $(filter-out $(PROPRIETARY_BLOBS), $(DEPEND_FILES))
 
 clean:
@@ -140,9 +142,9 @@ clean:
 
 ../misc.o:  ../misc.c ../uemf.h
 
-../mt_api.o:	../mt_api.c ../mt_api.h ../mt_validation.h ../uemf.h
+# ../mt_api.o:	../mt_api.c ../mt_api.h ../mt_validation.h ../uemf.h
 
-../mt_validation.o:	../mt_validation.c ../mt_api.h ../mt_validation.h ../uemf.h
+# ../mt_validation.o:	../mt_validation.c ../mt_api.h ../mt_validation.h ../uemf.h
 
 ../page.o:  ../page.c ../webs.h ../wsIntrn.h ../ej.h ../ejIntrn.h ../uemf.h
 
@@ -188,16 +190,16 @@ clean:
 
 ../hnap_config_metalink.o: ../hnap_config_metalink.c ../hnap_config_metalink.h ../hnap_interfaces.h ../xml_tree.h ../webs.h
 
-../hnap_implementation.o: ../hnap_implementation.c ../hnap_interfaces.h ../xml_tree.h
+# ../hnap_implementation.o: ../hnap_implementation.c ../hnap_interfaces.h ../xml_tree.h
 
-../mt_task.o: ../mt_task.h ../mt_api.h ../uemf.h
+# ../mt_task.o: ../mt_task.h ../mt_api.h ../uemf.h
 ../device_discover.o: ../device_discover.c ../device_discover.h ../uemf.h
 
 #Jacky.Yang 30-May-2008, Define U-Media API
-../wireless.o: ../wireless.c ../wireless.h
-../utils.o: ../utils.c ../utils.h
+# ../wireless.o: ../wireless.c ../wireless.h
+# ../utils.o: ../utils.c ../utils.h
 ../management.o: ../management.c ../management.h
-../wps.o: ../wps.c ../wps.h
+# ../wps.o: ../wps.c ../wps.h
 
 main.o:  main.c ../wsIntrn.h ../webs.h ../ej.h ../ejIntrn.h ../uemf.h ../mt_task.h ../hnap_interfaces.h
 

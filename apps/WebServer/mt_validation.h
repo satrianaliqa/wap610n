@@ -3,4 +3,8 @@
 
 #include "mt_api.h"
 
-#endif
+extern void MT_DefineValidationFuncs(void);
+extern int MT_ASPreturn(webs_t wp, int val);
+extern int isInteger(const char *str);
+
+#endif /* _MT_VALIDATION_H_ */

@@ -70,8 +70,10 @@ EOF
 		ln -sf cgi-bin/shell.cgi "${ROOTFS_DIR}/root/mtlk/web/shell.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/remote_access.cgi "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/dump_firmware.cgi "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi" 2>/dev/null || true
-		[ -f "rootfs-star/root/mtlk/web/run_webs.sh" ] && \
-			cp -af "rootfs-star/root/mtlk/web/run_webs.sh" "${ROOTFS_DIR}/root/mtlk/web/"
+		for web_file in webs run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh; do
+			[ -f "rootfs-star/root/mtlk/web/$web_file" ] && \
+				cp -af "rootfs-star/root/mtlk/web/$web_file" "${ROOTFS_DIR}/root/mtlk/web/"
+		done
 		[ -f "rootfs-star/root/mtlk/saved_configs/default_admin.conf" ] && \
 			cp -af "rootfs-star/root/mtlk/saved_configs/default_admin.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/"
 		[ -f "rootfs-star/root/mtlk/etc/sys.conf" ] && \
@@ -90,6 +92,7 @@ EOF
 			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
 		done
 		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
+		[ -f "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" ] && cp -af "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
 		[ -f "rootfs-star/etc/inittab" ] && cp -af "rootfs-star/etc/inittab" "${ROOTFS_DIR}/etc/"
 		[ -f "rootfs-star/etc/sysctl.conf" ] && cp -af "rootfs-star/etc/sysctl.conf" "${ROOTFS_DIR}/etc/"
 		[ -f "rootfs-star/etc/mtlk_init_start.sh" ] && cp -af "rootfs-star/etc/mtlk_init_start.sh" "${ROOTFS_DIR}/etc/"

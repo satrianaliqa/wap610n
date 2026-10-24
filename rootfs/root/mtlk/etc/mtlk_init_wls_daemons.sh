@@ -1,8 +1,6 @@
 #!/bin/sh
 
-
 # Start the BCL Server
-# TODO: We may want to remove the automatic BCL execution on customer dongles
 # For debugging redirect to: /tmp/bcl.log, instead of /dev/null
 echo "Starting BCL Server..."
 if [ -e /bin/nice ]
@@ -10,7 +8,6 @@ then nice -n 18 $BCL_PATH/BclSockServer > /dev/null &
 else
 $BCL_PATH/BclSockServer > /dev/null &
 fi
-
 
 if [ $WLAN_NUM_BANDS ] && [ $WLAN_NUM_BANDS == 2 ]
 then
@@ -20,37 +17,14 @@ then
 	else
 	$BCL_PATH/bcl2 > /dev/null &
 	fi
-	
 fi
 
+# Note: GoAhead Web Server (webs) on Port 80 is supervised by /etc/inittab
+# (::respawn:/root/mtlk/web/run_webs.sh). Signal SIGHUP so webs reloads
+# wireless/system state once wireless daemons are initialized.
+killall -HUP webs 2>/dev/null || true
 
-# Start Web Server
-# For debugging redirect to: /tmp/web.log, instead of /dev/null
-echo "Starting Web Server..."
-# use low priority
-if [ -e /bin/nice ]
-then 
-	nice -n 18 $WEB_PATH/webs -c 0 > /dev/null &
-else
-	$WEB_PATH/webs -c 0 > /dev/null &
+# Start single instance of web memory monitor
+if ! ps | grep -v grep | grep -q 'monitor_web.sh'; then
+	/root/mtlk/web/monitor_web.sh &
 fi
-
-if [ $WLAN_NUM_BANDS ] && [ $WLAN_NUM_BANDS == 2 ]
-then
-	# Start the second web server on port 81
-if [ -e /bin/nice ]
-then 
-	nice -n 18 $WEB_PATH/webs -c 1 > /dev/null &
-else
-	$WEB_PATH/webs -c 1 > /dev/null &
-fi
-     
-fi
-
-# Add for pass TestDevice SSDP Discovery test
-# Change to execute upnpd from apps/jffs2-etc/networking/VB/mtlk_init_daemons.sh to this point
-# Ricky Cao on Feb. 24 2009
-# nice -n 18 upnpd &
-
-# Jacky.Yang 11-Mar-2009, monitor web server
-/root/mtlk/web/monitor_web.sh&
