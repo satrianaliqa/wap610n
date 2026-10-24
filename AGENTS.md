@@ -480,6 +480,25 @@ Comprehensive audit and parallel remediation across all core firmware domains:
 | 52 | Plug-and-Play DHCP Server | `rootfs-star/.../default_ap_WAP610N.conf`<br>`rootfs-star/.../sys.conf`<br>`rootfs-star/etc/udhcpd/udhcpd.conf` | Enabled internal `udhcpd` DHCP server by default (`DHCPDEnabled = 1`, `ip_config_method = 1`) handing out `192.168.1.10`-`.20` with DNS `192.168.1.1`/`8.8.8.8`, enabling instant zero-config Wi-Fi & LAN client connectivity. | ✅ VERIFIED |
 | 53 | Sys.conf Fallback Restoration | `rootfs-star/.../mtlk_init.sh`<br>`rootfs-star/.../sys.conf.default` | Fixed `mtlk_init.sh` fallback to restore full `sys.conf` from `$ETC_PATH/sys.conf` or complete `sys.conf.default`, preventing truncated system config when `/mnt/jffs2` is unpopulated. | ✅ VERIFIED |
 
+### 9.3 Future Architectural Roadmap & Planned Next Steps
+
+Planned enhancements and features to be implemented in subsequent iterations:
+
+1. **Custom Dropbear SSH Key Upload & Sovereign Cryptography**:
+   - **Context & Motivation**: Static host keys (`dropbear_rsa_host_key` and `dropbear_dss_host_key`) are pre-baked into `rootfs-star/etc/dropbear/` to eliminate CPU-intensive boot-time key generation (~8 minutes at 100% CPU on 200MHz ARM9). To give users complete transparency, cryptographic trust, and ownership, users should have the ability to supply their own externally generated RSA host key and SSH public keys (`authorized_keys`).
+   - **Architecture & Implementation Plan**:
+     - **External Keygen**: User generates their own 1024-bit RSA host key on their trusted PC (e.g. `dropbearkey -t rsa -f custom_host_key` or `ssh-keygen`).
+     - **Upload Mechanism**: Add a secure file upload handler in GoAhead WebServer (`management.asp` / `upldform.c`) or CLI utility that saves the custom key into persistent non-volatile storage (`/mnt/jffs2/dropbear/`).
+     - **Boot Priority Fallback**:
+       ```bash
+       if [ -f /mnt/jffs2/dropbear/dropbear_rsa_host_key ]; then
+           cp /mnt/jffs2/dropbear/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
+       elif [ -f /root/mtlk/etc/dropbear/dropbear_rsa_host_key ]; then
+           cp /root/mtlk/etc/dropbear/dropbear_rsa_host_key /etc/dropbear/dropbear_rsa_host_key
+       fi
+       ```
+     - **Result**: Zero boot-time CPU penalty, user-controlled cryptography, and complete transparency without relying solely on image-bundled keys.
+
 ---
 
 ## 10. 🧪 QA Protocols & Build Reference
