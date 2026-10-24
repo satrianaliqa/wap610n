@@ -113,7 +113,7 @@ proc save_stats {} {
 		set totalMemory [lindex $words 1]
 		puts $output_file "Total Memory\t| $totalMemory KB"
 	}
-	if {![catch {set vmstat [exec vmstat 2 2]}]} {
+	if {![catch {set vmstat [exec vmstat 1 2]}]} {
 		set vmstatline [lindex [split $vmstat "\n"] 3]
 		set words [SplitIntoWords $vmstatline]
 		set freeMemory [lindex $words 3]

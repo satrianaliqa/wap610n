@@ -70,7 +70,7 @@ EOF
 		ln -sf cgi-bin/shell.cgi "${ROOTFS_DIR}/root/mtlk/web/shell.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/remote_access.cgi "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/dump_firmware.cgi "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi" 2>/dev/null || true
-		for web_file in webs run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh; do
+		for web_file in webs run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh mt_current_stat.tcl; do
 			[ -f "rootfs-star/root/mtlk/web/$web_file" ] && \
 				cp -af "rootfs-star/root/mtlk/web/$web_file" "${ROOTFS_DIR}/root/mtlk/web/"
 		done
@@ -88,7 +88,7 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
-		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh; do
+		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh simpdiff; do
 			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
 		done
 		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"

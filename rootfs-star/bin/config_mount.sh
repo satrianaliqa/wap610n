@@ -16,24 +16,24 @@ CONFIG_DEFAULT=$RESTORE_DEFAULTS_PATH/config.img.gz
 
 # First get a lock - to prevent parallel execution of config_mount/umount scripts
 config_lock.sh $$
-if [ ! $? -eq 0 ]
+if [ $? -ne 0 ]
 then
 	echo "config_mount ($$): Could not obtain config lock!"
 	logger -t $$ "config_mount: Could not obtain config lock!"
 	exit 1
 fi
 
-# Check if already mounted - if so, warn and do nothing
-CONFIG_MOUNTED=`mount | grep $CONFIG_MNT | wc -l`
-if [ $CONFIG_MOUNTED -gt 0 ]; 
-then 
-	echo " ($$) Configuration filesystem is already mounted!"
-	logger -t $$ "Configuration filesystem is already mounted!"
-
-	# Release lock
-	config_unlock.sh $$
-
-	exit 1
+# Check if already mounted - since config_umount.sh now preserves the mount,
+# ensure rw mode and return success immediately if valid.
+if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null || mount | grep -q "$CONFIG_MNT"
+then
+	mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
+	if [ -e "$CONFIG_MNT/wlan0.conf" ]
+	then
+		config_unlock.sh $$
+		exit 0
+	fi
+	umount "$CONFIG_MNT" 2>/dev/null || true
 fi
 
 echo " ($$) Mounting configuration filesystem"

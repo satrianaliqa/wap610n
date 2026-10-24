@@ -11,8 +11,7 @@
 
 CONFIG_LOCKFILE=/tmp/config_lock
 
-
-if [ ! $# -eq 1 ]
+if [ $# -ne 1 ]
 then
 	echo "config_unlock usage: $0 <PID>"
 	exit 2
@@ -20,25 +19,23 @@ fi
 
 PID=$1
 
-LOCKFOUND=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null)
-if [ $? -ne 0 ]
+if [ ! -L "$CONFIG_LOCKFILE" ] && [ ! -e "$CONFIG_LOCKFILE" ]
 then
-	# No config lock is taken - return fail
 	echo " ($PID) Unable to release config lock. No lock taken"
 	exit 1
 fi
 
-# Make sure that we are the owners of the lock
-PID_FOUND=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
+PID_FOUND=`readlink "$CONFIG_LOCKFILE" 2>/dev/null`
+if [ -z "$PID_FOUND" ]; then
+	PID_FOUND=`ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $NF}'`
+fi
 
 if [ "$PID_FOUND" != "$PID" ]
 then
-	# Config lock isn't owned by us - return fail
 	echo " ($PID) Unable to release config lock. Not owner (OLD: $PID_FOUND)"
 	exit 1
 fi
 
-# We can now be sure that we own the lock, so delete it
-rm -f $CONFIG_LOCKFILE
+rm -f "$CONFIG_LOCKFILE"
 echo " ($PID) Released config lock."
 exit 0

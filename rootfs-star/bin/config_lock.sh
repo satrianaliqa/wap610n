@@ -22,63 +22,61 @@
 
 CONFIG_LOCKFILE=/tmp/config_lock
 
-if [ ! $# -eq 1 ]
+if [ $# -ne 1 ]
 then
 	echo "config_lock usage: $0 <PID>"
 	exit 2
 fi
 
 PID=$1
+MAX_WAIT=20
+WAIT_COUNT=0
 
-# Get lock by creating a directory - 
-# This is an atomic operation, because you can use the return value to see if the lock was successful
-ln -s $PID $CONFIG_LOCKFILE 2> /dev/null
-
-if [ $? -eq 0 ]
-then
-	# Lock was successful
-	# We can now be sure that we own the lock
-	echo " ($PID) Got config lock"
-	exit 0
-fi
-
-
-# Lock failed - check if old process still exists, or we need to clean up a stale lock and try again
-
-OLDPID=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
-if [ -z "$OLDPID" ]
-then
-	# The lock was released since we issued the ln command.
-	# Try obtaining a lock again
-	echo " ($PID) Lock was removed. Restarting config_lock attempt."
-	# Recursively call this app with the original arguments
-	exec $0 $@
-	
-fi
-
-# kill -0 will return success if the process exists, but won't send a real signal to it
-kill -0 $OLDPID 2> /dev/null
-if [ ! $? -eq 0 ]
-then
-	# Stale lock - remove it and try again
-
-	# Extra validation needed: it could be that you will rm a newly obtained lock,
-	# if the old lock was deleted between the cat and the kill, and a different process got the lock,
-	# so make sure that the lock PID didn't change
-	LOCKPID=$(ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $11}')
-	if [ -n "$LOCKPID" ] && [ "$LOCKPID" = "$OLDPID" ]
-	then 
-		echo " ($PID) Found stale config lock (OLD: $OLDPID)"
-		
-		echo " ($PID) Removing stale config lock (OLD: $OLDPID)"
-		rm -f $CONFIG_LOCKFILE
-		
-		# Recursively call this script with the original arguments
-		echo " ($PID) Restarting config_lock attempt."
-		exec $0 $@
+get_lock_owner() {
+	OWNER=`readlink "$CONFIG_LOCKFILE" 2>/dev/null`
+	if [ -z "$OWNER" ] && [ -L "$CONFIG_LOCKFILE" ]; then
+		OWNER=`ls -l "$CONFIG_LOCKFILE" 2>/dev/null | awk '{print $NF}'`
 	fi
-fi
+	echo "$OWNER"
+}
 
-# Config lock is already taken - return fail
-echo " ($PID) Can't get config lock"
+while [ $WAIT_COUNT -lt $MAX_WAIT ]
+do
+	if ln -s "$PID" "$CONFIG_LOCKFILE" 2>/dev/null
+	then
+		echo " ($PID) Got config lock"
+		exit 0
+	fi
+
+	OLDPID=`get_lock_owner`
+	if [ -z "$OLDPID" ]
+	then
+		# Lock was just released between ln and readlink; retry immediately
+		continue
+	fi
+
+	if [ "$OLDPID" = "$PID" ]
+	then
+		# Already owned by this PID
+		exit 0
+	fi
+
+	if ! kill -0 "$OLDPID" 2>/dev/null
+	then
+		# Stale lock - verify owner didn't change before removing
+		LOCKPID=`get_lock_owner`
+		if [ -n "$LOCKPID" ] && [ "$LOCKPID" = "$OLDPID" ]
+		then
+			echo " ($PID) Removing stale config lock (OLD: $OLDPID)"
+			rm -f "$CONFIG_LOCKFILE"
+			continue
+		fi
+	fi
+
+	# Lock is held by an active process; wait 1s for it to finish
+	WAIT_COUNT=`expr $WAIT_COUNT + 1`
+	sleep 1
+done
+
+echo " ($PID) Can't get config lock after ${MAX_WAIT}s"
 exit 1

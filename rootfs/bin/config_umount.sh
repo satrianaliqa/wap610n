@@ -2,9 +2,8 @@
 
 # umount_config.sh
 #
-# This script unmounts the config filesystem, and saves it to flash
-
-echo "U-Media, umount_config.sh: Who call me?" > /dev/console
+# Flushes the configuration filesystem (/mnt/jffs2 backed by /tmp/fs.img)
+# and saves it to /dev/mtdblock4 without unmounting /mnt/jffs2.
 
 CONFIG_BLOCK=/dev/mtdblock4
 CONFIG_FILE=/tmp/fs.img
@@ -12,114 +11,99 @@ CONFIG_GZ=${CONFIG_FILE}.gz
 CONFIG_MNT=/mnt/jffs2
 CONFIG_MAX_SIZE=131072
 
-
-# First get a lock - to prevent parallel execution of config_mount/umount scripts
+# Obtain config lock to serialize all flash/loopback config operations
 config_lock.sh $$
-if [ ! $? -eq 0 ]
+if [ $? -ne 0 ]
 then
 	echo " ($$) config_umount: Could not obtain config lock!"
 	logger -t $$ "config_umount: Could not obtain config lock!"
 	exit 1
 fi
 
-echo " ($$) Unmounting configuration filesystem"
+cleanup_and_unlock() {
+	rm -f "$CONFIG_GZ" 2>/dev/null
+	config_unlock.sh $$ >/dev/null 2>&1 || true
+}
+trap 'cleanup_and_unlock' 0 1 2 15
 
-UMOUNT_RETRY_COUNT=0
-# Try umounting a number of times
-umount $CONFIG_MNT
-while [ $? -gt 0 ] 
-do
-	# umount failed - try again
-	UMOUNT_RETRY_COUNT=`expr $UMOUNT_RETRY_COUNT + 1`
-	if [ $UMOUNT_RETRY_COUNT -gt 5 ]
-	then
-		echo " ($$) Failed unmounting and saving configuration filesystem!"
-		logger -t $$ "Failed unmounting and saving configuration filesystem!"
-
-		# Release lock
-		config_unlock.sh $$
-
-		exit 1
-	fi
-	sleep 1
-	
-	# Try umounting again
-	umount $CONFIG_MNT
-done
-
-echo " ($$) Unmounted configuration filesystem (in $UMOUNT_RETRY_COUNT retry attempts)"
-
-echo " ($$) Saving configuration filesystem to flash"
-## UNSAFE BUT SIMPLE METHOD: gzip -c $CONFIG_FILE > $CONFIG_BLOCK
-
-# Compress filesystem
-if [ -e $CONFIG_GZ ]
-then 
-	rm $CONFIG_GZ
-fi
-if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
+if [ ! -f "$CONFIG_FILE" ]
 then
-	echo " ($$) Failed compressing configuration filesystem"
-	logger -t $$ "Failed compressing configuration filesystem"
-	config_unlock.sh $$
+	echo " ($$) config_umount: $CONFIG_FILE does not exist!"
 	exit 1
 fi
 
-# Never start an erase/write cycle with an image larger than mtdblock4.
-CONFIG_SIZE=`wc -c < $CONFIG_GZ`
-if [ $CONFIG_SIZE -gt $CONFIG_MAX_SIZE ]
+# Flush dirty pages of the loopback mount into /tmp/fs.img without unmounting /mnt/jffs2
+# so concurrent readers (/mnt/jffs2/wlan0.conf, /mnt/jffs2/sys.conf) never see an empty mountpoint.
+sync
+if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
+then
+	mount -o remount,ro "$CONFIG_MNT" 2>/dev/null || true
+	sync
+fi
+
+rm -f "$CONFIG_GZ" 2>/dev/null
+if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
+then
+	if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null; then
+		mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
+	fi
+	echo " ($$) Failed compressing configuration filesystem"
+	logger -t $$ "Failed compressing configuration filesystem"
+	exit 1
+fi
+
+if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
+then
+	mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
+fi
+
+# Never start an erase/write cycle with an image larger than mtdblock4 (128 KB).
+CONFIG_SIZE=`wc -c < "$CONFIG_GZ"`
+if [ "$CONFIG_SIZE" -gt "$CONFIG_MAX_SIZE" ]
 then
 	echo " ($$) Configuration image is too large: $CONFIG_SIZE bytes (max $CONFIG_MAX_SIZE)"
 	logger -t $$ "Configuration image is too large: $CONFIG_SIZE bytes"
-	rm $CONFIG_GZ
-	config_unlock.sh $$
 	exit 1
 fi
 
-# Copy to flash
-if ! cp $CONFIG_GZ $CONFIG_BLOCK
+# Skip NOR flash erase/write if /dev/mtdblock4 already contains the exact compressed image
+if simpdiff -s "$CONFIG_GZ" "$CONFIG_BLOCK" >/dev/null 2>&1
+then
+	echo " ($$) Configuration on flash is already up to date"
+	exit 0
+fi
+
+echo " ($$) Saving configuration filesystem to flash"
+if ! cp "$CONFIG_GZ" "$CONFIG_BLOCK"
 then
 	echo " ($$) Failed writing configuration filesystem to flash"
 	logger -t $$ "Failed writing configuration filesystem to flash"
-	rm $CONFIG_GZ
-	config_unlock.sh $$
 	exit 1
 fi
 sync
 
-# Validate image integrity - do a binary diff of tmp file and flash
+# Validate image integrity - binary diff of tmp gzip file and flash
 CP_RETRY_COUNT=0
-simpdiff -s $CONFIG_GZ $CONFIG_BLOCK
-while [ $? -gt 0 ] 
+simpdiff -s "$CONFIG_GZ" "$CONFIG_BLOCK"
+while [ $? -gt 0 ]
 do
-	# Failed writing to flash - try again.
-	CP_RETRY_COUNT=`expr $CP_RETRY_COUNT + 1 `
+	CP_RETRY_COUNT=`expr $CP_RETRY_COUNT + 1`
 	if [ $CP_RETRY_COUNT -gt 5 ]
 	then
 		echo " ($$) Failed copying configuration filesystem to flash!"
 		logger -t $$ "Failed copying configuration filesystem to flash!"
-
-		# Release lock
-		config_unlock.sh $$
-
 		exit 1
 	fi
 
-	# Try copying again
-	if ! cp $CONFIG_GZ $CONFIG_BLOCK
+	if ! cp "$CONFIG_GZ" "$CONFIG_BLOCK"
 	then
 		echo " ($$) Retry failed writing configuration filesystem to flash"
 		logger -t $$ "Retry failed writing configuration filesystem to flash"
-		config_unlock.sh $$
 		exit 1
 	fi
 	sync
-	simpdiff -s $CONFIG_GZ $CONFIG_BLOCK
+	simpdiff -s "$CONFIG_GZ" "$CONFIG_BLOCK"
 done
+
 echo " ($$) Configuration saved (in $CP_RETRY_COUNT retry attempts)"
-
-# Delete tmp gzip file
-rm $CONFIG_GZ
-
-# Release lock
-config_unlock.sh $$
+exit 0
