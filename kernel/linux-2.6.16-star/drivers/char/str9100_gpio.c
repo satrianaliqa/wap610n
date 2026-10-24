@@ -392,6 +392,7 @@ static irqreturn_t str9100_gpio_irq_handler(int this_irq, void *dev_id, struct p
 {
 	int i;
 	u32 gpio_intr;
+	u32 serviced = 0;
 
 	// Clean System irq status
 	INTC_CLEAR_EDGE_TRIGGER_INTERRUPT(INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
@@ -401,18 +402,21 @@ static irqreturn_t str9100_gpio_irq_handler(int this_irq, void *dev_id, struct p
 	//printk("GPIO INTERRUPT : %08x \n",gpio_intr);
 
 	for (i = 0; i < MAX_GPIO_LINE; i++) {
-		if ((gpio_intr &0x1) == 0x1) {
+		if ((gpio_intr & 0x1) == 0x1) {
 			if (gpio_isr[i] != NULL) {
 				gpio_isr[i](i);
 			}
+			serviced |= (1 << i);
 		}
 		gpio_intr = gpio_intr >> 1;
 	}
-	/* Clear All Interrupt Status */
-	str9100_gpio_write_intrclear(0x1FFFFF);
+	/* Clear only serviced interrupt status */
+	if (serviced) {
+		str9100_gpio_write_intrclear(serviced);
+	}
 	/* Unmask Intc Interrupt Status */
 	INTC_INTERRUPT_MASK_REG &= ~(0x1 << INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
-    return IRQ_HANDLED;
+	return IRQ_HANDLED;
 }
 
 /*  

@@ -108,9 +108,6 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
-		[ -f "rootfs-star/root/mtlk/web/cgi-bin/shell.cgi" ] && \
-			cp -af "rootfs-star/root/mtlk/web/cgi-bin/shell.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
-		ln -sf cgi-bin/shell.cgi "${ROOTFS_DIR}/root/mtlk/web/shell.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/remote_access.cgi "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" 2>/dev/null || true
 		ln -sf cgi-bin/dump_firmware.cgi "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi" 2>/dev/null || true
 		for web_file in webs run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh mt_current_stat.tcl; do
@@ -125,8 +122,6 @@ EOF
 			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" 2>/dev/null || true
 		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
 			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" 2>/dev/null || true
-		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/shell.cgi" ] && \
-			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/shell.cgi" 2>/dev/null || true
 		[ -f "rootfs-star/root/mtlk/web/admin/management.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
@@ -154,6 +149,8 @@ ensure_rootfs_dirs() {
 	chmod 755 "$base/proc" "$base/sys" "$base/mnt" "$base/var" 2>/dev/null || true
 	chmod 700 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
 	chown -R 0:0 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
+	chmod 600 "$base/etc/shadow" 2>/dev/null || true
+	chmod 644 "$base/etc/passwd" 2>/dev/null || true
 }
 
 ensure_rootfs_dirs "${ROOTFS_DIR}"

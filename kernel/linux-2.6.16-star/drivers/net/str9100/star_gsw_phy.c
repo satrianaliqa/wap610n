@@ -4176,7 +4176,9 @@ int rtl_init (void)
 {
 	u16 phy_data;
 	u8 phy_reg=0;	
+#if defined(CONFIG_PHY_RESET_GPIO3)
 	int reset_cnt,i;		
+#endif
 
 	star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data);
 	PRINT_INFO("PHY 1, reg 3, PHY Identifier 2=0x%04x\n", phy_data);
@@ -4233,6 +4235,9 @@ int rtl_init (void)
 			star_gsw_write_phy(RTL8201CP_PHY_ADDR, phy_reg, phy_data);
 		} else {
 			//Tim Wang, send reset PHY signal from GPIO 3
+			// GPIO 3 is the physical active-low factory reset button on WAP610N/WET610N.
+			// Guard against driving GPIO 3 output low during PHY init if not board-routed as PHY reset.
+#if defined(CONFIG_PHY_RESET_GPIO3)
 #define MAX_PHY_RESET_CNT 20
 #define SYSTEM_RESET_GPIO 3	
 #define PHY_RESET_GPIO 3
@@ -4264,6 +4269,10 @@ int rtl_init (void)
 				PRINT_INFO("after reset PHY from GPIO 3 %d times, still can not recover it. try workaround by disable AN\n", MAX_PHY_RESET_CNT);
 				force_port0_100Mbps();
 			}
+#else
+			PRINT_INFO("abnormal PHY status (0x%04x); GPIO 3 is reset button, avoid driving low\n", phy_data);
+			force_port0_100Mbps();
+#endif
 		}
 	}	
 		

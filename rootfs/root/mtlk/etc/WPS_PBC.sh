@@ -1,5 +1,5 @@
 #!/bin/sh
-# Hardware Safe-Shutdown button monitor daemon for WAP610N
+# Hardware WPS PushButton pairing monitor daemon for WAP610N / WET610N
 
 # The monitor can be started by both early boot and WPS initialization.
 # Use an atomic directory lock so only one process reads the GPIO device.
@@ -71,27 +71,29 @@ while [ $wait_gpio -lt 30 ]; do
 done
 
 if [ -n "$WPS_PBC_GPIO" ] && [ -e "$WPS_PBC_GPIO" ]; then
-	echo "--> [Hardware Daemon] WPS Safe-Shutdown Monitor started on $WPS_PBC_GPIO" > /dev/console
+	echo "--> [Hardware Daemon] WPS PBC Monitor started on $WPS_PBC_GPIO" > /dev/console
 	while true
 	do
 		# Wait for physical WPS button press (blocking read)
-		# Only trigger shutdown if cat succeeds (button pressed and released, returning EOF)
 		if cat "$WPS_PBC_GPIO" > /dev/null 2>&1; then
-			echo "[HARDWARE EVENT] WPS Button Pressed! Executing Safe System Shutdown..." > /dev/console
-			
-			# Save configuration before shutdown if available
-			if [ -x /bin/config_save.sh ]; then
-				/bin/config_save.sh 2>/dev/null || true
+			echo "[HARDWARE EVENT] WPS Button Pressed! Triggering WPS pairing..." > /dev/console
+			if [ -z "$NETWORK_TYPE" ] && [ -n "$2" ]; then
+				NETWORK_TYPE="$2"
 			fi
-
-			# Turn off activity LEDs
-			echo 0 > /dev/led0 2>/dev/null || true
-			echo 0 > /dev/led1 2>/dev/null || true
-			
-			# Sync storage buffers and safely halt CPU
-			sync
-			poweroff
-			exit 0
+			if [ -z "$NETWORK_TYPE" ] && [ -f /tmp/wlan0.conf ]; then
+				NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
+			fi
+			action_type='conf_via_pbc'
+			[ "$NETWORK_TYPE" = "0" ] && action_type='get_conf_via_pbc'
+			/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID '' 2>/dev/null || true
+			kill -9 `ps | grep 'wpsCleanTempClock.sh' | grep -v 'grep' | awk '{print $1}'` 2>/dev/null || true
+			if [ -x /root/mtlk/web/gui_wps_init.sh ]; then
+				/root/mtlk/web/gui_wps_init.sh start 2>/dev/null || true
+			fi
+			echo pbc > /var/wps_type 2>/dev/null || true
+			if [ -x /root/mtlk/etc/mtlk_wps_cmd.tcl ]; then
+				/root/mtlk/etc/mtlk_wps_cmd.tcl $action_type
+			fi
 		else
 			# If read failed (driver not ready, signal interrupted, etc.), avoid busy loop
 			sleep 2

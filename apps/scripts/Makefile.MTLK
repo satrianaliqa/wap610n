@@ -49,7 +49,6 @@ install_:
 	for dir in $(MTLK_APPS); do \
         $(MAKE) -f Makefile.MTLK INSTALL -C $(TOPDIR)/$$dir || exit 1; \
         done
-	cp -a $(E_TOPDIR)/scripts/devel.sh $(E_DEST)/bin/
 
 svnclean: 
 	find $(E_DEST) -iname "*.svn" -exec rm -rf {} + 2>/dev/null || true

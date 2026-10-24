@@ -26,15 +26,16 @@ WLAN_NUM_BANDS=1
 export WLAN_NUM_BANDS
 
 echo kill drvhlpr
-killall drvhlpr
+killall drvhlpr 2>/dev/null || true
+usleep 500000 2>/dev/null || sleep 1
 A=`ps | grep drvhlpr | grep -v grep | awk '{print $1}'`
-	for a in $A ; do kill -9 $a ; done
+	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 	
 echo kill WPS_PBC
 killall WPS_PBC.sh 2>/dev/null || true
 A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
 	for a in $A ; do kill $a 2>/dev/null || true ; done
-	sleep 1
+	usleep 500000 2>/dev/null || sleep 1
 	A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
 	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 	rm -rf /tmp/WPS_PBC_monitor.lock 2>/dev/null || true
@@ -52,9 +53,10 @@ fi
 
 # wsccmd needs to be killed properly (no -9) in order to clean up properly.	
 echo kill WPS
-killall wsccmd
+killall wsccmd 2>/dev/null || true
+usleep 500000 2>/dev/null || sleep 1
 A=`ps | grep wsccmd | grep -v grep | awk '{print $1}'`
-for a in $A ; do kill -9 $a ; done
+for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 #Delete fifo
 for A in /tmp/WPS*; do
 	[ -e "$A" ] || continue
@@ -64,31 +66,38 @@ done
 
 #kill mtlk_wps_msgloop.tcl process
 A=`ps | grep mtlk_wps_msgloop.tcl | grep -v grep | awk '{print $1}'`
-	for a in $A ; do kill -9 $a ; done
+	for a in $A ; do kill $a 2>/dev/null || true ; done
+	usleep 500000 2>/dev/null || sleep 1
+A=`ps | grep mtlk_wps_msgloop.tcl | grep -v grep | awk '{print $1}'`
+	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 
 # hostapd needs to be killed properly (no -9) in order to clean up properly.	
 echo kill hostapd
-killall hostapd
+killall hostapd 2>/dev/null || true
+usleep 500000 2>/dev/null || sleep 1
 A=`ps | grep hostapd | grep -v grep | awk '{print $1}'`
- for a in $A ; do kill -9 $a ; done
+ for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 
 # supplicant needs to be killed properly (no -9) in order to clean up properly.	
 echo kill supplicant
-killall wpa_supplicant
+killall wpa_supplicant 2>/dev/null || true
+usleep 500000 2>/dev/null || sleep 1
 A=`ps | grep wpa_supplicant | grep -v grep | awk '{print $1}'`
- for a in $A ; do kill -9 $a ; done
+ for a in $A ; do kill -9 $a 2>/dev/null || true ; done
+
+# Always bring interface down before rmmod
+ifconfig wlan0 down 2>/dev/null || true
 
 #Remove bridge interface
 if [ ! $BRIDGE_MODE ]
 then
-	BRIDGE_MODE=`awk -F "=" '/^BridgeMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+	BRIDGE_MODE=`awk -F "=" '/^BridgeMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 fi
 
-if [ $BRIDGE_MODE != 0 ]
+if [ "$BRIDGE_MODE" != "0" ]
 then
   echo bridge mode, delete interface
-  ifconfig wlan0 down
-  brctl delif br0 wlan0
+  brctl delif br0 wlan0 2>/dev/null || true
 fi
 
 
@@ -97,26 +106,20 @@ echo Removing mtlk
 #delete init_failed if exist
 if [ -f /tmp/init_failed ]; then rm /tmp/init_failed ; fi
 
-#rmmod led
-#sleep 5
-
 #remove driver
-DRIVER_UP=`lsmod | grep -c mtlk`
-if [ $DRIVER_UP \> 0 ] 
-	then
+if lsmod | grep -q mtlk; then
 	count=0
-	rmmod mtlk
-	while [ $? = 1 ]
-	do
+	while lsmod | grep -q mtlk; do
 		count=`expr $count + 1`
-		if expr $count != 10
-		then
-			sleep 1
-			rmmod mtlk
-		else
+		rmmod mtlk 2>/dev/null
+		if ! lsmod | grep -q mtlk; then
+			break
+		fi
+		if [ $count -ge 10 ]; then
 			echo failed to remove mtlk > /tmp/init_failed
 			break
-		fi	
+		fi
+		usleep 500000 2>/dev/null || sleep 1
 	done
 	echo count=$count
 fi

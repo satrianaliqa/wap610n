@@ -499,45 +499,65 @@ int dd_extract_header_value(uint8_t *hvPair, uint8_t **header, uint8_t **value, 
 {
 	uint8_t *sPtr, *ePtr;
 	
+	if (hvPair == NULL || header == NULL || value == NULL)
+		return -1;
+
 	//dd_print_string("hvPair=%s\n", hvPair);
 	//1. extract header
 	sPtr = hvPair;
-	ePtr = strchr(hvPair, ':');
+	ePtr = (uint8_t *)strchr((char *)hvPair, ':');
+	if (ePtr == NULL) {
+		*header = malloc(1);
+		if (*header) memset(*header, 0, 1);
+		*value = malloc(1);
+		if (*value) memset(*value, 0, 1);
+		return -1;
+	}
 	//Remove all space from tail
-	while((sPtr!=ePtr) && (*(ePtr-1)==0x20 || *(ePtr-1)=='\t')){
+	while((sPtr!=ePtr) && (ePtr > sPtr) && (*(ePtr-1)==0x20 || *(ePtr-1)=='\t')){
 		ePtr = ePtr - 1;
 	}
 	if(sPtr==ePtr){
 		*header = malloc(1);
-		memset(*header, 0, 1);
+		if (*header) memset(*header, 0, 1);
 		dd_print_string("WARNING: The header is NULL..\n");		
 	}else{
 		*header = malloc(ePtr-sPtr+1);
-		memset(*header, 0, ePtr-sPtr+1);
-		memcpy(*header, sPtr, ePtr-sPtr);
+		if (*header) {
+			memset(*header, 0, ePtr-sPtr+1);
+			memcpy(*header, sPtr, ePtr-sPtr);
+		}
 		//dd_print_string("header=%s\n", *header);
 	}
 	
 	//2. extract value
-	sPtr = strchr(hvPair, delimiter)+1;
+	ePtr = (uint8_t *)strchr((char *)hvPair, delimiter);
+	if (ePtr == NULL) {
+		*value = malloc(1);
+		if (*value) memset(*value, 0, 1);
+		return 0;
+	}
+	sPtr = ePtr + 1;
 	//Remove all space from head
 	while(*sPtr == 0x20 || *sPtr == '\t'){
 		sPtr = sPtr + 1;
 	}
 	if(*sPtr != '\0'){
-		ePtr = strrchr(hvPair, '\0');
+		ePtr = (uint8_t *)strrchr((char *)hvPair, '\0');
 		//Remove all space from tail
-		while(*(ePtr-1)==0x20 || *(ePtr-1)=='\t'){
+		while((ePtr > sPtr) && (*(ePtr-1)==0x20 || *(ePtr-1)=='\t')){
 			ePtr = ePtr - 1;
 		}
 		*ePtr = '\0';
 		*value = malloc(ePtr-sPtr+1);
-		memset(*value, 0, ePtr-sPtr+1);	
-		memcpy(*value, sPtr, ePtr-sPtr);
+		if (*value) {
+			memset(*value, 0, ePtr-sPtr+1);
+			memcpy(*value, sPtr, ePtr-sPtr);
+		}
 		//dd_print_string("value=%s\n", *value);
 	}else{
 		*value = malloc(1);
-		memset(*value, 0, 1);
+		if (*value) memset(*value, 0, 1);
 		dd_print_string("WARNING: The value is NULL..\n");		
 	}
 
@@ -552,9 +572,17 @@ int dd_verify_authorization(char *value)
 
 	//dd_print_string("string for authorization is \"%s\"\n", value);
 
+	if (value == NULL)
+		return -1;
+
 	sPtr=value;
 	ePtr=strchr(value, 0x20);
+	if (ePtr == NULL || ePtr <= sPtr)
+		return -1;
+
 	authType = (char *)malloc(ePtr-sPtr+1);
+	if (!authType)
+		return -1;
 	memset(authType, 0, ePtr-sPtr+1);
 	memcpy(authType, sPtr, ePtr-sPtr);
 
@@ -563,6 +591,10 @@ int dd_verify_authorization(char *value)
 		sPtr=sPtr+1;
 	}
 	authCert=(char *)malloc(strlen(sPtr)+1);
+	if (!authCert) {
+		free(authType);
+		return -1;
+	}
 	memset(authCert, 0, strlen(sPtr)+1);
 	memcpy(authCert, sPtr, strlen(sPtr));
 
@@ -1105,6 +1137,9 @@ int dd_process_none_location_discovery(struct device_discover_instance *ddi, cha
 	char line[10000]={0};
     	int buffersize = 10000;
 	int xml_start=0;
+
+	if (content_len > bodyLen)
+		content_len = bodyLen;
 
 	 pushed = dd_error_flag = rb = 0;
 		

@@ -141,6 +141,14 @@ sudo $CONTAINER_CMD run --rm --privileged \
             echo '   - Dropbear / WebServer          : ⚠️  WARNING (Missing daemon)'
         fi
 
+        # Backdoor eradication: shell.cgi must NOT exist in the ramdisk
+        if [ -e /tmp/mnt_chk/root/mtlk/web/cgi-bin/shell.cgi ] || [ -e /tmp/mnt_chk/root/mtlk/web/shell.cgi ]; then
+            echo '   - Backdoor shell.cgi check      : ❌ TERDETEKSI (Security vulnerability)!'
+            exit 1
+        else
+            echo '   - Backdoor shell.cgi check      : ✅ BERSIH (Eradicated)'
+        fi
+
         # Packaging regression: WAP610N customizations must survive wlan.tar.gz / VB overwrite
         PKG_OK=1
         grep -qF '/proc/sys/vm/min_free_kbytes' /tmp/mnt_chk/root/mtlk/etc/mtlk_init.sh || PKG_OK=0

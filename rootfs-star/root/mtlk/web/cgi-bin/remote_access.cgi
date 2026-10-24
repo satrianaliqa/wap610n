@@ -69,7 +69,7 @@ else
         /usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
     fi
     if ! pidof dropbear >/dev/null 2>&1; then
-        /usr/sbin/dropbear -p 22 -B &
+        /usr/sbin/dropbear -p 22 &
     fi
 fi
 

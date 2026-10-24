@@ -77,7 +77,7 @@ if STR9100_FLASH_PART
 
 	config CFG_OFFSET
 	hex "CFG OFFSET"
-	default 0x7f0000
+	default 0x3e0000
 	help
 	  The cfg start offset in flash layout
 endif

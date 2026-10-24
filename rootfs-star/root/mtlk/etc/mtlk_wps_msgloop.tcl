@@ -128,7 +128,7 @@ if {$action =="start_msg" } {
 	while {0 == 0 } {
 		if {[catch {set msg_file [open "${::FIFO_MSG}" "r+"]} err]} {
 			puts $err
-			sleep 1
+			after 1000
 		} else {
 			set msg_length $::wps_msg_length
 
@@ -153,7 +153,7 @@ if {$action =="start_code" } {
 	while {0 == 0 } {
 		if {[catch {set results_file [open "${::FIFO_STATUS}" "r+"]} err]} {
 			puts $err
-			sleep 1
+			after 1000
 		} else {
 			set results_raw [read $results_file ${::cmd_length}]
 			close $results_file

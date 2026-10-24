@@ -2543,7 +2543,7 @@ determine_dev_ok:
 	}
 	else{
 		PDEBUG("skb_ptr->dev==NULL\n");
-		//goto freepacket;
+		goto freepacket;
 	}
 
 #ifdef STAR_GSW_RX_HW_CHECKSUM
@@ -2873,7 +2873,9 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 	txdesc_ptr->data_ptr			= virt_to_phys(skb->data);
 	if ((nr_frags == 0) && (len < MIN_PACKET_LEN)) {
 		txdesc_ptr->length		= MIN_PACKET_LEN;
-		memset(skb->data + len, 0x00, MIN_PACKET_LEN - len);
+		if (skb_tailroom(skb) >= (MIN_PACKET_LEN - len)) {
+			memset(skb->data + len, 0x00, MIN_PACKET_LEN - len);
+		}
 	} else {
 		txdesc_ptr->length		= len;
 	}
@@ -2971,7 +2973,9 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 
         if (skb->len < MIN_PACKET_LEN) {
                 txdesc_ptr->length              = MIN_PACKET_LEN;
-                memset(skb->data + skb->len, 0x00, MIN_PACKET_LEN - skb->len);
+                if (skb_tailroom(skb) >= (MIN_PACKET_LEN - skb->len)) {
+                        memset(skb->data + skb->len, 0x00, MIN_PACKET_LEN - skb->len);
+                }
         } else {
                 txdesc_ptr->length              = skb->len;
         }

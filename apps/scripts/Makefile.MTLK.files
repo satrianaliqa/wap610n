@@ -8,7 +8,6 @@ FILES_UNUSED= \
 /usr/bin/iostat \
 /usr/bin/lessecho \
 /usr/bin/lesskey \
-/usr/bin/pgrep \
 /usr/bin/pwdx \
 /usr/bin/skill \
 /usr/bin/slabtop \

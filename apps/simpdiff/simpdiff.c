@@ -62,6 +62,11 @@ int main(int argc, char* argv[])
 	do {
 		numRead1 = read(file1, buf1, 1);
 		numRead2 = read(file2, buf2, 1);
+		if (numRead1 < 0 || numRead2 < 0) {
+			close(file1);
+			close(file2);
+			return -1;
+		}
 		if (numRead1 > 0 && numRead2 > 0) {
 			if (*buf1 != *buf2) {
 				printf("Files are different. (%d vs. %d at offset %d)\n", *buf1, *buf2, offset);
@@ -73,6 +78,12 @@ int main(int argc, char* argv[])
 		offset++;
 	} while (numRead1 > 0 && numRead2 > 0);
 	
+	if (numRead1 < 0 || numRead2 < 0) {
+		close(file1);
+		close(file2);
+		return -1;
+	}
+
 	if (numRead1 > 0 || numRead2 > 0) {
 		if (!ignoreSize) {
 			printf("Files have different size.\n");

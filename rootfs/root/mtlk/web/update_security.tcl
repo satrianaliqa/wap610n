@@ -236,11 +236,12 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	global wlan_index
 	debug "Update_Hostapd_Conf '$encryption_mode' '$SSID'  $WEP_length $authentication $Used_Key $WEP_Key1 $WEP_Key2 $WEP_Key3 $WEP_Key4 $WPA_mode $encapsulation_mode $psk $RADIUS_IP $RADIUS_port $RADIUS_key $RADIUS_interval"
 	
-	exec echo "logger_syslog_level=3"  >  $hostapd_conf_file
-	exec echo "interface=wlan$wlan_index"  >>  $hostapd_conf_file
-	exec echo "driver=mtlk"      >> $hostapd_conf_file
-	exec echo "ssid=$SSID"       >> $hostapd_conf_file
-	exec echo "macaddr_acl=0"    >> $hostapd_conf_file
+	set fp [open $hostapd_conf_file w]
+	puts $fp "logger_syslog_level=3"
+	puts $fp "interface=wlan$wlan_index"
+	puts $fp "driver=mtlk"
+	puts $fp "ssid=$SSID"
+	puts $fp "macaddr_acl=0"
 
 	# find the wireless card count
 	set card_count 1
@@ -249,97 +250,96 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	set bridging [get_parameter BridgeMode]
 	# in case of dual band, in bridge mode set br0 in both cards. 
 	if {$bridging > 0 } {
-		exec echo "bridge=br0"   >> $hostapd_conf_file
+		puts $fp "bridge=br0"
 	} else {
 		# in route mode set br1 in both cards only if there are two cards.
 		if {$card_count>1} {
-			exec echo "bridge=br1"   >> $hostapd_conf_file
-			}
+			puts $fp "bridge=br1"
+		}
 	}	
-	
 
 	if {$encryption_mode == "OPEN"} {
-		exec echo "# ------AP is in Plain Text mode------"     >> $hostapd_conf_file
+		puts $fp "# ------AP is in Plain Text mode------"
+		close $fp
 		return
 	}
 
 	if {$encryption_mode == "WEP"} {
-		exec echo "# ------AP is in WEP mode------"     >> $hostapd_conf_file
+		puts $fp "# ------AP is in WEP mode------"
+		close $fp
 		return
 	}
 	
 	if {$encryption_mode == "WEP RADIUS"} {
-		
 		set RADIUS_port2 [expr $RADIUS_port + 1]
-		exec echo "auth_server_addr=$RADIUS_IP"                    >> $hostapd_conf_file
-		exec echo "auth_server_port=$RADIUS_port"                  >> $hostapd_conf_file
-		exec echo "auth_server_shared_secret=$RADIUS_key"          >> $hostapd_conf_file
-		exec echo "acct_server_addr=$RADIUS_IP"                    >> $hostapd_conf_file
-		exec echo "acct_server_port=$RADIUS_port2"       		   >> $hostapd_conf_file
-		exec echo "acct_server_shared_secret=$RADIUS_key"          >> $hostapd_conf_file
-		
-		exec echo "# ------AP is in WEP RADIUS mode------"     >> $hostapd_conf_file
+		puts $fp "auth_server_addr=$RADIUS_IP"
+		puts $fp "auth_server_port=$RADIUS_port"
+		puts $fp "auth_server_shared_secret=$RADIUS_key"
+		puts $fp "acct_server_addr=$RADIUS_IP"
+		puts $fp "acct_server_port=$RADIUS_port2"
+		puts $fp "acct_server_shared_secret=$RADIUS_key"
+		puts $fp "# ------AP is in WEP RADIUS mode------"
+		close $fp
 		return
 	}
 
 	if {$encryption_mode == "WPA_PERSONAL"} {
-	
 		set groupRekey [get_parameter wpa_group_rekey]
 	
-		exec echo "wpa=$WPA_mode"          		>> $hostapd_conf_file
-		exec echo "wpa_key_mgmt=WPA-PSK"   		>> $hostapd_conf_file
-		exec echo "wpa_group_rekey=$groupRekey" >> $hostapd_conf_file
-		exec echo "wpa_gmk_rekey=86400"    		>> $hostapd_conf_file
+		puts $fp "wpa=$WPA_mode"
+		puts $fp "wpa_key_mgmt=WPA-PSK"
+		puts $fp "wpa_group_rekey=$groupRekey"
+		puts $fp "wpa_gmk_rekey=86400"
 
 		if {$encapsulation_mode == 0} {
-			exec echo "wpa_pairwise=TKIP" >> $hostapd_conf_file
+			puts $fp "wpa_pairwise=TKIP"
 			set encapsulation "TKIP"
 		} else {
 			if {$encapsulation_mode == 1} {
-				exec echo "wpa_pairwise=CCMP" >> $hostapd_conf_file
+				puts $fp "wpa_pairwise=CCMP"
 				set encapsulation "CCMP"
 			} else {
-				exec echo "wpa_pairwise=TKIP CCMP" >> $hostapd_conf_file
+				puts $fp "wpa_pairwise=TKIP CCMP"
 				set encapsulation "TKIP + CCMP"
 			}
 		}
 		
-		if {[string length $psk] == 64} {
-			exec echo "wpa_psk=$psk" >> $hostapd_conf_file
+		if {[string length $psk] == 64 && [regexp {^[0-9a-fA-F]+$} $psk]} {
+			puts $fp "wpa_psk=$psk"
 		} else {		
-			exec echo "wpa_passphrase=$psk" >> $hostapd_conf_file
+			puts $fp "wpa_passphrase=$psk"
 		}
 		
-		exec echo "# ------AP is in WPA/WPA2 PSK, $encapsulation mode------"     >> $hostapd_conf_file
+		puts $fp "# ------AP is in WPA/WPA2 PSK, $encapsulation mode------"
 	}
 	if {$encryption_mode == "WPA_ENTERPRISE"} {
-
 		set RADIUS_port2 [expr $RADIUS_port + 1]
-		exec echo "ieee8021x=1"	    	   			               >> $hostapd_conf_file
-		exec echo "auth_server_addr=$RADIUS_IP"                    >> $hostapd_conf_file
-		exec echo "auth_server_port=$RADIUS_port"                  >> $hostapd_conf_file
-		exec echo "auth_server_shared_secret=$RADIUS_key"          >> $hostapd_conf_file
-		exec echo "acct_server_addr=$RADIUS_IP"                    >> $hostapd_conf_file
-		exec echo "acct_server_port=$RADIUS_port2"       		   >> $hostapd_conf_file
-		exec echo "acct_server_shared_secret=$RADIUS_key"          >> $hostapd_conf_file
-		exec echo "wpa=$WPA_mode"         						   >> $hostapd_conf_file
-		exec echo "wpa_key_mgmt=WPA-EAP"   					       >> $hostapd_conf_file
-		exec echo "eap_reauth_period=$RADIUS_interval"             >> $hostapd_conf_file
+		puts $fp "ieee8021x=1"
+		puts $fp "auth_server_addr=$RADIUS_IP"
+		puts $fp "auth_server_port=$RADIUS_port"
+		puts $fp "auth_server_shared_secret=$RADIUS_key"
+		puts $fp "acct_server_addr=$RADIUS_IP"
+		puts $fp "acct_server_port=$RADIUS_port2"
+		puts $fp "acct_server_shared_secret=$RADIUS_key"
+		puts $fp "wpa=$WPA_mode"
+		puts $fp "wpa_key_mgmt=WPA-EAP"
+		puts $fp "eap_reauth_period=$RADIUS_interval"
 
 		if {$encapsulation_mode == 0} {
-			exec echo "wpa_pairwise=TKIP" >> $hostapd_conf_file
+			puts $fp "wpa_pairwise=TKIP"
 			set encapsulation "TKIP"
 		} else {
 			if {$encapsulation_mode == 1} {
-				exec echo "wpa_pairwise=CCMP" >> $hostapd_conf_file
+				puts $fp "wpa_pairwise=CCMP"
 				set encapsulation "CCMP"
 			} else {
-				exec echo "wpa_pairwise=TKIP CCMP" >> $hostapd_conf_file
+				puts $fp "wpa_pairwise=TKIP CCMP"
 				set encapsulation "TKIP + CCMP"
 			}
 		}
-		exec echo "# ------AP is in WPA/WPA2 Enterprise, $encapsulation mode------"     >> $hostapd_conf_file
+		puts $fp "# ------AP is in WPA/WPA2 Enterprise, $encapsulation mode------"
 	}
+	close $fp
 }
 ##################################################################
 # This function writes to /mnt/jffs2/etc/wpa_supplicant.conf file

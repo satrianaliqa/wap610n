@@ -409,6 +409,11 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 		bn = "/tmp/configfile.cfg";
 #endif
 	}
+	else
+	{
+		/* [BUG-02] Disallow arbitrary user-controlled remote_filename to overwrite system binaries */
+		bn = "/tmp/configfile.cfg";
+	}
 
     fn = websGetVar(wp, T("filename"), T(""));
 	if (!fn || strlen(fn)==0)
@@ -607,6 +612,8 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
     		websFooter(wp);
     		websDone(wp, 200);
     		debug_printf("upldForm: Leave here.(2) (pid=%d)\n", getpid());
+			/* [BUG-11] Terminate child cleanly to prevent duplicate HTTP listener loop */
+			_exit(0);
     	}
     }
     else
@@ -643,9 +650,19 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 	profileCaption = websGetVar(wp, T("Caption"), T(""));
 	isConfig = websGetVar(wp, T("isconfig"), T("0"));
 
-	if (strcmp(isConfig,"1") == 0)
+	/* [BUG-01] Whitelist path in sendFileForm: enforce strictly /tmp/configfile.conf */
+	if (strcmp(isConfig, "1") == 0 || strcmp(sendFileName, "/tmp/configfile.conf") == 0)
 	{
-		MT_SaveParamsToFile(sendFileName,profileCaption,profileToolTip);
+		sendFileName = "/tmp/configfile.conf";
+		MT_SaveParamsToFile(sendFileName, profileCaption, profileToolTip);
+	}
+	else
+	{
+		/* Disallow opening arbitrary filesystem files like /etc/passwd */
+		snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Access+Denied"));
+		MT_WriteRedirectScript(wp, redirectPage);
+		websDone(wp, 200);
+		return;
 	}
 
 	if (strlen(sendFileName)>0)	
@@ -700,7 +717,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 			{
 				//Jacky.Yang redirect to management.asp for u-media.
 				//sprintf(redirectPage,T("importexport.asp?error=Internal+Failure+could+not+find+%s"),sendFileName);
-				sprintf(redirectPage,T("admin/management.asp?error=Internal+Failure+could+not+find+%s"),sendFileName);
+				snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+could+not+find+%s"), sendFileName);
 				MT_WriteRedirectScript(wp, redirectPage);
 			}
 
@@ -710,7 +727,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 	{
 		//Jacky.Yang redirect to management.asp for u-media.
 		//sprintf(redirectPage,T("importexport.asp?error=Internal+Failure+Invalid+file+name+%s"),sendFileName);
-		sprintf(redirectPage,T("admin/management.asp?error=Internal+Failure+Invalid+file+name+%s"),sendFileName);
+		snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+Invalid+file+name+%s"), sendFileName);
 		MT_WriteRedirectScript(wp, redirectPage);
 	}
 
@@ -848,7 +865,8 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 		MT_InitBurnParams(&gMTBurnParams);
 
 	gstrncpy(statusPageName ,websGetVar(wp, T("page_name"), T("admin/upgrade.asp")),MT_MAX_LINE_LENGTH-1);
-	gstrncpy(targetFile , websGetVar(wp, T("remote_filename"), T("")),MT_MAX_LINE_LENGTH-1);
+	/* [BUG-03] Hardcode targetFile to /dev/mtdblock2; disallow targeting /dev/mtdblock1 */
+	gstrncpy(targetFile, "/dev/mtdblock2", MT_MAX_LINE_LENGTH-1);
 
     websHeader(wp);
 		
@@ -919,9 +937,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			printf("%s\n",gMTBurnParams.errorMessage);
 
 		}
-		else if ((!strcmp(targetFile, "/dev/mtdblock2") ||
-				  !strcmp(targetFile, "/dev/mtd2")) &&
-				 wp->FileContentLen > KERNEL_MTD_PARTITION_SIZE)
+		else if (wp->FileContentLen > KERNEL_MTD_PARTITION_SIZE)
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : Firmware is larger than the kernel MTD partition<br>"));
 			gMTBurnParams.precentComplete = -1;

@@ -30,6 +30,7 @@ echo wps_event.sh:$1 >/dev/console
 # WPS In progress
 if [ $ACTION = $WPS_INTERNAL_STAT_SCANNING ]
 then
+	echo 2 > /dev/gpio2 2>/dev/null
 	if [ $NETWORK_TYPE = 0 ]
 	then
 		echo "wps_event.sh:Event 1 - SEARCHING" >/dev/console
@@ -45,6 +46,7 @@ fi
 
 if [ $ACTION = $WPS_INTERNAL_STAT_CONNECTING ]
 then
+	echo 2 > /dev/gpio2 2>/dev/null
 	echo "wps_event.sh:Event 2 - Trying to Connect" >/dev/console
 	echo "WPS_Status = 3" > $WPS_CURRENT_STATUS_FILE
 	$WPS_CMD_SCRIPT save_settings
@@ -52,6 +54,7 @@ fi
 
 if [ $ACTION = $WPS_INTERNAL_STAT_OVERLAP ]
 then
+	echo 0 > /dev/gpio2 2>/dev/null
 	echo "wps_event.sh:Event 3 - ERROR_SESSION_OVERLAP" >/dev/console
 	echo "WPS_Status = 12" > $WPS_CURRENT_STATUS_FILE
 	#Jacky.Yang 25-Nov-2008, delete temp file.
@@ -60,6 +63,7 @@ fi
 
 if [ $ACTION = $WPS_INTERNAL_STAT_TIMEOUT ]
 then
+	echo 0 > /dev/gpio2 2>/dev/null
 	
 	# Check previous status
 	LAST_STATUS=`awk -F "=" '/^WPS_Status/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' $WPS_CURRENT_STATUS_FILE`
@@ -91,12 +95,14 @@ fi
 
 if [ $ACTION = $WPS_INTERNAL_STAT_PINERROR ]
 then
+	echo 0 > /dev/gpio2 2>/dev/null
 	echo "wps_event.sh:Event 7 - PIN Error" >/dev/console
 	echo "WPS_Status = 13" > $WPS_CURRENT_STATUS_FILE
 fi
 
 if [ $ACTION = $WPS_INTERNAL_STAT_CONNECTED ]
 then
+	echo 1 > /dev/gpio2 2>/dev/null
 	echo "wps_event.sh:Event 8 - CONNECTED" >/dev/console
 	echo "WPS_Status = 4" > $WPS_CURRENT_STATUS_FILE
 fi

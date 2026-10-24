@@ -371,11 +371,53 @@ Complete record of the 4-phase audit and remediation performed across the non-We
      - Dynamic linker verification confirmed zero userspace daemons depend on C++ runtime.
      - **Flash Savings**: Freed ~1.2 MB uncompressed (~400 KB compressed LZMA), ensuring the firmware remains safely at **~3.21 MB**, well below the **3.625 MB** hard brick ceiling.
 
+### FASE 5: Deep Multi-Subsystem Audit & Production Hardening
+Comprehensive audit and parallel remediation across all core firmware domains:
+
+1. **Kernel, U-Boot, BSP & Hardware Drivers**:
+   - **U-Boot 1.1.4 Recovery Overflow Fix**: Corrected safe recovery copy size from 6 MB (`0x5fffff`) to 3.625 MB (`0x39ffff`), corrected `CONFIGFS_OFFSET` to `0x103E0000`, and set `PHYS_FLASH_SIZE` to 4 MB in `star_orion_umedia.h`. This eliminates an instant hardware brick caused by address wrap-around into sector 0 (`0x10000000`).
+   - **Ethernet MAC (`star_gsw.c`) NULL Pointer Guard**: Uncommented `goto freepacket;` when `skb_ptr->dev == NULL`, preventing kernel panic in `eth_type_trans()` and statistics increment.
+   - **Ethernet Frame Short Padding Heap Guard**: Added `skb_tailroom` check prior to `memset` padding runt frames (<60 bytes), preventing out-of-bounds corruption of `skb_shared_info`.
+   - **PHY GPIO Reset Guard (`star_gsw_phy.c`)**: Guarded `PHY_RESET_GPIO 3` with `#if defined(CONFIG_PHY_RESET_GPIO3)` to avoid clashing with the hardware factory reset button.
+   - **Checksum Generator (`mkcsum.c`) Exit Code Fix**: Added argument validation, open descriptor checks, and changed exit code on invalid magic from 0 to 1 to fail the build cleanly on corruption.
+   - **Kconfig ConfigFS Offset**: Changed default `CFG_OFFSET` from `0x7f0000` (8 MB) to `0x3e0000` (4 MB) in `mach-str9100/Kconfig`.
+   - **GPIO Interrupt Masking (`str9100_gpio.c`)**: Serviced interrupt status registers using specific handled bitmasks rather than wiping all interrupts (`0x1FFFFF`).
+   - **GPIO Userspace Stack Guard (`gpioDevice.c`)**: Replaced 512-byte static buffer with a bounded 16-byte stack buffer and handled `-EFAULT` on `copy_from_user`.
+
+2. **WebServer, GoAhead Backend & Management UI**:
+   - **Management Form Logic Inversion**: Inverted `rebootTag` logic in `management.c` (reboot only when `rebootTag="true"`, save configuration when `"false"`), added hidden `rebootTag` in `management.asp`, prevented blank password overwrites, and removed insecure web terminal markup.
+   - **File Download Path Traversal Whitelist**: Enforced strict path whitelist in `sendFileForm` (`upldform.c`), permitting only `/tmp/configfile.conf`.
+   - **Upload File Overwrite Restriction**: Hardcoded `upldForm` destination filename strictly to `/tmp/configfile.cfg`, ignoring client-supplied paths.
+   - **BurnImage Partition Bounds & MTD Target**: Enforced hardcoded `/dev/mtdblock2` target and strict 3.625 MB partition limit (`KERNEL_MTD_PARTITION_SIZE`), preventing bootloader partition overwrites.
+   - **Child Process Split-Brain Elimination**: Added `_exit(0)` to the child process in `upldForm` fork branch, preventing concurrent duplicate socket processing and zombie leaks.
+   - **UDP Discovery Port 58000 Remote DoS Guard**: Validated authorization and header pointers in `device_discover.c` before executing `strchr` and `memcpy`.
+   - **HNAP Dual-Band & 802.11n Throughput Restoration**: Restored dynamic `FrequencyBand` detection and fixed `ChannelBonding` being written to `IsHTEnabled` in `hnap_config_metalink.c`.
+   - **CGI Execution Directory Isolation**: Confined CGI execution in `cgi.c` strictly to `/root/mtlk/web/cgi-bin/`.
+   - **Firmware Flash Dumper Form Mapping**: Updated `upgrade.asp` links to call `/goform/dumpFirmware?type=...`.
+
+3. **Wireless Radio, WPS & Network Automation Scripts**:
+   - **WPS Button Poweroff Elimination**: Restored OEM WPS pairing trigger (`conf_via_pbc` / `get_conf_via_pbc`) in `WPS_PBC.sh`, eliminating rogue `poweroff` command.
+   - **WPS Supervisor Tcl Sleep Crash**: Replaced invalid Tcl command `sleep 1` with native `after 1000` in `mtlk_wps_msgloop.tcl`.
+   - **WPS Hardware LED Indication**: Integrated GPIO 2 LED controls in `mtlk_wps_event.sh` (blinking on session start, solid blue on success, off on completion).
+   - **Dual-Band WSC & WEP Indexing**: Set `RF_BAND=3` for dual-band negotiation and normalized WEP transmit key to 1-based indexing in `mtlk_init_wps.sh`.
+   - **Wireless Driver Recovery Loop**: Invoked `reload_mtlk_driver.sh` on `rc=2` in `mtlk_drvhlpr.sh`, shut down `wlan0` prior to `rmmod`, and added graceful timeout before SIGKILL.
+   - **Hostapd Config Generation Optimization**: Rewrote `update_security.tcl` to use native Tcl file I/O instead of 25 subshell `exec echo` forks, validated 64-char hex PSKs, and stripped CRLF `\r` from passphrase generators.
+   - **UPnP Watchdog Revival**: Added active process monitoring to `mtlk_upnpd_monitor.sh` and 1s delay in `dhcp.tcl` `restart_upnpd` to avoid port bind conflicts.
+
+4. **System Initialization, BusyBox & Security Hardening**:
+   - **Dropbear SSH Flag Fix**: Removed unsupported `-B` flag from `dropbear` invocations across all scripts, restoring SSH on port 22.
+   - **Backdoor Removal & Assertion**: Deleted `shell.cgi` backdoor from all rootfs templates and added automated presence assertion in `docker/verify-firmware.sh`.
+   - **BusyBox Applet Expansion**: Enabled `CONFIG_BB_SYSCTL=y`, `CONFIG_HEAD=y`, standalone IP applets, and created rootfs symlinks for `/sbin/sysctl` and `/bin/head`.
+   - **Circular Buffer Logging & Serial Console**: Enabled in-memory `syslogd` (64 KB) and `klogd` in `inittab`, and configured serial console to respawn.
+   - **Credential Security Hardening**: Locked empty `default` account (`*`) in `/etc/shadow`, enforced `0600` permissions on shadow and `0644` on passwd.
+   - **Configuration Tools Reliability**: Added -1 return on read errors in `simpdiff.c`, and integrated `flock` and `fsync` in `set_env_param.c`.
+   - **Build Cleansing**: Preserved `pgrep` in rootfs packaging and pruned stale test scripts and symlinks (`devel.sh`, `crc`, `iptables`).
+
 ---
 
 ## 9. 📋 Summary of Verified Defects Remediated
 
-All 13 defects from the audit have been 100% remediated, cross-verified, and synchronized across `rootfs-star/`, `rootfs/`, and `apps/jffs2-etc/networking/VB/`:
+### 9.1 Phase 1–4 Non-WebUI Verified Remediation Matrix
 
 | # | Subsystem | File Location | Defect Remediated | Status |
 |---|---|---|---|---|
@@ -392,6 +434,44 @@ All 13 defects from the audit have been 100% remediated, cross-verified, and syn
 | 11 | Network Init | `rootfs-star/etc/udhcpc/dhcp.tcl`<br>`rootfs/etc/udhcpc/dhcp.tcl` | Pre-initialized `current_ip` and `current_netmask` with fallback `get_parameter`. | ✅ VERIFIED |
 | 12 | WPS Loop | `rootfs-star/root/mtlk/etc/mtlk_wps_msgloop.tcl`<br>`rootfs/root/mtlk/etc/mtlk_wps_msgloop.tcl` | Added `$process_num != [pid]` guard to prevent daemon from killing itself during stop. | ✅ VERIFIED |
 | 13 | Rootfs Parity | Entire repository tree (`rootfs-star/`, `rootfs/`, `VB/`) | Synchronized all 23 modified paths 100% identically across source and build staging. | ✅ VERIFIED |
+
+### 9.2 Comprehensive Master Codebase Remediation Matrix (Multi-Subagent Parallel Audit)
+
+| # | Subsystem | File Location | Defect Remediated | Status |
+|---|---|---|---|---|
+| 14 | U-Boot Flash Safety | `u-boot-1.1.4/include/configs/star_orion_umedia.h` | Fixed recovery copy size from 6MB (`0x5fffff`) to 3.625MB (`0x39ffff`), corrected `CONFIGFS_OFFSET` to `0x103E0000`, and set `PHYS_FLASH_SIZE` to 4MB, eliminating hardware brick hazard on recovery. | ✅ VERIFIED |
+| 15 | Ethernet Driver Panic | `kernel/linux-2.6.16-star/drivers/net/str9100/star_gsw.c` | Uncommented `goto freepacket;` when `skb_ptr->dev == NULL`, preventing NULL pointer dereference in `eth_type_trans()` and `priv->stats.rx_packets++`. | ✅ VERIFIED |
+| 16 | Ethernet Frame Padding | `kernel/linux-2.6.16-star/drivers/net/str9100/star_gsw.c` | Added `skb_tailroom` check before `memset` on short frames (<60B), preventing heap corruption of `skb_shared_info`. | ✅ VERIFIED |
+| 17 | Ethernet PHY Reset | `kernel/linux-2.6.16-star/drivers/net/str9100/star_gsw_phy.c` | Guarded `PHY_RESET_GPIO 3` with `#if defined(CONFIG_PHY_RESET_GPIO3)` to prevent driving the hardware factory reset button low. | ✅ VERIFIED |
+| 18 | Packaging Checksum Tool | `kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c` | Added `argc < 2` usage check, file descriptor check, and changed error exit code from `exit(0)` to `exit(1)` on bad header magic. | ✅ VERIFIED |
+| 19 | Kconfig Flash Offset | `kernel/linux-2.6.16-star/arch/arm/mach-str9100/Kconfig` | Changed default `CFG_OFFSET` from `0x7f0000` to `0x3e0000` for 4MB flash geometry. | ✅ VERIFIED |
+| 20 | GPIO Interrupt Clear | `kernel/linux-2.6.16-star/drivers/char/str9100_gpio.c` | Replaced wholesale status wipe (`0x1FFFFF`) with serviced interrupt mask, preventing dropped concurrent button presses. | ✅ VERIFIED |
+| 21 | Kernel GPIO Overflow | `apps/gpio_driver/gpioDevice.c` | Replaced static 512-byte buffer with bounded local stack buffer `char kbuf[16]`, bounded `count`, null-terminated, and returned `-EFAULT` on error. | ✅ VERIFIED |
+| 22 | Management Logic Invert | `apps/WebServer/management.c`<br>`rootfs-star/.../admin/management.asp` | Inverted `rebootTag` handler logic (rebootTag="true" reboots; "false" saves config), prevented empty password overwrite, and removed web shell terminal. | ✅ VERIFIED |
+| 23 | Arbitrary File Read | `apps/WebServer/upldform.c` | Enforced strict whitelist in `sendFileForm` allowing only `/tmp/configfile.conf`, eliminating arbitrary file read (CWE-22) of `/etc/passwd` or `/tmp/sys.conf`. | ✅ VERIFIED |
+| 24 | Arbitrary File Overwrite| `apps/WebServer/upldform.c` | Locked upload destination in `upldForm` strictly to `/tmp/configfile.cfg`, preventing user-controlled `remote_filename` from overwriting system binaries. | ✅ VERIFIED |
+| 25 | Bootloader Protection | `apps/WebServer/upldform.c` | Hardcoded `BurnImage` target to `/dev/mtdblock2` and enforced `KERNEL_MTD_PARTITION_SIZE` (3.625MB), preventing overwriting U-Boot bootloader at `mtdblock1`. | ✅ VERIFIED |
+| 26 | Process Split-Brain | `apps/WebServer/upldform.c` | Added `_exit(0);` in child fork process of `upldForm` after configuration commit, eliminating socket duplication and memory leak. | ✅ VERIFIED |
+| 27 | UDP Port 58000 DoS | `apps/WebServer/device_discover.c` | Added pointer validation in `dd_verify_authorization` and `dd_extract_header_value` before `strchr` dereference and `memcpy`, preventing remote DoS crash. | ✅ VERIFIED |
+| 28 | HNAP 5GHz & HT Restore | `apps/WebServer/hnap_config_metalink.c` | Replaced hardcoded `FrequencyBand 1` with dynamic config read; fixed `ChannelBonding` being written to `IsHTEnabled`, restoring 802.11n high throughput on 20MHz width. | ✅ VERIFIED |
+| 29 | CGI Path Traversal | `apps/WebServer/cgi.c` | Restricted CGI execution strictly to `/root/mtlk/web/cgi-bin/`, disallowing execution of scripts in the web document root directory. | ✅ VERIFIED |
+| 30 | Flash Dump Links | `rootfs-star/.../admin/upgrade.asp`<br>`rootfs/.../admin/upgrade.asp` | Updated WebUI flash dump buttons to call `/goform/dumpFirmware?type=...` instead of broken `/cgi-bin/dump_firmware.cgi`. | ✅ VERIFIED |
+| 31 | WPS Button Restore | `rootfs-star/.../mtlk/etc/WPS_PBC.sh`<br>`rootfs/.../mtlk/etc/WPS_PBC.sh`<br>`apps/jffs2-etc/networking/VB/WPS_PBC.sh` | Restored OEM WPS PBC pairing trigger (`conf_via_pbc` / `get_conf_via_pbc`), completely removing accidental system shutdown (`poweroff`) logic. | ✅ VERIFIED |
+| 32 | WPS Tcl Loop Crash | `rootfs-star/.../mtlk/etc/mtlk_wps_msgloop.tcl`<br>`rootfs/.../mtlk/etc/mtlk_wps_msgloop.tcl` | Replaced non-existent Tcl command `sleep 1` in catch blocks with native `after 1000`, preventing supervisor crash. | ✅ VERIFIED |
+| 33 | WPS Status LED | `rootfs-star/.../mtlk/etc/mtlk_wps_event.sh`<br>`rootfs/.../mtlk/etc/mtlk_wps_event.sh` | Added GPIO 2 LED handlers for WPS events (blinking on handshake, solid blue on success, off on error/timeout). | ✅ VERIFIED |
+| 34 | WPS RF Band & WEP Index| `rootfs-star/.../mtlk/etc/mtlk_init_wps.sh`<br>`rootfs/.../mtlk/etc/mtlk_init_wps.sh` | Configured `RF_BAND=3` for Dual-Band WSC and normalized WEP Transmit Key Index to 1-based indexing. | ✅ VERIFIED |
+| 35 | Wireless Driver Reload | `rootfs-star/.../mtlk/etc/mtlk_drvhlpr.sh`<br>`rootfs/.../mtlk/etc/reload_mtlk_driver.sh` | Invoked `reload_mtlk_driver.sh` on `rc=2`, brought `wlan0` down before `rmmod`, and added graceful delay between SIGTERM and SIGKILL. | ✅ VERIFIED |
+| 36 | Security Script Rewrite | `rootfs-star/.../mtlk/web/update_security.tcl`<br>`rootfs/.../mtlk/web/update_security.tcl` | Replaced 25 `exec echo` subshell forks with native Tcl file I/O, added hex validation on 64-char PSK, and stripped CRLF `\r` in passphrase helper. | ✅ VERIFIED |
+| 37 | UPnP Daemon Watchdog | `rootfs-star/.../mtlk/etc/mtlk_upnpd_monitor.sh`<br>`rootfs/.../mtlk/etc/mtlk_upnpd_monitor.sh`<br>`rootfs-star/etc/udhcpc/dhcp.tcl` | Added dead-process detection to restart crashed `upnpd`, and added 1s delay in `restart_upnpd` to prevent port 1900/49152 bind collisions. | ✅ VERIFIED |
+| 38 | Dropbear Boot Crash | `rootfs-star/etc/mtlk_init_start.sh`<br>`rootfs-star/.../mtlk_init_daemons.sh`<br>`rootfs-star/.../remote_access.cgi` (and rootfs/VB) | Removed unsupported `-B` flag from Dropbear 0.52 invocations across all scripts, restoring SSH on port 22 on boot. | ✅ VERIFIED |
+| 39 | Backdoor Eradication | `rootfs-star/.../web/cgi-bin/shell.cgi`<br>`devscripts/net-ver-mkrootfs.sh`<br>`docker/verify-firmware.sh` | Permanently deleted `shell.cgi` backdoor, purged mkrootfs copy rules, and added automated assertion gatekeeper in `verify-firmware.sh`. | ✅ VERIFIED |
+| 40 | BusyBox Sysctl & Head | `boards/.../busybox/.config`<br>`rootfs-star/sbin/sysctl`<br>`rootfs-star/bin/head` | Enabled `CONFIG_BB_SYSCTL=y`, `CONFIG_HEAD=y`, standalone IP applets, and created symlinks in rootfs, restoring sysctl memory tuning and web monitor. | ✅ VERIFIED |
+| 41 | Syslogd & Klogd Active | `rootfs-star/etc/inittab`<br>`rootfs/etc/inittab` | Activated circular buffer logging (`syslogd -n -m 0 -C 64`, `klogd -n`), and updated serial console to `ttyS0::respawn:-/bin/sh`. | ✅ VERIFIED |
+| 42 | Shadow Hardening | `rootfs-star/etc/shadow`<br>`devscripts/net-ver-mkrootfs.sh` | Locked empty `default` account (`*`), and enforced restrictive permissions `0600` for shadow and `0644` for passwd. | ✅ VERIFIED |
+| 43 | Simpdiff I/O Error Fix | `apps/simpdiff/simpdiff.c` | Added check for read error (`numRead < 0`) returning -1, preventing failed reads from falling through to return 0 (identical). | ✅ VERIFIED |
+| 44 | Set Env Param Fsync | `apps/set_env_param/set_env_param.c` | Added `flock(fileno(f), LOCK_EX)` on `/dev/mtdblock3` and `fsync(fileno(tmp_f))` after write, preventing corrupt NVRAM environment. | ✅ VERIFIED |
+| 45 | Pgrep Preservation | `apps/scripts/Makefile.MTLK.files` | Removed `/usr/bin/pgrep` from `FILES_UNUSED` so it is preserved in rootfs across builds. | ✅ VERIFIED |
+| 46 | Stale Files Cleanup | `rootfs-star/.../web/crc`<br>`rootfs-star/usr/local/lib/iptables`<br>`apps/scripts/Makefile.MTLK` (`devel.sh`) | Removed unstripped 12KB `crc` from web root, removed dangling `iptables` symlink, and stopped copying internal test script `devel.sh`. | ✅ VERIFIED |
 
 ---
 

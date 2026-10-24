@@ -91,9 +91,9 @@
 #define CONFIG_IPADDR		192.168.1.1
 #define CONFIG_SERVERIP		192.168.1.100
 #define CONFIG_DEVICE_ID	"0x0012"
-#define CONFIG_CONFIGFS_OFFSET  "0x10700000"
+#define CONFIG_CONFIGFS_OFFSET  "0x103E0000"
 #define CONFIG_LINUX_OFFSET     "0x10040000"
-#define CONFIG_SAFE_RECOVERY_COMMAND "echo Verifying image integrity. ; cksum $linux_offset  || echo Recovering bootpImage from tftp server 2.2.2.2 port 2555 && setenv serverip 2.2.2.2 && setenv ipaddr 2.2.2.1 && setenv tftpdstp 2555 && tftp 0x100000 bootpImage && cp.b 0x100000 $linux_offset 0x5fffff && reset"
+#define CONFIG_SAFE_RECOVERY_COMMAND "echo Verifying image integrity. ; cksum $linux_offset  || echo Recovering bootpImage from tftp server 2.2.2.2 port 2555 && setenv serverip 2.2.2.2 && setenv ipaddr 2.2.2.1 && setenv tftpdstp 2555 && tftp 0x100000 bootpImage && cp.b 0x100000 $linux_offset 0x39ffff && reset"
 #define CONFIG_RESTORE_DEFAULTS_COMMAND "if check_restore_default 3; then erase $config_offset +10000; led 0 2 3; fi;"
 #define CONFIG_BOOTCOMMAND	"run restore_defaults_cmd; run safe_recovery_cmd; go $linux_offset"
 
@@ -171,7 +171,7 @@
  * FLASH and environment organization
  */
 #define CFG_MAX_FLASH_BANKS	1		/* max number of memory banks */
-#define PHYS_FLASH_SIZE		0x00800000	/* 8MB */
+#define PHYS_FLASH_SIZE		0x00400000	/* 4MB */
 #define CFG_MAX_FLASH_SECT	(512)		/* max number of sectors on one chip */
 #define CFG_ENV_ADDR		(CFG_FLASH_BASE + 0x20000) /* addr of environment */
 

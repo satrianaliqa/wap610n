@@ -1174,17 +1174,25 @@ void hnap_active_wlan_basic(int isRadioOn)
 	
 	hnap_doSystem("/sbin/ifconfig wlan0 down");
 	
-	//doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand %s", FrequencyBand);
+	/* [W1 & BUG-08] Retrieve active frequency band dynamically */
+	hnap_get_config(CONFIG_WLAN_FREQUENCY_BAND, paramValue);
+	if (paramValue[0] != '\0') {
+		hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand %d", atoi(paramValue));
+	} else {
+		hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand 1");
+	}
 	
-	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand 1");
-	
+	/* Fix ChannelBonding: do NOT pass channel width to IsHTEnabled! Set ChannelBonding to requested width, and set IsHTEnabled 1 */
+	memset(paramValue, 0, sizeof(paramValue));
 	hnap_get_config(CONFIG_WLAN_CHANNEL_WIDTH, paramValue);
-	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 IsHTEnabled %d", atoi(paramValue));
+	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 ChannelBonding %d", atoi(paramValue));
+	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 IsHTEnabled 1");
 	
 	hnap_doSystem("/sbin/ifconfig wlan0 up");
 	
 	hnap_doSystem("/sbin/ifconfig wlan0 down");
 
+	memset(paramValue, 0, sizeof(paramValue));
 	hnap_get_config(CONFIG_WLAN_CHANNEL, paramValue);
 	if (atoi(paramValue) == 0) {
 		hnap_doSystem("/sbin/iwconfig wlan0 channel auto");
@@ -1192,6 +1200,7 @@ void hnap_active_wlan_basic(int isRadioOn)
 		hnap_doSystem("/sbin/iwconfig wlan0 channel %d", atoi(paramValue));
 	}
 
+	memset(paramValue, 0, sizeof(paramValue));
 	hnap_get_config(CONFIG_WLAN_CHANNEL_UPPERLOWER, paramValue);
 	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 UpperLowerChannelBonding %d", atoi(paramValue));
 
@@ -1200,7 +1209,6 @@ void hnap_active_wlan_basic(int isRadioOn)
 	//if(isRadioOn)
 		hnap_doSystem("/sbin/ifconfig wlan0 up");
 }
-
 
 void hnap_active_wlan_security(void)
 {
@@ -1727,11 +1735,17 @@ int hnap_ap_wbridge_upgrade( webs_t wp, int len, char *msg )
 	}
 	printf("\n");*/
 	
-	pstarTag = strstr(wp->postData, "<Base64Image>");
-	pstarTag += 13; //skip "<Base64Image>", and the pointer will locate the first byte of firmware image
-	//printf("pstarTag=%d(%x), First 3 characters in firmware image is '%c%c%c'\n", pstarTag, pstarTag, *pstarTag, *(pstarTag+1), *(pstarTag+2));
+	if (wp->postData == NULL) {
+		return -1;
+	}
 
+	pstarTag = strstr(wp->postData, "<Base64Image>");
 	pendTag = strstr(wp->postData, "</Base64Image>");
+	if (pstarTag == NULL || pendTag == NULL) {
+		return -1;
+	}
+	pstarTag += 13; //skip "<Base64Image>", and the pointer will locate the first byte of firmware image
+
 	//This will replace '<' to '\0. we don't use the XML tag later, so just modify it ..
 	//This is for b64_decode input string
 	*pendTag = '\0'; 

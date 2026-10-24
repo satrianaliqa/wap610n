@@ -50,14 +50,25 @@ int main(int argc, char *argv[])
   uLong crc = crc32(0L, Z_NULL, 0);
   int length;
 
-  fd= open(argv[1], O_RDWR);
-  if(read(fd, (void *)&head, (sizeof head)) != (sizeof head)) {
-    fprintf(stderr,"Can't read header: %s\n", argv[1]);
+  if (argc < 2) {
+    fprintf(stderr, "Usage: %s <bootpImage>\n", argv[0]);
+    exit(1);
+  }
+
+  fd = open(argv[1], O_RDWR);
+  if (fd < 0) {
+    fprintf(stderr, "Can't open file: %s\n", argv[1]);
+    exit(1);
+  }
+  if (read(fd, (void *)&head, (sizeof head)) != (sizeof head)) {
+    fprintf(stderr, "Can't read header: %s\n", argv[1]);
+    close(fd);
     exit(1);
   }
   if (head.magic != HEADER_MAGIC) {
-    fprintf(stderr,"Illegal magic in header - exiting crc calculation\n");
-    exit(0);
+    fprintf(stderr, "Illegal magic in header - exiting crc calculation\n");
+    close(fd);
+    exit(1);
   }
   printf("header cksum 0x%08.8x\n", head.cksum);
   length= head.pcksum2 - sizeof head;
@@ -85,7 +96,9 @@ int main(int argc, char *argv[])
   lseek(fd, head.pcksum2 + 12, SEEK_SET); // skip three ulong's
   if(write(fd, (void *)&crc, sizeof crc) != sizeof crc) {
     fprintf(stderr,"Can't write tail\n");
+    close(fd);
     exit(1);
   }
+  close(fd);
   exit(0);
 }

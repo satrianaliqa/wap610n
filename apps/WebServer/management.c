@@ -89,6 +89,7 @@ void management(webs_t wp, char_t *path, char_t *query)
 	char_t *admPass;
 	char_t *timeOut;
 	char_t *wirelessMgmt;
+	int paramCount = 0;
 
 	if (checkLoadDefault() == 1) {
 		websRedirect(wp, T("/admin/upgrade.asp"));
@@ -96,44 +97,53 @@ void management(webs_t wp, char_t *path, char_t *query)
 	}
 
 	rebootTag = websGetVar(wp, T("rebootTag"), T(""));
-	if (strcmp(rebootTag, "true") == 0) {
+	if (rebootTag != NULL && strcmp(rebootTag, "true") == 0) {
+		if (vfork() != 0) {
+			debug_printf("management(reboot): 1. pid=%d\n", getpid());
+			websRedirect(wp, T("/reboot_page.asp"));
+		} else {
+			debug_printf("management(reboot): 2. pid=%d\n", getpid());
+			system("echo 2 > /dev/gpio2");
+			system("sleep 8 ; reboot&");
+			_exit(0);
+		}
+	} else {
+		/* When rebootTag is empty or "false", save settings */
 		saveOldWebPid(getpid(), "management.asp");
 		if (vfork() != 0) {
-			debug_printf("management(true): 1. pid=%d\n", getpid());
+			debug_printf("management(save): 1. pid=%d\n", getpid());
 			websRedirect(wp, T("/wait_page.asp"));
 			doSystem("/root/mtlk/web/killchildweb.sh&");
 			waitOtherProcess = 1;
 		} else {
-			debug_printf("management(true): 2. pid=%d\n", getpid());
+			debug_printf("management(save): 2. pid=%d\n", getpid());
 			waitRedirectPage();
 			stopWPS_PBC();
 			memset(tmp, 0, sizeof(tmp));
-			paramNames[0] = "AdminPassword";
-			paramNames[1] = "AuthenticationTimeout";
-			paramNames[2] = "WirelessMgmtEnabled";
 
 			admPass = websGetVar(wp, T("submit_admPassword"), T(""));
 			timeOut = websGetVar(wp, T("timeOut"), T(""));
 			wirelessMgmt = websGetVar(wp, T("wirelessMgmt"), T(""));
 
-			snprintf(tmp, 512, "%s", admPass);
-			MT_Set_Param("AdminPassword", tmp, 1);
-			MT_Set_Param("AuthenticationTimeout", timeOut, 1);
-			MT_Set_Param("WirelessMgmtEnabled", wirelessMgmt, 1);
-			MT_WriteConfFiles(3, paramNames);
+			if (admPass != NULL && admPass[0] != '\0') {
+				snprintf(tmp, sizeof(tmp), "%s", admPass);
+				MT_Set_Param("AdminPassword", tmp, 1);
+				paramNames[paramCount++] = "AdminPassword";
+			}
+			if (timeOut != NULL && timeOut[0] != '\0') {
+				MT_Set_Param("AuthenticationTimeout", timeOut, 1);
+				paramNames[paramCount++] = "AuthenticationTimeout";
+			}
+			if (wirelessMgmt != NULL && wirelessMgmt[0] != '\0') {
+				MT_Set_Param("WirelessMgmtEnabled", wirelessMgmt, 1);
+				paramNames[paramCount++] = "WirelessMgmtEnabled";
+			}
+			if (paramCount > 0) {
+				MT_WriteConfFiles(paramCount, paramNames);
+			}
 			submitToFlash();
 			startWPS_PBC();
 			childFinishAndExit();
-		}
-	} else if (strcmp(rebootTag, "false") == 0) {
-		if (vfork() != 0) {
-			debug_printf("management(false): 1. pid=%d\n", getpid());
-			websRedirect(wp, T("/reboot_page.asp"));
-		} else {
-			debug_printf("management(false): 1. pid=%d\n", getpid());
-			system("echo 2 > /dev/gpio2");
-			system("sleep 8 ; reboot&");
-			_exit(0);
 		}
 	}
 }

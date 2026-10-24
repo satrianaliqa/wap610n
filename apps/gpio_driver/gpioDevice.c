@@ -63,9 +63,6 @@ MODULE_DESCRIPTION("Metalink GPIO (LED/pushbutton) driver");
 MODULE_AUTHOR("Copyright(c) 2008-2009 Metalink Ltd.");
 MODULE_LICENSE("GPL");
 
-
-static unsigned char Buffer[BUFFER_SIZE];
-
 /**
 	Module parameters: 
 		outputLeds - list of GPIOs to init for output, e.g. outputLeds=0,3,4
@@ -432,17 +429,24 @@ void led_pulse(unsigned long lednum)
  ********************************************/
 static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff_t *offset)
 {
-	
+	char kbuf[16];
 	int gpioval, gpio;
 	// Get the led number from the device MINOR number
 	gpio = MINOR(file->f_dentry->d_inode->i_rdev);
 
 	if (gpio >= MAX_GPIOS || gpio < 0)
 		return (-ENODEV);
-	if(copy_from_user(Buffer, buf, count))
-		return (-ENOMEM);
+
+	if (count >= sizeof(kbuf))
+		count = sizeof(kbuf) - 1;
+
+	if (copy_from_user(kbuf, buf, count))
+		return (-EFAULT);
+
+	kbuf[count] = '\0';
+
 	// Parse passed argument
-	gpioval = simple_strtoul(Buffer, NULL, 10);
+	gpioval = simple_strtoul(kbuf, NULL, 10);
 	// First disable any pending timer, to stop traffic simulation
 	if (timer_pending(pulse_timers+gpio))
 	{

@@ -223,7 +223,7 @@ proc start_upnpd {} {
 ##################################################################
 proc restart_upnpd {} {
 	stop_upnpd
-	sleep 1
+	after 1000
 	start_upnpd
 }
 

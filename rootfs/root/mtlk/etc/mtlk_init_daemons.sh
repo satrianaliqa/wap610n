@@ -42,7 +42,7 @@ if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
 		fi
 		if ! pidof dropbear >/dev/null 2>&1; then
 			echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
-			/usr/sbin/dropbear -B
+			/usr/sbin/dropbear -p 22 &
 		fi
 	) &
 fi

@@ -9,9 +9,11 @@
  *  Licensed under GPLv2 or later, see file LICENSE 
  */
 
-#include "stdio.h"
-#include "string.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/file.h>
+#include <unistd.h>
 
 #define CFG_ENV_SIZE		0x10000		/* Total Size of Environment Sector */
 #define ENV_HEADER_SIZE	(sizeof(unsigned long))
@@ -53,10 +55,12 @@ int main(int argc, char* argv[])
 printf("\nCannot open /dev/mtdblock3\n");
 		return 1;
 	}
+	flock(fileno(f), LOCK_EX);
 
 	if ((curr_str = malloc (CFG_ENV_SIZE)) == NULL)
 	{
 printf("\nCannot malloc 0x10000\n");
+		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		return 1;
 	}
@@ -66,6 +70,7 @@ printf("\nCannot malloc 0x10000\n");
 	crc = (unsigned long *)curr_str;
 	if (fread(curr_str, ENV_HEADER_SIZE, 1, f) != 1)
 	{
+		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(crc);
 		return 1;
@@ -141,6 +146,7 @@ printf("\nCannot malloc 0x10000\n");
 
 		}
 	}
+	flock(fileno(f), LOCK_UN);
 	fclose(f);
 	if (out_of_space)
 	{
@@ -182,12 +188,17 @@ printf("\nCannot open /dev/mtdblock3\n");
 		free (crc);
 		return 1;
 	}
+	flock(fileno(tmp_f), LOCK_EX);
 	if (fwrite(crc, CFG_ENV_SIZE, 1, tmp_f) != 1 || fflush(tmp_f) != 0)
 	{
+		fsync(fileno(tmp_f));
+		flock(fileno(tmp_f), LOCK_UN);
 		fclose(tmp_f);
 		free(crc);
 		return 1;
 	}
+	fsync(fileno(tmp_f));
+	flock(fileno(tmp_f), LOCK_UN);
 	fclose(tmp_f);
 
 	verify_buf = malloc(CFG_ENV_SIZE);

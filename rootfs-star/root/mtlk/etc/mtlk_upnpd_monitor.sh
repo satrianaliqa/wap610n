@@ -22,6 +22,10 @@ cat /proc/uptime | awk '{print $1}' >> $DEBUG_LOG
 
 while [ 1 ]
 do
+	if ! pidof upnpd >/dev/null 2>&1; then
+		nice -n 18 upnpd &
+		sleep 2
+	fi
 	UPNPD_MEM_USAGE=`ps | grep " upnpd" | grep -v grep | awk 'NR==1 {print $3}'`
 	case "$UPNPD_MEM_USAGE" in
 		''|*[!0-9]*)

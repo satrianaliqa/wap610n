@@ -29,6 +29,7 @@ if [ $rc -eq 1 ]
 elif [ $rc -eq 2 ]
   then
   echo drvhlpr return rmmod
+  /root/mtlk/etc/reload_mtlk_driver.sh
 else
   echo return from drvhlpr with error
 fi

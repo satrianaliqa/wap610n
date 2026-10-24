@@ -71,13 +71,12 @@ MAC_WLAN=`(set \`cat $MAC_FILE \`; echo $1)`
 
 FREQUENCY_BAND=`awk -F "=" '/^FrequencyBand/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 
-RF_BAND=2
-
-if [ $NETWORK_TYPE = 2 ] && [ $FREQUENCY_BAND == 1 ] 
-then
+if [ "$FREQUENCY_BAND" = "1" ]; then
 	RF_BAND=1
-else
+elif [ "$FREQUENCY_BAND" = "0" ]; then
 	RF_BAND=2
+else
+	RF_BAND=3
 fi
 
 
@@ -113,6 +112,10 @@ then
 		NW_KEY=`cat ${WLAN_CONF} | grep NonProc_WPA_Personal_PSK | sed 's#^[^=]*=[ ]*##'`				
 	elif [ $SECURITY_MODE == $Security_Wep ]
 	then
+		WepTxKeyIdx=`awk -F "=" '/^WepTxKeyIdx/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
+		if [ -n "$WepTxKeyIdx" ]; then
+			WepTxKeyIdx=`expr $WepTxKeyIdx + 1`
+		fi
 		NW_KEY0=`awk -F "=" '/^WepKeys_DefaultKey0/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 		NW_KEY1=`awk -F "=" '/^WepKeys_DefaultKey1/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 		NW_KEY2=`awk -F "=" '/^WepKeys_DefaultKey2/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
@@ -374,7 +377,7 @@ then
 			KEY_MGMT="NONE"
 			ENCR_TYPE_FLAGS="0x0002"
 			AUTH_TYPE_FLAGS="0x0001"
-			if [ $WepTxKeyIdx ] && [ $WepTxKeyIdx != 1 ]
+			if [ -n "$WepTxKeyIdx" ] && [ "$WepTxKeyIdx" != "1" ]
 			then
 				echo "#Set WEP TX KEY ID if not a default (1)" >> ${WSC_CONF_FILE}
 				echo "	WEP_TX_KEY_IDX=$WepTxKeyIdx" >> ${WSC_CONF_FILE}

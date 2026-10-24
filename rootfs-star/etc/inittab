@@ -34,17 +34,16 @@
 #tty1::respawn:/sbin/getty 38400 tty1
 #tty2::respawn:/sbin/getty 38400 tty2
 
-# Put a shell on the serial port (press Enter to activate)
-ttyS0::askfirst:-/bin/sh
+# Put a shell on the serial port
+ttyS0::respawn:-/bin/sh
 console::askfirst:-/bin/sh
 
 # Automatically respawn GoAhead Web Server if it crashes or restarts
 ::respawn:/root/mtlk/web/run_webs.sh
 
-# Logging junk
-#null::sysinit:/bin/touch /var/log/messages
-#null::respawn:/sbin/syslogd -n -m 0
-#null::respawn:/sbin/klogd -n
+# Circular buffer syslog and kernel logging
+::respawn:/sbin/syslogd -n -m 0 -C 64
+::respawn:/sbin/klogd -n
 
 # Stuff to do for the 3-finger salute
 ::ctrlaltdel:/sbin/reboot

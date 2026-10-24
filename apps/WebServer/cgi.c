@@ -74,7 +74,12 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	if ((cp = gstrchr(cgiName, '/')) != NULL) {
 		*cp = '\0';
 	}
-	fmtAlloc(&cgiPath, FNAMESIZE, T("%s/%s"), websGetDefaultDir(), cgiName);
+	if (gstrstr(cgiName, "..") != NULL) {
+		websError(wp, 200, T("Access Denied"));
+		return 1;
+	}
+	/* [BUG-12] Restrict CGI path: only execute scripts from cgi-bin directory */
+	fmtAlloc(&cgiPath, FNAMESIZE, T("%s/cgi-bin/%s"), websGetDefaultDir(), cgiName);
 #ifndef VXWORKS
 /*
  *	See if the file exists and is executable.  If not error out.

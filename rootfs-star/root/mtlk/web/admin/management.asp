@@ -104,7 +104,8 @@ function checkValue() {
 	
 	if (applyValue)
 	{
-		document.getElementById("rebootTag").value = "false";
+		var rtag = document.getElementById("rebootTag_mgmt");
+		if (rtag) rtag.value = "false";
 		//Jacky.Yang 13-Dec-2007 - waitting page and redirect url
 		//totalWaitTime = 15; //second
 		//wait_page();
@@ -153,26 +154,6 @@ function applyRemote() {
 		}
 	};
 	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal);
-}
-
-function runCommand(customCmd) {
-	var cmd = customCmd ? customCmd : document.getElementById("terminal_cmd").value;
-	if (!cmd || cmd.trim() === "") return;
-	document.getElementById("terminal_cmd").value = cmd;
-	var outBox = document.getElementById("terminal_out");
-	outBox.innerHTML += "\n> " + cmd + "\n[Executing...]";
-	outBox.scrollTop = outBox.scrollHeight;
-	
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", "/cgi-bin/shell.cgi", true);
-	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xhr.onreadystatechange = function() {
-		if (xhr.readyState == 4) {
-			outBox.innerHTML = xhr.responseText;
-			outBox.scrollTop = outBox.scrollHeight;
-		}
-	};
-	xhr.send("cmd=" + encodeURIComponent(cmd));
 }
 </script>
 <!-- InstanceEndEditable -->
@@ -274,6 +255,7 @@ function runCommand(customCmd) {
 				</table>
 				<table id="mainform" class="mainTableContent" cellspacing="0">
 					<form method="post" name="management" action="/goform/management">
+					<input type="hidden" name="rebootTag" id="rebootTag_mgmt" value="false">
 					<tr>
 						<td class="subMenuSubContent"><!--#tr id="adm.man.1" -->Bridge Access<!--#endtr--></td>
 						<td class="subMenuLeftSide"></td>
@@ -382,37 +364,6 @@ function runCommand(customCmd) {
 						<td class="subMenuLeftSide"></td>
 						<td class="blankContent" colspan="2"><hr></td>
 					</tr>
-					<tr>
-						<td class="subMenuSubContent">Web Terminal</td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel">Command:</td>
-						<td class="tdContent">
-							<input type="text" id="terminal_cmd" size="36" placeholder="e.g. ps, ifconfig, cat /proc/mtd" onkeydown="if(event.keyCode==13){runCommand();}">
-							<input type="button" value="Run" onclick="runCommand();"><br>
-							<div style="margin-top: 5px; font-size: 8pt;">
-								Quick: 
-								<a href="javascript:void(0)" onclick="runCommand('cat /proc/uptime; cat /proc/loadavg')">Uptime</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('ps')">Processes</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('ifconfig')">Interfaces</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('free')">Memory</a> | 
-								<a href="javascript:void(0)" onclick="runCommand('cat /proc/mtd')">Flash MTD</a> |
-								<a href="javascript:void(0)" onclick="runCommand('iwconfig wlan0')">Wireless</a>
-							</div>
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel" style="vertical-align: top;">Terminal Output:</td>
-						<td class="tdContent">
-							<pre id="terminal_out" style="background: #111; color: #00ff00; font-family: monospace; font-size: 9pt; padding: 8px; width: 420px; height: 160px; overflow: auto; border: 1px solid #333; margin: 0;">Linux WAP610N Web Terminal Ready. Click Quick command or type above.</pre>
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="blankContent" colspan="2"><hr></td>
-					</tr>
 					<form method="post" name="rebootFrom" action="/goform/management">
 					<tr>
 						<td class="subMenuSubContent"><!--#tr id="adm.man.4" -->System Reboot<!--#endtr--></td>
@@ -420,7 +371,7 @@ function runCommand(customCmd) {
 						<td class="tdLabel"><!--#tr id="adm.man.4-1" -->Reboot:<!--#endtr--></td>
 						<td class="tdContent">
 							<input type="button" name="reboot" value="<!--#tr id="adm.man.4-2" -->Start to Reboot<!--#endtr-->" onclick="submitReboot();">
-							<input type="hidden" id="rebootTag" name="rebootTag" value="">						</td>
+							<input type="hidden" id="rebootTag" name="rebootTag" value="true">						</td>
 					</tr>
 					</form>
 				</table>
