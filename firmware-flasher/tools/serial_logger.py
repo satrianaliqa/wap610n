@@ -28,9 +28,13 @@ except Exception as e:
 
 print(f"\n=======================================================", flush=True)
 print(f"  [MONITOR] SERIAL LISTENER AKTIF (38400 baud, 8N1)   ", flush=True)
+print(f"  [TIMING]  Atomic Timestamp & Stopwatch Aktif        ", flush=True)
 print(f"  >>> SILAKAN COLOKKAN ADAPTOR POWER ROUTER SEKARANG! <<<", flush=True)
 print(f"=======================================================\n", flush=True)
 print(f"[SERIAL] Log disimpan di: {LOG_FILE}\n", flush=True)
+
+start_time = None
+at_line_start = True
 
 with open(LOG_FILE, 'w', encoding='utf-8', buffering=1) as f:
     f.write(f"=== Serial Log Started at {time.strftime('%Y-%m-%d %H:%M:%S')} (Baud: {BAUDRATE}) ===\n")
@@ -39,12 +43,25 @@ with open(LOG_FILE, 'w', encoding='utf-8', buffering=1) as f:
             if ser.in_waiting > 0:
                 data = ser.read(ser.in_waiting)
                 text = data.decode('latin1', errors='replace')
-                sys.stdout.write(text)
-                sys.stdout.flush()
-                f.write(text)
-                f.flush()
+                for char in text:
+                    if at_line_start and char not in ('\r', '\n'):
+                        now = time.time()
+                        if start_time is None:
+                            start_time = now
+                        elapsed = now - start_time
+                        ts_str = time.strftime('%H:%M:%S', time.localtime(now)) + f".{int((now % 1) * 1000):03d}"
+                        prefix = f"[{elapsed:07.3f}s | {ts_str}] "
+                        sys.stdout.write(prefix)
+                        f.write(prefix)
+                        at_line_start = False
+                    sys.stdout.write(char)
+                    f.write(char)
+                    if char == '\n':
+                        at_line_start = True
+                        sys.stdout.flush()
+                        f.flush()
             else:
-                time.sleep(0.01)
+                time.sleep(0.005)
     except KeyboardInterrupt:
         print("\n[SERIAL] Monitoring dihentikan oleh user.", flush=True)
     finally:
