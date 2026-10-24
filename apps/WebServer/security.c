@@ -294,16 +294,22 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	if (AuthTimeout > 0)
 	{
 		time(&now);
-		if (now>lastAuth+AuthTimeout)
+		if (lastAuth != 0 && now > lastAuth + AuthTimeout)
 		{
 			//Jacky.Yang3-Dec-2008, fix timeout didn't pop login window again, if password is blank.
 			userid = "";
 			password = "";
 			//password = NULL;
 		}
-		lastAuth = now;
 	}
 
+	/* Block path traversal attempts */
+	if ((path != NULL && gstrstr(path, T("..")) != NULL) ||
+	    (url != NULL && gstrstr(url, T("..")) != NULL))
+	{
+		websError(wp, 403, T("Access Denied"));
+		return 1;
+	}
 
 	if (password == NULL)
 	{
@@ -336,13 +342,13 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	accessLimit = url; //umGetAccessLimit(path);
 
 #ifdef MT_USE_STAT_TASK
-	if (strstr(accessLimit, "/mt_stat")) return 0; // Check that mt_stat_page is in the URL
+	if (path != NULL && gstrncmp(path, T("/mt_stat"), 8) == 0) return 0;
 #endif
 
 	//Add for HNAP support - U-Media Ricky Cao
-	//Because HNAP will check usernam and password, so I skip to check them at here
-	if (strstr(accessLimit,"/HNAP1")){ // <--- check that HNAP1 is in the URL
-		return 0; // <--- return 0, which means it's ok to move to the next handler in list.
+	//Only skip GoAhead Basic Auth when the URL path itself is /HNAP1 (HNAP handler enforces its own Basic Auth)
+	if (path != NULL && (gstrcmp(path, T("/HNAP1")) == 0 || gstrncmp(path, T("/HNAP1/"), 7) == 0)){
+		return 0;
 	}
 	//U-Media Ricky Cao
 	
@@ -403,6 +409,9 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 /*
  *					User and password check out.
  */
+					if (AuthTimeout > 0) {
+						lastAuth = now;
+					}
 				}
 			}
 #ifdef DIGEST_ACCESS_SUPPORT

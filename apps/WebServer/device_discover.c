@@ -585,7 +585,7 @@ int dd_verify_authorization(char *value)
 		dd_extract_header_value(b64decode_authCert, &username, &password, ':');
 		MT_Get_Param(MTSECURITY_USER_NAME_VAR_NAME, sysUserName,MT_MAX_PARAM_VALUE_LENGTH-1);
 		MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, sysPassword,MT_MAX_PARAM_VALUE_LENGTH-1);
-		dd_print_string("username:%s, password:%s, sysPassword:%s, sysUserName:%s\n", username, password, sysPassword, sysUserName);	
+		/* Do not log plaintext credentials to console/stdout */
 		//WET610N doesn't check username
 		if(strcmp(password, sysPassword)){
 			free(b64decode_authCert);

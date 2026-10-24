@@ -1,6 +1,15 @@
 #!/bin/sh
 # Real-time physical MTD flash dumper for Cisco WAP610N Web Management GUI
 
+ADMIN_PASS=`awk -F "=" '/^AdminPassword/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+if [ -n "$ADMIN_PASS" ] && [ -z "$HTTP_AUTHORIZATION" ]; then
+    echo "Status: 401 Unauthorized"
+    echo "Content-Type: text/plain"
+    echo ""
+    echo "Unauthorized"
+    exit 0
+fi
+
 QUERY_STRING="${QUERY_STRING:-type=full}"
 
 case "$QUERY_STRING" in

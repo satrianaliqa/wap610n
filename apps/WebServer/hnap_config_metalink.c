@@ -1189,11 +1189,11 @@ void hnap_active_wlan_basic(int isRadioOn)
 	if (atoi(paramValue) == 0) {
 		hnap_doSystem("/sbin/iwconfig wlan0 channel auto");
 	}else{
-		hnap_doSystem("/sbin/iwconfig wlan0 channel %s", paramValue);
+		hnap_doSystem("/sbin/iwconfig wlan0 channel %d", atoi(paramValue));
 	}
 
 	hnap_get_config(CONFIG_WLAN_CHANNEL_UPPERLOWER, paramValue);
-	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 UpperLowerChannelBonding %s", paramValue);
+	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 UpperLowerChannelBonding %d", atoi(paramValue));
 
 	hnap_doSystem("/root/mtlk/web/post_apply.tcl");
 
@@ -1225,7 +1225,9 @@ void hnap_active_station_wlan_security(void)
 	hnap_get_config(CONFIG_WLAN_WILDCARD_SSID, paramValue);
 	hnap_doSystem("ifconfig wlan0 down");
 	hnap_doSystem("ifconfig wlan0 up");	
-	hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID %s", paramValue);
+	if (strchr(paramValue, '\'') == NULL && strchr(paramValue, '`') == NULL && strchr(paramValue, '$') == NULL && strchr(paramValue, ';') == NULL) {
+		hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID '%s'", paramValue);
+	}
 	hnap_doSystem("cd /root/mtlk/web/; /root/mtlk/web/init_security.tcl reactivate");
 
 	//Metalink had fixed abnormal wireless link status even detected and it will renew IP properly
@@ -2164,7 +2166,9 @@ int hnap_do_wps_pin(char *pinCode, char *bssid)
 		}else{
 			//Do WPS PIN with specfic AP
 			printf("Do WPS PIN with specfic AP(%s)\n", bssid);
-			hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl get_conf_via_pin 1; /root/mtlk/etc/mtlk_wps_cmd.tcl ap_selected_from_list %s &", bssid);
+			if (hnap_valid_mac(bssid)) {
+				hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl get_conf_via_pin 1; /root/mtlk/etc/mtlk_wps_cmd.tcl ap_selected_from_list %s &", bssid);
+			}
 			//hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl ap_selected_from_list %s", bssid);
 		}
     	}else{
@@ -2510,8 +2514,18 @@ int hanp_get_value_from_eeprom(char *tag, char *value)
 {
 	char command[64]={0};
 	FILE *fptr;
+	const char *p;
 
-	sprintf(command, "/bin/get_env_param %s", tag);
+	if (tag == NULL || *tag == '\0') {
+		return -1;
+	}
+	for (p = tag; *p != '\0'; p++) {
+		if (!isalnum((unsigned char)*p) && *p != '_' && *p != '-') {
+			return -1;
+		}
+	}
+
+	snprintf(command, sizeof(command), "/bin/get_env_param %s", tag);
 	fptr=popen(command, "r");
 	
 	if(fptr==NULL){

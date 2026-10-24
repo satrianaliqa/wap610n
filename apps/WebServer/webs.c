@@ -487,6 +487,7 @@ void websReadEvent(webs_t wp)
 #endif
             if (strcmp(wp->url,"/goform/upldImage")==0 || wp->flags & WEBS_HNAP_FW_UPGRADE) //Tom.Hung 2009-7-29, add HNAP f/w upgrade check
             {
+								int idleRetries = 0;
 								printf("getFlashSize: %d\n", getFlashSize());
 								printf("wp->clen: %d\n", wp->clen);
                 /* allocate a new buffer with a good size */
@@ -494,7 +495,7 @@ void websReadEvent(webs_t wp)
                 /* check that buffer allocation was good */
                 //Tom.Hung 2009-7-21, replace IMAGE_MAX_SIZE to getFlashSize()
                 //if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > IMAGE_MAX_SIZE) || !(buffer = malloc(wp->clen+wp->lenPostData)))
-                if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > getFlashSize() && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
+                if (!(wp->flags & WEBS_AUTH_BASIC) || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > getFlashSize() && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
                 //Tom.Hung 2009-7-21
                 {
                     char tmp[MAX_LINE];
@@ -511,7 +512,11 @@ void websReadEvent(webs_t wp)
                         nbytes = socketRead(wp->sid,tmp, MAX_LINE);
                         if (nbytes > 0) {
                             wp->clen -= nbytes;
+                            idleRetries = 0;
                         } else if (nbytes < 0) {
+                            if (++idleRetries > 100) {
+                                break;
+                            }
                             socketSelect(wp->sid, 100);
                         } else {
                             break;
@@ -538,7 +543,11 @@ void websReadEvent(webs_t wp)
                         if (nbytes > 0) {
                             wp->clen -= nbytes;
                             wp->lenPostData += nbytes;
+                            idleRetries = 0;
                         } else if (nbytes < 0) {
+                            if (++idleRetries > 100) {
+                                break;
+                            }
                             /* Non-blocking socket wait up to 100ms */
                             socketSelect(wp->sid, 100);
                         } else {
@@ -1295,7 +1304,7 @@ static void websParseRequest(webs_t wp)
 		}
 		//Add for HNAP firmware upgrade - Ricky Cao
 		else if (gstrcmp(key, T("soapaction")) == 0) {
-			if(gstrstr(value, T("FirmwareUpload"))){
+			if (wp->path != NULL && (gstrcmp(wp->path, T("/HNAP1")) == 0 || gstrncmp(wp->path, T("/HNAP1/"), 7) == 0) && gstrstr(value, T("FirmwareUpload"))){
 				printf("This is a HNAP Firmware Upload request !!\n");
 				wp->flags |= WEBS_HNAP_FW_UPGRADE;
 			}

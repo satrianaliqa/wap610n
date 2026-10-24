@@ -1,7 +1,26 @@
 #!/bin/sh
 # Real-time Remote Access (SSH / Telnet) Manager for Cisco WAP610N Web GUI
 
+ADMIN_PASS=`awk -F "=" '/^AdminPassword/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+if [ -n "$ADMIN_PASS" ] && [ -z "$HTTP_AUTHORIZATION" ]; then
+    printf "HTTP/1.0 401 Unauthorized\r\nContent-Type: text/plain\r\n\r\nUnauthorized\n"
+    exit 0
+fi
+
 QUERY="${QUERY_STRING}"
+if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ] && [ "$CONTENT_LENGTH" -gt 0 ] 2>/dev/null; then
+    read -n "$CONTENT_LENGTH" QUERY 2>/dev/null || true
+fi
+
+# Require explicit ssh= or telnet= parameter before changing state
+case "$QUERY" in
+    *ssh=*|*telnet=*)
+        ;;
+    *)
+        printf "HTTP/1.0 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nMissing parameters\n"
+        exit 0
+        ;;
+esac
 
 # Default values
 SSH_VAL=1

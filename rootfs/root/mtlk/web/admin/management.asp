@@ -50,12 +50,6 @@ function template_load() {
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
 
-function applyRemote() {
-	var sshVal = document.getElementById("sshEnabled").checked ? "1" : "0";
-	var telnetVal = document.getElementById("telnetEnabled").checked ? "1" : "0";
-	location.href = "/cgi-bin/remote_access.cgi?ssh=" + sshVal + "&telnet=" + telnetVal;
-}
-
 function checkConfFile() {
 	if (document.getElementById("configFilePathe").value == "") {
 		alert("<!--#tr id=\"adm.man.alert.1\" -->Please select a configuration file for restore.<!--#endtr-->");
@@ -146,7 +140,8 @@ function applyRemote() {
 	statusDiv.innerHTML = "<span style='color: #0000ff;'>Applying settings...</span>";
 	
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "/cgi-bin/remote_access.cgi?ssh=" + sshVal + "&telnet=" + telnetVal + "&t=" + new Date().getTime(), true);
+	xhr.open("POST", "/cgi-bin/remote_access.cgi", true);
+	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
 			if (xhr.status == 200) {
@@ -157,7 +152,7 @@ function applyRemote() {
 			setTimeout(function() { statusDiv.innerHTML = ""; }, 4000);
 		}
 	};
-	xhr.send(null);
+	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal);
 }
 
 function runCommand(customCmd) {
@@ -311,30 +306,7 @@ function runCommand(customCmd) {
 						<td class="tdLabel"><!--#tr id="adm.man.2-1" -->Access via Wireless:<!--#endtr--></td>
 						<td class="tdContent">
 							<input type="radio" id="wirelessMgmtEnabled" name="wirelessMgmt" value="1"><!--#tr id="adm.man.2-2" -->Enabled<!--#endtr-->
-					<tr>
-						<td class="subMenuSubContent">Remote Access</td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"><b>SSH Server (Port 22):</b></td>
-						<td class="tdContent">
-							<input type="radio" id="sshEnabled" name="sshServer" value="1" checked> Enabled
-							<input type="radio" id="sshDisabled" name="sshServer" value="0"> Disabled
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"><b>Telnet Server (Port 23):</b></td>
-						<td class="tdContent">
-							<input type="radio" id="telnetEnabled" name="telnetServer" value="1" checked> Enabled
-							<input type="radio" id="telnetDisabled" name="telnetServer" value="0"> Disabled
-						</td>
-					</tr>
-					<tr>
-						<td class="subMenuSubContent"></td>
-						<td class="subMenuLeftSide"></td>
-						<td class="tdLabel"></td>
-						<td class="tdContent">
-							<input type="button" value="Apply Remote Access" onclick="applyRemote();" />
+							<input type="radio" id="wirelessMgmtDisabled" name="wirelessMgmt" value="0"><!--#tr id="adm.man.2-3" -->Disabled<!--#endtr-->
 						</td>
 					</tr>
 					</form>
