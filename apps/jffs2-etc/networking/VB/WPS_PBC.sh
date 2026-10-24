@@ -1,5 +1,4 @@
 #!/bin/sh
-# A pushbutton daemon for dorango
 # Hardware Safe-Shutdown button monitor daemon for WAP610N
 
 # The monitor can be started by both early boot and WPS initialization.

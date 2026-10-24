@@ -57,8 +57,12 @@ jobs:
               if [ ! -d rootfs-star ]; then
                   tar -zxvf rootfs-star.tgz
               fi
+              if [ -L rootfs ]; then
+                  rm -f rootfs
+              fi
               if [ ! -e rootfs ]; then
-                  ln -sf rootfs-star rootfs
+                  # Real copy, never a symlink: packaging writes into rootfs.
+                  cp -a rootfs-star rootfs
               fi
 
               # Ensure device nodes and init symlinks

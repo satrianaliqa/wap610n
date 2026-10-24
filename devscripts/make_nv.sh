@@ -441,7 +441,15 @@ then
 
  # Create rootfs image
  mkdir -p ${ROOTDIR}/output ${ROOTDIR}/images
+ # Remove any previous ramdisk first: the "| tee" pipeline hides the exit code of
+ # net-ver-mkrootfs.sh, so a missing ramdisk is how we detect a failed packaging step.
+ rm -f ${ROOTDIR}/images/ramdisk_2.6.16.img.lzma
  devscripts/net-ver-mkrootfs.sh $WLAN_ROOTFS_FILE 2>&1 | tee -a $LOGFILE
+ if [ ! -f ${ROOTDIR}/images/ramdisk_2.6.16.img.lzma ]
+ then
+   echo "Failed to create rootfs ramdisk (see net-ver-mkrootfs.sh errors above)" | tee -a $LOGFILE
+   exit 1
+ fi
 
  # Make net_ver images/bootp image
  cd kernel/linux-2.6.16-star > /dev/null

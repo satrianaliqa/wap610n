@@ -1,6 +1,17 @@
 #!/bin/bash
 # Create an LZMA compressed ext2 ramdisk rootfs file system, containing all files in rootfs.
 ROOTFS_DIR=rootfs
+# rootfs-star is the tracked source of truth for all WAP610N customizations.
+STAR_DIR=rootfs-star
+
+# Safety guard: rootfs must be a separate staging tree. If it is a symlink to
+# (or the same directory as) rootfs-star, extracting wlan.tar.gz below would
+# overwrite the WAP610N customizations inside rootfs-star itself.
+if [ -d "${STAR_DIR}" ] && [ -e "${ROOTFS_DIR}" ] && \
+   [ "$(readlink -f "${ROOTFS_DIR}")" = "$(readlink -f "${STAR_DIR}")" ]; then
+	echo "ERROR: ${ROOTFS_DIR} resolves to ${STAR_DIR}. Use a real copy (cp -a ${STAR_DIR} ${ROOTFS_DIR}), not a symlink."
+	exit 1
+fi
 
 echo "--> Preparing rootfs files and version..."
 mkdir -p ${ROOTFS_DIR}/root/mtlk
@@ -19,7 +30,6 @@ if [ -n "$1" ]; then
 		echo "Extracting WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
 		tar -xzf "$1" -C "${ROOTFS_DIR}/root/mtlk/"
 	fi
-	chmod 777 -R "${ROOTFS_DIR}/root/mtlk/"
 
 	# Keep all ProgModel microcode files intact for full hardware revision compatibility
 	echo "Keeping all ProgModel microcode calibration files intact in ${ROOTFS_DIR}/root/mtlk/images/..."
@@ -34,6 +44,39 @@ if [ -n "$1" ]; then
 		cp -af apps/jffs2-etc/networking/VB/*.conf "${ROOTFS_DIR}/root/mtlk/saved_configs/" 2>/dev/null || true
 		[ -f "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" ] && \
 			cp -af "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" "${ROOTFS_DIR}/root/mtlk/etc/mtlk_init_platform.sh"
+	fi
+
+	# Overlay the WAP610N source of truth (rootfs-star/root/mtlk) on top of the
+	# stock WET610N files from wlan.tar.gz and the SDK VB scripts. Without this,
+	# wlan.tar.gz reverts WebUI pages to Bridge mode and the VB copy of
+	# mtlk_init.sh drops the 32MB sysctl tuning and the solid power LED init.
+	# Build-generated artifacts (gpio.ko, mtlk_init_platform.sh, etherdump_awk,
+	# hnap_wps_status_monitor, force_ethpc_renew_ip) are not present in
+	# rootfs-star and therefore are left untouched.
+	if [ -d "${STAR_DIR}/root/mtlk" ]; then
+		echo "Overlaying ${STAR_DIR}/root/mtlk onto ${ROOTFS_DIR}/root/mtlk (WAP610N customizations)..."
+		cp -a --remove-destination "${STAR_DIR}/root/mtlk/." "${ROOTFS_DIR}/root/mtlk/" || {
+			echo "ERROR: Failed to overlay ${STAR_DIR}/root/mtlk"
+			exit 1
+		}
+	fi
+	chmod 777 -R "${ROOTFS_DIR}/root/mtlk/"
+
+	# Fail hard if any WAP610N customization was lost during packaging.
+	OVERLAY_OK=1
+	check_marker() {
+		if ! grep -qF -- "$2" "${ROOTFS_DIR}/$1" 2>/dev/null; then
+			echo "ERROR: Packaging regression: '$2' missing in ${ROOTFS_DIR}/$1"
+			OVERLAY_OK=0
+		fi
+	}
+	check_marker root/mtlk/etc/mtlk_init.sh "/proc/sys/vm/min_free_kbytes"
+	check_marker root/mtlk/etc/mtlk_init.sh "echo 1 > /dev/led0"
+	check_marker root/mtlk/etc/mtlk_init_hostname.sh 'if [ -z "$1" ]'
+	check_marker root/mtlk/web/status/device_status.asp "Access Point Information"
+	check_marker root/mtlk/web/station/wireless_basic.asp 'objectDisplay("freqBand", value)'
+	if [ "$OVERLAY_OK" != 1 ]; then
+		exit 1
 	fi
 
 	# Force ProjectName to WAP610N (Access Point mode with SSID linksys)

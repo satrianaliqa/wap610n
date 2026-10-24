@@ -63,8 +63,14 @@ sudo $CONTAINER_CMD run --rm \
             echo "--> Extracting device nodes from rootfs-star.tgz..."
             tar -zxvf rootfs-star.tgz rootfs-star/dev 2>/dev/null || true
         fi
+        if [ -L rootfs ]; then
+            echo "--> Replacing rootfs symlink with a real staging copy of rootfs-star..."
+            rm -f rootfs
+        fi
         if [ ! -e rootfs ]; then
-            ln -sf rootfs-star rootfs
+            # Must be a real copy: packaging extracts wlan.tar.gz into rootfs and
+            # "make clean" wipes $(E_DEST)/*, which would destroy rootfs-star via a symlink.
+            cp -a rootfs-star rootfs
         fi
 
         # Ensure init symlinks

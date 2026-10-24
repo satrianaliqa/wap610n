@@ -141,6 +141,39 @@ sudo $CONTAINER_CMD run --rm --privileged \
             echo '   - Dropbear / WebServer          : ⚠️  WARNING (Missing daemon)'
         fi
 
+        # Packaging regression: WAP610N customizations must survive wlan.tar.gz / VB overwrite
+        PKG_OK=1
+        grep -qF '/proc/sys/vm/min_free_kbytes' /tmp/mnt_chk/root/mtlk/etc/mtlk_init.sh || PKG_OK=0
+        grep -qF 'echo 1 > /dev/led0' /tmp/mnt_chk/root/mtlk/etc/mtlk_init.sh || PKG_OK=0
+        grep -qF 'Access Point Information' /tmp/mnt_chk/root/mtlk/web/status/device_status.asp || PKG_OK=0
+        grep -qF 'objectDisplay(\"freqBand\", value)' /tmp/mnt_chk/root/mtlk/web/station/wireless_basic.asp || PKG_OK=0
+        [ -f /tmp/mnt_chk/root/mtlk/etc/mtlk_init_platform.sh ] || PKG_OK=0
+        if [ \$PKG_OK -eq 1 ]; then
+            echo '   - WAP610N Customizations (pkg)  : ✅ UTUH (sysctl, LED, AP UI, 5GHz band)'
+        else
+            echo '   - WAP610N Customizations (pkg)  : ❌ HILANG (wlan.tar.gz/VB overwrite regression)!'
+            exit 1
+        fi
+
+        # Shell syntax check of scripts as actually packaged in the ramdisk
+        RD_SH_OK=1
+        for s in /tmp/mnt_chk/bin/*.sh /tmp/mnt_chk/etc/*.sh /tmp/mnt_chk/root/mtlk/etc/*.sh /tmp/mnt_chk/root/mtlk/web/*.sh; do
+            [ -f \"\$s\" ] || continue
+            case \"\$(head -n 1 \"\$s\" 2>/dev/null)\" in
+                *bin/sh*|*bin/bash*)
+                    if ! bash -n \"\$s\" 2>/dev/null; then
+                        echo \"   ❌ Syntax error: \${s#/tmp/mnt_chk}\"
+                        RD_SH_OK=0
+                    fi
+                    ;;
+            esac
+        done
+        if [ \$RD_SH_OK -eq 1 ]; then
+            echo '   - Ramdisk Shell Scripts Syntax  : ✅ VALID'
+        else
+            exit 1
+        fi
+
         umount /tmp/mnt_chk
         rm -rf /tmp/chk_rd /tmp/mnt_chk
     "
@@ -148,7 +181,7 @@ sudo $CONTAINER_CMD run --rm --privileged \
 # 5. Check Critical Shell Scripts Syntax
 echo -n "5. Pengecekan Sintaks Seluruh Skrip Shell Kritis: "
 SCRIPTS_OK=1
-for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh "$ROOT_DIR"/rootfs-star/etc/*.sh; do
+for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh "$ROOT_DIR"/rootfs-star/etc/*.sh "$ROOT_DIR"/apps/jffs2-etc/networking/VB/*.sh; do
     if [ -f "$s" ]; then
         FIRST_LINE=$(head -n 1 "$s" 2>/dev/null)
         case "$FIRST_LINE" in
