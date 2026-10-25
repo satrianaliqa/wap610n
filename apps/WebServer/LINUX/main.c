@@ -65,6 +65,36 @@ extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
 extern void formDumpFirmware(webs_t wp, char_t *path, char_t *query);
+
+/* Safe non-blocking form overrides to eliminate legacy U-Media blocking bugs */
+static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
+{
+	FILE *fp = fopen("/var/WPS_History", "r");
+	char line[64];
+	char statusStr[64] = "-1,-1,0,0,\n";
+
+	if (fp != NULL) {
+		if (fgets(line, sizeof(line), fp) != NULL) {
+			int ts = 0, stat = -1;
+			if (sscanf(line, "%d,%d", &ts, &stat) == 2) {
+				snprintf(statusStr, sizeof(statusStr), "%d,-1,0,0,\n", stat);
+			}
+		}
+		fclose(fp);
+	}
+
+	websHeader(wp);
+	websWrite(wp, T("HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nPragma: no-cache\r\n\r\n%s"), statusStr);
+	websDone(wp, 200);
+}
+
+static void safeFormWirelessTypeSet(webs_t wp, char_t *path, char_t *query)
+{
+	char_t *cfgType = websGetVar(wp, T("wirelessConfigType"), T("manual"));
+	MT_Set_Param("wirelessConfigType", cfgType, 1);
+	submitToFlash();
+	websRedirect(wp, T("/wireless/security.asp"));
+}
 #ifdef B_STATS
 static void printMemStats(int handle, char_t *fmt, ...);
 static void memLeaks();
@@ -305,7 +335,7 @@ static int initWebs()
 	//Jacky.Yang 5-Jun-2008, Modify default page
 	//websSetDefaultPage(T("default.asp"));
 	//websSetDefaultPage(T("/station/wireless_basic.asp"));
-	websSetDefaultPage(T("/network/sta_network.asp"));
+	websSetDefaultPage(T("/network/ap_network.asp"));
 	websSetPassword(password);
 
 /* 
@@ -344,6 +374,8 @@ static int initWebs()
 	formDefineUtils();
 	formDefineWPS();
 	websFormDefine(T("dumpFirmware"), formDumpFirmware);
+	websFormDefine(T("getCurrentWPSStatus"), safeFormGetCurrentWPSStatus);
+	websFormDefine(T("wirelessTypeSet"), safeFormWirelessTypeSet);
 
 /*
  *	Create the Form handlers for the User Management pages
@@ -378,7 +410,7 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		memset(network_type, '\0', sizeof(network_type));
 		MT_Get_Param("network_type", network_type, sizeof(network_type));
 		
-		if (atoi(network_type) == 0)
+		if (strcmp(network_type, "0") == 0)
 			websRedirect(wp, T("/network/sta_network.asp"));
 		else
 			websRedirect(wp, T("/network/ap_network.asp"));

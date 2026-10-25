@@ -35,6 +35,8 @@ elif [ "$1" == "stop" ]; then
 	rm -f /var/wps_type
 	rm -f /var/gui_wps_waiting
 	rm -f /var/tryToGetSSID
+	echo "0,-1" > /var/WPS_History 2>/dev/null || true
+	echo "0,-1" > /var/WPS_History_temp 2>/dev/null || true
 
 	/root/mtlk/etc/umedia_kill_process.sh wpsCleanTempClock.sh
 

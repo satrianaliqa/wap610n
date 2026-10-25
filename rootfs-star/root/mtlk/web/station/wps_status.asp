@@ -49,6 +49,7 @@ function template_load() {
 </script>
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
+var g_mode = "<% getParam(1, "network_type"); %>";
 var updateWPSStatusStopToWait = true;
 var stopUpdateWPSStatus = false;
 var StopWaitEthernetUP = false;
@@ -622,7 +623,12 @@ function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
 	wpsStatus("<% getWPSStatus(); %>", "wps_status.asp");
 
-	document.getElementById("waitPad").style.display="block";
+	if (g_mode != "2") {
+		document.getElementById("waitPad").style.display="block";
+	} else {
+		document.getElementById("waitPad").style.display="none";
+		stopUpdateWPSStatus = true;
+	}
 	
 	if(langset == "SA"){
 		document.getElementById("progressTD").style.textAlign = "right";	
@@ -632,8 +638,10 @@ function page_load() {
 		document.getElementById("WPS_succeed_id").style.textAlign = "right";
 	}
 	
-	updateWPSStatus();
-	blinkingWaitMSG();
+	if (g_mode != "2") {
+		updateWPSStatus();
+		blinkingWaitMSG();
+	}
 }
 </script>
 <!-- InstanceEndEditable -->

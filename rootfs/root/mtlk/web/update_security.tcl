@@ -102,6 +102,15 @@ proc save_security {{noMount ""}} {
 			exec config_mount.sh
 		}				
 	}
+
+	# Apply wireless SSID and security live for AP mode
+	if {$device_type == 2 && $ESSID != ""} {
+		catch {exec iwconfig wlan0 essid "$ESSID"}
+		catch {exec killall hostapd}
+		if {[file exists /mnt/jffs2/hostapd0.conf]} {
+			catch {exec /root/mtlk/etc/hostapd -d /mnt/jffs2/hostapd0.conf >/dev/null 2>&1 &}
+		}
+	}
 }
 
 ##################################################################

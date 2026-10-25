@@ -306,6 +306,10 @@ Restored legacy object files (`mt_api.o`, `mt_task.o`, `mt_validation.o`) and re
 | **S7: Flash Dump Single-Thread Freeze** | **MEDIUM** | `apps/WebServer/upldform.c:992-1035`| `formDumpFirmware` streamed 4 MB synchronously without chunking or timeouts, blocking WebUI. | Added non-blocking chunking with socket select timeouts. |
 | **S8: Insecure CGI Filename Collision** | **LOW** | `apps/WebServer/cgi.c:100` | Temp filenames generated via predictable `rand() % 10000`, vulnerable to collisions. | Converted to process-isolated naming template. |
 | **S9: HNAP Gateway Null Dereference** | **LOW** | `apps/WebServer/device_discover.c:1026` | HNAP static IP config with missing Gateway passed `NULL` to `route add`, risking segfault. | Added fallback guard: default to `"0.0.0.0"` or ignore default route assignment. |
+| **S10: WPS Poll Freeze Deadlock** | **HIGH** | `apps/WebServer/LINUX/main.c`, `run_webs.sh` | Legacy `getCurrentWPSStatus` looped with 5s usleep when `/var/WPS_History` missing, blocking single-threaded GoAhead. | Replaced with non-blocking C handler `safeFormGetCurrentWPSStatus` and pre-seeded `/var/WPS_History`. |
+| **S11: Manual Config Blank Screen** | **MEDIUM** | `apps/WebServer/LINUX/main.c` | `wirelessTypeSet` form returned 200 without redirect or body, replacing UI with blank page. | Added `safeFormWirelessTypeSet` redirecting to `/wireless/security.asp`. |
+| **S12: Live Beacon Update on SSID Change** | **MEDIUM** | `rootfs-star/root/mtlk/web/update_security.tcl` | WebUI saved SSID to flash but did not reload hostapd or set in-flight ESSID. | Added live `iwconfig wlan0 essid "$ESSID"` and hostapd reload. |
+| **S13: Dual-Band UI Cleanup & Mode Guard** | **LOW** | `station/wireless_basic.asp`, `station/wps_status.asp` | UI showed unsupported concurrent "both" option for single-radio WAP610N and enabled client-bridge `waitPad` screen blocker. | Removed "both" option, disabled `waitPad` and status poll loop when running in AP mode. |
 
 ### 7.4 Flash Config Lock & Elimination of Flash Wear
 - Legacy firmware wrote directly to `/dev/mtdblock4` on every WebUI button click without concurrency guards.

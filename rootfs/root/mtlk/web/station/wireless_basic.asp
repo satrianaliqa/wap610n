@@ -694,13 +694,13 @@ function page_load() {
 									<!-- InstanceBeginEditable name="Sub Menu" -->
 									<td class="subMenuOption">Basic Wireless Settings</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wps_status.asp">Wi-Fi Protected Setup™</a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/wireless/wps_status.asp">Wi-Fi Protected Setup™</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/site_survey.asp">Wireless Network Site Survey</a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/wireless/site_survey.asp">Wireless Network Site Survey</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp">WMM®</a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/wireless/wmm.asp">WMM®</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/wireless/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>
@@ -761,9 +761,8 @@ function page_load() {
 							<input type="hidden" id="nowMode" name="nowMode" value="">
 							<input type="hidden" id="wpaToHex" name="wpaToHex" value="">
 							<select id="frequencyBand" name="frequencyBand" onchange="selectRFBand();">
-								<option id="5GHz" value="0">5 GHz</option>
-								<option id="2.4GHz" value="1">2.4 GHz</option>
-								<option id="both" value="both">Both</option>
+								<option id="5GHz" value="0">5 GHz (802.11a/n)</option>
+								<option id="2.4GHz" value="1">2.4 GHz (802.11b/g/n)</option>
 							</select>						</td>
 					</tr>
 					<tr id="ESSIDFeild">
