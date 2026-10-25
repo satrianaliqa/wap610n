@@ -284,6 +284,10 @@ int websUrlHandlerRequest(webs_t wp)
 			}
 			if ((*sp->handler)(wp, sp->urlPrefix, sp->webDir, sp->arg, 
 					wp->url, wp->path, wp->query)) {
+				/* Handler processed request but forgot to finish and has no background writer */
+				if (websValid(wp) && wp->writeSocket == NULL) {
+					websDone(wp, 200);
+				}
 				return 1;
 			}
 			if (!websValid(wp)) {

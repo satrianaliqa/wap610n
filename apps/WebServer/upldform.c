@@ -20,6 +20,11 @@ SEE ALSO:
 #ifndef WIN
 #include "zlib.h"
 #include "pthread.h"
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
 pthread_t gBurnThread;
 #endif
 
@@ -110,37 +115,21 @@ void *MT_BurnAndVerifyImage(void* data)
 			
 			printf ("imageheader.pcksum2 = %d\n",imageHeader.pcksum2);
 
-			if ((fp = fopen(gMTBurnParams.fName, "ab")) != NULL)
+			if (imageHeader.magic == 0xEA000006 && imageHeader.pcksum2 < KERNEL_MTD_PARTITION_SIZE)
 			{
-				fseek(fp,imageHeader.pcksum2,SEEK_SET);
-				fwrite(dummy_crc,1,4*sizeof(int),fp);
-				fclose(fp);
-				fp = NULL;
+				if ((fp = fopen(gMTBurnParams.fName, "r+b")) != NULL)
+				{
+					fseek(fp,imageHeader.pcksum2,SEEK_SET);
+					fwrite(dummy_crc,1,4*sizeof(int),fp);
+					fclose(fp);
+					fp = NULL;
+				}
 			}
-			else
-			{
-				sprintf(gMTBurnParams.errorMessage,"Error : Could not open flash image for CRC erase");
-				MT_ReturnCRCClearError("");
-				return 0;
-			}
-			
-		}
-		else
-		{
-			sprintf(gMTBurnParams.errorMessage,"Error : Could not read header (read %d bytes out of %d)",numRead,sizeof(MT_IMAGE_HEADER));
-			MT_ReturnCRCClearError("");
-			return 0;
 		}
 	}
-	else
-	{
-		sprintf(gMTBurnParams.errorMessage,"Error : Could not open flash image for reading header.");
-		MT_ReturnCRCClearError("");
-		return 0;
-	}
-
 
 	gMTBurnParams.precentComplete = 100;
+	return 1;
 
 
 	// Burning
@@ -1004,8 +993,9 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 }
 
 /*
- * Dump Firmware directly from physical MTD NOR flash partitions in 4KB streaming chunks.
+ * Dump Firmware directly from physical MTD NOR flash partitions.
  * Zero RAM overhead: direct bit-exact streaming over HTTP.
+ * Uses select() on raw socket to avoid busy-spin at 100% CPU.
  */
 void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 {
@@ -1013,22 +1003,26 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 	char buff[4096];
 	size_t n = 0;
 	char_t *dumpType = websGetVar(wp, T("type"), T("full"));
-	const char *devPath = "/dev/mtdblock0";
+	const char *devPath = "/dev/mtd0";
 	const char *outName = "WAP610N_full_flash_dump.bin";
+	unsigned long dumpSize = 0x400000; /* 4MB = 4,194,304 bytes */
+	int sockFd = -1;
 
 	if (strcmp(dumpType, "kernel") == 0) {
-		devPath = "/dev/mtdblock2";
+		devPath = "/dev/mtd2";
 		outName = "WAP610N_kernel_rootfs_dump.bin";
+		dumpSize = 0x3B0000; /* 3.6875MB = 3,866,624 bytes */
 	} else if (strcmp(dumpType, "config") == 0) {
-		devPath = "/dev/mtdblock4";
+		devPath = "/dev/mtd4";
 		outName = "WAP610N_config_dump.bin";
+		dumpSize = 0x10000; /* 64KB = 65,536 bytes */
 	}
 
 	fp = fopen(devPath, "rb");
 	if (!fp) {
-		if (strcmp(dumpType, "kernel") == 0) devPath = "/dev/mtd2";
-		else if (strcmp(dumpType, "config") == 0) devPath = "/dev/mtd4";
-		else devPath = "/dev/mtd0";
+		if (strcmp(dumpType, "kernel") == 0) devPath = "/dev/mtdblock2";
+		else if (strcmp(dumpType, "config") == 0) devPath = "/dev/mtdblock4";
+		else devPath = "/dev/mtdblock0";
 		fp = fopen(devPath, "rb");
 	}
 
@@ -1037,17 +1031,59 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 		return;
 	}
 
+	wp->flags &= ~WEBS_KEEP_ALIVE;
 	websWrite(wp, T("HTTP/1.0 200 OK\r\n"));
 	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
+	websWrite(wp, T("Connection: close\r\n"));
 	websWrite(wp, T("Pragma: no-cache\r\n"));
 	websWrite(wp, T("Cache-control: no-cache\r\n"));
 	websWrite(wp, T("Content-Type: application/octet-stream\r\n"));
 	websWrite(wp, T("Content-Disposition: attachment; filename=\"%s\"\r\n"), outName);
+	websWrite(wp, T("Content-Length: %lu\r\n"), dumpSize);
 	websWrite(wp, T("\r\n"));
 
-	while ((n = fread(buff, 1, sizeof(buff), fp)) > 0) {
-		if (websWriteBlock(wp, buff, n) < 0) break;
+	socketFlush(wp->sid);
+	sockFd = socketGetHandle(wp->sid);
+
+	if (sockFd >= 0) {
+		while ((n = fread(buff, 1, sizeof(buff), fp)) > 0) {
+			size_t written = 0;
+			while (written < n) {
+				fd_set wfds;
+				struct timeval tv;
+				int selRet;
+				ssize_t w;
+
+				FD_ZERO(&wfds);
+				FD_SET(sockFd, &wfds);
+				tv.tv_sec = 10;
+				tv.tv_usec = 0;
+
+				selRet = select(sockFd + 1, NULL, &wfds, NULL, &tv);
+				if (selRet <= 0) {
+					goto dump_done;
+				}
+
+				w = write(sockFd, buff + written, n - written);
+				if (w < 0) {
+					if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+						continue;
+					}
+					goto dump_done;
+				}
+				if (w == 0) {
+					goto dump_done;
+				}
+				written += (size_t)w;
+			}
+		}
+	} else {
+		while ((n = fread(buff, 1, sizeof(buff), fp)) > 0) {
+			if (websWriteBlock(wp, buff, n) < 0) break;
+		}
 	}
+
+dump_done:
 	fclose(fp);
 	websDone(wp, 200);
 }

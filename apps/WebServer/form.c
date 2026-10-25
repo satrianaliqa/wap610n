@@ -75,15 +75,11 @@ int websFormHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
  */
 			(*fn)((void*) wp, formName, query);
 
-/*
- *			Remove the test to force websDone, since this prevents
- *			the server "push" from a form>
- */
-#if 0 /* push */
+			/* If the form handler returned without calling websDone,
+			 * complete the transaction cleanly to prevent CLOSE_WAIT leaks */
 			if (websValid(wp)) {
-				websError(wp, 200, T("Form didn't call websDone"));
+				websDone(wp, 200);
 			}
-#endif /* push */
 		}
 	}
 	return 1;

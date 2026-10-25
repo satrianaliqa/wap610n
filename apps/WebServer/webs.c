@@ -495,36 +495,35 @@ void websReadEvent(webs_t wp)
                 /* check that buffer allocation was good */
                 //Tom.Hung 2009-7-21, replace IMAGE_MAX_SIZE to getFlashSize()
                 //if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > IMAGE_MAX_SIZE) || !(buffer = malloc(wp->clen+wp->lenPostData)))
-                if (!(wp->flags & WEBS_AUTH_BASIC) || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > getFlashSize() && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
+                if (!(wp->flags & WEBS_AUTH_BASIC) || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > (getFlashSize() + 0x10000) && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
                 //Tom.Hung 2009-7-21
                 {
                     char tmp[MAX_LINE];
                     /* parsing will fail, and an error will be shown */
                     if (wp->FileContentLen == 0)
-                    		//Tom.Hung 2009-7-21, replace IMAGE_MAX_SIZE to getFlashSize()
-                        //wp->FileContentLen = (wp->clen > IMAGE_MAX_SIZE) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
-                        wp->FileContentLen = (wp->clen > getFlashSize()) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
-                        //Tom.Hung 2009-7-21
-                    /* just read all data */
+                        wp->FileContentLen = (wp->clen > (getFlashSize() + 0x10000)) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
+                    /* drain remaining data cleanly */
                     wp->clen -= nbytes;
-                    while (wp->clen >0)
+                    while (wp->clen > 0)
                     {
-                        nbytes = socketRead(wp->sid,tmp, MAX_LINE);
+                        nbytes = socketRead(wp->sid, tmp, MAX_LINE);
                         if (nbytes > 0) {
                             wp->clen -= nbytes;
                             idleRetries = 0;
+                        } else if (nbytes == 0 && !socketEof(wp->sid)) {
+                            if (++idleRetries > 100) break;
+                            socketSelect(wp->sid, 100);
                         } else if (nbytes < 0) {
-                            if (++idleRetries > 100) {
-                                break;
-                            }
+                            if (++idleRetries > 100) break;
                             socketSelect(wp->sid, 100);
                         } else {
                             break;
                         }
                     }
-                    
-                    
-                    
+                    wp->flags |= WEBS_POST_DATA;
+                    websUrlHandlerRequest(wp);
+                    done++;
+                    break;
                 } else
                 {
                     if (wp->postData)
@@ -544,16 +543,27 @@ void websReadEvent(webs_t wp)
                             wp->clen -= nbytes;
                             wp->lenPostData += nbytes;
                             idleRetries = 0;
+                        } else if (nbytes == 0 && !socketEof(wp->sid)) {
+                            /* Socket not ready (EWOULDBLOCK) - wait up to 100ms for incoming packets */
+                            if (++idleRetries > 200) { /* 20s timeout */
+                                break;
+                            }
+                            socketSelect(wp->sid, 100);
                         } else if (nbytes < 0) {
                             if (++idleRetries > 100) {
                                 break;
                             }
-                            /* Non-blocking socket wait up to 100ms */
                             socketSelect(wp->sid, 100);
                         } else {
-                            /* Connection closed */
+                            /* Real connection EOF */
                             break;
                         }
+                    }
+                    if (wp->clen <= 0) {
+                        wp->flags |= WEBS_POST_DATA;
+                        websUrlHandlerRequest(wp);
+                        done++;
+                        break;
                     }
                 }
             } else
@@ -1246,6 +1256,13 @@ static void websParseRequest(webs_t wp)
 				if ((p = gstrstr(value, BOUNDARY_KWD)) != NULL) {
 					/* skip over the 'boundary=' part */
 					p+= gstrlen(BOUNDARY_KWD);
+					if (*p == '"') {
+						char_t *endq;
+						p++;
+						if ((endq = gstrchr(p, '"')) != NULL) {
+							*endq = '\0';
+						}
+					}
 					wp->multiPartBoundary = balloc(B_L, gstrlen(p) + 3);
 					gsprintf(wp->multiPartBoundary , "--%s", p);
 				}
@@ -1994,6 +2011,12 @@ int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 				return -1;
 			}
 			socketFlush(wp->sid);
+			if (len == 0) {
+				if (socketSelect(wp->sid, 100) <= 0) {
+					bfree(B_L, asciiBuf);
+					return -1;
+				}
+			}
 		}
 #else /* ! WEBS_SSL_SUPPORT */
 		if ((len = socketWrite(wp->sid, pBuf, nChars)) < 0) {
@@ -2001,6 +2024,12 @@ int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 			return -1;
 		}
 		socketFlush(wp->sid);
+		if (len == 0) {
+			if (socketSelect(wp->sid, 100) <= 0) {
+				bfree(B_L, asciiBuf);
+				return -1;
+			}
+		}
 #endif /* WEBS_SSL_SUPPORT */
 		nChars -= len;
 		pBuf += len;

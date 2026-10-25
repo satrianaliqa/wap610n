@@ -171,7 +171,8 @@ function checkFW()
 		applyValue = false;
 
 	if (applyValue) {
-		//blinkingWarningMSG("true");
+		stopToWait = true;
+		updateBurnProgress();
 		document.upload_frm.submit();
 	}
 }
@@ -188,8 +189,7 @@ function page_load() {
 	if(langset == "SA"){
 		document.getElementById("progressTD").style.textAlign = "right";
 	}
-	stopToWait = true;
-	updateBurnProgress();
+	stopToWait = false;
 }
 </script>
 <!-- InstanceEndEditable -->
@@ -292,7 +292,7 @@ function page_load() {
 				</table>
 				<table id="mainform" class="mainTableContent" cellspacing="0">
 					<!--<tbody>-->
-					<form method="post" name="upload_frm" enctype="multipart/form-data" action="/goform/upldImage">
+					<form method="post" name="upload_frm" enctype="multipart/form-data" action="/goform/upldImage" target="rebootRedirect">
 					<!--<tr>
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>

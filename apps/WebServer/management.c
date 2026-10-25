@@ -153,6 +153,7 @@ void updateBurnProgress(webs_t wp, char_t *path, char_t *query)
 	char stateStr[8];
 	char progressStr[8];
 	char errStr[512];
+	char resp[64];
 	char_t *err;
 
 	debug_printf("updateBurnProgress: Into updateBurnProgress function.\n");
@@ -164,34 +165,24 @@ void updateBurnProgress(webs_t wp, char_t *path, char_t *query)
 
 	err = WebImageUpdateErr();
 	memset(errStr, 0, 512);
-	strcpy(errStr, err);
+	if (err) strcpy(errStr, err);
 
-	websWrite(wp, T("HTTP/1.1 200 OK\nContent-type: text/plain\nPragma: no-cache\n\n"));
-	websWrite(wp, T("%s,%s"), stateStr, progressStr);
+	snprintf(resp, sizeof(resp), "%s,%s", stateStr, progressStr);
+	wp->flags &= ~WEBS_KEEP_ALIVE;
+	websWrite(wp, T("HTTP/1.0 200 OK\r\n"));
+	websWrite(wp, T("Content-Type: text/plain\r\n"));
+	websWrite(wp, T("Connection: close\r\n"));
+	websWrite(wp, T("Pragma: no-cache\r\n"));
+	websWrite(wp, T("Cache-Control: no-cache\r\n"));
+	websWrite(wp, T("Content-Length: %d\r\n\r\n"), (int)strlen(resp));
+	websWrite(wp, T("%s"), resp);
 	websDone(wp, 200);
 }
 
 int checkHW(int eid, webs_t wp, int argc, char_t **argv)
 {
-	char hwName[16];
-	char buf[1024];
-	FILE *fp;
-
-	memset(hwName, 0, 12);
-	fp = popen("echo \"read_phy\" >> /proc/str9100/reg_debug ; cat /proc/str9100/reg_debug", "r");
-	if (fp != NULL) {
-		fgets(buf, 1024, fp);
-		fgets(buf, 1024, fp);
-		pclose(fp);
-		if (strstr(buf, "reg3=0xc852") != NULL) {
-			strcpy(hwName, "Linksys WES610N");
-		} else {
-			strcpy(hwName, "Linksys WET610N");
-		}
-	} else {
-		strcpy(hwName, "Linksys WET610N");
-	}
-	return websWrite(wp, T("%s"), hwName);
+	/* Model name for WAP610N; eliminate failing popen subshell */
+	return websWrite(wp, T("WAP610N"));
 }
 
 void formDefineManagement(void)

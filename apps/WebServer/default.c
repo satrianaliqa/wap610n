@@ -226,6 +226,11 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	websWrite(wp, T("Connection: close\r\n"));
 	websWrite(wp, T("\r\n"));
 
+	/* Enforce connection termination for dynamic ASP pages without Content-Length */
+	if (flags & WEBS_ASP) {
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+	}
+
 	debug_printf("websDefaultHandler: All done if the browser did a HEAD request\n");
 /*
  *	All done if the browser did a HEAD request

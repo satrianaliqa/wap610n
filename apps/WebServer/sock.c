@@ -362,7 +362,9 @@ int socketInputBuffered(int sid)
 	if (socketEof(sid)) {
 		return -1;
 	}
-	return ringqLen(&sp->lineBuf) + ringqLen(&sp->inBuf);
+	/* Only inBuf contains unparsed raw socket bytes ready for reading.
+	 * lineBuf contains an incomplete line and must NOT prevent socketSelect() from sleeping. */
+	return ringqLen(&sp->inBuf);
 }
 
 /******************************************************************************/

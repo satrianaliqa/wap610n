@@ -83,8 +83,8 @@ static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
 		fclose(fp);
 	}
 
-	websHeader(wp);
-	websWrite(wp, T("HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nPragma: no-cache\r\n\r\n%s"), statusStr);
+	wp->flags &= ~WEBS_KEEP_ALIVE;
+	websWrite(wp, T("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n%s"), statusStr);
 	websDone(wp, 200);
 }
 
@@ -92,7 +92,6 @@ static void safeFormWirelessTypeSet(webs_t wp, char_t *path, char_t *query)
 {
 	char_t *cfgType = websGetVar(wp, T("wirelessConfigType"), T("manual"));
 	MT_Set_Param("wirelessConfigType", cfgType, 1);
-	submitToFlash();
 	websRedirect(wp, T("/wireless/security.asp"));
 }
 #ifdef B_STATS
@@ -529,10 +528,13 @@ DONE:
 
 int websCheckCgiProc(int handle)
 {
+	int rc;
 /*
  *	Check to see if the CGI child process has terminated or not yet.  
+ *	When SIGCHLD is SIG_IGN, waitpid returns -1 with errno == ECHILD when the child exits.
  */
-	if (waitpid(handle, NULL, WNOHANG) == handle) {
+	rc = waitpid(handle, NULL, WNOHANG);
+	if (rc == handle || rc == -1) {
 		return 0;
 	} else {
 		return 1;
