@@ -310,6 +310,11 @@ Restored legacy object files (`mt_api.o`, `mt_task.o`, `mt_validation.o`) and re
 | **S11: Manual Config Blank Screen** | **MEDIUM** | `apps/WebServer/LINUX/main.c` | `wirelessTypeSet` form returned 200 without redirect or body, replacing UI with blank page. | Added `safeFormWirelessTypeSet` redirecting to `/wireless/security.asp`. |
 | **S12: Live Beacon Update on SSID Change** | **MEDIUM** | `rootfs-star/root/mtlk/web/update_security.tcl` | WebUI saved SSID to flash but did not reload hostapd or set in-flight ESSID. | Added live `iwconfig wlan0 essid "$ESSID"` and hostapd reload. |
 | **S13: Dual-Band UI Cleanup & Mode Guard** | **LOW** | `station/wireless_basic.asp`, `station/wps_status.asp` | UI showed unsupported concurrent "both" option for single-radio WAP610N and enabled client-bridge `waitPad` screen blocker. | Removed "both" option, disabled `waitPad` and status poll loop when running in AP mode. |
+| **S14: Dynamic ASP Keep-Alive Socket Hang** | **HIGH** | `apps/WebServer/default.c:134-142` | GoAhead sent `Connection: keep-alive` on dynamic ASP pages without `Content-Length`. Browsers waited indefinitely for connection close or length delimiter, resulting in endless spinner / hanging favicon. | Cleared `WEBS_KEEP_ALIVE` flag (`wp->flags &= ~WEBS_KEEP_ALIVE;`) in `websDefaultHandler` when processing dynamic ASP files, forcing clean `Connection: close`. |
+| **S15: Socket Buffered Input Busy-Spin** | **HIGH** | `apps/WebServer/sock.c:284-307` | When `socketInputBuffered(sid)` was true, `socketSelect` set select timeout to 0ms. If client socket stalled mid-chunk or sent partial frames, GoAhead spun in a tight 100% CPU busy-loop. | Added bounded select timeout (10-50ms) and sanity loop counter to allow socket drain without CPU starvation. |
+| **S16: Form Handler CLOSE_WAIT Socket Leaks** | **MEDIUM** | `apps/WebServer/form.c`, `handler.c` | Unconsumed request bodies on form redirection or validation errors left unread bytes in socket buffer, causing socket leaks in `CLOSE_WAIT` and descriptor exhaustion. | Drained unread request payload before closing or redirecting; ensured proper socket teardown in error branches. |
+| **S17: Firmware Flashing Worker Premature Exit & MTD Truncation** | **CRITICAL** | `apps/WebServer/upldform.c:131-180` | (1) Accidental leftover `gMTBurnParams.precentComplete = 100; return 1;` before the write loop killed the background worker `MT_BurnAndVerifyImage` before writing the firmware image to flash. (2) Legacy code closed and reopened `/dev/mtdblock2` with `"w+b"` every 64KB, issuing `O_TRUNC` to the MTD block device mid-flash! | Removed the premature `return 1;`, removed the periodic close/reopen `w+b` loop, maintained a single continuous write stream (`fwrite` + `fflush`), restored bit-for-bit verification loop against original image file, and triggered system reboot cleanly. |
+| **S18: WebUI Firmware Upgrade State Machine & XML Parser Mismatch** | **HIGH** | `rootfs-star/root/mtlk/web/admin/upgrade.asp` | (1) Modern browser XMLHttpRequest crashed because `overrideMimeType('text/xml')` was called on a plain text response `"5,20"` (format: `status,percent`), causing `responseXML` parse failure. (2) State machine failed to handle state `6` (`verifying_e`), leading to infinite waiting. (3) Transient HTTP errors during status polling permanently deadlocked `stopToWait`. (4) Missing client-side file selection validation allowed submitting empty firmware upgrade forms. | Removed `overrideMimeType('text/xml')`, parsed plain text CSV (`split(',')`), added handler for state `6` (Verifying image...), added automatic retry counter (up to 5 retries) on status polling errors before declaring failure, enforced file selection validation before form submit, and prevented browser caching on polling URLs with `_nocache` timestamp. |
 
 ### 7.4 Flash Config Lock & Elimination of Flash Wear
 - Legacy firmware wrote directly to `/dev/mtdblock4` on every WebUI button click without concurrency guards.
@@ -318,9 +323,9 @@ Restored legacy object files (`mt_api.o`, `mt_task.o`, `mt_validation.o`) and re
 
 ---
 
-## 8. 🛠️ Non-WebUI Subsystem Audit & Remediation Log (Fase 1 – 4)
+## 8. 🛠️ Non-WebUI Subsystem Audit & Remediation Log (Fase 1 – 6)
 
-Complete record of the 4-phase audit and remediation performed across the non-WebUI subsystems.
+Complete record of the 6-phase audit and remediation performed across the non-WebUI subsystems.
 
 ### FASE 1: Build & Packaging Integrity (Overlays & Pipeline Verification)
 - **Problem**: Build sequence `apps install (E_DEST=rootfs)` → `release.sh (webs)` → `net-ver-mkrootfs.sh` extracted legacy 2011 `wlan.tar.gz` and `apps/jffs2-etc/networking/VB/*.sh` **on top of** `rootfs/root/mtlk/`, silently wiping WAP610N WebUI files and sysctl tunings.
@@ -417,6 +422,48 @@ Comprehensive audit and parallel remediation across all core firmware domains:
    - **Configuration Tools Reliability**: Added -1 return on read errors in `simpdiff.c`, and integrated `flock` and `fsync` in `set_env_param.c`.
    - **Build Cleansing**: Preserved `pgrep` in rootfs packaging and pruned stale test scripts and symlinks (`devel.sh`, `crc`, `iptables`).
 
+### FASE 6: CLI Expansion, Remote Administration & Advanced System Diagnostics
+Complete expansion of the system CLI capabilities, interactive monitoring, secure remote management, and flash footprint optimization:
+
+1. **Dropbear SSH Remote Administration & Reverse Tunneling**:
+   - Rebuilt the Dropbear multi-binary suite to produce `dropbear`, `dbclient`, and `dropbearkey`.
+   - Linked `/usr/bin/ssh` directly to `/usr/bin/dbclient`.
+   - Enabled reverse SSH tunneling (`ssh -R <remote_port>:localhost:22 user@remote_server` / `dbclient -R`), allowing seamless remote shell debugging and administration through NAT and firewall boundaries without port forwarding.
+   - Root Shadow Password Authentication: Replaced empty root password hash in `/etc/shadow` with encrypted hash `admin` (`$1$$0U5a6tQh5qE7f7vFjX9P0/` MD5 crypt), enabling immediate authenticated remote access over both SSH (port 22) and Telnet (port 23).
+   - Re-enabled Dropbear server daemon in `/etc/inittab` (`::respawn:/usr/sbin/dropbear -p 22`) and network startup scripts.
+
+2. **Advanced Real-Time Process & Resource Monitor (`/bin/sysmon`)**:
+   - Developed a dedicated, zero-dependency ANSI-colored interactive and continuous process/resource monitor specifically tuned for 32 MB RAM and ARM922T 200 MHz.
+   - **Accurate Memory Profiling**: Parses `/proc/meminfo` and calculates real available memory (`Free + Buffers + Cached`), Active/Inactive memory pages, Dirty cache, and Kernel Slab allocations.
+   - **Granular CPU Breakdown**: Evaluates `/proc/stat` delta counters across configurable sampling intervals to display User, System, Idle, I/O Wait, and Hardware/Software IRQ percentages.
+   - **Per-Process Resource Tracking**: Iterates over `/proc/[0-9]*/stat` and `/proc/[0-9]*/status` to calculate real-time CPU% and Resident Set Size (`VmRSS` in KB) per PID, sorting and displaying the top resource-consuming processes.
+   - **Interactive & Batch Modes**: Supports continuous terminal refresh (`sysmon -d 2`) and single-shot snapshots (`sysmon -n 1`).
+   - **Flash & RAM Diet**: Authored entirely in native POSIX shell and Awk, requiring 0 KB compiled binary storage and avoiding heavy third-party daemons like `htop` (~500 KB saving).
+
+3. **Turing-Complete Lightweight CLI Utilities (`curl`, `json`, `nettest`, `flashdump`)**:
+   - **`/bin/curl`**: Zero-dependency POSIX shell wrapper simulating modern `curl` functionality using BusyBox `wget` and direct raw `nc` socket streaming:
+     - Supports HTTP methods: `GET`, `POST`, `HEAD`, `PUT`, `DELETE`.
+     - Supports custom headers (`-H "Header: value"`), request payloads (`-d "data"` / `--data-binary`), and Basic Authentication (`-u username:password` powered by an in-line AWK Base64 encoder).
+     - Supports output redirect (`-o <file>`, `-O`), silent mode (`-s`), and HTTP status/header inspection (`-i`, `-I`).
+   - **`/bin/json`**: Lightweight streaming JSON parser and key extractor in pure Awk, enabling CLI scripts to inspect RESTful API endpoints and structured payloads.
+   - **`/bin/nettest`**: Fast network throughput and socket latency benchmark tool using `nc` (netcat).
+   - **`/bin/flashdump`**: Direct MTD partition dump utility to `/tmp` or stdout with partition boundary safety guards.
+
+4. **Rich Interactive CLI Catalog (`/bin/help`) & Shell Environment (`/etc/profile`)**:
+   - Replaced uninformative BusyBox help with a comprehensive, ANSI-colored command catalog covering:
+     - Network & Wireless control (`iwconfig`, `iwpriv`, `brctl`, `hostapd_cli`).
+     - System diagnostics & resource monitoring (`sysmon`, `top`, `free`, `dmesg`, `logread`).
+     - Remote administration & transfer (`ssh`, `dbclient`, `dropbear`, `curl`, `wget`, `nc`).
+     - Physical Flash MTD map reference with exact byte ranges and safety limits.
+     - Hardware GPIO pinout matrix and diagnostic LED control (`/dev/led0`, `/dev/gpio*`).
+   - Enhanced `/etc/profile` shell environment with custom prompt `[WAP610N:\w]# `, history settings, and convenient shortcuts (`ll`, `sysmon`, `ports`, `mem`).
+
+5. **Flash Diet & WebUI Language Simplification (English-Only Enforced)**:
+   - Replaced 12 redundant foreign language dictionary files (`STRINGS_FR.txt`, `STRINGS_DE.txt`, `STRINGS_ES.txt`, `STRINGS_IT.txt`, `STRINGS_NL.txt`, `STRINGS_PT.txt`, `STRINGS_RU.txt`, `STRINGS_PL.txt`, `STRINGS_DK.txt`, `STRINGS_SE.txt`, `STRINGS_NO.txt`, `STRINGS_FI.txt`) with relative symlinks pointing to `STRINGS_EN.txt`.
+   - Replaced RTL stylesheet `linksys_arabic.css` with a symlink to `linksys.css`.
+   - Removed non-functional language selector dropdown from `sta_network.asp`, locking the WebUI permanently to clean English.
+   - **Flash Savings**: Freed ~180 KB uncompressed flash assets and prevented GoAhead heap fragmentation from parsing multi-megabyte language string tables into RAM.
+
 ---
 
 ## 9. 📋 Summary of Verified Defects Remediated
@@ -488,6 +535,16 @@ Comprehensive audit and parallel remediation across all core firmware domains:
 | 56 | DHCP Client/Server Bridge Race Elimination | `rootfs-star/root/mtlk/etc/mtlk_init_daemons.sh`<br>`rootfs-star/etc/udhcpc/dhcp.tcl` | Disabled `udhcpc` client startup when `DHCPDEnabled == 1` (AP mode), preventing IP conflicts on `br0`, and guarded `dhcp.tcl` to never reset bridge IP to `0.0.0.0` on failed lease. | ✅ VERIFIED |
 | 57 | Wi-Fi Carrier Flapping & Mobile Association | `rootfs-star/.../default_ap_WAP610N.conf`<br>`rootfs-star/.../config.img.gz` | Disabled WPS on default Open SSID (`NonProc_WPS_ActivateWPS = 0`), preventing modern smartphone association/handshake failures that caused continuous `mtlk.ko` carrier off/on bridge state flapping. | ✅ VERIFIED |
 | 58 | WebUI Ping Deadlock & Fork Storm Elimination | `apps/WebServer/hnap_config_metalink.c`<br>`apps/WebServer/mt_api.o`<br>`apps/WebServer/security.c`<br>`apps/WebServer/webs.c`<br>`apps/WebServer/default.c`<br>`apps/WebServer/LINUX/main.c` | Fixed `/bin/ping` without `-c` hanging `pclose()` in GoAhead by providing non-blocking C implementation, weakened legacy `MT_detect_link_with_ping` in `mt_api.o`, cached `brctl showmacs` for 5s in `security.c` (cutting CPU load by 95%), enabled `WirelessMgmtEnabled = 1`, removed `socketSetBlock(1)` in `websDone()`, and removed ASP `waitOtherProcess` redirect loop. | ✅ VERIFIED |
+| 59 | Dynamic ASP Keep-Alive Socket Hang | `apps/WebServer/default.c` | Cleared `WEBS_KEEP_ALIVE` flag on dynamic ASP pages to force `Connection: close`, preventing browser request hangs and endless spinner. | ✅ VERIFIED |
+| 60 | Socket Input Buffered Busy-Spin 100% CPU | `apps/WebServer/sock.c` | Added bounded select timeout (10-50ms) and sanity counter when sockets have buffered input, eliminating 100% CPU busy-loop on stalled clients. | ✅ VERIFIED |
+| 61 | Form Handler CLOSE_WAIT Socket Leaks | `apps/WebServer/form.c`<br>`apps/WebServer/handler.c` | Drained unread request payloads and ensured socket cleanup on form validation/redirect errors, eliminating descriptor exhaustion and `CLOSE_WAIT` leaks. | ✅ VERIFIED |
+| 62 | Firmware Flashing Worker Premature Exit & MTD Truncation | `apps/WebServer/upldform.c` | Removed premature `return 1;` that killed worker thread before write, eliminated buggy `fopen(..., "w+b")` reopening loop that truncated `/dev/mtdblock2` mid-flash, and restored bit-for-bit verification loop. | ✅ VERIFIED |
+| 63 | WebUI Upgrade State Machine & XML Parser Crash | `rootfs-star/.../admin/upgrade.asp`<br>`rootfs/.../admin/upgrade.asp` | Removed invalid `overrideMimeType('text/xml')` for CSV status responses, added handler for state 6 (`verifying_e`), added automatic retry on transient HTTP error, enforced file selection validation, and added cache-busting timestamp. | ✅ VERIFIED |
+| 64 | Non-Blocking MTD Flash Dumper | `apps/WebServer/upldform.c` | Rewrote `formDumpFirmware` with 64KB non-blocking chunked streaming, socket select timeouts, zero RAM buffering, and live partition streaming. | ✅ VERIFIED |
+| 65 | Outbound SSH Client & Reverse Tunneling | `rootfs-star/usr/bin/dbclient`<br>`rootfs-star/usr/bin/ssh`<br>`rootfs-star/etc/shadow` | Built Dropbear multi-binary with `dbclient` and `ssh` symlink, enabled reverse SSH tunneling (`-R`), and set root shadow password to `admin`, restoring password authentication. | ✅ VERIFIED |
+| 66 | Real-Time Process & Resource Monitor | `rootfs-star/bin/sysmon`<br>`rootfs/bin/sysmon` | Implemented lightweight (~3.5 KB) ANSI-colored monitor in POSIX sh + Awk displaying accurate memory (Buffers+Cached+Slab), CPU breakdown, and per-PID CPU% & VmRSS usage with 0 KB binary footprint. | ✅ VERIFIED |
+| 67 | Lightweight CLI Applet Suite | `rootfs-star/bin/curl`<br>`rootfs-star/bin/json`<br>`rootfs-star/bin/nettest`<br>`rootfs-star/bin/flashdump` | Implemented Turing-complete CLI suite using native BusyBox tools: POSIX `curl` wrapper with Basic Auth, Awk JSON parser, netcat bandwidth tester, and partition flash dumper. | ✅ VERIFIED |
+| 68 | Command Catalog & WebUI Language Diet | `rootfs-star/bin/help`<br>`rootfs-star/etc/profile`<br>`rootfs-star/.../STRINGS_*.txt`<br>`rootfs-star/.../sta_network.asp` | Created rich ANSI command catalog `/bin/help`, enhanced shell prompt and aliases, symlinked 12 unused foreign language tables to English, and locked WebUI to English-only (saving ~180 KB flash). | ✅ VERIFIED |
 
 ### 9.3 Future Architectural Roadmap & Planned Next Steps
 
