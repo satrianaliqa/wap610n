@@ -1,0 +1,99 @@
+#!/bin/sh
+# sysmon - Detailed System Resource & Process Monitor for Cisco Linksys WAP610N
+# Zero dependencies, 100% uClibc / BusyBox ash compatible
+
+show_header() {
+	clear 2>/dev/null || printf "\033[H\033[J"
+	echo "================================================================================"
+	echo " 📡 WAP610N System & Process Resource Monitor (sysmon)"
+	echo "================================================================================"
+}
+
+show_system_summary() {
+	# 1. Uptime & Load
+	UP=$(awk '{d=int($1/86400); h=int(($1%86400)/3600); m=int(($1%3600)/60); s=int($1%60); printf "%dd %02dh %02dm %02ds", d, h, m, s}' /proc/uptime)
+	LOAD=$(cat /proc/loadavg | awk '{print $1, $2, $3}')
+	echo "Uptime     : $UP"
+	echo "Load Avg   : $LOAD (1m, 5m, 15m)"
+
+	# 2. CPU Usage Calculation (1-second sample if running live, or instant from /proc/stat)
+	CPU_LINE=$(grep '^cpu ' /proc/stat)
+	U=$(echo "$CPU_LINE" | awk '{print $2}')
+	N=$(echo "$CPU_LINE" | awk '{print $3}')
+	S=$(echo "$CPU_LINE" | awk '{print $4}')
+	I=$(echo "$CPU_LINE" | awk '{print $5}')
+	W=$(echo "$CPU_LINE" | awk '{print $6}')
+	TOTAL=$((U + N + S + I + W))
+	if [ -n "$PREV_TOTAL" ] && [ "$TOTAL" -gt "$PREV_TOTAL" ]; then
+		D_TOTAL=$((TOTAL - PREV_TOTAL))
+		D_U=$((U - PREV_U))
+		D_S=$((S - PREV_S))
+		D_I=$((I - PREV_I))
+		D_W=$((W - PREV_W))
+		CPU_USR=$(( (D_U * 100) / D_TOTAL ))
+		CPU_SYS=$(( (D_S * 100) / D_TOTAL ))
+		CPU_IDLE=$(( (D_I * 100) / D_TOTAL ))
+		CPU_IO=$(( (D_W * 100) / D_TOTAL ))
+		echo "CPU Usage  : Usr: ${CPU_USR}% | Sys: ${CPU_SYS}% | Idle: ${CPU_IDLE}% | IOWait: ${CPU_IO}%"
+	fi
+	PREV_U=$U; PREV_S=$S; PREV_I=$I; PREV_W=$W; PREV_TOTAL=$TOTAL
+
+	# 3. RAM Statistics
+	MEM_TOT=$(awk '/MemTotal/ {print $2}' /proc/meminfo)
+	MEM_FREE=$(awk '/MemFree/ {print $2}' /proc/meminfo)
+	MEM_BUF=$(awk '/Buffers/ {print $2}' /proc/meminfo)
+	MEM_CACH=$(awk '/^Cached/ {print $2}' /proc/meminfo)
+	MEM_SLAB=$(awk '/Slab/ {print $2}' /proc/meminfo)
+	MEM_USED=$((MEM_TOT - MEM_FREE - MEM_BUF - MEM_CACH))
+	
+	PCT_USED=$(( (MEM_USED * 100) / MEM_TOT ))
+	echo "Memory     : Total: $((MEM_TOT / 1024)) MB ($MEM_TOT kB) | Used: $((MEM_USED / 1024)) MB (${PCT_USED}%) | Free: $((MEM_FREE / 1024)) MB"
+	echo "Caches     : Buffers: $((MEM_BUF / 1024)) MB | Cached: $((MEM_CACH / 1024)) MB | Slab: $((MEM_SLAB / 1024)) MB"
+
+	# 4. Socket Connections
+	if [ -f /proc/net/tcp ]; then
+		ESTAB=$(grep -c ': 01 ' /proc/net/tcp 2>/dev/null || echo 0)
+		LISTEN=$(grep -c ': 0A ' /proc/net/tcp 2>/dev/null || echo 0)
+		CW=$(grep -c ': 08 ' /proc/net/tcp 2>/dev/null || echo 0)
+		echo "Sockets    : Listen: $LISTEN | Established: $ESTAB | Close_Wait: $CW"
+	fi
+	echo "--------------------------------------------------------------------------------"
+}
+
+show_top_processes() {
+	echo "🔥 TOP PROCESSES (Sorted by CPU & RAM Usage):"
+	echo "--------------------------------------------------------------------------------"
+	# Use BusyBox top in batch mode for exact per-process CPU & RAM
+	if command -v top >/dev/null 2>&1; then
+		top -b -n 1 | head -n 25 | tail -n +5
+	else
+		ps
+	fi
+	echo "================================================================================"
+}
+
+# Single run or continuous loop mode
+if [ "$1" = "-l" ] || [ "$1" = "--loop" ] || [ "$1" = "-c" ]; then
+	INTERVAL="${2:-2}"
+	echo "Starting continuous monitor (interval: ${INTERVAL}s, press Ctrl+C to exit)..."
+	# Pre-seed initial CPU tick
+	CPU_LINE=$(grep '^cpu ' /proc/stat)
+	PREV_U=$(echo "$CPU_LINE" | awk '{print $2}')
+	PREV_S=$(echo "$CPU_LINE" | awk '{print $4}')
+	PREV_I=$(echo "$CPU_LINE" | awk '{print $5}')
+	PREV_W=$(echo "$CPU_LINE" | awk '{print $6}')
+	PREV_TOTAL=$((PREV_U + PREV_S + PREV_I + PREV_W))
+	sleep 1
+	while true; do
+		show_header
+		show_system_summary
+		show_top_processes
+		echo " [Mode: Continuous (${INTERVAL}s) - Run 'sysmon' without flags for 1-shot] "
+		sleep "$INTERVAL"
+	done
+else
+	show_header
+	show_system_summary
+	show_top_processes
+	echo " Tip: Run 'sysmon -l' for continuous real-time monitor like htop (0 KB overhead) "
+fi
