@@ -1,0 +1,155 @@
+#!/bin/sh
+# ============================================================================
+# Cisco Linksys WAP610N / WET610N - System Command Manual & Quick Directory
+# ============================================================================
+
+SECTION="$1"
+
+# ANSI color codes
+BOLD="\033[1m"
+GREEN="\033[1;32m"
+CYAN="\033[1;36m"
+YELLOW="\033[1;33m"
+MAGENTA="\033[1;35m"
+RED="\033[1;31m"
+BLUE="\033[1;34m"
+RESET="\033[0m"
+
+# Disable color if stdout is not a TTY or --no-color requested
+if [ ! -t 1 ] || [ "$2" = "--no-color" ]; then
+    BOLD=""
+    GREEN=""
+    CYAN=""
+    YELLOW=""
+    MAGENTA=""
+    RED=""
+    BLUE=""
+    RESET=""
+fi
+
+show_header() {
+    echo -e "${CYAN}=============================================================================${RESET}"
+    echo -e "  ${BOLD}CISCO LINKSYS WAP610N / WET610N - SYSTEM DIRECTORY & COMMAND MANUAL${RESET}"
+    echo -e "${CYAN}=============================================================================${RESET}"
+    echo -e "  ${YELLOW}SoC:${RESET} Cavium CNS2132 (ARM922T @ 200 MHz)  ${YELLOW}RAM:${RESET} 32 MB  ${YELLOW}Flash:${RESET} 4 MB Parallel NOR"
+    echo -e "  ${YELLOW}OS:${RESET}  Linux 2.6.16-star (uClibc 0.9.28)    ${YELLOW}Radio:${RESET} Metalink 802.11a/b/g/n (MTLK)"
+    echo -e "${CYAN}-----------------------------------------------------------------------------${RESET}"
+}
+
+show_wifi() {
+    echo -e "${GREEN}[+] 📡 WIRELESS & 802.11n RADIO (Metalink Subsystem):${RESET}"
+    echo -e "    ${BOLD}iwconfig${RESET}              - View/configure SSID, channel, txpower, rate, operating mode"
+    echo -e "    ${BOLD}iwpriv${RESET}                - Metalink low-level wireless private ioctls & registers"
+    echo -e "    ${BOLD}mtlk_sysinfo.sh -v${RESET}    - Detailed RF stats, link quality, client MAC & frame counters"
+    echo -e "    ${BOLD}etherdump${RESET}             - Real-time frame & packet sniffer on wlan0 and eth0"
+    echo -e "    ${BOLD}wpa_cli${RESET}               - Interactive command-line client for WPA/WPA2 daemon"
+    echo -e "    ${BOLD}wpa_passphrase${RESET}        - Generate 256-bit PSK hex hash from SSID and passphrase"
+    echo -e "    ${BOLD}hostapd_cli${RESET}           - Wi-Fi Protected Setup (WPS) and AP supervisor control"
+    echo -e "    ${BOLD}mtlk_carrier_detect.sh${RESET}- RF carrier sense, interference & clear channel assessment"
+    echo ""
+}
+
+show_net() {
+    echo -e "${CYAN}[+] 🌐 NETWORKING, ROUTING & PROTOCOLS:${RESET}"
+    echo -e "    ${BOLD}ifconfig${RESET}              - Interface management (br0=bridge, eth0=FastEth, wlan0=Wi-Fi)"
+    echo -e "    ${BOLD}brctl${RESET}                 - Ethernet bridge table (${BOLD}brctl show${RESET}, ${BOLD}brctl showmacs br0${RESET})"
+    echo -e "    ${BOLD}route / ip${RESET}            - Kernel routing tables and policy-based IP route inspection"
+    echo -e "    ${BOLD}netstat -tlpn${RESET}         - Active TCP/UDP listening ports and connected foreign sockets"
+    echo -e "    ${BOLD}arp / arping${RESET}          - ARP cache table display and ARP-level IP reachability test"
+    echo -e "    ${BOLD}ping / traceroute${RESET}     - ICMP echo diagnostics and gateway hop latency tracing"
+    echo -e "    ${BOLD}curl${RESET}                  - HTTP client for REST APIs, JSON webhooks & POST/GET calls"
+    echo -e "    ${BOLD}wget${RESET}                  - Fast HTTP/FTP file retrieval with resume and backgrounding"
+    echo -e "    ${BOLD}nc (netcat)${RESET}           - Raw network Swiss Army knife (TCP/UDP listener & pipe transport)"
+    echo -e "    ${BOLD}nettest${RESET}               - Throughput & bandwidth testing (${BOLD}nettest server${RESET} / ${BOLD}client${RESET})"
+    echo ""
+}
+
+show_remote() {
+    echo -e "${MAGENTA}[+] 🔒 REMOTE ACCESS & SUPERVISION DAEMONS:${RESET}"
+    echo -e "    ${BOLD}ssh / dbclient${RESET}        - SSH client & reverse port forwarding (${BOLD}ssh -R 2222:localhost:22 user@host${RESET})"
+    echo -e "    ${BOLD}dropbear${RESET}              - Hardened Dropbear SSH server running on Port 22"
+    echo -e "    ${BOLD}telnet / telnetd${RESET}      - Lightweight Telnet client and background daemon on Port 23"
+    echo -e "    ${BOLD}passwd${RESET}                - Update root authentication password"
+    echo ""
+}
+
+show_sys() {
+    echo -e "${YELLOW}[+] ⚡ SYSTEM, PROCESS & PERFORMANCE DIAGNOSTICS:${RESET}"
+    echo -e "    ${BOLD}sysmon${RESET}                - Live CPU%, RAM breakdown, Hungry Processes & TCP summary"
+    echo -e "    ${BOLD}sysmon -l [sec]${RESET}       - Continuous interactive system monitor loop (default 2s)"
+    echo -e "    ${BOLD}top / ps${RESET}              - Linux task monitor and full process list (${BOLD}ps aux${RESET})"
+    echo -e "    ${BOLD}free${RESET}                  - SDRAM memory allocation (Total, Used, Free, Buffers, Cached)"
+    echo -e "    ${BOLD}uptime / vmstat${RESET}       - System running time, 1/5/15 min load averages & paging"
+    echo -e "    ${BOLD}dmesg${RESET}                 - Kernel ring buffer diagnostic log (${BOLD}dmesg | tail -n 25${RESET})"
+    echo -e "    ${BOLD}json${RESET}                  - Lightweight JSON parser/query tool (${BOLD}echo '{\"ip\":\"1.2.3.4\"}' | json ip${RESET})"
+    echo -e "    ${BOLD}kill / killall${RESET}        - Deliver termination signals (SIGTERM/SIGKILL) to PID or process"
+    echo ""
+}
+
+show_flash() {
+    echo -e "${RED}[+] 💾 PHYSICAL FLASH (4 MB NOR) & PERSISTENT CONFIGURATION:${RESET}"
+    echo -e "    ${BOLD}flashdump${RESET}             - Direct MTD extractor (${BOLD}flashdump kernel /tmp/bootpImage.bin${RESET})"
+    echo -e "    ${BOLD}simpdiff${RESET}              - Fast NVRAM / configuration delta & file comparison tool"
+    echo -e "    ${BOLD}config_save.sh${RESET}        - Safely commit runtime settings (/mnt/jffs2) to physical flash"
+    echo -e "    ${BOLD}cat /proc/mtd${RESET}         - View raw MTD flash memory partition table boundaries:"
+    echo -e "       • ${BOLD}mtdblock1${RESET}: 0x10000000 (128 KB)  - U-Boot 1.1.4 Bootloader (Read-Only)"
+    echo -e "       • ${BOLD}mtdblock3${RESET}: 0x10020000 ( 64 KB)  - U-Boot Env / NVRAM (Read-Write)"
+    echo -e "       • ${BOLD}mtdblock2${RESET}: 0x10040000 (3.625MB) - Kernel + RootFS Ramdisk (Firmware Limit)"
+    echo -e "       • ${BOLD}mtdblock4${RESET}: 0x103E0000 (128 KB)  - ConfigFS Runtime JFFS2 (Persistent Storage)"
+    echo ""
+}
+
+show_hardware() {
+    echo -e "${BLUE}[+] 🎛️ HARDWARE PERIPHERALS & GPIO CONTROLS:${RESET}"
+    echo -e "    ${BOLD}/dev/led0${RESET}             - Front Power/Diag LED (${BOLD}echo green > /dev/led0${RESET}, ${BOLD}echo amber...${RESET})"
+    echo -e "    ${BOLD}/dev/gpio3${RESET}            - Hardware Reset PushButton (Active-Low, hold 3s for factory reset)"
+    echo -e "    ${BOLD}/dev/gpio13${RESET}           - Hardware WPS PushButton (Active-Low, triggers WPS pairing)"
+    echo ""
+}
+
+show_footer() {
+    echo -e "${CYAN}=============================================================================${RESET}"
+    echo -e "  ${BOLD}QUICK TIPS:${RESET}"
+    echo -e "  • Check CPU/RAM load:    ${BOLD}sysmon${RESET} or ${BOLD}sysmon -l${RESET}"
+    echo -e "  • Reverse SSH out:       ${BOLD}ssh -N -R 2222:localhost:22 user@your-server${RESET}"
+    echo -e "  • Download via HTTP:     ${BOLD}curl -O http://remote/file.bin${RESET}"
+    echo -e "  • Filter this help:      ${BOLD}help wifi${RESET} | ${BOLD}help net${RESET} | ${BOLD}help sys${RESET} | ${BOLD}help flash${RESET}"
+    echo -e "${CYAN}=============================================================================${RESET}"
+}
+
+case "$SECTION" in
+    wifi|wlan|wireless)
+        show_header
+        show_wifi
+        ;;
+    net|network|routing)
+        show_header
+        show_net
+        ;;
+    remote|ssh|telnet)
+        show_header
+        show_remote
+        ;;
+    sys|system|diag|proc)
+        show_header
+        show_sys
+        ;;
+    flash|mtd|storage)
+        show_header
+        show_flash
+        ;;
+    gpio|led|hw|hardware)
+        show_header
+        show_hardware
+        ;;
+    *)
+        show_header
+        show_wifi
+        show_net
+        show_remote
+        show_sys
+        show_flash
+        show_hardware
+        show_footer
+        ;;
+esac

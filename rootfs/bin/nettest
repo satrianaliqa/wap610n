@@ -1,0 +1,51 @@
+#!/bin/sh
+# ============================================================================
+# Lightweight Bandwidth & Throughput Tester for WAP610N (Netcat-based)
+# Usage:
+#   nettest server [port]                  (Start listening on port, default 5201)
+#   nettest client <target_ip> [port] [MB] (Send MB megabytes to target_ip, default 10MB)
+# ============================================================================
+
+MODE="$1"
+TARGET="$2"
+PORT="${3:-5201}"
+MB="${4:-10}"
+
+case "$MODE" in
+    server|recv|rx)
+        PORT="${TARGET:-5201}"
+        echo "[+] Starting nettest server on port $PORT..."
+        echo "[+] Waiting for incoming stream (Press Ctrl+C to stop)..."
+        while true; do
+            start_time=$(date +%s)
+            nc -l -p "$PORT" > /tmp/.nettest_sink
+            end_time=$(date +%s)
+            bytes=$(wc -c < /tmp/.nettest_sink 2>/dev/null || echo 0)
+            rm -f /tmp/.nettest_sink
+            dur=$((end_time - start_time))
+            [ "$dur" -le 0 ] && dur=1
+            mbps=$((bytes * 8 / dur / 1000000))
+            echo "[+] Received $bytes bytes in ${dur}s (~$mbps Mbps)"
+        done
+        ;;
+    client|send|tx)
+        if [ -z "$TARGET" ]; then
+            echo "Usage: nettest client <target_ip> [port] [MB]"
+            exit 1
+        fi
+        echo "[+] Connecting to $TARGET:$PORT (transmitting ${MB} MB)..."
+        start_time=$(date +%s)
+        dd if=/dev/zero bs=64k count=$((MB * 16)) 2>/dev/null | nc "$TARGET" "$PORT"
+        end_time=$(date +%s)
+        dur=$((end_time - start_time))
+        [ "$dur" -le 0 ] && dur=1
+        total_bits=$((MB * 8 * 1000000))
+        mbps=$((total_bits / dur / 1000000))
+        echo "[+] Transmitted ${MB} MB in ${dur}s (~$mbps Mbps)"
+        ;;
+    *)
+        echo "Usage: nettest server [port]"
+        echo "       nettest client <target_ip> [port] [MB]"
+        exit 1
+        ;;
+esac

@@ -1,0 +1,252 @@
+#!/bin/sh
+# ============================================================================
+# Lightweight POSIX curl wrapper for WAP610N / embedded Linux
+# Supports GET, POST, HEAD, PUT, DELETE, custom headers, auth, data, output file
+# ============================================================================
+
+METHOD="GET"
+DATA=""
+SILENT=0
+VERBOSE=0
+INCLUDE_HDR=0
+HEAD_ONLY=0
+OUTFILE="-"
+USER_AGENT="curl/7.68.0 (wap610n)"
+AUTH=""
+CUSTOM_HEADERS=""
+CONTENT_TYPE=""
+URL=""
+
+usage() {
+    echo "Usage: curl [options] <url>"
+    echo "Options:"
+    echo "  -d, --data <data>       HTTP POST data"
+    echo "  -H, --header <header>   Custom header to pass to server"
+    echo "  -I, --head              Show document info only (HEAD request)"
+    echo "  -i, --include           Include protocol response headers in the output"
+    echo "  -o, --output <file>     Write to file instead of stdout"
+    echo "  -O, --remote-name       Write output to file named as remote file"
+    echo "  -s, --silent            Silent mode (no progress or error output)"
+    echo "  -u, --user <user:pass>  Server user and password (Basic Auth)"
+    echo "  -v, --verbose           Make operation verbose"
+    echo "  -X, --request <command> Specify request method (GET/POST/PUT/DELETE)"
+    echo "  -k, --insecure          Allow insecure connections (ignored)"
+    echo "  -L, --location          Follow redirects"
+    exit 1
+}
+
+# Base64 encoder in pure AWK
+b64_encode() {
+    awk -v s="$1" 'BEGIN {
+        b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        len = length(s); res = ""
+        for (i = 1; i <= len; i += 3) {
+            c1 = ord(substr(s, i, 1))
+            c2 = (i+1 <= len) ? ord(substr(s, i+1, 1)) : 0
+            c3 = (i+2 <= len) ? ord(substr(s, i+2, 1)) : 0
+            n = c1 * 65536 + c2 * 256 + c3
+            e1 = int(n / 262144) % 64; e2 = int(n / 4096) % 64
+            e3 = int(n / 64) % 64; e4 = n % 64
+            res = res substr(b64, e1+1, 1) substr(b64, e2+1, 1)
+            if (i+1 <= len) res = res substr(b64, e3+1, 1); else res = res "="
+            if (i+2 <= len) res = res substr(b64, e4+1, 1); else res = res "="
+        }
+        print res
+    }
+    function ord(c, i) {
+        for (i=0; i<256; i++) { if (sprintf("%c", i) == c) return i }
+        return 0
+    }'
+}
+
+# Parse CLI options
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -s|--silent)
+            SILENT=1
+            shift
+            ;;
+        -v|--verbose)
+            VERBOSE=1
+            shift
+            ;;
+        -i|--include)
+            INCLUDE_HDR=1
+            shift
+            ;;
+        -I|--head)
+            HEAD_ONLY=1
+            METHOD="HEAD"
+            shift
+            ;;
+        -X|--request)
+            METHOD="$2"
+            shift 2
+            ;;
+        -d|--data|--data-raw|--data-ascii)
+            DATA="$2"
+            [ "$METHOD" = "GET" ] && METHOD="POST"
+            shift 2
+            ;;
+        -H|--header)
+            case "$2" in
+                [Cc][Oo][Nn][Tt][Ee][Nn][Tt]-[Tt][Yy][Pp][Ee]:*)
+                    CONTENT_TYPE="${2#*: }"
+                    ;;
+                *)
+                    CUSTOM_HEADERS="${CUSTOM_HEADERS}$2\r\n"
+                    ;;
+            esac
+            shift 2
+            ;;
+        -u|--user)
+            AUTH="$2"
+            shift 2
+            ;;
+        -A|--user-agent)
+            USER_AGENT="$2"
+            shift 2
+            ;;
+        -o|--output)
+            OUTFILE="$2"
+            shift 2
+            ;;
+        -O|--remote-name)
+            OUTFILE="__REMOTE__"
+            shift
+            ;;
+        -k|--insecure|-L|--location)
+            shift
+            ;;
+        -h|--help)
+            usage
+            ;;
+        -*)
+            [ "$SILENT" -eq 0 ] && echo "curl: option $1 not supported" >&2
+            shift
+            ;;
+        *)
+            URL="$1"
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$URL" ]; then
+    usage
+fi
+
+# Determine remote filename if -O was specified
+if [ "$OUTFILE" = "__REMOTE__" ]; then
+    fname="${URL%%\?*}"
+    fname="${fname##*/}"
+    [ -z "$fname" ] && fname="index.html"
+    OUTFILE="$fname"
+fi
+
+# Check if we can fast-path standard GET with wget
+if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HEAD_ONLY" -eq 0 ]; then
+    WGET_ARGS="-U \"$USER_AGENT\""
+    [ "$SILENT" -eq 1 ] && WGET_ARGS="$WGET_ARGS -q"
+    
+    # If basic auth provided, rewrite URL to http://user:pass@host/path
+    FINAL_URL="$URL"
+    if [ -n "$AUTH" ]; then
+        proto="${URL%%://*}"
+        rest="${URL#*://}"
+        FINAL_URL="${proto}://${AUTH}@${rest}"
+    fi
+
+    if [ "$OUTFILE" = "-" ]; then
+        eval "wget $WGET_ARGS -O - \"$FINAL_URL\""
+    else
+        eval "wget $WGET_ARGS -O \"$OUTFILE\" \"$FINAL_URL\""
+    fi
+    exit $?
+fi
+
+# For POST, HEAD, PUT, DELETE, or -i, use raw socket via nc
+url_no_proto="${URL#http://}"
+url_no_proto="${url_no_proto#https://}"
+hostport="${url_no_proto%%/*}"
+if [ "$hostport" = "$url_no_proto" ]; then
+    path="/"
+else
+    path="/${url_no_proto#*/}"
+fi
+
+case "$hostport" in
+    *:*)
+        host="${hostport%:*}"
+        port="${hostport#*:}"
+        ;;
+    *)
+        host="$hostport"
+        port=80
+        ;;
+esac
+
+[ "$VERBOSE" -eq 1 ] && echo "* Connecting to $host port $port..." >&2
+
+# Build Basic Auth header if requested
+AUTH_HDR=""
+if [ -n "$AUTH" ]; then
+    b64_str=$(b64_encode "$AUTH")
+    AUTH_HDR="Authorization: Basic $b64_str\r\n"
+fi
+
+# Default Content-Type for POST/PUT if data present
+if [ -n "$DATA" ] && [ -z "$CONTENT_TYPE" ]; then
+    CONTENT_TYPE="application/x-www-form-urlencoded"
+fi
+
+CLEN_HDR=""
+if [ -n "$DATA" ]; then
+    clen=$(printf "%s" "$DATA" | wc -c | tr -d ' ')
+    CLEN_HDR="Content-Length: $clen\r\n"
+fi
+
+CTYPE_HDR=""
+if [ -n "$CONTENT_TYPE" ]; then
+    CTYPE_HDR="Content-Type: $CONTENT_TYPE\r\n"
+fi
+
+# Execute HTTP request over netcat
+do_request() {
+    (
+        printf "%s %s HTTP/1.0\r\n" "$METHOD" "$path"
+        printf "Host: %s\r\n" "$host"
+        printf "User-Agent: %s\r\n" "$USER_AGENT"
+        printf "Accept: */*\r\n"
+        printf "Connection: close\r\n"
+        [ -n "$AUTH_HDR" ] && printf "%b" "$AUTH_HDR"
+        [ -n "$CLEN_HDR" ] && printf "%b" "$CLEN_HDR"
+        [ -n "$CTYPE_HDR" ] && printf "%b" "$CTYPE_HDR"
+        [ -n "$CUSTOM_HEADERS" ] && printf "%b" "$CUSTOM_HEADERS"
+        printf "\r\n"
+        [ -n "$DATA" ] && printf "%s" "$DATA"
+    ) | nc "$host" "$port"
+}
+
+if [ "$HEAD_ONLY" -eq 1 ]; then
+    # Print headers only
+    if [ "$OUTFILE" = "-" ]; then
+        do_request | sed '/^\r*$/q'
+    else
+        do_request | sed '/^\r*$/q' > "$OUTFILE"
+    fi
+elif [ "$INCLUDE_HDR" -eq 1 ]; then
+    # Print headers + body
+    if [ "$OUTFILE" = "-" ]; then
+        do_request
+    else
+        do_request > "$OUTFILE"
+    fi
+else
+    # Body only
+    if [ "$OUTFILE" = "-" ]; then
+        do_request | sed '1,/^\r*$/d'
+    else
+        do_request | sed '1,/^\r*$/d' > "$OUTFILE"
+    fi
+fi

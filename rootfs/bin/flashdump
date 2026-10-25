@@ -1,0 +1,85 @@
+#!/bin/sh
+# ============================================================================
+# WAP610N Flash Partition Dumper
+# Partition layout:
+#   mtdblock1: U-Boot Bootloader       (0x10000000, 128 KB)
+#   mtdblock3: U-Boot Env / NVRAM      (0x10020000, 64 KB)
+#   mtdblock2: Kernel + RootFS Ramdisk (0x10040000, 3.625 MB)
+#   mtdblock4: ConfigFS Runtime JFFS2  (0x103E0000, 128 KB)
+#   mtd0     : Complete Physical Flash (0x10000000, 4.0 MB)
+# ============================================================================
+
+PART="$1"
+OUTFILE="$2"
+
+usage() {
+    echo "Usage: flashdump <partition> [output_file]"
+    echo ""
+    echo "Partitions:"
+    echo "  kernel | firmware  - Kernel + RootFS ramdisk (/dev/mtdblock2, ~3.625 MB)"
+    echo "  nvram  | env       - U-Boot environment variables (/dev/mtdblock3, 64 KB)"
+    echo "  bootloader | uboot - U-Boot 1.1.4 bootloader (/dev/mtdblock1, 128 KB)"
+    echo "  configfs | jffs2   - Runtime persistent configuration (/dev/mtdblock4, 128 KB)"
+    echo "  full | all         - Entire physical 4 MB flash chip (/dev/mtd0)"
+    echo ""
+    echo "Example:"
+    echo "  flashdump kernel /tmp/bootpImage.dump"
+    echo "  flashdump nvram /tmp/nvram.dump"
+    echo "  flashdump full /tmp/wap610n_full_4mb.bin"
+    exit 1
+}
+
+[ -z "$PART" ] && usage
+
+case "$PART" in
+    kernel|firmware|fw)
+        DEV="/dev/mtdblock2"
+        DEF_OUT="/tmp/wap610n_firmware.bin"
+        ;;
+    nvram|env)
+        DEV="/dev/mtdblock3"
+        DEF_OUT="/tmp/wap610n_nvram.bin"
+        ;;
+    bootloader|uboot|boot)
+        DEV="/dev/mtdblock1"
+        DEF_OUT="/tmp/wap610n_uboot.bin"
+        ;;
+    configfs|jffs2|config)
+        DEV="/dev/mtdblock4"
+        DEF_OUT="/tmp/wap610n_configfs.bin"
+        ;;
+    full|all|mtd0)
+        if [ -e "/dev/mtd0" ]; then
+            DEV="/dev/mtd0"
+        elif [ -e "/dev/mtdblock0" ]; then
+            DEV="/dev/mtdblock0"
+        else
+            DEV="/dev/mtdblock/0"
+        fi
+        DEF_OUT="/tmp/wap610n_full_4mb.bin"
+        ;;
+    *)
+        echo "Error: Unknown partition '$PART'"
+        usage
+        ;;
+esac
+
+TARGET="${OUTFILE:-$DEF_OUT}"
+
+if [ ! -e "$DEV" ]; then
+    echo "Error: Device node $DEV not found! Check /proc/mtd:"
+    cat /proc/mtd 2>/dev/null
+    exit 1
+fi
+
+echo "[+] Dumping $DEV to $TARGET..."
+cat "$DEV" > "$TARGET"
+ret=$?
+
+if [ $ret -eq 0 ] && [ -f "$TARGET" ]; then
+    sz=$(ls -lh "$TARGET" 2>/dev/null | awk '{print $5}')
+    echo "[✓] Flash dump completed successfully ($sz written to $TARGET)"
+else
+    echo "[✗] Flash dump failed with exit code $ret"
+    exit 1
+fi

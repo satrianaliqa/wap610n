@@ -126,7 +126,7 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
-		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh simpdiff; do
+		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh simpdiff sysmon curl help json nettest flashdump; do
 			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
 		done
 		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
@@ -134,6 +134,8 @@ EOF
 		[ -f "rootfs-star/etc/inittab" ] && cp -af "rootfs-star/etc/inittab" "${ROOTFS_DIR}/etc/"
 		[ -f "rootfs-star/etc/sysctl.conf" ] && cp -af "rootfs-star/etc/sysctl.conf" "${ROOTFS_DIR}/etc/"
 		[ -f "rootfs-star/etc/mtlk_init_start.sh" ] && cp -af "rootfs-star/etc/mtlk_init_start.sh" "${ROOTFS_DIR}/etc/"
+		[ -f "rootfs-star/etc/profile" ] && cp -af "rootfs-star/etc/profile" "${ROOTFS_DIR}/etc/"
+		[ -f "rootfs-star/etc/shadow" ] && cp -af "rootfs-star/etc/shadow" "${ROOTFS_DIR}/etc/"
 	fi
 fi
 

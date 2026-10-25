@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/tr/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/tr/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><!-- InstanceBegin template="/Templates/setup.dwt" codeOutsideHTMLIsLocked="false" -->
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -294,18 +294,6 @@ function page_load() {
 						<td colspan="2" class="blankContent">
       <select name="langSelection" id="langSelection">
 		<option value="EN" selected="selected">English</option>
-		<option value="FR">Fran&#231;ais</option>
-		<option value="DE">Deutsch</option>
-		<option value="IT">Italiano</option>
-		<option value="NL">Nederlands</option>
-		<option value="PT">Portugu&#234;s</option>
-		<option value="CA">Français Canadien</option>
-		<option value="ES">Espa&#241;ol</option>
-		<option value="SE">Svenska</option>
-		<option value="DK">Dansk</option>
-		<option value="SA">العربية</option>
-		<option value="PL">polski</option>
-		<option value="TR">Türk</option>
       </select>
 						</td>
 					</tr>

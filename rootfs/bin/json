@@ -1,0 +1,42 @@
+#!/bin/sh
+# ============================================================================
+# Lightweight POSIX JSON extractor for WAP610N / embedded Linux
+# Usage: json [file] <key>  OR  cat data.json | json <key>
+# ============================================================================
+
+KEY=""
+FILE=""
+
+if [ $# -eq 1 ]; then
+    KEY="$1"
+elif [ $# -ge 2 ]; then
+    FILE="$1"
+    KEY="$2"
+else
+    echo "Usage: json [file] <key>"
+    echo "       echo '{\"ip\":\"1.2.3.4\"}' | json ip"
+    exit 1
+fi
+
+do_query() {
+    awk -v target="$KEY" '
+    {
+        str = $0
+        pat = "\"" target "\"[[:space:]]*:[[:space:]]*(\"[^\"]*\"|[^,}\]]*)"
+        while (match(str, pat)) {
+            val = substr(str, RSTART, RLENGTH)
+            sub(/^[^:]*:[[:space:]]*/, "", val)
+            sub(/^"/, "", val)
+            sub(/"$/, "", val)
+            gsub(/[[:space:]]+$/, "", val)
+            print val
+            str = substr(str, RSTART + RLENGTH)
+        }
+    }'
+}
+
+if [ -n "$FILE" ]; then
+    do_query < "$FILE"
+else
+    do_query
+fi
