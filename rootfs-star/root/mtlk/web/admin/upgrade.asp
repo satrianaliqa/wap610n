@@ -76,10 +76,10 @@ function blinkingWarningMSG(displayMsg)
 
 function makeRequest(url, content) {
 	http_request = false;
-	if (window.XMLHttpRequest) { // Mozilla, Safari,...
+	if (window.XMLHttpRequest) { // Mozilla, Safari, Chrome,...
 		http_request = new XMLHttpRequest();
 		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+			http_request.overrideMimeType('text/plain');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
@@ -102,9 +102,9 @@ function makeRequest(url, content) {
 function alertContents() {
 	if (http_request.readyState == 4) {
 		if (http_request.status == 200) {
-			reWirteList( http_request.responseText);
+			reWirteList(http_request.responseText);
 		} else {
-			alert("<!--#tr id=\"adm.fu.alert.2\" -->There was a problem with the request.<!--#endtr-->");
+			stopToWait = true;
 		}
 	}
 }
@@ -113,41 +113,51 @@ function reWirteList(str)
 {
 	stopToWait = true;
 	
-	docTemp = str;
-	index = docTemp.indexOf(',');
-	burn_state = docTemp.substr(0, index);
-	burn_progress = docTemp.substr(index+1);
+	var docTemp = str;
+	if (!docTemp) return;
+	var index = docTemp.indexOf(',');
+	if (index == -1) return;
+
+	burn_state = docTemp.substr(0, index) * 1;
+	burn_progress = docTemp.substr(index+1) * 1;
 	
-	if ((burn_progress == -1)) {
-		alert("<!--#tr id=\"adm.fu.alert.3\" -->This image file is incorrect.<!--#endtr-->");
+	if ((burn_progress == -1) || (burn_state == 2)) {
+		alert("<!--#tr id=\"adm.fu.alert.3\" -->This image file is incorrect or flash write failed.<!--#endtr-->");
 		stopProcess = true;
+		document.getElementById("waitPad").style.display = "none";
 	}
-	else if (burn_state*1 == 4) {
-		document.getElementById("waitPad").style.display="block";
-	}
-	else if (burn_state*1 == 5) {
+	else if (burn_state == 4) {
 		document.getElementById("waitPad").style.display="block";
 		displayAllField("block");
-		percent = burn_progress*1;
+		document.getElementById("progressValue").innerHTML = "Checking image CRC...";
+	}
+	else if ((burn_state == 5) || (burn_state == 6)) {
+		document.getElementById("waitPad").style.display="block";
+		displayAllField("block");
+		var percent = Math.min(100, Math.max(0, Math.round(burn_progress)));
 
 		document.getElementById("progress").style.backgroundColor = "blue";
-		document.getElementById("progress").style.width = Math.round(percent) + "%";
-		document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";
+		document.getElementById("progress").style.width = percent + "%";
+		document.getElementById("progressValue").innerHTML = (burn_state == 6 ? "Verifying: " : "Flashing: ") + percent + "%";
 	}
-	else if ((burn_state*1 == 1) && (burn_progress == 100)) {
+	else if ((burn_state == 1) && (burn_progress == 100)) {
 		stopProcess = true;
-		location.href = "/reboot_page.asp";
+		document.getElementById("progress").style.width = "100%";
+		document.getElementById("progressValue").innerHTML = "Complete! Rebooting...";
+		setTimeout(function() {
+			location.href = "/reboot_page.asp";
+		}, 1000);
 	}
 }
 
 function updateBurnProgress(){
-	if (stopToWait == true) {
-		if (!stopProcess) {
-			makeRequest("/goform/updateBurnProgress", "something");
-			stopToWait = false;
-		}
+	if (stopToWait == true && !stopProcess) {
+		makeRequest("/goform/updateBurnProgress", "something");
+		stopToWait = false;
 	}
-	setTimeout("updateBurnProgress()", 1500);
+	if (!stopProcess) {
+		setTimeout("updateBurnProgress()", 1500);
+	}
 }
 
 function reloadMe(){
@@ -166,15 +176,21 @@ function displayAllField(value)
 
 function checkFW()
 {
-	var applyValue = true;	
-	if (document.getElementById("fwFile").value == "")
-		applyValue = false;
-
-	if (applyValue) {
-		stopToWait = true;
-		updateBurnProgress();
-		document.upload_frm.submit();
+	var fileEl = document.getElementById("fwFile");
+	if (!fileEl || fileEl.value == "") {
+		alert("Please select a firmware image file (.bin or bootpImage) to upgrade.");
+		return;
 	}
+
+	stopToWait = true;
+	stopProcess = false;
+	document.getElementById("waitPad").style.display = "block";
+	displayAllField("block");
+	document.getElementById("progress").style.width = "0%";
+	document.getElementById("progressValue").innerHTML = "Uploading image...";
+
+	document.upload_frm.submit();
+	setTimeout("updateBurnProgress()", 1500);
 }
 
 function submitReboot() {

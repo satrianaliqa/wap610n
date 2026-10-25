@@ -128,10 +128,6 @@ void *MT_BurnAndVerifyImage(void* data)
 		}
 	}
 
-	gMTBurnParams.precentComplete = 100;
-	return 1;
-
-
 	// Burning
 	gMTBurnParams.burnState = burning_e;
 	gMTBurnParams.precentComplete = 0;
@@ -176,40 +172,6 @@ void *MT_BurnAndVerifyImage(void* data)
 				numLeft -= numWrite;
 				debug_printf("MT_BurnAndVerifyImage: locWrite=%d, numLeft=%d\n", locWrite, numLeft);
 				gMTBurnParams.precentComplete = locWrite*100/gMTBurnParams.imageSize;
-
-				//////////////////////////////////////////////////////////////////////////
-				//////////////////////////////////////////////////////////////////////////
-				chunkSize += numWrite;
-				if (chunkSize >= (FILE_SINGLE_WRITE)) 
-				{
-					debug_printf("MT_BurnAndVerifyImage: into chunkSize >= (FILE_SINGLE_WRITE)\n");
-					chunkSize = 0;
-
-					// close the file to allow it to flush all data.
-					if (fclose(fp) != 0) {
-						sprintf(gMTBurnParams.errorMessage,T("Error : File close failed  (reopen for flushing).<br> errno=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), errno, locWrite, numLeft, numWrite, gMTBurnParams.imageSize);             
-						gMTBurnParams.precentComplete = -1;
-						gMTBurnParams.burnState = error_e;
-						printf("Error can not close file  (reopen for flushing)\n");
-						break;
-					}
-
-					fp = NULL;
-					
-					// reopen the file and seek to the last location to continue writing the next chunk.
-					if ((fp = fopen(gMTBurnParams.fName, "w+b")) == NULL)
-					{
-						sprintf(gMTBurnParams.errorMessage,T("Error : Flash File could not be Opened (reopen for flushing)"));
-						gMTBurnParams.precentComplete = -1;
-						gMTBurnParams.burnState = error_e;
-						printf("can not open file  (reopen for flushing)\n");
-						break;
-					}
-					
-					fseek(fp,locWrite,SEEK_SET);
-				}
-				//////////////////////////////////////////////////////////////////////////
-				//////////////////////////////////////////////////////////////////////////
 
 				debug_printf("MT_BurnAndVerifyImage: Next while loop. numLeft > 0(numLef=%d)\n", numLeft);
 			}
@@ -988,6 +950,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 	sprintf(redirectPage,T("%s"),statusPageName);
 	//printf("target file '%s' redirct to '%s' (%s)\n",targetFile,redirectPage,statusPageName);
 	MT_WriteRedirectScript(wp,redirectPage);
+    wp->flags &= ~WEBS_KEEP_ALIVE;
     websFooter(wp);
     websDone(wp, 200);
 }
