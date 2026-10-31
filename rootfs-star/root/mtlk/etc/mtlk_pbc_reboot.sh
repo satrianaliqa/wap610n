@@ -21,9 +21,15 @@ if [ -n "$RESET_GPIO" ]; then
 				echo "Reset button pressed! Restoring factory defaults..." > /dev/console
 				echo 2 > /dev/gpio2 2>/dev/null || true
 				if [ -x /root/mtlk/etc/mtlk_restore_defaults.sh ]; then
-					/root/mtlk/etc/mtlk_restore_defaults.sh 1 1
+					if ! /root/mtlk/etc/mtlk_restore_defaults.sh 1 1; then
+						echo "Factory reset failed; configuration was not rebooted." > /dev/console
+						sleep 2
+						continue
+					fi
 				else
-					reboot
+					echo "Factory reset utility is missing; configuration was not rebooted." > /dev/console
+					sleep 2
+					continue
 				fi
 				break
 			fi

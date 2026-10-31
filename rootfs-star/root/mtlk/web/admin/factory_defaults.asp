@@ -58,17 +58,6 @@ function restoreToAP() {
 	}
 }
 
-function restoreToSTA() {
-	if (confirm("<!--#tr id=\"adm.fd.confirm.1\" -->Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.<!--#endtr-->")){
-		document.getElementById("restoreTag").value = "STA";
-		//totalWaitTime = 45; //second
-		//wait_page();
-		document.getElementById("waitPad").style.display="block";
-		//resetToDefault.submit();
-		document.resetToDefault.submit();
-	}
-}
-
 function checkValue() {
 	//management.submit();
 	return false;

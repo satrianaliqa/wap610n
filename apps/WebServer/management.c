@@ -21,14 +21,7 @@ void childFinishAndExit(void)
 
 void resetToDefault(webs_t wp, char_t *path, char_t *query)
 {
-	char filePath[32];
-	char line[64];
-	char projectName[16];
 	char_t *restoreTag;
-	FILE *fp;
-	char *p;
-	char *start;
-	char *end;
 	pid_t pid;
 
 	if (checkLoadDefault() == 1) {
@@ -36,50 +29,30 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		return;
 	}
 
-	strcpy(filePath, "/root/mtlk/web/fw_version.txt");
-	memset(projectName, 0, sizeof(projectName));
 	restoreTag = websGetVar(wp, T("restoreTag"), T(""));
 
-	fp = fopen(filePath, "r");
-	if (fp == NULL) {
-		printf("Can't open %s file\n", filePath);
+	if (strcmp(restoreTag, "AP") != 0) {
+		websError(wp, 400, T("Invalid restore mode"));
 		return;
-	}
-
-	while (fgets(line, 64, fp) != NULL) {
-		p = strstr(line, "ProjectName=");
-		if (p != NULL) {
-			start = p + 13;
-			end = strchr(p + 14, '"');
-			if (end != NULL) {
-				memset(projectName, 0, 16);
-				strncpy(projectName, start, end - start);
-			}
-		}
-	}
-	fclose(fp);
-
-	if (strcmp(restoreTag, "AP") == 0) {
-		system("echo killconfig > /dev/mtdblock4");
-	} else if (strcmp(restoreTag, "STA") == 0) {
-		if (strcmp(projectName, "WET610N") == 0 || strcmp(projectName, "WAP610N") == 0) {
-			printf("ProjectName:%s\n", projectName);
-		} else {
-			printf("ProjectName:%s\n", "NULL");
-		}
-		system("echo killconfig > /dev/mtdblock4");
 	}
 
 	waitOtherProcess = 1;
 	pid = fork();
-	if (pid != 0) {
+	if (pid < 0) {
+		waitOtherProcess = 0;
+		websError(wp, 500, T("Unable to start factory reset"));
+		return;
+	} else if (pid != 0) {
 		debug_printf("resetToDefault: 1. pid=%d\n", getpid());
 		websRedirect(wp, T("/reboot_page.asp"));
 		return;
 	} else {
 		debug_printf("resetToDefault: 2. pid=%d\n", getpid());
 		waitRedirectPage();
-		system("/root/mtlk/etc/default_settings.sh > /dev/null 2>&1");
+		if (system("/root/mtlk/etc/mtlk_restore_defaults.sh 1 1 > /dev/null 2>&1") != 0) {
+			debug_printf("resetToDefault: factory reset failed\n");
+			_exit(1);
+		}
 		system("echo 2 > /dev/gpio2");
 		system("sync");
 		system("sleep 3 ; reboot&");
@@ -107,7 +80,11 @@ void management(webs_t wp, char_t *path, char_t *query)
 	if (rebootTag != NULL && strcmp(rebootTag, "true") == 0) {
 		waitOtherProcess = 1;
 		pid = fork();
-		if (pid != 0) {
+		if (pid < 0) {
+			waitOtherProcess = 0;
+			websError(wp, 500, T("Unable to start reboot"));
+			return;
+		} else if (pid != 0) {
 			debug_printf("management(reboot): 1. pid=%d\n", getpid());
 			websRedirect(wp, T("/reboot_page.asp"));
 			return;
@@ -123,7 +100,11 @@ void management(webs_t wp, char_t *path, char_t *query)
 		saveOldWebPid(getpid(), "management.asp");
 		waitOtherProcess = 1;
 		pid = fork();
-		if (pid != 0) {
+		if (pid < 0) {
+			waitOtherProcess = 0;
+			websError(wp, 500, T("Unable to save settings"));
+			return;
+		} else if (pid != 0) {
 			debug_printf("management(save): 1. pid=%d\n", getpid());
 			websRedirect(wp, T("/wait_page.asp"));
 			return;
