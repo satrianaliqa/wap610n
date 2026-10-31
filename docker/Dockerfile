@@ -1,12 +1,20 @@
-FROM docker.io/i386/debian:8
+FROM --platform=linux/386 docker.io/i386/debian:8
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Configure archive repositories for Debian 8 Jessie
-RUN echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie main contrib non-free" > /etc/apt/sources.list && \
+# Configure archive repositories for Debian 8 Jessie (with DNS & IPv4 fallbacks for BuildKit/CI)
+RUN if ! getent ahostsv4 archive.debian.org >/dev/null 2>&1; then \
+        printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf; \
+    fi && \
+    if ! getent ahostsv4 archive.debian.org >/dev/null 2>&1; then \
+        echo "151.101.194.132 archive.debian.org" >> /etc/hosts; \
+    fi && \
+    echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie main contrib non-free" > /etc/apt/sources.list && \
     echo "deb [check-valid-until=no] http://archive.debian.org/debian-security jessie/updates main contrib non-free" >> /etc/apt/sources.list && \
     echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid-until && \
     echo 'Acquire::AllowInsecureRepositories "true";' > /etc/apt/apt.conf.d/99allow-insecure && \
+    echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4 && \
+    echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/99retries && \
     apt-get update && \
     apt-get install -y --force-yes \
         build-essential \

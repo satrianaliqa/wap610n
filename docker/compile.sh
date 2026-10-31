@@ -20,7 +20,7 @@ fi
 echo "=========================================================="
 echo " 🔨 Building wap610n-builder container image..."
 echo "=========================================================="
-$CONTAINER_CMD build -t wap610n-builder "$DIR"
+DOCKER_BUILDKIT=0 $CONTAINER_CMD build --network=host -t wap610n-builder "$DIR"
 
 # Validate prerequisites
 echo "Validating prerequisites..."
