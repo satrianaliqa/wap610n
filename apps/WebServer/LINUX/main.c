@@ -344,7 +344,10 @@ static int initWebs()
  */
 	//Jacky.Yang 27-Nov-2008
 	//websOpenServer(port, retries);
-	websOpenServer(websPort, retries);
+	if (websOpenServer(websPort, retries) < 0) {
+		printf("Failed to open HTTP listen socket.\n");
+		return -1;
+	}
 
 /*
  * 	First create the URL handlers. Note: handlers are called in sorted order
