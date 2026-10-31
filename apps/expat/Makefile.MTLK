@@ -29,9 +29,19 @@ CLEAN:
 
 INSTALL: FORCE
 	install -m 755 -d  $(E_DEST)/lib/
-	install -m 755 libexpat.so* $(E_DEST)/lib/
+	@if [ -f .libs/libexpat.so.1.5.2 ]; then \
+		install -m 755 .libs/libexpat.so.1.5.2 $(E_DEST)/lib/libexpat.so.1.5.2; \
+		$(E_STRIP) $(E_DEST)/lib/libexpat.so.1.5.2 2>/dev/null || true; \
+		ln -sf libexpat.so.1.5.2 $(E_DEST)/lib/libexpat.so.1; \
+		ln -sf libexpat.so.1.5.2 $(E_DEST)/lib/libexpat.so; \
+	elif [ -d .libs ]; then \
+		cp -d .libs/libexpat.so* $(E_DEST)/lib/; \
+	elif [ -f libexpat.so ]; then \
+		cp -d libexpat.so* $(E_DEST)/lib/ 2>/dev/null || cp -a libexpat.so* $(E_DEST)/lib/; \
+	fi
 
 STRIP:
+	-$(E_STRIP) $(E_DEST)/lib/libexpat.so.1.5.2
 	-$(E_STRIP) $(E_DEST)/lib/libexpat.so
 	-$(E_STRIP) $(E_DEST)/lib/libexpat.so.0.*
 

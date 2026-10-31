@@ -20,7 +20,7 @@ CONF:
 	fi
 
 COMP: CONF
-	$(MAKE) MULTI=1 PROGRAMS="dropbear dropbearkey scp dbclient"
+	$(MAKE) MULTI=1 PROGRAMS="dropbear dbclient dropbearkey dropbearconvert"
 
 CLEAN:
 	@if [ -f Makefile ]; then $(MAKE) clean; fi
@@ -29,7 +29,7 @@ INSTALL: FORCE
 	install -m 755 -D dropbearmulti $(E_DEST)/usr/sbin/dropbearmulti
 	ln -sf dropbearmulti $(E_DEST)/usr/sbin/dropbear
 	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/dropbearkey
-	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/scp
+	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/dropbearconvert
 	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/dbclient
 	ln -sf ../sbin/dropbearmulti $(E_DEST)/usr/bin/ssh
 	mkdir -p $(E_DEST)/etc/dropbear

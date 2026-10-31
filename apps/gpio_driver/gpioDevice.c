@@ -368,6 +368,9 @@ void led_pulse(unsigned long lednum)
 	int ledStatus;
 	led_pattern_t* currPattern;
 
+	if (pulse_pattern < 0 || pulse_pattern >= NUM_PATTERNS)
+		return;
+
 	// If this is the first call to led_pulse, initialize the used pattern structure
 	if (ledPatternsUsed[lednum].pattern == NULL) {
 		///printk("Initializing pattern\n");
@@ -421,6 +424,43 @@ void led_pulse(unsigned long lednum)
 }
 
 
+static int string_to_int(const char *buf)
+{
+	const char *p;
+	long val;
+	int neg;
+
+	p = buf;
+	val = 0;
+	neg = 0;
+
+	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+		p++;
+
+	if (strnicmp(p, "green", 5) == 0 || strnicmp(p, "on", 2) == 0)
+		return GPIO_ON;
+	if (strnicmp(p, "off", 3) == 0)
+		return GPIO_OFF;
+
+	if (*p == '-') {
+		neg = 1;
+		p++;
+	} else if (*p == '+') {
+		p++;
+	}
+
+	while (*p >= '0' && *p <= '9') {
+		if (val > (LONG_MAX - (*p - '0')) / 10) {
+			val = LONG_MAX;
+			break;
+		}
+		val = val * 10 + (*p - '0');
+		p++;
+	}
+
+	return neg ? (int)(-val) : (int)val;
+}
+
 /********************************************
  * GPIO Write: turn a GPIO on/off or flash it
  * The GPIO number is passed as the device number,
@@ -446,7 +486,7 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 	kbuf[count] = '\0';
 
 	// Parse passed argument
-	gpioval = simple_strtoul(kbuf, NULL, 10);
+	gpioval = string_to_int(kbuf);
 	// First disable any pending timer, to stop traffic simulation
 	if (timer_pending(pulse_timers+gpio))
 	{
@@ -469,7 +509,7 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 	} else  {
 		/* pulse_pattern is the index to the LED pattern (after subtracting 2) */
 		pulse_pattern = gpioval - 2;
-		if (pulse_pattern >= NUM_PATTERNS) {
+		if (pulse_pattern < 0 || pulse_pattern >= NUM_PATTERNS) {
 			return (-EINVAL);
 		}
 		led_pulse(gpio); 
@@ -490,11 +530,7 @@ void gpio_cleanup(void)
 {
 	int i, gpio;
 	for (i = 0; i < numOutputLeds && i < MAX_GPIOS; i++) {
-		/* disable any pending timer */
-		//if (timer_pending(pulse_timers+outputLeds[i]))
-		//{
-			del_timer(pulse_timers+outputLeds[i]);
-		//}
+		del_timer_sync(pulse_timers + outputLeds[i]);
 
 		/* turn all leds off */
 		gpio_set(outputLeds[i], GPIO_OFF);
@@ -503,10 +539,8 @@ void gpio_cleanup(void)
 	/* Release the blocked reads, timers and interrupts */
 	for (i = 0; i < numPushButtons && i < MAX_GPIOS; i++) {
 		gpio = pushButtons[i];
-		pbc_flag[gpio]=0; 
-		if (timer_pending(pbc_timer + gpio)) {
-			del_timer(pbc_timer + gpio);
-		}
+		pbc_flag[gpio] = 0; 
+		del_timer_sync(pbc_timer + gpio);
 		str9100_gpio_clear_intr(gpio);
 	}
 	wake_up_interruptible(&wq);
@@ -549,16 +583,14 @@ static int __init gpio_init_module(void)
  ********************************************/
 static void __exit gpio_cleanup_module(void)
 {
-	/* disable any pending timer */
+	/* Unregister the device first to prevent new requests */
+	if (unregister_chrdev(major > 0 ? major : DEVICE_NUM, MODULE_NAME) < 0) {
+		printk(KERN_ERR "Can't unregister %s\n", MODULE_NAME);
+	}
 
-	/* Do GPIOs cleanup*/
+	/* Do GPIOs cleanup and sync delete all timers */
 	gpio_cleanup();
 
-	/* Unregister the device*/	
-	if (unregister_chrdev(DEVICE_NUM, MODULE_NAME) < 0) {
-		printk(KERN_ERR "Can't unregister %s", MODULE_NAME);
-		return ;
-	}
 	printk("<1>Successfully removed gpio driver\n");
 }
 

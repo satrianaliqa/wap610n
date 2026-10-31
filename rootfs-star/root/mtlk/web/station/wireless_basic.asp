@@ -167,10 +167,13 @@ function selectSecurityMode(mode) {
 	var modeName = document.getElementById("securityMode").options[selectedIndex].id;
 
 	if (mode*1 == 1) {
-	
+		if (document.getElementById("WPAPersonalMode"))
+			document.getElementById("WPAPersonalMode").value = "";
 	}
 	else if (mode*1 == 2) {
 		WEPDisplay("block");
+		if (document.getElementById("WPAPersonalMode"))
+			document.getElementById("WPAPersonalMode").value = "";
 	}
 	else if (mode*1 == 3) {
 		WPAPersonalDisplay("block");
@@ -178,17 +181,25 @@ function selectSecurityMode(mode) {
 		{
 			selectWPAMode(1);
 			objectDisplay("WPAPersonalEncryptionField", "none");
+			if (document.getElementById("WPAPersonalMode"))
+				document.getElementById("WPAPersonalMode").value = "1";
 		}
 		else if (modeName == "wpa2")
 		{
 			selectWPAMode(2);
+			if (document.getElementById("WPAPersonalMode")) {
+				if (document.getElementById("WPAPersonalEncryption") && document.getElementById("WPAPersonalEncryption").value == "2")
+					document.getElementById("WPAPersonalMode").value = "3";
+				else
+					document.getElementById("WPAPersonalMode").value = "2";
+			}
 		}
 	}
 }
 
 function selectRFBand() {
 	var chElem = document.getElementById("channel");
-	if (!chElem) return;
+	if (!chElem || !chElem.options) return;
 	var value = document.getElementById("frequencyBand") ? document.getElementById("frequencyBand").value : "1";
 	var origIndex = chElem.selectedIndex;
 	removeAllOption("channel");
@@ -222,7 +233,7 @@ function selectRFBand() {
 
 function selectMode(mode){
 	//selectRFBand(mode);
-	if (mode*1 == 0) //STA mode
+	if (mode*1 == 0 || mode*1 == 2) // Both STA and AP mode
 	{
 		WEPDisplay("block");
 		objectDisplay("WPAPSKField", "block");
@@ -237,6 +248,8 @@ function selectMode(mode){
 		var WEPKeyLength = "<% getParam(1, "NonProc_WepKeyLength"); %>";
 		var WEPAuth = "<% getParam(1, "NonProc_Authentication"); %>";
 		var WPAPersonalMode = "<% getParam(1, "NonProc_WPA_Personal_Mode"); %>";
+		if (WPAPersonalMode == "" || WPAPersonalMode == "NULL")
+			WPAPersonalMode = "<% getParam("wlan0", "NonProc_WPAPersonalMode"); %>";
 		var WPAPSK = "<% getParam(1, "NonProc_WPA_Personal_PSK"); %>";
 		
 		/*docTemp = document.getElementById("securityMode");
@@ -259,23 +272,37 @@ function selectMode(mode){
 			selectSecurityMode(securityMode*1);
 		}
 		else {
-			if (WPAPersonalMode == 1) //WPA
+			if (WPAPersonalMode == 1 || WPAPersonalMode == "1" || WPAPersonalMode == "WPA - Personal" || WPAPersonalMode == "WPA-Personal") //WPA
 			{
 				document.getElementById("securityMode").options[2].selected = true;
 				selectSecurityMode(securityMode*1);
 				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
+				if (document.getElementById("WPAPersonalMode"))
+					document.getElementById("WPAPersonalMode").value = "1";
 			}
-			else if (WPAPersonalMode == 2) //WPA2
+			else if (WPAPersonalMode == 2 || WPAPersonalMode == "2" || WPAPersonalMode == "WPA2 - Personal" || WPAPersonalMode == "WPA2-Personal") //WPA2
 			{
 				document.getElementById("securityMode").options[3].selected = true;
 				selectSecurityMode(securityMode*1);
 				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
+				if (document.getElementById("WPAPersonalMode"))
+					document.getElementById("WPAPersonalMode").value = "2";
 			}
-			else if (WPAPersonalMode == 3) //WPA2 Mixed
+			else if (WPAPersonalMode == 3 || WPAPersonalMode == "3" || WPAPersonalMode == "WPA2 Mixed") //WPA2 Mixed
 			{
 				document.getElementById("securityMode").options[3].selected = true;
 				selectSecurityMode(securityMode*1);
 				document.getElementById("WPAPersonalEncryption").options[1].selected = true;
+				if (document.getElementById("WPAPersonalMode"))
+					document.getElementById("WPAPersonalMode").value = "3";
+			}
+			else
+			{
+				document.getElementById("securityMode").options[3].selected = true;
+				selectSecurityMode(securityMode*1);
+				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
+				if (document.getElementById("WPAPersonalMode"))
+					document.getElementById("WPAPersonalMode").value = "2";
 			}
 		}
 		//alert(document.getElementById("securityMode").selectedIndex);
@@ -480,8 +507,46 @@ function checkValue() {
 		if (applyValue)
 		{
 			docTemp = document.getElementById("display_WPAPSK").value;
-			if (checkWPAPSK(docTemp.length == 64))
-				document.getElementById("wpaToHex").value = "hex";
+			if (docTemp.length == 64)
+			{
+				if (checkWPAPSK(docTemp))
+				{
+					if (document.getElementById("wpaPskFormat"))
+						document.getElementById("wpaPskFormat").value = "0";
+					document.getElementById("wpaToHex").value = "hex";
+				}
+				else
+				{
+					alert("<!--#tr id=\"wb.alert.8\" -->Pre-shared key should be 8~63 ASCII characters or 64 hexadecimal digits.<!--#endtr-->");
+					applyValue = false;
+				}
+			}
+			else if (docTemp.length >= 8 && docTemp.length <= 63)
+			{
+				if (document.getElementById("wpaPskFormat"))
+					document.getElementById("wpaPskFormat").value = "3";
+				document.getElementById("wpaToHex").value = "ascii";
+			}
+			else
+			{
+				alert("<!--#tr id=\"wb.alert.8\" -->Pre-shared key should be 8~63 ASCII characters or 64 hexadecimal digits.<!--#endtr-->");
+				applyValue = false;
+			}
+		}
+		if (applyValue)
+		{
+			var selectedIndex = document.getElementById("securityMode").selectedIndex;
+			var modeName = document.getElementById("securityMode").options[selectedIndex].id;
+			if (document.getElementById("WPAPersonalMode")) {
+				if (modeName == "wpa")
+					document.getElementById("WPAPersonalMode").value = "1";
+				else if (modeName == "wpa2") {
+					if (document.getElementById("WPAPersonalEncryption") && document.getElementById("WPAPersonalEncryption").value == "2")
+						document.getElementById("WPAPersonalMode").value = "3";
+					else
+						document.getElementById("WPAPersonalMode").value = "2";
+				}
+			}
 		}
 	}
 
@@ -585,7 +650,7 @@ function page_load() {
 
 		if (mode*1 == 0 || mode*1 == 2) // Both STA and AP mode (WAP610N)
 		{
-			document.modeOption.nowMode.value = (mode*1 == 2) ? "apMode" : "stationMode";
+			document.modeOption.nowMode.value = "stationMode";
 			selectMode(mode*1);
 			removeAllOption("frequencyBand");
 			addNewOption("frequencyBand", "", "", "0", "5GHz");
@@ -760,6 +825,12 @@ function page_load() {
 						<td class="tdContent">
 							<input type="hidden" id="nowMode" name="nowMode" value="">
 							<input type="hidden" id="wpaToHex" name="wpaToHex" value="">
+							<input type="hidden" id="WPAPersonalMode" name="WPAPersonalMode" value="">
+							<input type="hidden" id="wpaPskFormat" name="wpaPskFormat" value="">
+							<input type="hidden" id="country" name="country" value="<% getParam(1, "Country"); %>">
+							<input type="hidden" id="channel" name="channel" value="<% getParam(1, "Channel"); %>">
+							<input type="hidden" id="channelBounding" name="channelBounding" value="<% getParam(1, "ChannelBonding"); %>">
+							<input type="hidden" id="upperLower" name="upperLower" value="<% getParam(1, "UpperLowerChannelBonding"); %>">
 							<select id="frequencyBand" name="frequencyBand" onchange="selectRFBand();">
 								<option id="5GHz" value="0">5 GHz (802.11a/n)</option>
 								<option id="2.4GHz" value="1">2.4 GHz (802.11b/g/n)</option>

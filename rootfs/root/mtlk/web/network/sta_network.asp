@@ -98,7 +98,7 @@ function checkValue() {
 	}
 	
 	if (document.getElementById("hostName").value.length > 32) {
-		alert("<!--#tr id="adm.w.alert.10" -->Host Name length can't bigger than 32 characters!<!--#endtr-->");
+		alert("<!--#tr id=\"adm.w.alert.10\" -->Host Name length can't bigger than 32 characters!<!--#endtr-->");
 		applyValue = false;
 	}
 	document.getElementById("lanIP").value = document.getElementById("lanIP_1").value + "." + document.getElementById("lanIP_2").value + "." + document.getElementById("lanIP_3").value + "." + document.getElementById("lanIP_4").value;

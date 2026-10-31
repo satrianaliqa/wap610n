@@ -19,10 +19,21 @@ then
 	nice -n 15 ./mtlk_ledman.sh &
 fi
 
-# Start the upnp Daemon once
-if ! pidof upnpd >/dev/null 2>&1; then
-	nice -n 18 upnpd &
-fi
+# Start the UPnP daemon once br0 interface is up and available
+(
+	count=0
+	while [ ! -d /sys/class/net/br0 ] && ! ifconfig br0 >/dev/null 2>&1 && [ "$count" -lt 15 ]; do
+		sleep 1
+		count=$((count + 1))
+	done
+	if ! pidof upnpd >/dev/null 2>&1; then
+		if [ -x ./upnpd ]; then
+			nice -n 18 ./upnpd br0 &
+		elif command -v upnpd >/dev/null 2>&1; then
+			nice -n 18 upnpd br0 &
+		fi
+	fi
+) &
 
 # Start Telnet and Dropbear SSH daemons in background for remote diagnostics
 if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then
@@ -47,18 +58,19 @@ if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
 	) &
 fi
 
-# Start the DHCP Client
-nice -n 18 /etc/udhcpc/dhcp.tcl startup &
+# Start the DHCP Server / Client
+DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 
-# Start the DHCP Server
-DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-if [ "$DHCPD_ENABLED" ]
-then
-	if [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]
-	then
-		./mtlk_init_dhcpd.sh 
-		nice -n 18 udhcpd /tmp/udhcpd.conf
-	fi
+if [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
+	# DHCP Client Mode: Obtain dynamic IP from upstream router
+	echo "Starting DHCP client (udhcpc)..." > /dev/console
+	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
+elif [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
+	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
+	echo "Starting DHCP server (udhcpd) for Access Point..." > /dev/console
+	./mtlk_init_dhcpd.sh
+	nice -n 18 udhcpd /tmp/udhcpd.conf &
 fi
 
 # Start the upnp Daemon

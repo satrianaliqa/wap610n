@@ -13,7 +13,7 @@ PART="$1"
 OUTFILE="$2"
 
 usage() {
-    echo "Usage: flashdump <partition> [output_file]"
+    echo "Usage: flashdump <partition> [output_file|-]"
     echo ""
     echo "Partitions:"
     echo "  kernel | firmware  - Kernel + RootFS ramdisk (/dev/mtdblock2, ~3.625 MB)"
@@ -22,10 +22,13 @@ usage() {
     echo "  configfs | jffs2   - Runtime persistent configuration (/dev/mtdblock4, 128 KB)"
     echo "  full | all         - Entire physical 4 MB flash chip (/dev/mtd0)"
     echo ""
-    echo "Example:"
-    echo "  flashdump kernel /tmp/bootpImage.dump"
+    echo "Streaming mode (zero /tmp RAM usage):"
+    echo "  flashdump <partition> -"
+    echo "  Example over SSH: ssh root@192.168.1.1 \"flashdump full -\" > full_backup.bin"
+    echo ""
+    echo "File mode examples:"
     echo "  flashdump nvram /tmp/nvram.dump"
-    echo "  flashdump full /tmp/wap610n_full_4mb.bin"
+    echo "  flashdump bootloader /tmp/uboot.dump"
     exit 1
 }
 
@@ -35,18 +38,22 @@ case "$PART" in
     kernel|firmware|fw)
         DEV="/dev/mtdblock2"
         DEF_OUT="/tmp/wap610n_firmware.bin"
+        PART_SIZE_KB=3712
         ;;
     nvram|env)
         DEV="/dev/mtdblock3"
         DEF_OUT="/tmp/wap610n_nvram.bin"
+        PART_SIZE_KB=64
         ;;
     bootloader|uboot|boot)
         DEV="/dev/mtdblock1"
         DEF_OUT="/tmp/wap610n_uboot.bin"
+        PART_SIZE_KB=128
         ;;
     configfs|jffs2|config)
         DEV="/dev/mtdblock4"
         DEF_OUT="/tmp/wap610n_configfs.bin"
+        PART_SIZE_KB=128
         ;;
     full|all|mtd0)
         if [ -e "/dev/mtd0" ]; then
@@ -57,9 +64,10 @@ case "$PART" in
             DEV="/dev/mtdblock/0"
         fi
         DEF_OUT="/tmp/wap610n_full_4mb.bin"
+        PART_SIZE_KB=4096
         ;;
     *)
-        echo "Error: Unknown partition '$PART'"
+        echo "Error: Unknown partition '$PART'" >&2
         usage
         ;;
 esac
@@ -67,19 +75,50 @@ esac
 TARGET="${OUTFILE:-$DEF_OUT}"
 
 if [ ! -e "$DEV" ]; then
-    echo "Error: Device node $DEV not found! Check /proc/mtd:"
-    cat /proc/mtd 2>/dev/null
+    echo "Error: Device node $DEV not found! Check /proc/mtd:" >&2
+    cat /proc/mtd 2>/dev/null >&2
     exit 1
 fi
 
+# 1. Direct stdout streaming mode: outputs raw binary to stdout, status messages to stderr
+if [ "$TARGET" = "-" ]; then
+    echo "[+] Streaming $DEV to stdout..." >&2
+    dd if="$DEV" bs=64k 2>/dev/null
+    ret=$?
+    if [ $ret -ne 0 ]; then
+        echo "[✗] Flash dump stream failed with exit code $ret" >&2
+        exit 1
+    fi
+    exit 0
+fi
+
+# 2. File destination mode: check RAM safety if writing into tmpfs (/tmp)
+case "$TARGET" in
+    /tmp/*)
+        MEM_FREE=$(awk '/^MemFree:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+        CACHED=$(awk '/^Cached:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+        AVAIL_RAM=$((MEM_FREE + CACHED))
+        if [ "$AVAIL_RAM" -gt 0 ] && [ $((AVAIL_RAM - PART_SIZE_KB)) -lt 2048 ]; then
+            echo "Error: Insufficient RAM to write $PART (${PART_SIZE_KB} KB) into tmpfs (/tmp)." >&2
+            echo "Available RAM: ${AVAIL_RAM} KB. Preserving 2048 KB safety margin to avoid kernel OOM panic." >&2
+            echo "Recommendation: Stream directly over SSH or use WebUI dumper:" >&2
+            echo "  ssh root@192.168.1.1 \"flashdump $PART -\" > dump.bin" >&2
+            echo "  Web GUI: http://192.168.1.1/goform/dump_firmware" >&2
+            exit 1
+        fi
+        ;;
+esac
+
 echo "[+] Dumping $DEV to $TARGET..."
-cat "$DEV" > "$TARGET"
+dd if="$DEV" of="$TARGET" bs=64k 2>/dev/null
 ret=$?
 
 if [ $ret -eq 0 ] && [ -f "$TARGET" ]; then
-    sz=$(ls -lh "$TARGET" 2>/dev/null | awk '{print $5}')
-    echo "[✓] Flash dump completed successfully ($sz written to $TARGET)"
+    sz=$(ls -l "$TARGET" 2>/dev/null | awk '{print $5}')
+    echo "[✓] Flash dump completed successfully ($sz bytes written to $TARGET)"
+    echo "Tip: To dump without using /tmp RAM, stream directly over SSH:"
+    echo "  ssh root@192.168.1.1 \"flashdump $PART -\" > dump.bin"
 else
-    echo "[✗] Flash dump failed with exit code $ret"
+    echo "[✗] Flash dump failed with exit code $ret" >&2
     exit 1
 fi

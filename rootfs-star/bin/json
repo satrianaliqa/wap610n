@@ -13,25 +13,40 @@ elif [ $# -ge 2 ]; then
     FILE="$1"
     KEY="$2"
 else
-    echo "Usage: json [file] <key>"
-    echo "       echo '{\"ip\":\"1.2.3.4\"}' | json ip"
+    echo "Usage: json [file] <key>" >&2
+    echo "       echo '{\"ip\":\"1.2.3.4\"}' | json ip" >&2
     exit 1
 fi
 
+if [ -n "$FILE" ]; then
+    if [ ! -f "$FILE" ]; then
+        echo "Error: File '$FILE' not found" >&2
+        exit 1
+    fi
+fi
+
 do_query() {
-    awk -v target="$KEY" '
+    tr '\r\n' '  ' | awk -v target="$KEY" '
     {
         str = $0
-        pat = "\"" target "\"[[:space:]]*:[[:space:]]*(\"[^\"]*\"|[^,}\]]*)"
-        while (match(str, pat)) {
-            val = substr(str, RSTART, RLENGTH)
-            sub(/^[^:]*:[[:space:]]*/, "", val)
-            sub(/^"/, "", val)
-            sub(/"$/, "", val)
-            gsub(/[[:space:]]+$/, "", val)
-            print val
-            str = substr(str, RSTART + RLENGTH)
+        nkeys = split(target, keys, ".")
+        for (k = 1; k <= nkeys; k++) {
+            cur_key = keys[k]
+            pat = "\"" cur_key "\"[[:space:]]*:[[:space:]]*(\"[^\"]*\"|\\{[^}]*\\}|\\[[^]]*\\]|[^,}\]]*)"
+            if (match(str, pat)) {
+                val = substr(str, RSTART, RLENGTH)
+                sub(/^[^:]*:[[:space:]]*/, "", val)
+                sub(/^[[:space:]]+/, "", val)
+                sub(/[[:space:]]+$/, "", val)
+                str = val
+            } else {
+                str = ""
+                break
+            }
         }
+        sub(/^"/, "", str)
+        sub(/"$/, "", str)
+        if (length(str) > 0) print str
     }'
 }
 

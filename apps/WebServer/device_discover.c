@@ -753,7 +753,7 @@ char *dd_capability_discovery(xml_tree request)
     	xml_element curr_el;
 	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0};
 	char tempBuf[MT_MAX_PARAM_VALUE_LENGTH]={0};
-	char *xml_encode_tempbuf, *tempBuf_ptr;
+	char *xml_encode_tempbuf = NULL, *tempBuf_ptr = NULL;
 	char firmwareVersion[128]={0}, releaseDate[128]={0};
 
 	hnap_get_frimware_version_date(firmwareVersion, releaseDate);
@@ -797,6 +797,10 @@ char *dd_capability_discovery(xml_tree request)
 		tempBuf_ptr = tempBuf;
 	}
     	set_xml_element_text( curr_el, tempBuf_ptr );
+	if(xml_encode_tempbuf != NULL){
+		free(xml_encode_tempbuf);
+		xml_encode_tempbuf = NULL;
+	}
     	DD_HANDLER_MEM_CHECK( curr_el->text, get_dev_s );
     	push_pop_xml_tree( get_dev_s, curr_el );
 
@@ -1243,15 +1247,24 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	struct device_discover_instance *ddi;
 	uint8_t *sPtr, *tmpPtr, *ePtr, *tmpBuf;
 	int hvLen=0;
-	int headerEnd=0;
+	int foundHeaderEnd=0;
 	uint8_t devMac[17]={0};
 	char *txPacket = NULL;
 	int result=0;
 	int dataRead=0;
 	int bodyLen=0;
 	char *bodyContent=NULL;
+	int curOffset=0;
+	int eOffset=0;
+
+	if (data == NULL || dataLen < 4) {
+		return -1;
+	}
 
 	ddi = (struct device_discover_instance *)malloc(sizeof(struct device_discover_instance));
+	if (ddi == NULL) {
+		return -1;
+	}
 	memset(ddi, 0, sizeof(struct device_discover_instance));
 
 	dd_getIfMacStr("br0", devMac);
@@ -1259,40 +1272,68 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	//dd_print_string("MAC address for br0 is %s\n", ddi->devphy);
 	//printf("===== Start to parse data header =====\n");
 	//Parse the data header and extract header value
-	sPtr = tmpPtr = data;
-	while((ePtr=strchr(tmpPtr, '\r'))!=0){
-		if(*(ePtr+1)=='\n'){
-			if(*(ePtr+2)=='\r' && *(ePtr+3)=='\n'){
-				headerEnd=1;
+	sPtr = tmpPtr = (uint8_t *)data;
+	while(dataRead < dataLen){
+		curOffset = (int)(tmpPtr - (uint8_t *)data);
+		if (curOffset >= dataLen) {
+			break;
+		}
+		ePtr = (uint8_t *)memchr(tmpPtr, '\r', dataLen - curOffset);
+		if (ePtr == NULL) {
+			break;
+		}
+		eOffset = (int)(ePtr - (uint8_t *)data);
+		if (eOffset + 1 < dataLen && *(ePtr+1) == '\n'){
+			if (eOffset + 3 < dataLen && *(ePtr+2) == '\r' && *(ePtr+3) == '\n'){
+				foundHeaderEnd = 1;
 			}
-			ePtr = ePtr+1;
+			ePtr = ePtr + 1;
 			sPtr = tmpPtr;	
 		}else{
-			tmpPtr = ePtr+1;
+			tmpPtr = ePtr + 1;
 			continue;
 		}
 
-		hvLen = ePtr - sPtr - 1; //eliminate the character '\r'
+		hvLen = (int)(ePtr - sPtr - 1); //eliminate the character '\r'
 		dataRead = dataRead + hvLen + 2;
-		tmpBuf = (char *)malloc(hvLen+1);
-		memset(tmpBuf, 0, hvLen+1);
-		memcpy(tmpBuf, sPtr, hvLen);
-		//dd_print_string("%s\n", tmpBuf);
-		dd_parse_header(tmpBuf, ddi);
+		if (hvLen > 0) {
+			tmpBuf = (uint8_t *)malloc(hvLen+1);
+			if (tmpBuf != NULL) {
+				memset(tmpBuf, 0, hvLen+1);
+				memcpy(tmpBuf, sPtr, hvLen);
+				//dd_print_string("%s\n", tmpBuf);
+				dd_parse_header((char *)tmpBuf, ddi);
+				free(tmpBuf);
+			}
+		}
 		sPtr = tmpPtr = ePtr + 1;
-		free(tmpBuf);
 		
-		if(headerEnd)
+		if(foundHeaderEnd)
 			break;
+	}
+
+	if (!foundHeaderEnd) {
+		free(ddi);
+		return -1;
 	}
 
 	dataRead = dataRead + 2;
 	printf("dataRead=%d, dataLen=%d\n", dataRead, dataLen);
-	bodyLen = dataLen-dataRead;
-	if(bodyLen){
-		bodyContent=(char *)malloc(bodyLen);
-		memset(bodyContent, 0, bodyLen);
-		memcpy(bodyContent, data+dataRead, bodyLen);
+	bodyLen = dataLen - dataRead;
+	if(bodyLen > 0 && bodyLen <= 65536){
+		bodyContent = (char *)malloc((size_t)bodyLen + 1);
+		if (bodyContent == NULL) {
+			free(ddi);
+			return -1;
+		}
+		memset(bodyContent, 0, (size_t)bodyLen + 1);
+		memcpy(bodyContent, data + dataRead, bodyLen);
+		bodyContent[bodyLen] = '\0';
+	} else if (bodyLen == 0) {
+		bodyContent = NULL;
+	} else {
+		free(ddi);
+		return -1;
 	}
 	
 	dd_print_string("ddi->action: %x\n", ddi->action);
@@ -1351,7 +1392,7 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	}
 	
 end:
-	if(bodyLen)
+	if(bodyContent)
 		free(bodyContent);
 	if(txPacket)
 		free(txPacket);

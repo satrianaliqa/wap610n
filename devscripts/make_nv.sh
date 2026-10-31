@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 UPDATE_SRC=0
 RECONFIGURE_PLATFORM=0
 MAKE_CLEAN=0
@@ -220,19 +221,19 @@ fi
 #####
 if [ $RECONFIGURE_PLATFORM -eq 1 ]
 then
- devscripts/net-ver-select-star.sh $NEW_PLATFORM  2>&1  | tee -a $LOGFILE
+ devscripts/net-ver-select-star.sh $NEW_PLATFORM  2>&1  | tee -a $LOGFILE || exit 1
  # Jacky.Yang 23-Dec-2008, Start - We need make clean and re-config it
  # Make clean and configure for applications
  pushd apps/scripts > /dev/null
  PWD=`pwd`
- E_CROSS=${PWD}/../../tools/arm-uclibc-3.4.6 E_KERNEL=${PWD}/../../kernel/linux-2.6.16-star make -f Makefile.MTLK link clean config  | tee -a $LOGFILE
+ E_CROSS=${PWD}/../../tools/arm-uclibc-3.4.6 E_KERNEL=${PWD}/../../kernel/linux-2.6.16-star make -f Makefile.MTLK link clean config 2>&1 | tee -a $LOGFILE || exit 1
  popd > /dev/null
 
  
  # Make clean in kernel tree
  cd kernel/linux-2.6.16-star
  export PATH=../../tools/arm-uclibc-3.4.6/bin/:$PATH
- make clean | tee -a $LOGFILE
+ make clean 2>&1 | tee -a $LOGFILE || exit 1
  cd - > /dev/null
  rm -rf images/*
  rm -rf output/* 
@@ -262,9 +263,13 @@ then
  rm -rf images/*
  rm -rf output/*
  rm -f ${PWD}/apps/l/*
- rm -f ${PWD}/kernel/linux-2.6.16-star/.config
  rm -f ${PWD}/kernel/linux-2.6.16-star/.config.old
  rm -f ${PWD}/kernel/linux-2.6.16-star/.version
+ if [ -f "${PWD}/boards/star-6.7.2-mtlk-U-Media-vela/kernel/.config" ]; then
+   cp -f "${PWD}/boards/star-6.7.2-mtlk-U-Media-vela/kernel/.config" "${PWD}/kernel/linux-2.6.16-star/.config"
+ else
+   rm -f ${PWD}/kernel/linux-2.6.16-star/.config
+ fi
 fi
 
 #####
@@ -278,7 +283,7 @@ function make_modules
 	pushd kernel/linux-2.6.16-star
 	echo Making dynamic modules  | tee -a $LOGFILE
 	export PATH=`pwd`/../../tools/arm-uclibc-3.4.6/bin/:$PATH
-	make modules 2>&1 | tee -a $LOGFILE
+	make modules 2>&1 | tee -a $LOGFILE || exit 1
 	popd > /dev/null
 }
 
@@ -436,9 +441,11 @@ then
 	fi
 	cd ${ROOTDIR}
 	#Jacky.Yang 21-Jul-2008, create build number and re-name firmware file name.
-	sed -i '/ProjectName/d' ${ENV_CONF}
-	echo "ProjectName=${MODENAME}" >> ${ENV_CONF}
-	devscripts/count_version.sh ${MODENAME}
+	if [ ! -f "${ENV_CONF}" ] || ! grep -q "^ProjectName=${MODENAME}$" "${ENV_CONF}" 2>/dev/null; then
+		sed -i '/ProjectName/d' "${ENV_CONF}" 2>/dev/null || true
+		echo "ProjectName=${MODENAME}" >> "${ENV_CONF}"
+		devscripts/count_version.sh ${MODENAME}
+	fi
 	#cd ${ROOTDIR}/_${WLAN_ROOTFS_FILE}
 	#tar cvf - * | gzip > ../${WLAN_ROOTFS_FILE}
 	#tar cvf - * --exclude=*.svn | gzip > ../${WLAN_ROOTFS_FILE}
@@ -464,6 +471,11 @@ then
  if [ 0 != $? ]
  then
    echo "Failed to build kernel image" | tee -a $LOGFILE
+   exit 1
+ fi
+ BOOTP_SIZE=$(stat -c%s arch/arm/boot/bootpImage 2>/dev/null || wc -c < arch/arm/boot/bootpImage)
+ if [ "$BOOTP_SIZE" -gt 3801088 ]; then
+   echo "FATAL: bootpImage ($BOOTP_SIZE bytes) exceeds 3,801,088 bytes (0x3A0000) flash limit!" | tee -a $LOGFILE >&2
    exit 1
  fi
 cd - > /dev/null

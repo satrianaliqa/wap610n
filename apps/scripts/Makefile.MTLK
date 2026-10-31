@@ -29,7 +29,7 @@ comp:
 
 config: 
 	for dir in $(MTLK_APPS); do \
-        $(MAKE) -f Makefile.MTLK CONF -C $(TOPDIR)/$$dir; \
+        $(MAKE) -f Makefile.MTLK CONF -C $(TOPDIR)/$$dir || exit 1; \
         done
 strip: 
 	for dir in $(MTLK_APPS); do \

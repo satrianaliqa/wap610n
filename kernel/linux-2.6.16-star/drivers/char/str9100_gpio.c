@@ -35,6 +35,7 @@
 #include <linux/sched.h>
 #include <linux/proc_fs.h>
 #include <linux/interrupt.h>
+#include <linux/spinlock.h>
 
 #include <asm/irq.h>
 #include <asm/uaccess.h>
@@ -42,6 +43,8 @@
 
 #include <linux/str9100/str9100_gpio.h>
 #include <linux/timer.h>
+
+static spinlock_t str9100_gpio_lock = SPIN_LOCK_UNLOCKED;
 
 #ifdef CONFIG_STR9100_GPIO_INTERRUPT
 #define MAX_GPIO_LINE		21
@@ -137,15 +140,17 @@ int str9100_gpio_in_bit(volatile __u32 *data, int bit)
 /* Write GPIO Data, but only one bit */
 int str9100_gpio_out_bit(__u32 data, int bit)
 {
+	unsigned long flags;
 	u32 temp;
 	if (bit >= 0 && bit <= 20) {
+		spin_lock_irqsave(&str9100_gpio_lock, flags);
 		str9100_gpio_in(&temp);
-		temp &= ~(1 <<bit);
-		temp |= (data &0x1)<< bit;
+		temp &= ~(1 << bit);
+		temp |= (data & 0x1) << bit;
 		str9100_gpio_out(temp);
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 	}
 	return 0;
-
 }
 
 int str9100_gpio_read_direction_bit(volatile __u32 *data, int bit)
@@ -160,12 +165,15 @@ int str9100_gpio_read_direction_bit(volatile __u32 *data, int bit)
 
 int str9100_gpio_write_direction_bit(__u32 data, int bit)
 {
+	unsigned long flags;
 	u32 temp;
 	if (bit >= 0 && bit <= 20) {
+		spin_lock_irqsave(&str9100_gpio_lock, flags);
 		str9100_gpio_read_direction(&temp);
-		temp &= ~(1 <<bit);
-		temp |= (data &0x1)<< bit;
+		temp &= ~(1 << bit);
+		temp |= (data & 0x1) << bit;
 		str9100_gpio_write_direction(temp);
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 	}
 	return 0;
 }
@@ -193,10 +201,15 @@ int str9100_gpio_dataclear_bit(__u32 data, int bit)
 #define GEN_GPIO_WRITE_SCRIPT(regname)\
 int str9100_gpio_write_##regname##_bit(volatile __u32 data,int bit) \
 { \
-	u32 temp=0; \
+	unsigned long flags; \
+	u32 temp; \
 	if (bit >= 0 && bit <= 20) { \
-		temp |= ((data &0x1)<< bit); \
+		spin_lock_irqsave(&str9100_gpio_lock, flags); \
+		str9100_gpio_read_##regname(&temp); \
+		temp &= ~(1 << bit); \
+		temp |= ((data & 0x1) << bit); \
 		str9100_gpio_write_##regname(temp); \
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags); \
 	} \
 	return 0; \
 } 
@@ -392,28 +405,24 @@ static irqreturn_t str9100_gpio_irq_handler(int this_irq, void *dev_id, struct p
 {
 	int i;
 	u32 gpio_intr;
-	u32 serviced = 0;
 
 	// Clean System irq status
 	INTC_CLEAR_EDGE_TRIGGER_INTERRUPT(INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
 	INTC_INTERRUPT_MASK_REG |= (0x1 << INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
 
-	str9100_gpio_read_intrrawstate(&gpio_intr);
-	//printk("GPIO INTERRUPT : %08x \n",gpio_intr);
+	str9100_gpio_read_intrmaskedstatus(&gpio_intr);
 
-	for (i = 0; i < MAX_GPIO_LINE; i++) {
-		if ((gpio_intr & 0x1) == 0x1) {
-			if (gpio_isr[i] != NULL) {
+	if (gpio_intr) {
+		/* Clear active masked interrupt status before calling handler */
+		str9100_gpio_write_intrclear(gpio_intr);
+
+		for (i = 0; i < MAX_GPIO_LINE; i++) {
+			if ((gpio_intr & (1 << i)) && gpio_isr[i] != NULL) {
 				gpio_isr[i](i);
 			}
-			serviced |= (1 << i);
 		}
-		gpio_intr = gpio_intr >> 1;
 	}
-	/* Clear only serviced interrupt status */
-	if (serviced) {
-		str9100_gpio_write_intrclear(serviced);
-	}
+
 	/* Unmask Intc Interrupt Status */
 	INTC_INTERRUPT_MASK_REG &= ~(0x1 << INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
 	return IRQ_HANDLED;
@@ -595,7 +604,12 @@ int __init str9100_gpio_init(void)
 
 void __exit str9100_gpio_exit(void)
 {
-	free_irq(INTC_GPIO_EXTERNAL_INT_BIT_INDEX,0);
+	sys_blinking_flag = 0;
+	del_timer_sync(&sysled_timer);
+#ifdef CONFIG_STR9100_GPIO_INTERRUPT
+	free_irq(INTC_GPIO_EXTERNAL_INT_BIT_INDEX, 0);
+#endif
+	remove_proc_entry("str9100/gpio", NULL);
 }
 
 module_init(str9100_gpio_init);

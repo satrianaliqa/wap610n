@@ -3,6 +3,7 @@
 ROOTFS_DIR=rootfs
 # rootfs-star is the tracked source of truth for all WAP610N customizations.
 STAR_DIR=rootfs-star
+ROOTFS_STAR="${STAR_DIR}"
 
 # Safety guard: rootfs must be a separate staging tree. If it is a symlink to
 # (or the same directory as) rootfs-star, extracting wlan.tar.gz below would
@@ -60,7 +61,7 @@ if [ -n "$1" ]; then
 			exit 1
 		}
 	fi
-	chmod 777 -R "${ROOTFS_DIR}/root/mtlk/"
+	chmod 755 -R "${ROOTFS_DIR}/root/mtlk/"
 
 	# Fail hard if any WAP610N customization was lost during packaging.
 	OVERLAY_OK=1
@@ -126,9 +127,12 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
-		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh simpdiff sysmon curl help json nettest flashdump; do
+		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh sysmon curl help json nettest flashdump; do
 			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
 		done
+		if [ ! -e $ROOTFS_DIR/bin/simpdiff ] && [ -e $ROOTFS_STAR/bin/simpdiff ]; then
+			cp -fv $ROOTFS_STAR/bin/simpdiff $ROOTFS_DIR/bin/simpdiff
+		fi
 		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
 		[ -f "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" ] && cp -af "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
 		[ -f "rootfs-star/etc/inittab" ] && cp -af "rootfs-star/etc/inittab" "${ROOTFS_DIR}/etc/"
@@ -152,7 +156,7 @@ ensure_rootfs_dirs() {
 	chmod 700 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
 	chown -R 0:0 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
 	chmod 600 "$base/etc/shadow" 2>/dev/null || true
-	chmod 644 "$base/etc/passwd" 2>/dev/null || true
+	chmod 644 "$base/etc/passwd" "$base/etc/group" "$base/etc/inittab" "$base/etc/fstab" "$base/etc/profile" 2>/dev/null || true
 }
 
 ensure_rootfs_dirs "${ROOTFS_DIR}"
@@ -162,8 +166,8 @@ create_device_nodes() {
 	local target_dev="$1"
 	mkdir -p "$target_dev" "$target_dev/pts" "$target_dev/shm" "$target_dev/net" "$target_dev/input"
 
-	# First, try to extract devices directly from rootfs-star.tgz if present
-	if [ -f "rootfs-star.tgz" ]; then
+	# First, try to extract devices directly from rootfs-star.tgz if not already present
+	if [ ! -e "$target_dev/console" ] && [ -f "rootfs-star.tgz" ]; then
 		tar -zxvf rootfs-star.tgz rootfs-star/dev -C /tmp/ 2>/dev/null || true
 		if [ -d "/tmp/rootfs-star/dev" ]; then
 			cp -a /tmp/rootfs-star/dev/* "$target_dev/" 2>/dev/null || true
@@ -179,7 +183,7 @@ create_device_nodes() {
 	[ -e "$target_dev/urandom" ] || mknod "$target_dev/urandom" c 1 9 2>/dev/null || true
 	[ -e "$target_dev/mem" ] || mknod "$target_dev/mem" c 1 1 2>/dev/null || true
 	[ -e "$target_dev/kmem" ] || mknod "$target_dev/kmem" c 1 2 2>/dev/null || true
-	[ -e "$target_dev/ptmx" ] || mknod "$target_dev/ptmx" c 5 2 2>/dev/null || true
+	[ -e "$target_dev/ptmx" ] || mknod -m 666 "$target_dev/ptmx" c 5 2 2>/dev/null || true
 	[ -e "$target_dev/tty" ] || mknod "$target_dev/tty" c 5 0 2>/dev/null || true
 
 	# Serial and Virtual Terminals
@@ -218,7 +222,9 @@ create_device_nodes() {
 	for i in 0 1 2 3; do
 		[ -e "$target_dev/led$i" ] || mknod "$target_dev/led$i" c 42 $i 2>/dev/null || true
 	done
-	[ -e "$target_dev/rdflt0" ] || mknod "$target_dev/rdflt0" c 42 13 2>/dev/null || true
+	# rdflt0 is Reset to Default Button (GPIO 3, minor 3)
+	rm -f "$target_dev/rdflt0" 2>/dev/null || true
+	mknod -m 644 "$target_dev/rdflt0" c 42 3 2>/dev/null || mknod -m 644 "$target_dev/rdflt0" c 240 3 2>/dev/null || true
 
 	# Network TUN
 	[ -e "$target_dev/net/tun" ] || mknod "$target_dev/net/tun" c 10 200 2>/dev/null || true
@@ -226,8 +232,9 @@ create_device_nodes() {
 	# Symlinks & Permissions
 	[ -e "$target_dev/log" ] || ln -sf ../tmp/log "$target_dev/log" 2>/dev/null || true
 	chmod 600 "$target_dev/console" "$target_dev/ttyS0" 2>/dev/null || true
-	chmod 666 "$target_dev/null" "$target_dev/zero" "$target_dev/random" "$target_dev/urandom" "$target_dev/tty" 2>/dev/null || true
-	chmod 666 "$target_dev"/gpio* "$target_dev"/led* 2>/dev/null || true
+	chmod 666 "$target_dev/null" "$target_dev/zero" "$target_dev/random" "$target_dev/urandom" "$target_dev/tty" "$target_dev/ptmx" 2>/dev/null || true
+	chmod 644 "$target_dev"/gpio* "$target_dev"/rdflt* 2>/dev/null || true
+	chmod 666 "$target_dev"/led* 2>/dev/null || true
 	chmod 660 "$target_dev"/mtd* "$target_dev"/mtdblock* 2>/dev/null || true
 	chown -R 0:0 "$target_dev" 2>/dev/null || true
 }
@@ -240,6 +247,9 @@ ln -sf ../bin/busybox ${ROOTFS_DIR}/sbin/init 2>/dev/null || true
 ln -sf bin/busybox ${ROOTFS_DIR}/linuxrc 2>/dev/null || true
 ln -sf busybox ${ROOTFS_DIR}/bin/sh 2>/dev/null || true
 
+# Strip compile-time static libraries (*.a) from runtime rootfs
+rm -f "${ROOTFS_DIR}"/lib/*.a "${ROOTFS_DIR}"/usr/lib/*.a 2>/dev/null || true
+
 echo "--> Generating ext2 ramdisk image directly from ${ROOTFS_DIR}..."
 mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
@@ -250,11 +260,19 @@ mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
 
 MNT_DIR=/tmp/mnt_rd_$$
 mkdir -p ${MNT_DIR}
-if mount -o loop ${RD} ${MNT_DIR} 2>/dev/null; then
-    cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/
+if mount -o loop ${RD} ${MNT_DIR} 2>/dev/null || sudo mount -o loop ${RD} ${MNT_DIR} 2>/dev/null; then
+    (cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/ || sudo cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/) || {
+        echo "ERROR: Failed to copy rootfs to ramdisk mount!"
+        umount ${MNT_DIR} 2>/dev/null || sudo umount ${MNT_DIR} 2>/dev/null || true
+        exit 1
+    }
     ensure_rootfs_dirs "${MNT_DIR}"
     create_device_nodes "${MNT_DIR}/dev"
-    umount ${MNT_DIR}
+    (chown -R 0:0 "${MNT_DIR}" || sudo chown -R 0:0 "${MNT_DIR}") 2>/dev/null || true
+    umount ${MNT_DIR} 2>/dev/null || sudo umount ${MNT_DIR} || {
+        echo "ERROR: Failed to unmount ramdisk mount!"
+        exit 1
+    }
     rmdir ${MNT_DIR} 2>/dev/null || true
 elif command -v genext2fs >/dev/null 2>&1; then
     rm -f ${RD}

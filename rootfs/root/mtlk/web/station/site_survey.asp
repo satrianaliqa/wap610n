@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/tr/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/tr/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><!-- InstanceBegin template="/Templates/station.dwt" codeOutsideHTMLIsLocked="false" -->
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
@@ -53,6 +53,30 @@ function template_load() {
 var WPAPersonalMode, WPAPersonalEncryption, WPAPSK;
 var WPAEnterpriseMode, WPAEnterpriseEncryption, WPARadiusIP, WPARadiusPort, WPARadiusKey, RadiusReKeyInterval;*/
 var waitCount=0;
+
+function escapeHTML(str) {
+	if (!str) return "";
+	return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function sanitizeSiteSurvey(str) {
+	if (!str) return "";
+	return str.replace(/(<span[^>]*id=["']?ESSID_\d+["']?[^>]*>)([\s\S]*?)(<\/span>)/gi, function(match, openTag, ssid, closeTag) {
+		return openTag + escapeHTML(ssid) + closeTag;
+	});
+}
+
+function reWirteList(fieldID, disableFieldID, str) {
+	stopToWait = true;
+	if (disableFieldID != "" && str != "")
+		objectDisplay(disableFieldID, "none");
+	if (fieldID != "") {
+		if (fieldID == "listSiteSurvey") {
+			str = sanitizeSiteSurvey(str);
+		}
+		document.getElementById(fieldID).innerHTML = str;
+	}
+}
 
 function updateSiteSurvey(){
 	makeRequest("/goform/updateSiteSurvey", "something", "listSiteSurvey", "waitMsg");
@@ -403,7 +427,10 @@ function page_load() {
 	
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
 	
-	document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wpsMode"))
+		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wirelessAdv"))
+		document.getElementById("wirelessAdv").href = "wireless_advanced.asp?random=" + Math.random();
 	
 	displaySecurityField("none");
 	document.getElementById("waitMsg").innerHTML = "<!--#tr id=\"w.bws.asp.2\" -->Please wait <!--#endtr-->";
@@ -478,7 +505,7 @@ function page_load() {
 									<td class="subMenuDIV">|</td>
 									<td class="subMenuOption"><font class="small"><a href="/station/wmm.asp">WMM®</a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
+									<td class="subMenuOption"><font class="small"><a id="wirelessAdv" href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>

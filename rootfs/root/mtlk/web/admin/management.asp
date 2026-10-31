@@ -51,17 +51,19 @@ function template_load() {
 <script language="JavaScript" type="text/javascript">
 
 function checkConfFile() {
-	if (document.getElementById("configFilePathe").value == "") {
+	var fileVal = document.getElementById("configFilePathe").value;
+	if (fileVal == "") {
 		alert("<!--#tr id=\"adm.man.alert.1\" -->Please select a configuration file for restore.<!--#endtr-->");
+		return;
 	}
-	else
-	{
-		totalWaitTime = 30; //second
-		wait_page();
-		document.getElementById("waitPad").style.display="block";
-		document.uploadConfig.submit();
+	if (!/\.(conf|cfg|bin|tar\.gz|tgz)$/i.test(fileVal)) {
+		alert("Invalid file format. Please select a valid configuration file (.conf, .cfg, .tar.gz, .tgz, .bin).");
+		return;
 	}
-	
+	totalWaitTime = 30; //second
+	wait_page();
+	document.getElementById("waitPad").style.display="block";
+	document.uploadConfig.submit();
 }
 
 function submitReboot() {
@@ -309,7 +311,6 @@ function applyRemote() {
 					</tr>
 					</form>
 					<form method="post" name="uploadConfig" encType="multipart/form-data" action="/goform/upldForm">
-					<!--<form method="post" name="uploadConfig" encType="multipart/form-data" action="/goform/uploadConfigFile">-->
 					<tr>
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
@@ -415,14 +416,18 @@ function applyRemote() {
 		</tr>
 	
 	</table>
-	<%
-		if (error != "")
-		{
-			write("<script type='text/javascript'>\n");
-			write("alert(\""+error+"\");");
-			write("</script>\n");
+	<script type="text/javascript">
+	(function() {
+		var match = window.location.search.match(/[?&]error=([^&]+)/);
+		if (match && match[1]) {
+			var err = decodeURIComponent(match[1].replace(/\+/g, " "));
+			err = err.replace(/[<>"'\r\n]/g, "");
+			if (err.length > 0) {
+				alert(err);
+			}
 		}
-	%>
+	})();
+	</script>
 	<!-- InstanceEndEditable -->
 </td></tr></table>
 </body>

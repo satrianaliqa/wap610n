@@ -81,8 +81,8 @@ jobs:
               ln -sf busybox rootfs/bin/sh 2>/dev/null || true
 
               # Ensure host mkcsum tool is compiled
-              gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
-              chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum 2>/dev/null || true
+              gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
+              chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
               
               # Verify toolchain availability
               which arm-linux-gcc || { echo "❌ ERROR: arm-linux-gcc not in PATH"; exit 1; }
@@ -126,8 +126,7 @@ jobs:
         with:
           name: WAP610N-Firmware-${{ github.sha }}
           path: |
-            output/bootpImage
-            output/*WAP610N*
+            output/WAP610N_v*.bin
             output/ramdisk_2.6.16.img.lzma
             output/System.map
           if-no-files-found: warn

@@ -13,8 +13,8 @@ SHLIB_MAJOR=0
 SHLIB_MINOR=9.8
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
 PLATFORM=linux-arm
-OPTIONS=--prefix=/ --install_prefix=/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/..//openssl-lib --openssldir=/usr/lib/ssl -L/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/lib -ldl -I/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/include enable-shared no-gmp no-idea no-krb5 no-mdc2 no-rc5 no-threads no-zlib no-zlib-dynamic
-CONFIGURE_ARGS=linux-arm --prefix=/ --install_prefix=/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/..//openssl-lib --openssldir=/usr/lib/ssl -L/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/lib -ldl -I/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/include no-threads shared no-idea no-mdc2 no-rc5
+OPTIONS=--prefix=/ --install_prefix=../openssl-lib --openssldir=/usr/lib/ssl -L../../tools/arm-uclibc-3.4.6/lib -ldl -I../../tools/arm-uclibc-3.4.6/include enable-shared no-gmp no-idea no-krb5 no-mdc2 no-rc5 no-threads no-zlib no-zlib-dynamic
+CONFIGURE_ARGS=linux-arm --prefix=/ --install_prefix=../openssl-lib --openssldir=/usr/lib/ssl -L../../tools/arm-uclibc-3.4.6/lib -ldl -I../../tools/arm-uclibc-3.4.6/include no-threads shared no-idea no-mdc2 no-rc5
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -25,11 +25,11 @@ HERE=.
 # INSTALL_PREFIX is for package builders so that they can configure
 # for, say, /usr/ and yet have everything installed to /tmp/somedir/usr/.
 # Normally it is left empty.
-INSTALL_PREFIX=/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/..//openssl-lib
-INSTALLTOP=
+INSTALL_PREFIX=../openssl-lib
+INSTALLTOP=/usr
 
 # Do not edit this manually. Use Configure --openssldir=DIR do change this!
-OPENSSLDIR=/usr/lib/ssl
+OPENSSLDIR=/usr/ssl
 
 # NO_IDEA - Define to build without the IDEA algorithm
 # NO_RC4  - Define to build without the RC4 algorithm
@@ -60,10 +60,10 @@ OPENSSLDIR=/usr/lib/ssl
 # PKCS1_CHECK - pkcs1 tests.
 
 CC= gcc
-CFLAG= -msoft-float  -fPIC -DOPENSSL_PIC -I/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/include -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall -Os -pipe 
+CFLAG= -msoft-float  -fPIC -DOPENSSL_PIC -I../../tools/arm-uclibc-3.4.6/include -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -Wall -Os -pipe 
 DEPFLAG= -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 
 PEX_LIBS= 
-EX_LIBS= -L/home/ricky.cao/METALINK/projects/WET610N_v1.0.03_build_351/apps/scripts/../../tools/arm-uclibc-3.4.6/lib -ldl -ldl
+EX_LIBS= -L../../tools/arm-uclibc-3.4.6/lib -ldl -ldl
 EXE_EXT= 
 ARFLAGS= 
 AR=ar $(ARFLAGS) r

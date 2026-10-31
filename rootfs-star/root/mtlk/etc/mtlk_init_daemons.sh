@@ -19,10 +19,21 @@ then
 	nice -n 15 ./mtlk_ledman.sh &
 fi
 
-# Start the upnp Daemon once
-if ! pidof upnpd >/dev/null 2>&1; then
-	nice -n 18 upnpd &
-fi
+# Start the UPnP daemon once br0 interface is up and available
+(
+	count=0
+	while [ ! -d /sys/class/net/br0 ] && ! ifconfig br0 >/dev/null 2>&1 && [ "$count" -lt 15 ]; do
+		sleep 1
+		count=$((count + 1))
+	done
+	if ! pidof upnpd >/dev/null 2>&1; then
+		if [ -x ./upnpd ]; then
+			nice -n 18 ./upnpd br0 &
+		elif command -v upnpd >/dev/null 2>&1; then
+			nice -n 18 upnpd br0 &
+		fi
+	fi
+) &
 
 # Start Telnet and Dropbear SSH daemons in background for remote diagnostics
 if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then
@@ -42,7 +53,7 @@ if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
 		fi
 		if ! pidof dropbear >/dev/null 2>&1; then
 			echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
-			/usr/sbin/dropbear -B -p 22 &
+			/usr/sbin/dropbear -p 22 &
 		fi
 	) &
 fi

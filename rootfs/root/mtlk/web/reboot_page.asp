@@ -124,7 +124,7 @@ function page_load() {
 					<tr>
 						<td width="172" class="mainMenuOption"><A href="../network/sta_network.asp"><!--#tr id="mainmenu.2" -->Setup<!--#endtr--></A></td>
 						<td width="172" class="mainMenuOption"><A id="ap_wbridge" href=""><!--#tr id="mainmenu.1" -->Wireless<!--#endtr--></A></td>
-						<td width="172" class="mainMenuSelected"><A href="management.asp"><!--#tr id="mainmenu.3" -->Administration<!--#endtr--></A></td>
+						<td width="172" class="mainMenuSelected"><A href="/admin/management.asp"><!--#tr id="mainmenu.3" -->Administration<!--#endtr--></A></td>
 						<td width="172" class="mainMenuOption"><A href="../status/device_status.asp"><!--#tr id="mainmenu.4" -->Status<!--#endtr--></A></td>
 					</tr>
 				</table>

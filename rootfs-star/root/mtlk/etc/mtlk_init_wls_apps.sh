@@ -55,28 +55,32 @@ WPS_ON=`awk -F "=" '/^NonProc_WPS_ActivateWPS/ {str = $2; gsub(/ /, "", str); su
 # Bring up WPS or standalone hostapd/wpa_supplicant 
 if [ "$WPS_ON" == "1" ]
 then 
-	ln -s  $WPA_APPS_PATH/wsccmd /tmp/wsccmd
-	ln -s $ETC_PATH/mtlk_init_wps.sh /tmp/mtlk_init_wps.sh
+	[ ! -e /tmp/wsccmd ] && ln -s  $WPA_APPS_PATH/wsccmd /tmp/wsccmd
+	[ ! -e /tmp/mtlk_init_wps.sh ] && ln -s $ETC_PATH/mtlk_init_wps.sh /tmp/mtlk_init_wps.sh
 	if expr $WPS_PB = 1
 	then
-		ln -s $ETC_PATH/WPS_PBC.sh /tmp/WPS_PBC.sh
+		[ ! -e /tmp/WPS_PBC.sh ] && ln -s $ETC_PATH/WPS_PBC.sh /tmp/WPS_PBC.sh
 	fi
 	if expr $NETWORK_TYPE = 2
 	then
-		ln -s $WPA_APPS_PATH/hostapd /tmp/hostapd
-		ln -s $WPA_APPS_PATH/hostapd.eap_user /tmp/hostapd.eap_user
-		ln -s $WPA_APPS_PATH/hostapd_cli /tmp/hostapd_cli
-		ln -s $WPA_APPS_PATH/template.conf /tmp/template.conf
+		[ ! -e /tmp/hostapd ] && ln -s $WPA_APPS_PATH/hostapd /tmp/hostapd
+		[ ! -e /tmp/hostapd.eap_user ] && ln -s $WPA_APPS_PATH/hostapd.eap_user /tmp/hostapd.eap_user
+		[ ! -e /tmp/hostapd_cli ] && ln -s $WPA_APPS_PATH/hostapd_cli /tmp/hostapd_cli
+		[ ! -e /tmp/template.conf ] && ln -s $WPA_APPS_PATH/template.conf /tmp/template.conf
 
 	fi
 	if expr $NETWORK_TYPE = 0
 	then
-		ln -s $WPA_APPS_PATH/wpa_cli /tmp/wpa_cli
-		ln -s $WPA_APPS_PATH/wpa_passphrase /tmp/wpa_passphrase
-		ln -s $WPA_APPS_PATH/wpa_supplicant /tmp/wpa_supplicant
+		[ ! -e /tmp/wpa_cli ] && ln -s $WPA_APPS_PATH/wpa_cli /tmp/wpa_cli
+		[ ! -e /tmp/wpa_passphrase ] && ln -s $WPA_APPS_PATH/wpa_passphrase /tmp/wpa_passphrase
+		[ ! -e /tmp/wpa_supplicant ] && ln -s $WPA_APPS_PATH/wpa_supplicant /tmp/wpa_supplicant
 	
 	fi
-	chmod 777 /tmp/*
+	[ ! -e /tmp/driver_API.tcl ] && [ -e $ETC_PATH/driver_api.tcl ] && ln -s $ETC_PATH/driver_api.tcl /tmp/driver_API.tcl
+	[ ! -e /tmp/driver_api.tcl ] && [ -e $ETC_PATH/driver_api.tcl ] && ln -s $ETC_PATH/driver_api.tcl /tmp/driver_api.tcl
+	for f in /tmp/*; do
+		[ -e "$f" ] && [ ! -L "$f" ] && chmod 777 "$f" 2>/dev/null
+	done
 else
 	# Activates the Hostapd 
 	if [ "$NETWORK_TYPE" == "2" ]

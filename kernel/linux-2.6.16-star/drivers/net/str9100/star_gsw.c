@@ -2719,8 +2719,8 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 #if defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG)
 
 	unsigned int f;
-	unsigned int nr_frags = skb_shinfo(skb)->nr_frags;
-	unsigned int len = skb->len - skb->data_len;
+	unsigned int nr_frags;
+	unsigned int len;
 	unsigned int offset;
 
 #ifndef FREE_TX_SKB_MULTI
@@ -2732,6 +2732,18 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 	struct sk_buff *skb_free = NULL;
 #endif
 #endif /* defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG) */
+
+	/* Pad short frames to MIN_PACKET_LEN before DMA mapping to prevent etherleak */
+	if (skb->len < MIN_PACKET_LEN) {
+		skb = skb_padto(skb, MIN_PACKET_LEN);
+		if (!skb)
+			return 0;
+	}
+
+#if defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG)
+	nr_frags = skb_shinfo(skb)->nr_frags;
+	len = skb->len - skb->data_len;
+#endif
 
 	HAL_GSW_TS_DMA_STOP();
 	spin_lock_irqsave(&star_gsw_send_lock, flags);
@@ -2873,9 +2885,7 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 	txdesc_ptr->data_ptr			= virt_to_phys(skb->data);
 	if ((nr_frags == 0) && (len < MIN_PACKET_LEN)) {
 		txdesc_ptr->length		= MIN_PACKET_LEN;
-		if (skb_tailroom(skb) >= (MIN_PACKET_LEN - len)) {
-			memset(skb->data + len, 0x00, MIN_PACKET_LEN - len);
-		}
+		memset(skb->data + len, 0x00, MIN_PACKET_LEN - len);
 	} else {
 		txdesc_ptr->length		= len;
 	}
@@ -2973,9 +2983,7 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 
         if (skb->len < MIN_PACKET_LEN) {
                 txdesc_ptr->length              = MIN_PACKET_LEN;
-                if (skb_tailroom(skb) >= (MIN_PACKET_LEN - skb->len)) {
-                        memset(skb->data + skb->len, 0x00, MIN_PACKET_LEN - skb->len);
-                }
+                memset(skb->data + skb->len, 0x00, MIN_PACKET_LEN - skb->len);
         } else {
                 txdesc_ptr->length              = skb->len;
         }

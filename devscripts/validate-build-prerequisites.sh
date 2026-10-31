@@ -31,7 +31,7 @@ check_file() {
         return 0
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND at $file"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
         return 1
     fi
 }
@@ -45,7 +45,7 @@ check_dir() {
         return 0
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND at $dir"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
         return 1
     fi
 }
@@ -60,7 +60,7 @@ check_executable() {
         return 0
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND in PATH"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
         return 1
     fi
 }
@@ -108,7 +108,7 @@ if command -v docker >/dev/null 2>&1 || command -v podman >/dev/null 2>&1; then
     fi
 else
     echo -e "${RED}✗${NC} Container runtime (docker/podman): NOT FOUND"
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
 fi
 echo ""
 
@@ -128,7 +128,7 @@ if [ ! -d "$ROOT_DIR/output" ]; then
     echo -e "${YELLOW}⚠${NC} Output directory does not exist (will be created during build)"
     mkdir -p "$ROOT_DIR/output" || {
         echo -e "${RED}✗${NC} Failed to create output directory"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
     }
 else
     echo -e "${GREEN}✓${NC} Output directory exists"

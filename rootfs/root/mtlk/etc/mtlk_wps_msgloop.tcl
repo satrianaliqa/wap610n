@@ -76,7 +76,7 @@ proc get_current_uptime {} {
 #Main function
 set action ""
 
-if {[llength ::argv]==0} {
+if {[llength $::argv] == 0} {
 	set action "start"
 } else {
 	set action [lindex $::argv 0] 
@@ -128,14 +128,14 @@ if {$action =="start_msg" } {
 	while {0 == 0 } {
 		if {[catch {set msg_file [open "${::FIFO_MSG}" "r+"]} err]} {
 			puts $err
-			after 1000
+			sleep 1
 		} else {
 			set msg_length $::wps_msg_length
 
 			set MSG [read $msg_file $msg_length]
 			close $msg_file
 			if {$MSG == ""} {
-				after 200
+				sleep 1
 			} else {
 				debug_puts "$::WPS_MSG_LOOP_TCL:msg($eventCount)=$MSG"
 				catch {exec echo "WPS_LastMessage = $MSG" > $::g_web_tmp_folder/wps_last_msg}
@@ -153,12 +153,12 @@ if {$action =="start_code" } {
 	while {0 == 0 } {
 		if {[catch {set results_file [open "${::FIFO_STATUS}" "r+"]} err]} {
 			puts $err
-			after 1000
+			sleep 1
 		} else {
 			set results_raw [read $results_file ${::cmd_length}]
 			close $results_file
 			if {$results_raw == ""} {
-				after 200
+				sleep 1
 				continue
 			}
 			set results [expr $results_raw]

@@ -29,6 +29,7 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 	char *p;
 	char *start;
 	char *end;
+	pid_t pid;
 
 	if (checkLoadDefault() == 1) {
 		websRedirect(wp, T("/admin/upgrade.asp"));
@@ -69,13 +70,18 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		system("echo killconfig > /dev/mtdblock4");
 	}
 
-	if (vfork() != 0) {
+	waitOtherProcess = 1;
+	pid = fork();
+	if (pid != 0) {
 		debug_printf("resetToDefault: 1. pid=%d\n", getpid());
 		websRedirect(wp, T("/reboot_page.asp"));
+		return;
 	} else {
 		debug_printf("resetToDefault: 2. pid=%d\n", getpid());
 		waitRedirectPage();
+		system("/root/mtlk/etc/default_settings.sh > /dev/null 2>&1");
 		system("echo 2 > /dev/gpio2");
+		system("sync");
 		system("sleep 3 ; reboot&");
 		_exit(0);
 	}
@@ -90,6 +96,7 @@ void management(webs_t wp, char_t *path, char_t *query)
 	char_t *timeOut;
 	char_t *wirelessMgmt;
 	int paramCount = 0;
+	pid_t pid;
 
 	if (checkLoadDefault() == 1) {
 		websRedirect(wp, T("/admin/upgrade.asp"));
@@ -98,23 +105,28 @@ void management(webs_t wp, char_t *path, char_t *query)
 
 	rebootTag = websGetVar(wp, T("rebootTag"), T(""));
 	if (rebootTag != NULL && strcmp(rebootTag, "true") == 0) {
-		if (vfork() != 0) {
+		waitOtherProcess = 1;
+		pid = fork();
+		if (pid != 0) {
 			debug_printf("management(reboot): 1. pid=%d\n", getpid());
 			websRedirect(wp, T("/reboot_page.asp"));
+			return;
 		} else {
 			debug_printf("management(reboot): 2. pid=%d\n", getpid());
 			system("echo 2 > /dev/gpio2");
+			system("sync");
 			system("sleep 8 ; reboot&");
 			_exit(0);
 		}
 	} else {
 		/* When rebootTag is empty or "false", save settings */
 		saveOldWebPid(getpid(), "management.asp");
-		if (vfork() != 0) {
+		waitOtherProcess = 1;
+		pid = fork();
+		if (pid != 0) {
 			debug_printf("management(save): 1. pid=%d\n", getpid());
 			websRedirect(wp, T("/wait_page.asp"));
-			doSystem("/root/mtlk/web/killchildweb.sh&");
-			waitOtherProcess = 1;
+			return;
 		} else {
 			debug_printf("management(save): 2. pid=%d\n", getpid());
 			waitRedirectPage();

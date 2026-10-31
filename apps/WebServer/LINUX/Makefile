@@ -59,7 +59,7 @@ DEPEND_FILES	= ../asp.o ../balloc.o ../base64.o ../cgi.o ../default.o  \
 				  ../wireless.o ../wps.o ../utils.o ../management.o \
 				  ../webrom.o ../webs.o ../websuemf.o ../mt_task.o \
 				  ../device_discover.o \
-				  ../xml_tree.o ../stack.o ../linked_list.o ../hnap_config_metalink.o ../hnap_implementation.o main.o
+				  ../xml_tree.o ../stack.o ../linked_list.o ../hnap_config_metalink.o ../hnap_implementation.o
 # CFLAGS	= -DWEBS -DUEMF -DOS="LINUX" -DLINUX $(UMSW) $(DASW) $(SSLSW) $(IFMODSW)
 
 ############### Settings for Snapgear -these are overridden by other platforms ################
@@ -100,13 +100,13 @@ $(ARCH): $(DEPEND_FILES)
 #
 #	Primary link
 #
-$(NAME): Makefile $(ARCH)
+$(NAME): Makefile main.o $(ARCH)
 	$(CC) -o $(NAME) $(DEBUG) \
 		$(CFLAGS) $(IFLAGS) \
 		main.o $(ARCH) $(LDFLAGS) $(ADDITIONAL_OBJS) 
 
 PROPRIETARY_BLOBS = ../mt_api.o ../mt_task.o ../mt_validation.o ../wireless.o ../wps.o ../utils.o ../hnap_implementation.o
-CLEAN_FILES = $(filter-out $(PROPRIETARY_BLOBS), $(DEPEND_FILES))
+CLEAN_FILES = $(filter-out $(PROPRIETARY_BLOBS), $(DEPEND_FILES)) main.o
 
 clean:
 	rm -f $(NAME) $(ARCH) $(CLEAN_FILES)

@@ -99,6 +99,20 @@ proc SplitIntoWords {block} {
     return $words
  }
 
+proc get_free_memory {} {
+	set freeMemory 0
+	if {![catch {set memfp [open "/proc/meminfo" r]}]} {
+		while {[gets $memfp line] >= 0} {
+			if {[regexp {^MemFree:[ \t]+([0-9]+)} $line dummy val]} {
+				set freeMemory $val
+				break
+			}
+		}
+		close $memfp
+	}
+	return $freeMemory
+}
+
 proc save_stats {} {
 	global save_file_name
 	global web_root
@@ -107,22 +121,37 @@ proc save_stats {} {
 	if {$time_str != ""} { 
 		puts $output_file "Time taken\t| $time_str"
 	}
-	if {![catch {set meminfo [exec cat /proc/meminfo]}]} {
-		set meminfoline [lindex [split $meminfo "\n"] 0]
-		set words [SplitIntoWords $meminfoline]
-		set totalMemory [lindex $words 1]
+	set totalMemory 0
+	set freeMemory [get_free_memory]
+	if {![catch {set memfp [open "/proc/meminfo" r]}]} {
+		while {[gets $memfp line] >= 0} {
+			if {[regexp {^MemTotal:[ \t]+([0-9]+)} $line dummy val]} {
+				set totalMemory $val
+				break
+			}
+		}
+		close $memfp
+	}
+	if {$totalMemory > 0} {
 		puts $output_file "Total Memory\t| $totalMemory KB"
 	}
-	if {![catch {set vmstat [exec vmstat 1 2]}]} {
-		set vmstatline [lindex [split $vmstat "\n"] 3]
-		set words [SplitIntoWords $vmstatline]
-		set freeMemory [lindex $words 3]
+	if {$freeMemory > 0} {
 		puts $output_file "Free Memory\t| $freeMemory KB"
-		set CPUidle [lindex $words 14]
-		set CPUusage [expr "100 - $CPUidle"]
-		puts $output_file "CPU Usage\t| $CPUusage %"
-		puts $output_file ""
 	}
+	if {![catch {set statfp [open "/proc/stat" r]}]} {
+		if {[gets $statfp statline] >= 0} {
+			if {[regexp {^cpu[ \t]+([0-9]+)[ \t]+([0-9]+)[ \t]+([0-9]+)[ \t]+([0-9]+)} $statline dummy u n s idle]} {
+				set total [expr $u + $n + $s + $idle]
+				if {$total > 0} {
+					set busy [expr $u + $n + $s]
+					set CPUusage [expr ($busy * 100) / $total]
+					puts $output_file "CPU Usage\t| $CPUusage %"
+				}
+			}
+		}
+		close $statfp
+	}
+	puts $output_file ""
 	print_stats $output_file
 	close $output_file
 }

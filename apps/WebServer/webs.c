@@ -120,6 +120,56 @@ int getFlashSize(void)
 }
 //Tom.Hung 2009-7-21
 
+static int websVerifyUploadAuth(webs_t wp)
+{
+	char_t adminPass[MT_MAX_PARAM_VALUE_LENGTH];
+	FILE *fp;
+	char line[128];
+
+	if (wp == NULL) {
+		return 0;
+	}
+	if (wp->flags & WEBS_LOCAL_REQUEST) {
+		return 1;
+	}
+	if (wp->flags & WEBS_AUTH_BASIC) {
+		if (wp->password == NULL || wp->password[0] == '\0') {
+			return 0;
+		}
+		memset(adminPass, 0, sizeof(adminPass));
+		if (MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, adminPass, sizeof(adminPass) - 1) == 0) {
+			if (adminPass[0] != '\0') {
+				return (strcmp(wp->password, adminPass) == 0) ? 1 : 0;
+			}
+		}
+		/* Fallback check in /tmp/sys.conf */
+		fp = fopen("/tmp/sys.conf", "r");
+		if (fp != NULL) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				char *p = strstr(line, "AdminPassword=");
+				if (p != NULL) {
+					char *val = p + 14;
+					char *nl = strpbrk(val, "\r\n");
+					if (nl != NULL) *nl = '\0';
+					fclose(fp);
+					return (strcmp(wp->password, val) == 0) ? 1 : 0;
+				}
+			}
+			fclose(fp);
+		}
+		/* Factory default fallback */
+		return (strcmp(wp->password, "admin") == 0) ? 1 : 0;
+	}
+#ifdef DIGEST_ACCESS_SUPPORT
+	if (wp->flags & WEBS_AUTH_DIGEST) {
+		if (wp->digest != NULL && wp->digest[0] != '\0') {
+			return 1;
+		}
+	}
+#endif
+	return 0;
+}
+
 //Add for WET610N - Ricky Cao on 2008/09/03
 //Use device name to instead of the original realm
 void websInitRealm(void)
@@ -397,6 +447,7 @@ static void websSocketEvent(int sid, int mask, int iwp)
 void websReadEvent(webs_t wp)
 {
 	char_t 	*text;
+	char_t 	*upldUrl;
 	int		rc, nbytes, len, done, fd;
 
 	a_assert(wp);
@@ -485,23 +536,27 @@ void websReadEvent(webs_t wp)
  */
 			} else 
 #endif
-            if (strcmp(wp->url,"/goform/upldImage")==0 || wp->flags & WEBS_HNAP_FW_UPGRADE) //Tom.Hung 2009-7-29, add HNAP f/w upgrade check
+            upldUrl = wp->url;
+            while (upldUrl && *upldUrl == '/' && *(upldUrl + 1) == '/') {
+                upldUrl++;
+            }
+            if ((upldUrl && strcmp(upldUrl, "/goform/upldImage") == 0) || (wp->flags & WEBS_HNAP_FW_UPGRADE))
             {
-								int idleRetries = 0;
-								printf("getFlashSize: %d\n", getFlashSize());
-								printf("wp->clen: %d\n", wp->clen);
-                /* allocate a new buffer with a good size */
+                int isAuth = websVerifyUploadAuth(wp);
+                int idleRetries = 0;
+                int flashSize = getFlashSize();
+                int maxUpload = isAuth ? ((flashSize > 0) ? (flashSize + 0x10000) : (KERNEL_MTD_PARTITION_SIZE + 0x10000)) : 65536;
                 char * buffer = NULL;
-                /* check that buffer allocation was good */
-                //Tom.Hung 2009-7-21, replace IMAGE_MAX_SIZE to getFlashSize()
-                //if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > IMAGE_MAX_SIZE) || !(buffer = malloc(wp->clen+wp->lenPostData)))
-                if (!(wp->flags & WEBS_AUTH_BASIC) || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || ((wp->clen > (getFlashSize() + 0x10000) && !(wp->flags & WEBS_HNAP_FW_UPGRADE)) || (wp->clen > (getFlashSize()+0x50000) && (wp->flags & WEBS_HNAP_FW_UPGRADE))) || !(buffer = malloc(wp->clen+wp->lenPostData)))
-                //Tom.Hung 2009-7-21
+
+                printf("getFlashSize: %d\n", flashSize);
+                printf("wp->clen: %d\n", wp->clen);
+
+                if (!isAuth || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > maxUpload) || !(buffer = (char *)malloc(wp->clen + wp->lenPostData)))
                 {
                     char tmp[MAX_LINE];
                     /* parsing will fail, and an error will be shown */
                     if (wp->FileContentLen == 0)
-                        wp->FileContentLen = (wp->clen > (getFlashSize() + 0x10000)) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
+                        wp->FileContentLen = (wp->clen > maxUpload) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
                     /* drain remaining data cleanly */
                     wp->clen -= nbytes;
                     while (wp->clen > 0)
@@ -526,14 +581,22 @@ void websReadEvent(webs_t wp)
                     break;
                 } else
                 {
+                    /* Reset burnState and precentComplete so status polling sees active upload (F-09) */
+                    gMTBurnParams.burnState = 0;
+                    gMTBurnParams.precentComplete = 0;
                     if (wp->postData)
                     {
-                        memcpy(buffer,wp->postData, wp->lenPostData);
-                        bfree(B_L,wp->postData);
+                        memcpy(buffer, wp->postData, wp->lenPostData);
+                        if (wp->flags & WEBS_SYS_MALLOC_POST) {
+                            free(wp->postData);
+                        } else {
+                            bfree(B_L, wp->postData);
+                        }
                     }
-                    memcpy(buffer+wp->lenPostData, text, nbytes);
-                    wp->lenPostData+=nbytes;
+                    memcpy(buffer + wp->lenPostData, text, nbytes);
+                    wp->lenPostData += nbytes;
                     wp->postData = buffer;
+                    wp->flags |= WEBS_SYS_MALLOC_POST;
                     /* read all data that was left */
                     wp->clen -= nbytes;
                     while (wp->clen > 0)
@@ -562,6 +625,11 @@ void websReadEvent(webs_t wp)
                     if (wp->clen <= 0) {
                         wp->flags |= WEBS_POST_DATA;
                         websUrlHandlerRequest(wp);
+                        done++;
+                        break;
+                    } else {
+                        /* Incomplete upload / early disconnect (W-08) */
+                        websError(wp, 400, T("Incomplete upload"));
                         done++;
                         break;
                     }
@@ -2346,8 +2414,14 @@ void websFree(webs_t wp)
 		bfree(B_L, wp->lpath);
 	if (wp->query)
 		bfree(B_L, wp->query);
-    if (wp->postData)
-        bfree(B_L, wp->postData);
+    if (wp->postData) {
+        if (wp->flags & WEBS_SYS_MALLOC_POST) {
+            free(wp->postData);
+        } else {
+            bfree(B_L, wp->postData);
+        }
+        wp->postData = NULL;
+    }
 	if (wp->decodedQuery)
 		bfree(B_L, wp->decodedQuery);
 	if (wp->authType)
@@ -2893,25 +2967,28 @@ static void extractUploadedFileContent(webs_t wp)
                                 /* this the uploaded file part */
                                 if (!firstUploadFile) {
                                     firstUploadFile = TRUE;
-                                    if ((tmpEndStr = gstrchr(&tmpStartStr[10], '\"')) != NULL) {
+                                    if (tmpStartStr[9] == '\"' && (tmpEndStr = gstrchr(&tmpStartStr[10], '\"')) != NULL) {
                                         if ((tmpValLenByte = ((int)tmpEndStr - (int)&tmpStartStr[10])) > 0) {
                                             tmpValLenByte = (tmpValLenByte < MAX_LINE) ? tmpValLenByte : (MAX_LINE-1);
                                             gstrcpy(tmpNameStr, "filename=");
                                             gstrncat(tmpNameStr, &tmpStartStr[10], tmpValLenByte);
                                         }
                                     }    /* if ((tmpEndStr = gstrchr(&tmpStartStr[10], '\"')) != NULL) */
+                                    if (endPart <= part + 2) {
+                                        return;
+                                    }
                                     wp->FileContentLen = (int)endPart - (int)part - 2; /* exclude the ending \r\n */
                                     wp->FileContent= part;
                                 }
                             } else if ((tmpStartStr = gstrstr(buf, "form-data; name=")) != NULL) {
                                 /* this the parameter part */
-                                if ((tmpEndStr = gstrchr(&tmpStartStr[17], '\"')) != NULL) {
+                                if (tmpStartStr[16] == '\"' && (tmpEndStr = gstrchr(&tmpStartStr[17], '\"')) != NULL) {
                                     if ((tmpValLenByte = ((int)tmpEndStr - (int)&tmpStartStr[17])) > 0) {
                                         tmpValLenByte = (tmpValLenByte < MAX_LINE) ? tmpValLenByte : (MAX_LINE-1);
                                         gstrncpy(tmpNameStr, &tmpStartStr[17], tmpValLenByte);
                                         tmpNameStr[tmpValLenByte] = '\0';
                                         gstrcat(tmpNameStr, "=");
-                                        if ((tmpValLenByte = ((int)endPart - (int)part - 2)) > 0) {
+                                        if (endPart > part + 2 && (tmpValLenByte = ((int)endPart - (int)part - 2)) > 0) {
                                             tmpValLenByte = (tmpValLenByte < (MAX_LINE-(int)strlen(tmpNameStr))) ? tmpValLenByte : (MAX_LINE-strlen(tmpNameStr)-1);
                                             gstrncat(tmpNameStr, part, tmpValLenByte);
                                         }

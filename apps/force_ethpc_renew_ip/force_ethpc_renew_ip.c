@@ -44,12 +44,57 @@ int check_somefile_is_exist(char *file_path)
 	return 1;
 }
 
+static int is_valid_ip(const char *ip)
+{
+	int dots = 0;
+	int num = 0;
+	int has_digit = 0;
+	const char *p = ip;
+
+	if (!ip || !*ip)
+		return 0;
+
+	while (*p) {
+		if (*p >= '0' && *p <= '9') {
+			num = num * 10 + (*p - '0');
+			if (num > 255)
+				return 0;
+			has_digit = 1;
+		} else if (*p == '.') {
+			if (!has_digit)
+				return 0;
+			dots++;
+			num = 0;
+			has_digit = 0;
+		} else {
+			return 0;
+		}
+		p++;
+	}
+
+	return (dots == 3 && has_digit);
+}
+
 int get_config(char *config_value, char *config_name, char *config_file)
 {
 	FILE *fptr;
-	char command[256]={0};
+	char command[256];
+	const char *p;
 
-	sprintf(command, "awk -F \"=\" '/^%s/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' %s", config_name, config_file);
+	if (!config_value || !config_name || !config_file)
+		return -1;
+
+	/* Validate config_name to prevent shell injection */
+	for (p = config_name; *p; p++) {
+		if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
+		      (*p >= '0' && *p <= '9') || *p == '_'))
+			return -1;
+	}
+
+	memset(command, 0, sizeof(command));
+	snprintf(command, sizeof(command),
+		"awk -F \"=\" '/^%s/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' %s",
+		config_name, config_file);
 
 	fptr = popen(command, "r");
 	if(fptr==NULL){
@@ -134,25 +179,32 @@ int getClientGateway(char *gateway, int isDHCP)
 int detect_layer3_link_with_ping(char *gateway)
 {
 	FILE *fptr;
-	char command[128]={0}, pingResult[128]={0}, checkResult[128]={0};
+	char command[128], pingResult[128], checkResult[128];
 	char *charPtr;
 
-	//printf("Current LAN Gateway = %s\n", gateway);		
-	memset(command, 0, 128);
+	memset(command, 0, sizeof(command));
+	memset(pingResult, 0, sizeof(pingResult));
+	memset(checkResult, 0, sizeof(checkResult));
+
+	if (!is_valid_ip(gateway)) {
+		printf("ERROR: invalid gateway IP '%s'\n", gateway ? gateway : "");
+		return -1;
+	}
+
 	//Clear gateway entry in arp table
-	sprintf(command, "/sbin/arp -d %s", gateway);
+	snprintf(command, sizeof(command), "/sbin/arp -d %s 2>/dev/null", gateway);
 	system(command);
-	memset(command, 0, 128);
-	//Send a echo request for update arp table
-	sprintf(command, "/bin/ping %s", gateway);
+	memset(command, 0, sizeof(command));
+	//Send an echo request for update arp table (-c 1 prevents hanging forever)
+	snprintf(command, sizeof(command), "/bin/ping -c 1 %s", gateway);
 	fptr = popen(command, "r");
 	if(fptr!=NULL){
-		if(fgets(pingResult, 128, fptr)!=NULL){
+		if(fgets(pingResult, sizeof(pingResult), fptr)!=NULL){
 			charPtr=strchr(pingResult, '\n');
 			if(charPtr){
 				*charPtr='\0';
 			}
-			sprintf(checkResult, "%s is alive!", gateway);
+			snprintf(checkResult, sizeof(checkResult), "%s is alive!", gateway);
 			printf("The result of ping is %s\nThe string for check result is %s\n", pingResult, checkResult);
 			if(!strcmp(pingResult, checkResult)){
 				printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
@@ -396,7 +448,7 @@ int main(int argc, char** argv)
 	int tempCount=0;
 
 	printf("daemon start for force PC at ethernet port of device to renew ..\n");
-	sprintf(buf, "echo %d > /var/run/force_ethpc_renew_ip", getpid());
+	snprintf(buf, sizeof(buf), "echo %d > /var/run/force_ethpc_renew_ip", getpid());
 	system(buf);
 
 	struct sigaction sa;   

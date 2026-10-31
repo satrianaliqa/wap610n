@@ -93,7 +93,7 @@
 #define CONFIG_DEVICE_ID	"0x0012"
 #define CONFIG_CONFIGFS_OFFSET  "0x103E0000"
 #define CONFIG_LINUX_OFFSET     "0x10040000"
-#define CONFIG_SAFE_RECOVERY_COMMAND "echo Verifying image integrity. ; cksum $linux_offset  || echo Recovering bootpImage from tftp server 2.2.2.2 port 2555 && setenv serverip 2.2.2.2 && setenv ipaddr 2.2.2.1 && setenv tftpdstp 2555 && tftp 0x100000 bootpImage && cp.b 0x100000 $linux_offset 0x39ffff && reset"
+#define CONFIG_SAFE_RECOVERY_COMMAND "if cksum $linux_offset; then echo Verifying image integrity OK.; else echo Recovering bootpImage from tftp server 2.2.2.2 port 2555; setenv serverip 2.2.2.2; setenv ipaddr 2.2.2.1; setenv tftpdstp 2555; if tftp 0x100000 bootpImage; then erase $linux_offset +0x3a0000; cp.b 0x100000 $linux_offset $filesize; reset; fi; fi"
 #define CONFIG_RESTORE_DEFAULTS_COMMAND "if check_restore_default 3; then erase $config_offset +10000; led 0 2 3; fi;"
 #define CONFIG_BOOTCOMMAND	"run restore_defaults_cmd; run safe_recovery_cmd; go $linux_offset"
 

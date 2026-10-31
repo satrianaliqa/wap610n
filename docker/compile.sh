@@ -46,6 +46,9 @@ echo "=========================================================="
 
 sudo $CONTAINER_CMD run --rm \
     --privileged \
+    -e TARGET_NAME="$TARGET_NAME" \
+    -e CURRENT_UID="$CURRENT_UID" \
+    -e CURRENT_GID="$CURRENT_GID" \
     -v "$ROOT_DIR:/workspace:z" \
     -w /workspace \
     wap610n-builder /bin/bash -c '
@@ -96,7 +99,7 @@ sudo $CONTAINER_CMD run --rm \
         echo "--> Fixing permissions for workspace output..."
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/output 2>/dev/null || true
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/images 2>/dev/null || true
-    "'
+    '
 
 # Audit & Verifikasi hasil compile otomatis (dynamically find firmware)
 echo ""

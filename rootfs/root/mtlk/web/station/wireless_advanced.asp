@@ -98,6 +98,7 @@ function stationMode() {
 
 	document.getElementById("Use11QMap").options[Use11QMap].selected = true;
 	//u-media(rh001)-Jacky.Yang (Add), 15-Apr-2010, Add new feature for Linksys request.
+	objectDisplay("Re-EstablishEthernet", "block");
 	document.getElementById("EthDownUp").options[EthDownUp].selected = true;
 }
 
@@ -110,6 +111,7 @@ function apMode() {
 	objectDisplay("ReliableMulticastField", "block");
 	//objectDisplay("STBCField", "block");
 	objectDisplay("STBCField", "none");
+	objectDisplay("Re-EstablishEthernet", "none");
 
 	document.getElementById("RadarDetect").options[RadarDetect].selected = true;
 	document.getElementById("AocsRestrictCh").value = AocsRestrictCh;
@@ -136,7 +138,10 @@ function page_load() {
 	var mode = "<% getParam(1, "network_type"); %>";
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
 	
-	document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wpsMode"))
+		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wirelessAdv"))
+		document.getElementById("wirelessAdv").href = "wireless_advanced.asp?random=" + Math.random();
 	/*if (wirelessConfigType == "manual")
 		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
 	else if (wirelessConfigType == "wps")

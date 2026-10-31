@@ -75,11 +75,12 @@ int websVirtualDirHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 						char_t *url, char_t *path, char_t *query)
 {
-	debug_printf("websDefaultHandler: Into websDefaultHandler function. (We will not display Exit message.)\n");
-	debug_printf("websDefaultHandler: urlPrefix=%s, webDir=%s, arg=%d, url=%s, path=%s, query=%s\n", urlPrefix, webDir, arg, url, path, query);
 	websStatType	sbuf;
 	char_t			*lpath, *tmp, *date;
 	int				bytes, flags, nchars;
+
+	debug_printf("websDefaultHandler: Into websDefaultHandler function. (We will not display Exit message.)\n");
+	debug_printf("websDefaultHandler: urlPrefix=%s, webDir=%s, arg=%d, url=%s, path=%s, query=%s\n", urlPrefix, webDir, arg, url, path, query);
 
 	a_assert(websValid(wp));
 	a_assert(url && *url);

@@ -87,7 +87,8 @@ echo -n "2. Pengecekan Device ID Header: "
 if [ "$DEVICE_ID_HEX" = "00000012" ] || [ "$DEVICE_ID_HEX" = "12000000" ] || [ "$DEVICE_ID_HEX" = "0012" ]; then
     echo "✅ VALID (0x0012 - WAP610N Official)"
 else
-    echo "⚠️ Device ID Hex: $DEVICE_ID_HEX (Cek ke U-Boot config)"
+    echo "❌ INVALID Device ID Hex: $DEVICE_ID_HEX (Expected 0x0012)"
+    exit 1
 fi
 
 # 3. Check CRC32 Checksum in Header and Footer
@@ -138,7 +139,8 @@ sudo $CONTAINER_CMD run --rm --privileged \
         if [ -x /tmp/mnt_chk/usr/sbin/dropbear ] && [ -x /tmp/mnt_chk/root/mtlk/web/webs ]; then
             echo '   - Dropbear SSH & WebServer      : ✅ ADA & EXECUTABLE'
         else
-            echo '   - Dropbear / WebServer          : ⚠️  WARNING (Missing daemon)'
+            echo '   - Dropbear / WebServer          : ❌ ERROR (Missing daemon)'
+            exit 1
         fi
 
         # Backdoor eradication: shell.cgi must NOT exist in the ramdisk

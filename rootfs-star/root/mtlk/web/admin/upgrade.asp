@@ -53,6 +53,7 @@ function template_load() {
 var burn_state, burn_progress;
 var firstTime=true;
 var stopProcess=false;
+var uploadStarted=false;
 var http_request = false;
 var langset = "<% getParam(1, "Language"); %>";
 
@@ -120,6 +121,14 @@ function reWirteList(str)
 
 	burn_state = docTemp.substr(0, index) * 1;
 	burn_progress = docTemp.substr(index+1) * 1;
+
+	if (uploadStarted && burn_state == 0 && (burn_progress == 0 || burn_progress == -1)) {
+		document.getElementById("waitPad").style.display = "block";
+		displayAllField("block");
+		document.getElementById("progressValue").innerHTML = "Uploading image...";
+		return;
+	}
+	uploadStarted = false;
 	
 	if ((burn_progress == -1) || (burn_state == 2)) {
 		alert("<!--#tr id=\"adm.fu.alert.3\" -->This image file is incorrect or flash write failed.<!--#endtr-->");
@@ -140,12 +149,12 @@ function reWirteList(str)
 		document.getElementById("progress").style.width = percent + "%";
 		document.getElementById("progressValue").innerHTML = (burn_state == 6 ? "Verifying: " : "Flashing: ") + percent + "%";
 	}
-	else if ((burn_state == 1) && (burn_progress == 100)) {
+	else if (((burn_state == 1) || (burn_state == 3)) && (burn_progress == 100)) {
 		stopProcess = true;
 		document.getElementById("progress").style.width = "100%";
 		document.getElementById("progressValue").innerHTML = "Complete! Rebooting...";
 		setTimeout(function() {
-			location.href = "/reboot_page.asp";
+			top.location.href = "/reboot_page.asp";
 		}, 1000);
 	}
 }
@@ -182,6 +191,7 @@ function checkFW()
 		return;
 	}
 
+	uploadStarted = true;
 	stopToWait = true;
 	stopProcess = false;
 	document.getElementById("waitPad").style.display = "block";
@@ -201,6 +211,7 @@ function submitReboot() {
 
 function page_load() {
 	objectDisplay("warningMsg", "none");
+	objectDisplay("upgradeProgress", "none");
 	blinkingWarningMSG("true");
 	if(langset == "SA"){
 		document.getElementById("progressTD").style.textAlign = "right";
@@ -365,13 +376,13 @@ function page_load() {
 					</tr>
 					<!--</tbody>-->
 				</table>
-				<table id="upgradeProgress" class="mainTableContent" cellspacing="0">
+				<table id="upgradeProgress" class="mainTableContent" cellspacing="0" style="display:none">
 					<tr>
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td class="fwUpgradeLabel"><!--#tr id="adm.fu.3" -->Warning:<!--#endtr--></td>
 						<td class="fwUpgradeContent">
-							<div style="width:270px;text-align:left;word-wrap:break-word;"><!--#tr id="adm.fu.4"" -->Upgrading firmware may take a few minutes, please don't turn off <!--#endtr--><!--#tr id="adm.fu.5" -->the power or press the reset button.<!--#endtr--></div>
+							<div style="width:270px;text-align:left;word-wrap:break-word;"><!--#tr id="adm.fu.4" -->Upgrading firmware may take a few minutes, please don't turn off <!--#endtr--><!--#tr id="adm.fu.5" -->the power or press the reset button.<!--#endtr--></div>
 						</td>
 					</tr>
 					<tr>

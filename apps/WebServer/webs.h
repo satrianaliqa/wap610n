@@ -81,6 +81,7 @@
 #define WEBS_HEADER_DONE		0x40000		/* Already output the HTTP header */
 #define WEBS_MULTIPART_FORM		0x80000		/* Post multipart form for file upload   orik */
 #define WEBS_HNAP_FW_UPGRADE	  	0x01000000 //Add for HNAP firmware upgrade - Ricky Cao
+#define WEBS_SYS_MALLOC_POST		0x08000000	/* wp->postData allocated via system malloc() */
 
 /*
  *	URL handler flags

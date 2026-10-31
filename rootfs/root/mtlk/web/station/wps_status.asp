@@ -70,6 +70,11 @@ var ipConfigMethod;
 var doRefresh = false;
 var langset = "<% getParam(1, "Language"); %>";
 
+function escapeHTML(str) {
+	if (!str) return "";
+	return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 var WPS_CURRENT_STAT_IDLE="-1";
 var WPS_CURRENT_STAT_SEARCHING="1";
 var WPS_CURRENT_STAT_REGISTERING="2";
@@ -251,7 +256,7 @@ function showField(tagName)
 	objectDisplay("successField", "none");
 	objectDisplay("failField", "none");
 	objectDisplay("progressField", "none");
-	document.getElementById("NonProc_ESSID").innerHTML = displayESSID;
+	document.getElementById("NonProc_ESSID").innerHTML = escapeHTML(displayESSID);
 
 	if (tagName != "")
 	{
@@ -353,7 +358,7 @@ function parsingRespone(msg)
 	//alert("'" + currentESSID + "'");
 	//if (currentESSID != "NULL")
 	if (currentESSID != "")
-		displayESSID = currentESSID; 
+		displayESSID = escapeHTML(currentESSID); 
 
 	switch(wps_info){
 		//case "SEARCHING":
@@ -628,14 +633,6 @@ function page_load() {
 	} else {
 		document.getElementById("waitPad").style.display="none";
 		stopUpdateWPSStatus = true;
-	}
-	
-	if(langset == "SA"){
-		document.getElementById("progressTD").style.textAlign = "right";	
-		document.getElementById("WPSPBC").style.textAlign = "right";
-		document.getElementById("WPSPIN").style.textAlign = "right";
-		document.getElementById("WPS_fail_id").style.textAlign = "right";
-		document.getElementById("WPS_succeed_id").style.textAlign = "right";
 	}
 	
 	if (g_mode != "2") {

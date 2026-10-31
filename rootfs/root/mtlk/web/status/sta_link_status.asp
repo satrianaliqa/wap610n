@@ -78,11 +78,19 @@ function waitStatus()
 	}
 }
 
+function updateSignalStrength() {
+	var sig = document.getElementById("signalLevel");
+	if (sig && (!sig.innerHTML || sig.innerHTML == "" || sig.innerHTML == "0" || sig.innerHTML == "0 dBm" || sig.innerHTML == "NULL" || sig.innerHTML == "N/A")) {
+		sig.innerHTML = "N/A dBm";
+	}
+}
+
 function updateLinkStatus(){
 	if (stopToWait == true) {
 		makeRequest("/goform/updateLinkStatus", "something", "listLinkStatus", "linkStatusTemp");
 		stopToWait = false;
 	}
+	updateSignalStrength();
 	setTimeout("updateLinkStatus()", 12000);
 }
 
@@ -94,7 +102,8 @@ function page_load() {
 	waitStatus();
 	makeRequest("/goform/checkDHCPMode", "something", "", "");
 	makeRequest("/goform/updateLinkStatus", "something", "listLinkStatus", "linkStatusTemp");
-	updateLinkStatus();
+	stopToWait = false;
+	setTimeout("updateLinkStatus()", 12000);
 }
 </script>
 <!-- InstanceEndEditable -->

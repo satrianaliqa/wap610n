@@ -267,12 +267,12 @@ sym_t *symLookup(sym_fd_t sd, char_t *name)
 
 sym_t *symEnter(sym_fd_t sd, char_t *name, value_t v, int arg)
 {
-	debug_printf("symEnter: Into symEnter function. (We will not display exit message.)\n");
-	debug_printf("symEnter: name:%s\n", name);
 	sym_tabent_t	*tp;
 	sym_t			*sp, *last;
 	char_t			*cp;
 	int				hindex;
+	debug_printf("symEnter: Into symEnter function. (We will not display exit message.)\n");
+	debug_printf("symEnter: name:%s\n", name);
 
 	a_assert(name);
 	a_assert(0 <= sd && sd < symMax);

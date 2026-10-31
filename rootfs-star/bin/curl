@@ -80,15 +80,18 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         -X|--request)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             METHOD="$2"
             shift 2
             ;;
-        -d|--data|--data-raw|--data-ascii)
+        -d|--data|--data-raw|--data-ascii|--data-binary|--data-urlencode)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             DATA="$2"
             [ "$METHOD" = "GET" ] && METHOD="POST"
             shift 2
             ;;
         -H|--header)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             case "$2" in
                 [Cc][Oo][Nn][Tt][Ee][Nn][Tt]-[Tt][Yy][Pp][Ee]:*)
                     CONTENT_TYPE="${2#*: }"
@@ -100,19 +103,30 @@ while [ $# -gt 0 ]; do
             shift 2
             ;;
         -u|--user)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             AUTH="$2"
+            AUTH_USER="$2"
             shift 2
             ;;
         -A|--user-agent)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             USER_AGENT="$2"
             shift 2
             ;;
         -o|--output)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             OUTFILE="$2"
+            OUT_FILE="$2"
+            shift 2
+            ;;
+        -m|--max-time|--connect-timeout)
+            [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
+            # timeout parameter ignored on busybox nc wrapper
             shift 2
             ;;
         -O|--remote-name)
             OUTFILE="__REMOTE__"
+            OUT_FILE="__REMOTE__"
             shift
             ;;
         -k|--insecure|-L|--location)
@@ -137,30 +151,32 @@ if [ -z "$URL" ]; then
 fi
 
 # Determine remote filename if -O was specified
-if [ "$OUTFILE" = "__REMOTE__" ]; then
+if [ "$OUTFILE" = "__REMOTE__" ] || [ "$OUT_FILE" = "__REMOTE__" ]; then
     fname="${URL%%\?*}"
     fname="${fname##*/}"
     [ -z "$fname" ] && fname="index.html"
     OUTFILE="$fname"
+    OUT_FILE="$fname"
 fi
 
 # Check if we can fast-path standard GET with wget
-if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HEAD_ONLY" -eq 0 ]; then
-    WGET_ARGS="-U \"$USER_AGENT\""
-    [ "$SILENT" -eq 1 ] && WGET_ARGS="$WGET_ARGS -q"
-    
-    # If basic auth provided, rewrite URL to http://user:pass@host/path
+if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HEAD_ONLY" -eq 0 ] && \
+   [ -z "$CUSTOM_HEADERS" ] && [ -z "$AUTH" ] && [ -z "$AUTH_USER" ] && \
+   { [ "$USER_AGENT" = "curl/7.68.0 (wap610n)" ] || [ "$USER_AGENT" = "curl/7.wap610n-ash" ]; }; then
     FINAL_URL="$URL"
-    if [ -n "$AUTH" ]; then
-        proto="${URL%%://*}"
-        rest="${URL#*://}"
-        FINAL_URL="${proto}://${AUTH}@${rest}"
-    fi
-
-    if [ "$OUTFILE" = "-" ]; then
-        eval "wget $WGET_ARGS -O - \"$FINAL_URL\""
+    TARGET_OUT="${OUT_FILE:-$OUTFILE}"
+    if [ "$SILENT" -eq 1 ]; then
+        if [ -n "$TARGET_OUT" ] && [ "$TARGET_OUT" != "-" ]; then
+            wget -q -O "$TARGET_OUT" "$FINAL_URL"
+        else
+            wget -q -O - "$FINAL_URL"
+        fi
     else
-        eval "wget $WGET_ARGS -O \"$OUTFILE\" \"$FINAL_URL\""
+        if [ -n "$TARGET_OUT" ] && [ "$TARGET_OUT" != "-" ]; then
+            wget -O "$TARGET_OUT" "$FINAL_URL"
+        else
+            wget -O - "$FINAL_URL"
+        fi
     fi
     exit $?
 fi

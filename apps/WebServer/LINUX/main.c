@@ -104,8 +104,8 @@ int ReParseOnLoad = 0;
 
 void CatchSIG(int s)
 {
-	debug_printf("CatchSIG: Reload flash content in the Web Server.\n");
 	char filename[512];
+	debug_printf("CatchSIG: Reload flash content in the Web Server.\n");
 	printf("CatchSIG %d - parseing OnLoad\n",s);
 	ReParseOnLoad = 1;
 }
@@ -121,21 +121,21 @@ int waitOtherProcess = 0;
 
 int main(int argc, char** argv)
 {
+	struct sigaction setup_action;
+	sigset_t block_mask;
+	char cmd[256];
+	int firewallReloadID;
+	int msgSize = 1024;
+	struct msgbuffer {
+		long mtype;
+		char mtext[1024];
+	} msgInfo;
+
 	//Jacky.Yang 15-May-209, set open debug message value;
 	//openDebug=1;
 	
 	printf("Web Server start to init.\n");
-	struct sigaction setup_action;
-	sigset_t block_mask;
 
-	//Jacky.Yang 25-Mar-2008,
-	char cmd[256];
-	int firewallReloadID;
-	int msgSize=1024;
-	struct msgbuffer {
-		long mtype;
-		char mtext[msgSize];
-	}msgInfo;
 	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0666);
 	if(firewallReloadID == -1){
 		printf("goahead: Create firewall reload message queue fail!\n");
@@ -312,7 +312,8 @@ static int initWebs()
 	if ((cp = strrchr(dir, '/'))) {
 		*cp = '\0';
 	}
-	sprintf(webdir, "%s/%s", dir, rootWeb);
+	snprintf(webdir, sizeof(webdir), "%s/%s", dir, rootWeb);
+	webdir[sizeof(webdir) - 1] = '\0';
 
 	websSetDefaultDir(webdir);
 
@@ -459,10 +460,18 @@ void defaultTraceHandler(int level, char_t *buf)
 char_t *websGetCgiCommName()
 {
 	char_t	*pname1, *pname2;
+	char_t	fallbackBuf[128];
+	static int cgiCounter = 0;
 
 	pname1 = tempnam(NULL, T("cgi"));
-	pname2 = bstrdup(B_L, pname1);
-	free(pname1);
+	if (pname1 == NULL) {
+		snprintf(fallbackBuf, sizeof(fallbackBuf), "/tmp/cgi_%d_%d", (int)getpid(), ++cgiCounter);
+		fallbackBuf[sizeof(fallbackBuf) - 1] = '\0';
+		pname2 = bstrdup(B_L, fallbackBuf);
+	} else {
+		pname2 = bstrdup(B_L, pname1);
+		free(pname1);
+	}
 	return pname2;
 }
 
@@ -474,9 +483,10 @@ char_t *websGetCgiCommName()
 int websLaunchCgiProc(char_t *cgiPath, char_t **argp, char_t **envp,
 					  char_t *stdIn, char_t *stdOut)
 {
-	debug_printf("websLaunchCgiProc: INto websLaunchCgiProc pid=%d\n", getpid());
 	int	pid, fdin, fdout, hstdin, hstdout, rc;
 	char dir[MT_MAX_PATH_LENGTH];
+
+	debug_printf("websLaunchCgiProc: INto websLaunchCgiProc pid=%d\n", getpid());
 
 	fdin = fdout = hstdin = hstdout = rc = -1; 
 	if ((fdin = open(stdIn, O_RDWR | O_CREAT, 0666)) < 0 ||

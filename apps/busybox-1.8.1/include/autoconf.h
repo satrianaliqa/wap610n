@@ -192,7 +192,7 @@
 #define ENABLE_INSTALL_SH_APPLET_SCRIPT_WRAPPER 0
 #define USE_INSTALL_SH_APPLET_SCRIPT_WRAPPER(...)
 #define SKIP_INSTALL_SH_APPLET_SCRIPT_WRAPPER(...) __VA_ARGS__
-#define CONFIG_PREFIX "/home/satszz/wap610n/apps/busybox-1.8.1/../../rootfs-star"
+#define CONFIG_PREFIX "../../rootfs-star"
 #define ENABLE_PREFIX 1
 #define USE_PREFIX(...) __VA_ARGS__
 #define SKIP_PREFIX(...)

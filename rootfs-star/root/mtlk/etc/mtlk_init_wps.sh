@@ -247,7 +247,7 @@ BSSID_USAGE_IN_CONNECTION_POLICY=$BSSID_USAGE
 # Yes: 0xValue or passphrase, No: comment out line
 # NW_KEY=0x000102030405060708090A0B0C0D0E0F000102030405060708090A0B0C0D0E0F
 	#NW_KEY=0xC37844A77F463D59AF2D2E7FEC6D014E8FE5E510674F2AE56447DD443A147666
-	          1234567890123456789012345678901234567890123456789012345678901234
+	#         1234567890123456789012345678901234567890123456789012345678901234
 
 
 # vendor specific info for WPS packets
@@ -377,11 +377,6 @@ then
 			KEY_MGMT="NONE"
 			ENCR_TYPE_FLAGS="0x0002"
 			AUTH_TYPE_FLAGS="0x0001"
-			if [ -n "$WepTxKeyIdx" ] && [ "$WepTxKeyIdx" != "1" ]
-			then
-				echo "#Set WEP TX KEY ID if not a default (1)" >> ${WSC_CONF_FILE}
-				echo "	WEP_TX_KEY_IDX=$WepTxKeyIdx" >> ${WSC_CONF_FILE}
-			fi
 		fi
 	fi
 	
@@ -395,5 +390,14 @@ fi
 
 SUPPLICANT_PARAMS_WC=`echo $SUPPLICANT_PARAMS | wc -c`
 write_wps_config_file 
+
+if [ $SECURITY_MODE == $Security_Wep ]
+then
+	if [ -n "$WepTxKeyIdx" ] && [ "$WepTxKeyIdx" != "1" ]
+	then
+		echo "#Set WEP TX KEY ID if not a default (1)" >> ${WSC_CONF_FILE}
+		echo "	WEP_TX_KEY_IDX=$WepTxKeyIdx" >> ${WSC_CONF_FILE}
+	fi
+fi 
 dos2unix $WSC_CONF_FILE
 chmod a+x $WSC_CONF_FILE 

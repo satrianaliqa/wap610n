@@ -14,223 +14,310 @@
 #include <stdlib.h>
 #include <sys/file.h>
 #include <unistd.h>
+#include <stdint.h>
 
-#define CFG_ENV_SIZE		0x10000		/* Total Size of Environment Sector */
-#define ENV_HEADER_SIZE	(sizeof(unsigned long))
-#define ENV_SIZE (CFG_ENV_SIZE - ENV_HEADER_SIZE)
+#ifndef MTD_ENV_BLOCK_NAME
+#define MTD_ENV_BLOCK_NAME "/dev/mtdblock3"
+#endif
 
-unsigned long crc32(unsigned long crc, const char *buf, int len);
+#define CFG_ENV_SIZE       0x10000		/* Total Size of Environment Sector (64 KB) */
+#define ENV_HEADER_SIZE    (sizeof(uint32_t))	/* CRC header is exactly 4 bytes */
+#define ENV_SIZE           (CFG_ENV_SIZE - ENV_HEADER_SIZE) /* 65532 (0xFFFC) bytes */
+#define MAX_ENV_PARAMS     500
 
-typedef struct _list_elem
+uint32_t crc32(uint32_t crc, const char *buf, int len);
+
+int main(int argc, char *argv[])
 {
-	char *name_ptr;
-	char *value_ptr;
-}list_elem;
+	FILE *f;
+	char *param_name;
+	char *param_value;
+	const char *p;
+	const char *data_end;
+	const char *end_str;
+	const char *eq;
+	unsigned char *raw_buf;
+	unsigned char *new_env_data;
+	unsigned char *verify_buf;
+	uint32_t new_crc;
+	size_t out_offset;
+	size_t name_len_arg;
+	size_t cur_len;
+	size_t cur_name_len;
+	size_t val_len;
+	size_t entry_len;
+	size_t bytes_read;
+	int param_found;
+	int entry_count;
+	int is_match;
 
+	f = NULL;
+	param_name = NULL;
+	param_value = NULL;
+	p = NULL;
+	data_end = NULL;
+	end_str = NULL;
+	eq = NULL;
+	raw_buf = NULL;
+	new_env_data = NULL;
+	verify_buf = NULL;
+	new_crc = 0;
+	out_offset = 0;
+	name_len_arg = 0;
+	cur_len = 0;
+	cur_name_len = 0;
+	val_len = 0;
+	entry_len = 0;
+	bytes_read = 0;
+	param_found = 0;
+	entry_count = 0;
+	is_match = 0;
 
-int main(int argc, char* argv[])
-{
-	FILE *f, *tmp_f;
-	unsigned long *crc;
-	char *verify_buf;
-	char *param_name, *param_value=NULL, *curr_str;
-	char *data_end;
-	int curr_char;
-	int curr_str_idx=0, param_found=0, out_of_space=0;
-	size_t value_len;
-	list_elem params_arr[500];
-	
-	if ((argc > 3) || (argc < 2))
-    	return 1;
+	if (argc < 1 || argc > 3)
+		return 1;
 
+	/* Mode 1: Read all environment variables (argc == 1) */
+	if (argc == 1)
+	{
+		f = fopen(MTD_ENV_BLOCK_NAME, "rb");
+		if (!f)
+		{
+			printf("\nCannot open %s\n", MTD_ENV_BLOCK_NAME);
+			return 1;
+		}
+		flock(fileno(f), LOCK_SH);
+
+		raw_buf = (unsigned char *)malloc(CFG_ENV_SIZE);
+		if (!raw_buf)
+		{
+			printf("\nCannot malloc 0x10000\n");
+			flock(fileno(f), LOCK_UN);
+			fclose(f);
+			return 1;
+		}
+		memset(raw_buf, 0, CFG_ENV_SIZE);
+		bytes_read = fread(raw_buf, 1, CFG_ENV_SIZE, f);
+		(void)bytes_read;
+		raw_buf[CFG_ENV_SIZE - 1] = '\0';
+
+		p = (const char *)(raw_buf + ENV_HEADER_SIZE);
+		data_end = (const char *)(raw_buf + CFG_ENV_SIZE);
+
+		while (p < data_end && *p != '\0')
+		{
+			end_str = (const char *)memchr(p, '\0', (size_t)(data_end - p));
+			if (!end_str)
+				break;
+			printf("%s\n", p);
+			p = end_str + 1;
+		}
+
+		flock(fileno(f), LOCK_UN);
+		fclose(f);
+		free(raw_buf);
+		return 0;
+	}
+
+	/* Mode 2: Delete (argc == 2) or Update/Add (argc == 3) */
 	param_name = argv[1];
 	if (param_name[0] == '\0' || strchr(param_name, '=') != NULL)
 		return 1;
+
 	if (argc == 3)
 		param_value = argv[2];
+	else
+		param_value = NULL;
 
-    f=fopen("/dev/mtdblock3","r");
-    if (!f)
+	name_len_arg = strlen(param_name);
+
+	/* Open for read and write while keeping flock across the entire operation */
+	f = fopen(MTD_ENV_BLOCK_NAME, "r+b");
+	if (!f)
+		f = fopen(MTD_ENV_BLOCK_NAME, "w+b");
+	if (!f)
 	{
-printf("\nCannot open /dev/mtdblock3\n");
+		printf("\nCannot open %s\n", MTD_ENV_BLOCK_NAME);
 		return 1;
 	}
 	flock(fileno(f), LOCK_EX);
 
-	if ((curr_str = malloc (CFG_ENV_SIZE)) == NULL)
+	raw_buf = (unsigned char *)malloc(CFG_ENV_SIZE);
+	if (!raw_buf)
 	{
-printf("\nCannot malloc 0x10000\n");
+		printf("\nCannot malloc 0x10000\n");
 		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		return 1;
 	}
-	memset(curr_str, 0, CFG_ENV_SIZE);
+	memset(raw_buf, 0, CFG_ENV_SIZE);
 
-	/* Skip the 4 bytes of crc */
-	crc = (unsigned long *)curr_str;
-	if (fread(curr_str, ENV_HEADER_SIZE, 1, f) != 1)
+	new_env_data = (unsigned char *)calloc(1, ENV_SIZE);
+	if (!new_env_data)
 	{
+		printf("\nCannot calloc %d\n", (int)ENV_SIZE);
 		flock(fileno(f), LOCK_UN);
 		fclose(f);
-		free(crc);
+		free(raw_buf);
 		return 1;
 	}
 
-	curr_str += ENV_HEADER_SIZE;
-	data_end = curr_str + ENV_SIZE;
-	params_arr[0].name_ptr = curr_str;
-	params_arr[0].name_ptr[0] = 0;
+	/* Read existing environment sector */
+	bytes_read = fread(raw_buf, 1, CFG_ENV_SIZE, f);
+	(void)bytes_read;
+	raw_buf[CFG_ENV_SIZE - 1] = '\0';
 
-	// Create a copy of the env partition in the memory; if the specified parameter already exists, overwrite it
-	while ((curr_char = fgetc(f)) != EOF)
+	p = (const char *)(raw_buf + ENV_HEADER_SIZE);
+	data_end = (const char *)(raw_buf + CFG_ENV_SIZE);
+
+	while (p < data_end && *p != '\0')
 	{
-		// Check the memory resources
-		if ((curr_str_idx >= 500) || (curr_str >= data_end))
-		{
-			if (curr_str < data_end)
-				*(curr_str++) = 0;
-			out_of_space = 1;
+		end_str = (const char *)memchr(p, '\0', (size_t)(data_end - p));
+		if (!end_str)
 			break;
+
+		cur_len = (size_t)(end_str - p);
+		if (entry_count++ >= MAX_ENV_PARAMS)
+			break;
+
+		is_match = 0;
+		eq = (const char *)memchr(p, '=', cur_len);
+		if (eq != NULL)
+		{
+			cur_name_len = (size_t)(eq - p);
+			if (cur_name_len == name_len_arg && strncmp(p, param_name, name_len_arg) == 0)
+			{
+				is_match = 1;
+			}
 		}
 
-		/* Read the param string in format name=value*/
-		*(curr_str++) = curr_char;
-		if (curr_char=='=') // End of name, move to read the value
+		if (is_match)
 		{
-			//*(curr_str-1) = 0;
-			params_arr[curr_str_idx].value_ptr = curr_str;
-			continue;
-		}
-		if (curr_char==0) // End of name=value string
-		{
-			if (params_arr[curr_str_idx].name_ptr[0] != 0)
+			if (!param_found)
 			{
-//printf("\nFound string %s\n", params_arr[curr_str_idx].name_ptr);
-				if (!strcmp(params_arr[curr_str_idx].name_ptr, param_name))
+				param_found = 1;
+				if (param_value != NULL)
 				{
-					// We've found the parameter, overwrite it or delete
-//printf("\nFound param %s\n", param_name);
-					param_found = 1;
-					if (param_value != NULL)
+					val_len = strlen(param_value);
+					entry_len = name_len_arg + 1 + val_len + 1;
+					if (out_offset + entry_len > ENV_SIZE - 1)
 					{
-						value_len = strlen(param_value);
-						if (params_arr[curr_str_idx].value_ptr + value_len + 1 > data_end)
-						{
-							out_of_space = 1;
-							break;
-						}
-//printf("\New param value %s\n", param_value);
-						strcpy (params_arr[curr_str_idx].value_ptr, param_value);
-						curr_str = params_arr[curr_str_idx].value_ptr + value_len + 1;
-					}	
-					else
-					{
-						curr_str = params_arr[curr_str_idx].name_ptr;
-						params_arr[curr_str_idx].name_ptr[0] = 0;
-						continue;
+						flock(fileno(f), LOCK_UN);
+						fclose(f);
+						free(new_env_data);
+						free(raw_buf);
+						return 1;
 					}
+					sprintf((char *)(new_env_data + out_offset), "%s=%s", param_name, param_value);
+					out_offset += entry_len;
 				}
-				if (curr_str_idx + 1 >= 500) {
-					out_of_space = 1;
-					break;
-				}
-				curr_str_idx++;
-				params_arr[curr_str_idx].name_ptr = curr_str;
-				params_arr[curr_str_idx].name_ptr[0] = 0;
+				/* If param_value == NULL, parameter is omitted (deleted) */
 			}
-			else /* end is marked with double '\0' */
-			{
-				curr_str--;
-				break;
-			}
-
+			/* If param_found is already 1, skip duplicate occurrence */
 		}
+		else
+		{
+			/* Preserve existing non-matching parameter */
+			if (out_offset + cur_len + 1 > ENV_SIZE - 1)
+			{
+				flock(fileno(f), LOCK_UN);
+				fclose(f);
+				free(new_env_data);
+				free(raw_buf);
+				return 1;
+			}
+			memcpy(new_env_data + out_offset, p, cur_len + 1);
+			out_offset += cur_len + 1;
+		}
+
+		p = end_str + 1;
 	}
+
+	/* In case the parameter is new, append it */
+	if (!param_found && param_value != NULL)
+	{
+		val_len = strlen(param_value);
+		entry_len = name_len_arg + 1 + val_len + 1;
+		if (out_offset + entry_len > ENV_SIZE - 1)
+		{
+			flock(fileno(f), LOCK_UN);
+			fclose(f);
+			free(new_env_data);
+			free(raw_buf);
+			return 1;
+		}
+		sprintf((char *)(new_env_data + out_offset), "%s=%s", param_name, param_value);
+		out_offset += entry_len;
+	}
+
+	/* Compute CRC32 over the entire ENV_SIZE bytes (remaining bytes zero-padded) */
+	new_crc = crc32(0, (const char *)new_env_data, ENV_SIZE);
+	memcpy(raw_buf, &new_crc, ENV_HEADER_SIZE);
+	memcpy(raw_buf + ENV_HEADER_SIZE, new_env_data, ENV_SIZE);
+
+	/* Rewind and write entire 64 KB sector */
+	if (fseek(f, 0, SEEK_SET) != 0)
+	{
+		printf("\nCannot seek in %s\n", MTD_ENV_BLOCK_NAME);
+		flock(fileno(f), LOCK_UN);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
+
+	if (fwrite(raw_buf, CFG_ENV_SIZE, 1, f) != 1)
+	{
+		printf("\nCannot write to %s\n", MTD_ENV_BLOCK_NAME);
+		flock(fileno(f), LOCK_UN);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
+
+	if (fflush(f) != 0 || fsync(fileno(f)) != 0)
+	{
+		printf("\nCannot sync %s\n", MTD_ENV_BLOCK_NAME);
+		flock(fileno(f), LOCK_UN);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
+
+	/* Verify write by reading back and comparing */
+	verify_buf = (unsigned char *)malloc(CFG_ENV_SIZE);
+	if (verify_buf)
+	{
+		if (fseek(f, 0, SEEK_SET) == 0)
+		{
+			if (fread(verify_buf, CFG_ENV_SIZE, 1, f) != 1 ||
+			    memcmp(verify_buf, raw_buf, CFG_ENV_SIZE) != 0)
+			{
+				printf("\nVerification failed for %s\n", MTD_ENV_BLOCK_NAME);
+				free(verify_buf);
+				flock(fileno(f), LOCK_UN);
+				fclose(f);
+				free(new_env_data);
+				free(raw_buf);
+				return 1;
+			}
+		}
+		free(verify_buf);
+	}
+
 	flock(fileno(f), LOCK_UN);
 	fclose(f);
-	if (out_of_space)
-	{
-		free(crc);
-		return 1;
-	}
-
-	// In case the parameter is new, add it to the memory picture
-	if ((!param_found) && (param_value != NULL))
-	{
-		if (curr_str_idx + 1 >= 500)
-		{
-			free(crc);
-			return 1;
-		}
-		value_len = strlen(param_value);
-		if (curr_str + strlen(param_name) + value_len + 2 > data_end)
-		{
-			free(crc);
-			return 1;
-		}
-		params_arr[curr_str_idx].name_ptr = curr_str;
-		strcpy (curr_str, param_name);
-		curr_str += strlen(param_name);
-		*(curr_str++) = '=';
-
-		params_arr[curr_str_idx].value_ptr = curr_str;
-		strcpy (curr_str, param_value);
-		curr_str += value_len + 1;
-		curr_str_idx++;
-	}
-
-	*crc = crc32(0, params_arr[0].name_ptr, ENV_SIZE);
-
-    tmp_f=fopen("/dev/mtdblock3","w");
-    if (!tmp_f)
-	{
-printf("\nCannot open /dev/mtdblock3\n");
-		free (crc);
-		return 1;
-	}
-	flock(fileno(tmp_f), LOCK_EX);
-	if (fwrite(crc, CFG_ENV_SIZE, 1, tmp_f) != 1 || fflush(tmp_f) != 0)
-	{
-		fsync(fileno(tmp_f));
-		flock(fileno(tmp_f), LOCK_UN);
-		fclose(tmp_f);
-		free(crc);
-		return 1;
-	}
-	fsync(fileno(tmp_f));
-	flock(fileno(tmp_f), LOCK_UN);
-	fclose(tmp_f);
-
-	verify_buf = malloc(CFG_ENV_SIZE);
-	if (verify_buf == NULL)
-	{
-		free(crc);
-		return 1;
-	}
-	tmp_f = fopen("/dev/mtdblock3", "r");
-	if (!tmp_f || fread(verify_buf, CFG_ENV_SIZE, 1, tmp_f) != 1 ||
-		memcmp(verify_buf, crc, CFG_ENV_SIZE) != 0)
-	{
-		if (tmp_f)
-			fclose(tmp_f);
-		free(verify_buf);
-		free(crc);
-		return 1;
-	}
-	fclose(tmp_f);
-	free(verify_buf);
-
-	free (crc);
+	free(new_env_data);
+	free(raw_buf);
 	return 0;
 }
-
-
 
 /* Counting crc */
 /* ========================================================================
  * Table of CRC-32's of all single-byte values (made by make_crc_table)
  */
-unsigned long crc_table[] = {
+static const uint32_t crc_table[256] = {
   0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
   0x706af48fL, 0xe963a535L, 0x9e6495a3L, 0x0edb8832L, 0x79dcb8a4L,
   0xe0d5e91eL, 0x97d2d988L, 0x09b64c2bL, 0x7eb17cbdL, 0xe7b82d07L,
@@ -290,7 +377,7 @@ unsigned long crc_table[] = {
 #define DO4(buf)  DO2(buf); DO2(buf);
 #define DO8(buf)  DO4(buf); DO4(buf);
 
-unsigned long crc32 (unsigned long crc, const char *buf, int len)
+uint32_t crc32 (uint32_t crc, const char *buf, int len)
 {
 	crc = crc ^ 0xffffffffL;
 	while (len >= 8)
@@ -307,9 +394,3 @@ unsigned long crc32 (unsigned long crc, const char *buf, int len)
 	}
 	return crc ^ 0xffffffffL;
 }
-
-
-
-
-
-

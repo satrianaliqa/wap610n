@@ -109,14 +109,14 @@ void socketClose()
 int socketOpenConnection(char *host, int port, socketAccept_t accept, int flags)
 {
 	
-	debug_printf("socketOpenConnection: Into socketOpenConnection function.\n");
-	debug_printf("socketOpenConnection: host:%s, port:%d, accept=%d, flags=%d\n", host, port, accept, flags);
 #if (!defined (NO_GETHOSTBYNAME) && !defined (VXWORKS))
 	struct hostent		*hostent;					/* Host database entry */
 #endif /* ! (NO_GETHOSTBYNAME || VXWORKS) */
 	socket_t			*sp;
 	struct sockaddr_in	sockaddr;
 	int					sid, bcast, dgram, rc;
+	debug_printf("socketOpenConnection: Into socketOpenConnection function.\n");
+	debug_printf("socketOpenConnection: host:%s, port:%d, accept=%d, flags=%d\n", host, port, accept, flags);
 
 	if (port > SOCKET_PORT_MAX) {
 		return -1;

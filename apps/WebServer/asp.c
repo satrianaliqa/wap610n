@@ -161,15 +161,21 @@ int startOrigParser(webs_t wp, char_t **lpath, int *ejid, char_t **nextp, char_t
 //startMultiLangParser: ruleFlag=>fullHTML or dynamicHTML
 int startMultiLangParser(webs_t wp, char_t **nextp, char_t **last, int *rc, char *startTagStart, char *startTagEnd, char *endTag, char *ruleFlag)
 {
-	//printf("startMultiLangParser: startTagStart=%s(%d), startTagEnd=%s(%d), endTag=%s(%d)\n", startTagStart, strlen(startTagStart), startTagEnd, strlen(startTagEnd), endTag, strlen(endTag));
-	
-	char_t *token, *ep, *cp, *lang, *result;
-	char tagTmp[32], tagBuf[32], language[8];
+	char_t *ep, *cp;
+	char tagTmp[32], tagBuf[32];
 	char *begin, *end, *transString;
 	int loopCount, saveCount;
+	size_t idLen;
+
+	if (nextp == NULL || *nextp == NULL || last == NULL || startTagStart == NULL || startTagEnd == NULL || endTag == NULL) {
+		return 0;
+	}
 
 	*nextp = skipWhite(*nextp + strlen(startTagStart));
 	ep = gstrstr(*nextp, T(startTagEnd));
+	if (ep == NULL) {
+		return 0;
+	}
 	if (!strcmp(ruleFlag, "fullHTML"))
 		*ep = '\0';
 	*last = ep + strlen(startTagEnd);
@@ -198,39 +204,53 @@ int startMultiLangParser(webs_t wp, char_t **nextp, char_t **last, int *rc, char
 	if (**nextp)
 	{
 		//printf("startMultiLangParser: tag=%s\n", *nextp);
-		begin = strchr(*nextp, '"');
+		begin = gstrstr(*nextp, "id=\"");
+		if (begin != NULL) {
+			begin += 4;
+		} else {
+			begin = strchr(*nextp, '"');
+			if (begin != NULL) {
+				begin += 1;
+			}
+		}
 		if (!begin)
 		{
 			printf("startMultiLangParser: We can't get start \" character, please check translation file!\n");
 			return 1;
 		}
-		begin = begin + 1;
 		end = strchr(begin, '"');
 		if (!end)
 		{
 			printf("startMultiLangParser: We can't get end \" character, please check translation file!\n");
 			return 1;
 		}
-		/*memcpy(tagBuf, begin, end-begin);
-		*(tagBuf + (end-begin)) = '\0';
-		printf("startMultiLangParser: tag=%s(len=%d)\n", tagBuf, strlen(tagBuf));*/
-		memcpy(tagTmp, begin, end-begin);
-		*(tagTmp + (end-begin)) = '\0';
+		idLen = (size_t)(end - begin);
+		if (idLen >= sizeof(tagTmp)) {
+			idLen = sizeof(tagTmp) - 1;
+		}
+		memcpy(tagTmp, begin, idLen);
+		tagTmp[idLen] = '\0';
 		
 		saveCount=0;
-		for (loopCount=0; loopCount<strlen(tagTmp); loopCount++)
+		for (loopCount=0; loopCount<(int)strlen(tagTmp) && saveCount < (int)(sizeof(tagBuf) - 1); loopCount++)
 		{
-			if (tagTmp[loopCount] != ' ')
+			if (tagTmp[loopCount] != ' ' && tagTmp[loopCount] != '\\')
 			{
 				tagBuf[saveCount] = tagTmp[loopCount];
 				saveCount++;
 			}
 		}
-		//printf("startMultiLangParser: tag=%s(len=%d)\n", tagBuf, strlen(tagBuf));
+		tagBuf[saveCount] = '\0';
 	}
 	
 	*nextp = *last;
+	if (*nextp == NULL) {
+		return 0;
+	}
 	ep = gstrstr(*nextp, T(endTag));
+	if (ep == NULL) {
+		return 0;
+	}
 	if (!strcmp(ruleFlag, "fullHTML"))
 		*ep = '\0';
 	*last = ep + strlen(endTag);
@@ -283,7 +303,6 @@ int startMultiLangParser(webs_t wp, char_t **nextp, char_t **last, int *rc, char
 
 int websAspRequest(webs_t wp, char_t *lpath)
 {
-	debug_printf("websAspRequest: Into websAspRequest for trace web crashed issue. path:%s\n", lpath);
 	websStatType	sbuf;
 	char			*rbuf;
 	//char_t			*token, *lang, *result, *path, *ep, *cp, *buf, *nextp, *origParser, *multiLangParser;
@@ -291,6 +310,9 @@ int websAspRequest(webs_t wp, char_t *lpath)
 	char_t			*last, *lastOrigParser, *lastMultiLangParser;
 	//int				rc, engine, len, ejid;
 	int				rc, len, ejid;
+	int				optionMode, stopLoop;
+	char			startTagStart[8], startTagEnd[8], endTag[18];
+	debug_printf("websAspRequest: Into websAspRequest for trace web crashed issue. path:%s\n", lpath);
 
 	a_assert(websValid(wp));
 	a_assert(lpath && *lpath);
@@ -352,9 +374,8 @@ int websAspRequest(webs_t wp, char_t *lpath)
  */
 	last = buf;
 	rc = 0;
-	//Jacky.Yang 5-Feb-2009, for multi-lang
-	int optionMode=0, stopLoop=0;
-	char startTagStart[8], startTagEnd[8], endTagStart[8], endTag[18];
+	optionMode = 0;
+	stopLoop = 0;
 	//printf("websAspRequest: last:%s\n", last);
 	//while (rc == 0 && *last && ((nextp = gstrstr(last, T("<%"))) != NULL)) {
 	while (rc == 0 && *last && !stopLoop) {

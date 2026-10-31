@@ -569,7 +569,10 @@ function page_load() {
 	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
 	var CurrentWMM = "<% getParam(1, "CurrentWMM"); %>";
 	
-	document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wpsMode"))
+		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
+	if (document.getElementById("wirelessAdv"))
+		document.getElementById("wirelessAdv").href = "wireless_advanced.asp?random=" + Math.random();
 	/*if (wirelessConfigType == "manual")
 		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";
 	else if (wirelessConfigType == "wps")
@@ -657,7 +660,7 @@ function page_load() {
 									<td class="subMenuDIV">|</td>
 									<td class="subMenuOption">WMM®</td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
+									<td class="subMenuOption"><font class="small"><a id="wirelessAdv" href="/station/wireless_advanced.asp">Advanced Wireless Settings</a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>

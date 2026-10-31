@@ -63,15 +63,20 @@ exec_prefix=${prefix}
 bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
 
-CC=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
-AR=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar
-RANLIB=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib
-STRIP=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip
+TOOLCHAIN_DIR ?= $(shell cd ../../tools/arm-uclibc-3.4.6 2>/dev/null && pwd)
+ifeq ($(strip $(TOOLCHAIN_DIR)),)
+TOOLCHAIN_DIR := ../../tools/arm-uclibc-3.4.6
+endif
+
+CC=$(TOOLCHAIN_DIR)/bin/arm-linux-gcc
+AR=$(TOOLCHAIN_DIR)/bin/arm-linux-ar
+RANLIB=$(TOOLCHAIN_DIR)/bin/arm-linux-ranlib
+STRIP=$(TOOLCHAIN_DIR)/bin/arm-linux-strip
 INSTALL=install
 CPPFLAGS=
-CFLAGS=-I. -I$(srcdir) -I$(srcdir)/libtomcrypt/src/headers/ $(CPPFLAGS) -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include
+CFLAGS=-I. -I$(srcdir) -I$(srcdir)/libtomcrypt/src/headers/ $(CPPFLAGS) -Os -I$(TOOLCHAIN_DIR)/include
 LIBS=$(LTC) $(LTM) -lutil -lz  -lcrypt
-LDFLAGS=-L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib
+LDFLAGS=-L$(TOOLCHAIN_DIR)/lib
 
 EXEEXT=
 

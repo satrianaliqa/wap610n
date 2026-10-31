@@ -220,11 +220,9 @@ static int get_config_part_offset (void)
 	if ((tmp = get_boot_env_param ("config_offset")) != NULL)
 	{
 		config_part_offset = simple_strtol(tmp, (char **)NULL, 16) & 0x00FFFFFF;
-		if (config_part_offset < CONFIG_KERNEL_OFFSET ||
-			config_part_offset > WINDOW_SIZE - CFG_ENV_SIZE ||
-			(config_part_offset & (CFG_ENV_SIZE - 1)))
+		if (config_part_offset != CONFIG_CFG_OFFSET)
 		{
-			printk (KERN_WARNING "invalid config_offset=0x%x, using 0x%x\n",
+			printk (KERN_WARNING "invalid or stale config_offset=0x%x, using 0x%x\n",
 				config_part_offset, CONFIG_CFG_OFFSET);
 			config_part_offset = CONFIG_CFG_OFFSET;
 		}

@@ -84,10 +84,11 @@ int websUrlHandlerDefine(char_t *urlPrefix, char_t *webDir, int arg,
 		int (*handler)(webs_t wp, char_t *urlPrefix, char_t *webdir, int arg, 
 		char_t *url, char_t *path, char_t *query), int flags)
 {
-	debug_printf("websUrlHandlerDefine: Into websUrlHandlerDefine function.\n");
-	debug_printf("websUrlHandlerDefine: urlPrefix=%s, webDir=%s, arg=%d, flags=%d\n", urlPrefix, webDir, arg, flags);
 	websUrlHandlerType	*sp;
 	int					len;
+
+	debug_printf("websUrlHandlerDefine: Into websUrlHandlerDefine function.\n");
+	debug_printf("websUrlHandlerDefine: urlPrefix=%s, webDir=%s, arg=%d, flags=%d\n", urlPrefix, webDir, arg, flags);
 
 	a_assert(urlPrefix);
 	a_assert(handler);

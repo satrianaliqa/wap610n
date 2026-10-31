@@ -50,7 +50,9 @@ proc save_security {{noMount ""}} {
 		# security_mode = WEP
 		set WEP_Length                      [get_parameter NonProc_WepKeyLength]
 		set WEP_Used_Key                    [get_parameter WepTxKeyIdx]
-		set WEP_Authentication       		[get_parameter NonProc_Authentication]
+		if {$device_type != 2} {
+			set WEP_Authentication       		[get_parameter NonProc_Authentication]
+		}
 		set WEP_Key1                        [get_parameter WepKeys_DefaultKey0]
 		set WEP_Key2                        [get_parameter WepKeys_DefaultKey1]
 		set WEP_Key3                        [get_parameter WepKeys_DefaultKey2]
@@ -107,7 +109,8 @@ proc save_security {{noMount ""}} {
 	if {$device_type == 2 && $ESSID != ""} {
 		catch {exec iwconfig wlan0 essid "$ESSID"}
 		catch {exec killall hostapd}
-		if {[file exists /mnt/jffs2/hostapd0.conf]} {
+		sleep 2
+		if {$security_mode > 1 && [file exists /mnt/jffs2/hostapd0.conf]} {
 			catch {exec /root/mtlk/etc/hostapd -d /mnt/jffs2/hostapd0.conf >/dev/null 2>&1 &}
 		}
 	}
@@ -274,6 +277,20 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	}
 
 	if {$encryption_mode == "WEP"} {
+		for {set j 1} {$j <= 4} {incr j} {
+			set WEP_Key WEP_Key$j
+			set value_WEP_Key [set $WEP_Key]
+			set hexa       [regexp "^0x" $value_WEP_Key]
+			set minusOne [expr $j - 1]
+			set Key_Conf wep_key$minusOne
+			if {$hexa == 1} {
+				set hex_WEP_Key [string range $value_WEP_Key 2 end]
+				puts $fp "$Key_Conf=$hex_WEP_Key"
+			} else {
+				puts $fp "$Key_Conf=\"$value_WEP_Key\""
+			}
+		}
+		puts $fp "wep_default_key=$Used_Key"
 		puts $fp "# ------AP is in WEP mode------"
 		close $fp
 		return
@@ -365,6 +382,51 @@ proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WE
     catch { exec echo "ctrl_interface=/var/run/wpa_supplicant" > $wpa_supplicant_conf_file }
     catch { exec echo "ctrl_interface_group=0" >> $wpa_supplicant_conf_file }
 	
+	if {$encryption_mode == "OPEN"} {
+		set handler [open $wpa_supplicant_conf_file a]
+		puts $handler "network=\{"
+		puts $handler "\tssid=\"$SSID\""
+		puts $handler "\tkey_mgmt=NONE"
+		puts $handler "\tauth_alg=OPEN"
+		puts $handler "\tscan_ssid=1"
+		puts $handler "\}"
+		close $handler
+		return
+	}
+
+	if {$encryption_mode == "WEP"} {
+		set handler [open $wpa_supplicant_conf_file a]
+		puts $handler "network=\{"
+		puts $handler "\tssid=\"$SSID\""
+		puts $handler "\tkey_mgmt=NONE"
+		for {set j 1} {$j <= 4} {incr j} {
+			set WEP_Key WEP_Key$j
+			set value_WEP_Key [set $WEP_Key]
+			set hexa       [regexp "^0x" $value_WEP_Key]
+			set minusOne [expr $j - 1]
+			set Key_Conf wep_key$minusOne
+			if {$hexa == 1} {
+				set hex_WEP_Key [string range $value_WEP_Key 2 end]
+				puts $handler "\t$Key_Conf=$hex_WEP_Key"
+			} else {
+				puts $handler "\t$Key_Conf=\"$value_WEP_Key\""
+			}
+		}
+		puts $handler "\twep_tx_keyidx=$WEP_Used_Key"
+		puts $handler "\tgroup=WEP40 WEP104"
+		if {$WEP_Auth==1} {
+			puts $handler "\tauth_alg=OPEN"
+		} elseif {$WEP_Auth==2} {
+			puts $handler "\tauth_alg=SHARED"
+		} elseif {$WEP_Auth==3} {
+			puts $handler "\tauth_alg=OPEN SHARED"
+		}
+		puts $handler "\tscan_ssid=1"
+		puts $handler "\}"
+		close $handler
+		return
+	}
+
 	if {[string length $WPA_Password] == 64} {
 		catch { exec echo "network=\{" >> $wpa_supplicant_conf_file }
 		catch { exec echo "ssid=\"$SSID\"" >> $wpa_supplicant_conf_file }

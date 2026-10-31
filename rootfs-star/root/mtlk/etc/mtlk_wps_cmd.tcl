@@ -94,8 +94,11 @@ proc config_load {config_file} {
 # save configuration file
 proc config_save {config_file_name config_file_contents} {
 	set config_file_contents [join $config_file_contents "\n"]
-	catch [exec echo $config_file_contents > $::g_web_tmp_folder/tmp_config.conf]
-	catch [exec mv $::g_web_tmp_folder/tmp_config.conf $config_file_name]
+	if {![catch {set fp [open "$::g_web_tmp_folder/tmp_config.conf" w]}]} {
+		puts $fp $config_file_contents
+		close $fp
+		catch {exec mv $::g_web_tmp_folder/tmp_config.conf $config_file_name}
+	}
 }
 
 # Get parameter value
@@ -938,6 +941,8 @@ if {$action == "save_settings"} {
 	
 	# if this is a STA, update accordingly
 	if {$network_type==0} {
+		# wait some time to give wsccmd a chance to update supplicant config file
+		sleep 5
 		
 		# set NeverConnected in wlan0.conf to 0 so that in reboot, supplicant will be activated 
 		# (to increase scan performance)

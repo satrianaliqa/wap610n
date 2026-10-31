@@ -84,10 +84,10 @@ function checkIPwithSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, su
 	}
 
 	if (zero == 0 && one != 0)	{
-		alert("<!--#tr id="u-media.js.11" -->The Subnet Mask address is illegal.<!--#endtr-->");
+		alert("The Subnet Mask address is illegal.");
 		return false;
 	} else if (zero != 0 && one == 0) {
-		alert("<!--#tr id="u-media.js.11" -->The Subnet Mask address is illegal.<!--#endtr-->");
+		alert("The Subnet Mask address is illegal.");
 		return false;
 	} else if (zero == 0 && one == 0) {
 		return false;
@@ -107,7 +107,7 @@ function checkGatewayIPwithSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subn
 		for(j=0;j<8;j++) {
 			if(b[i].charAt(j) == "1")
 				if(a[i].charAt(j) != gw[i].charAt(j)) {
-					alert("<!--#tr id="u-media.js.12" -->The IP address and gateway are not in the same subnet mask.<!--#endtr-->");
+					alert("The IP address and gateway are not in the same subnet mask.");
 					return false;
 				}
 		}
@@ -163,7 +163,7 @@ function checkSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4)
 		return true;
 	else
 	{
-		alert("<!--#tr id="u-media.js.11" -->The Subnet Mask address is illegal.<!--#endtr-->");
+		alert("The Subnet Mask address is illegal.");
 		return false;
 	}
 }
@@ -255,7 +255,7 @@ function checkGateway(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4, gw
 		return true;
 	else
 	{
-		alert("<!--#tr id="u-media.js.12" -->The IP address and gateway are not in the same subnet mask.<!--#endtr-->");
+		alert("The IP address and gateway are not in the same subnet mask.");
 		return false;
 	}
 }
@@ -292,6 +292,7 @@ function stringToHex(tagName)
 {
 	var resultStr="";
 	var docTemp;
+	var loopCount;
 	docTemp = document.getElementById("display_"+tagName).value;
 	
 	for (loopCount=0; loopCount<docTemp.length; loopCount++){
@@ -330,6 +331,7 @@ function translateSubmitToHex(tagName)
 {
 	var resultStr="";
 	var docTemp;
+	var loopCount;
 	docTemp = document.getElementById("display_"+tagName).value;
 	
 	for (loopCount=0; loopCount<docTemp.length; loopCount++){
@@ -351,7 +353,7 @@ function translateSubmitToHex(tagName)
 		return false;
 	}*/
 	if ((tagName == "ESSID") && (document.getElementById("submit_"+tagName).value.length > 32)) {
-		alert("<!--#tr id=\"u-media.js.1\" -->The SSID length can't big than 32 character!<!--#endtr-->");
+		alert("The SSID length can't big than 32 character!");
 		return false;
 	}
 	return true;
@@ -374,28 +376,32 @@ function transSSID(SSID)
 }
 
 function getHTMLContent(IDName) {
-	if(window.ActiveXObject) { // IE
-        return document.getElementById("ESSID_"+loopCount).innerText;
-    } else if (window.XMLHttpRequest) { // Mozilla, Safari,...
-        return document.getElementById("ESSID_"+loopCount).textContent;
-    }
+	var el = document.getElementById(IDName);
+	if (!el) return "";
+	if (el.textContent !== undefined) {
+		return el.textContent;
+	} else if (el.innerText !== undefined) {
+		return el.innerText;
+	}
+	return el.innerHTML;
 }
 
 function checkWPAPSK(value) {
 	var pskValue;
+	var loopCount;
 	if (value.length == 64) {
 		for (loopCount=0; loopCount<64; loopCount++)
 		{
 			pskValue = value.substr(loopCount, 1);
 			if (!(parseInt(pskValue, 16) >= 0) && !(parseInt(pskValue, 16) <= 15)) {
-				alert("<!--#tr id=\"u-media.js.7\" -->Please input 64 Hex character of pre-shared key!<!--#endtr-->");
+				alert("Please input 64 Hex character of pre-shared key!");
 				return false;
 			}
 		}
 		return true;
 	}
 	else if (value.length < 8) {
-		alert("<!--#tr id=\"u-media.js.8\" -->The passphrase key must between 8 and 63 ASCII characters!<!--#endtr-->");
+		alert("The passphrase key must between 8 and 63 ASCII characters!");
 		return false;
 	}
 	
@@ -406,6 +412,7 @@ function checkWPAPSK(value) {
 }
 
 function selectWEPKeyLength(keyLength) {
+	var loopCount, docTemp;
 	if (keyLength == 64) {
 		for (loopCount=0; loopCount<4; loopCount++) {
 			docTemp = document.getElementById("WEPKey"+loopCount);
@@ -545,14 +552,14 @@ function checkMaskRange(str)
 function checkIpAddr(field, ismask, msg)
 {
 	if (field.value == "") {
-		alert("<!--#tr id=\"u-media.js.3-1\" -->Error. <!--#endtr-->" + msg + "<!--#tr id=\"u-media.js.3-2\" --> is empty!<!--#endtr-->");
+		alert("Error. " + msg + " is empty!");
 		//field.value = field.defaultValue;
 		//field.focus();
 		return false;
 	}
 
 	if (isAllNum(field.value) == 0) {
-		alert("<!--#tr id=\"u-media.js.4-1\" -->The <!--#endtr-->" + msg + "<!--#tr id=\"u-media.js.4-2\" --> should be a [0-9] number.<!--#endtr-->");
+		alert("The " + msg + " should be a [0-9] number.");
 		//field.value = field.defaultValue;
 		//field.focus();
 		return false;
@@ -571,7 +578,7 @@ function checkIpAddr(field, ismask, msg)
 			field.value == "0.0.0.0" || field.value == "255.255.255.254" || field.value == "255.255.255.255")
 		{
 			alert("The " + msg + " is illegal value!");
-			//alert("<!--#tr id=\"u-media.js.5-1\" -->The <!--#endtr-->" + msg + "<!--#tr id=\"u-media.js.5-2\" --> is illegal value!<!--#endtr-->");
+			//alert("The " + msg + " is illegal value!");
 			//field.value = field.defaultValue;
 			//field.focus();
 			return false;
@@ -593,32 +600,35 @@ function checkIpAddr(field, ismask, msg)
 }
 
 function makeRequest(url, content, fieldID, disableFieldID) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+				req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
-		alert("<!--#tr id=\"u-media.js.6\" -->Giving up :( Cannot create an XMLHTTP instance<!--#endtr-->");
+	if (!req) {
+		alert("Giving up :( Cannot create an XMLHTTP instance");
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertContents(fieldID, disableFieldID)};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {
+		http_request = req;
+		alertContents(fieldID, disableFieldID);
+	};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
 function alertContents(fieldID, disableFieldID) {
-	if (http_request.readyState == 4) {
+	if (http_request && http_request.readyState == 4) {
 		if (http_request.status == 200) {
 			reWirteList(fieldID, disableFieldID, http_request.responseText);
 		} else {

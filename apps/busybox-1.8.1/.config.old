@@ -65,7 +65,7 @@ CONFIG_INSTALL_APPLET_SYMLINKS=y
 # CONFIG_INSTALL_SH_APPLET_SYMLINK is not set
 # CONFIG_INSTALL_SH_APPLET_HARDLINK is not set
 # CONFIG_INSTALL_SH_APPLET_SCRIPT_WRAPPER is not set
-CONFIG_PREFIX="/home/satszz/wap610n/apps/busybox-1.8.1/../../rootfs-star"
+CONFIG_PREFIX="../../rootfs-star"
 
 #
 # Busybox Library Tuning

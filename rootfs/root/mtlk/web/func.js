@@ -23,31 +23,34 @@ docTemp = IPandMask;
 index = docTemp.indexOf(','); //IP
 currentIP = docTemp.substr(0, index);
 
-var current_lang = "<% getParam(1, "Language"); %>";
+var current_lang = (typeof langset !== "undefined") ? langset : "<% getParam(1, 'Language'); %>";
 
 function makeUpdateIPRequest(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+				req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
-		alert("<!--#tr id=\"u-media.js.6\" -->Giving up :( Cannot create an XMLHTTP instance<!--#endtr-->");
+	if (!req) {
+		alert("Giving up :( Cannot create an XMLHTTP instance");
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertUpdateIPContents()};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {
+		http_request = req;
+		alertUpdateIPContents();
+	};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
 function alertUpdateIPContents() {
@@ -76,28 +79,31 @@ function updateIPAddress(){
 }
 
 function makeWaitDHCPInfoRequest(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+				req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
-		alert("<!--#tr id=\"u-media.js.6\" -->Giving up :( Cannot create an XMLHTTP instance<!--#endtr-->");
+	if (!req) {
+		alert("Giving up :( Cannot create an XMLHTTP instance");
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertWaitDHCPInfoContents()};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {
+		http_request = req;
+		alertWaitDHCPInfoContents();
+	};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
 function alertWaitDHCPInfoContents() {
@@ -118,31 +124,53 @@ function alertWaitDHCPInfoContents() {
 }
 
 function waitDHCPInfo(){
-	//alert("waitDHCPInfo");
-	//alert(waitDHCPInfoValue);
 	if (updateWaitDHCPInfoStopToWait == true) {
-		waitDHCPInfoValue="";
-		currentIP="";
-		//updateIPAddress();
+		waitDHCPInfoValue = "";
+		currentIP = "";
 		makeWaitDHCPInfoRequest("/goform/waitDHCPInfo", "something");
 		updateWaitDHCPInfoStopToWait = false;
 	}
-	
-	//if ((waitDHCPInfoValue != "") && (waitCount < 20))
+
+	if (waitDHCPInfoValue != "" && currentIP != "") {
 		document.getElementById("returnField").innerHTML = "<input type=button value=\"Close\" onclick=\"returnWPS();\">";
-		setTimeout("waitDHCPInfo()", 500);
-	//if ((waitDHCPInfoValue != 1) && (waitCount < 50))
-	//alert("waitDHCPInfoValue: " + waitDHCPInfoValue);
-	/*if ((waitDHCPInfoValue == ""))
-	{
+		waitCount = 0;
+	} else if (waitCount < 60) {
 		waitCount++;
 		setTimeout("waitDHCPInfo()", 500);
-	}
-	else
-	{
-		
+	} else {
 		document.getElementById("returnField").innerHTML = "<input type=button value=\"Close\" onclick=\"returnWPS();\">";
-	}*/
+		waitCount = 0;
+	}
+}
+
+function makeRequest(url, content, fieldID, disableFieldID) {
+	var req = false;
+	if (window.XMLHttpRequest) { // Mozilla, Safari,...
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
+		}
+	} else if (window.ActiveXObject) { // IE
+		try {
+			req = new ActiveXObject("Msxml2.XMLHTTP");
+		} catch (e) {
+			try {
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			} catch (e) {}
+		}
+	}
+	if (!req) {
+		alert("Giving up :( Cannot create an XMLHTTP instance");
+		return false;
+	}
+	req.onreadystatechange = function () {
+		http_request = req;
+		if (typeof alertContents === "function") {
+			alertContents(fieldID, disableFieldID);
+		}
+	};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
 function wait_page()
@@ -162,10 +190,10 @@ function wait_page()
 		objectDisplay("saveField", "none");
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 		else{
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 	}
 	percent+=renewClock;
@@ -201,10 +229,10 @@ function connecting_wait_page()
 		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 		else{
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 	}
 	percent+=renewClock;
@@ -236,10 +264,10 @@ function process_page()
 		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 		else{
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.1\" -->Processing, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=427 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 	}
 	percent+=renewClock;
@@ -268,10 +296,10 @@ function reboot_page()
 		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.2\" -->Rebooting, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Rebooting, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 		else{
-			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red><!--#tr id=\"func.js.2\" -->Rebooting, Please wait......<!--#endtr--></font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
+			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Rebooting, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"right\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\" align=\"right\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
 		}
 	}
 	percent+=renewClock;

@@ -76,8 +76,8 @@ show_remote() {
 show_sys() {
     echo -e "${YELLOW}[+] ⚡ SYSTEM, PROCESS & PERFORMANCE DIAGNOSTICS:${RESET}"
     echo -e "    ${BOLD}sysmon${RESET}                - Live CPU%, RAM breakdown, Hungry Processes & TCP summary"
-    echo -e "    ${BOLD}sysmon -l [sec]${RESET}       - Continuous interactive system monitor loop (default 2s)"
-    echo -e "    ${BOLD}top / ps${RESET}              - Linux task monitor and full process list (${BOLD}ps aux${RESET})"
+    echo -e "    ${BOLD}sysmon [-l|-d|-n]${RESET}     - Continuous monitor (-l [sec], -d <sec>, -n <count>, -c)"
+    echo -e "    ${BOLD}top / ps${RESET}              - Linux task monitor and process list (${BOLD}ps${RESET}, ${BOLD}ps -w${RESET})"
     echo -e "    ${BOLD}free${RESET}                  - SDRAM memory allocation (Total, Used, Free, Buffers, Cached)"
     echo -e "    ${BOLD}uptime / vmstat${RESET}       - System running time, 1/5/15 min load averages & paging"
     echo -e "    ${BOLD}dmesg${RESET}                 - Kernel ring buffer diagnostic log (${BOLD}dmesg | tail -n 25${RESET})"
@@ -89,6 +89,7 @@ show_sys() {
 show_flash() {
     echo -e "${RED}[+] 💾 PHYSICAL FLASH (4 MB NOR) & PERSISTENT CONFIGURATION:${RESET}"
     echo -e "    ${BOLD}flashdump${RESET}             - Direct MTD extractor (${BOLD}flashdump kernel /tmp/bootpImage.bin${RESET})"
+    echo -e "    ${BOLD}flashdump <part> -${RESET}    - Stream flash over SSH: ${BOLD}ssh root@192.168.1.1 \"flashdump full -\" > full.bin${RESET}"
     echo -e "    ${BOLD}simpdiff${RESET}              - Fast NVRAM / configuration delta & file comparison tool"
     echo -e "    ${BOLD}config_save.sh${RESET}        - Safely commit runtime settings (/mnt/jffs2) to physical flash"
     echo -e "    ${BOLD}cat /proc/mtd${RESET}         - View raw MTD flash memory partition table boundaries:"

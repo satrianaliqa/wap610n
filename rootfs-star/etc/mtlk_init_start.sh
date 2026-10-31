@@ -24,19 +24,14 @@ if [ -x /usr/sbin/dropbear ]; then
 		fi
 		if ! pidof dropbear >/dev/null 2>&1; then
 			echo "--> [Early Boot] Starting Dropbear SSH daemon on Port 22..." > /dev/console
-			/usr/sbin/dropbear -B -p 22 &
+			/usr/sbin/dropbear -p 22 &
 		fi
 	) &
 fi
 
-# 3. Start Hardware WPS Safe-Shutdown Monitor daemon
-if [ -f /root/mtlk/etc/WPS_PBC.sh ]; then
-	/root/mtlk/etc/WPS_PBC.sh &
-fi
-
-# 4. Add a link for the RW fs mountpoint
+# 3. Add a link for the RW fs mountpoint
 ln -s /mnt/jffs2 /tmp/jffs2 2>/dev/null || true
 
-# 5. Change to mtlk etc and run init scripts
+# 4. Change to mtlk etc and run init scripts
 cd /root/mtlk/etc
 . ./mtlk_init.sh

@@ -26,33 +26,36 @@ int get_station_link_status(void)
 	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;
-	FILE *fptr = popen("cat /proc/net/wireless", "r");
+	FILE *fptr = fopen("/proc/net/wireless", "r");
 	if(fptr == NULL)
 		return 0;
 
 	//printf("is_station_wlan_link_up..\n");
-	while(fgets(tmpBuf, 512, fptr) != NULL){
-		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
+	while(fgets((char *)tmpBuf, 512, fptr) != NULL){
+		if(strstr((char *)tmpBuf, "Inter-") || strstr((char *)tmpBuf, "face")){
 			continue;
 		}
 		
-		paramCount = sscanf(tmpBuf, "%15s %d %15s %15s %15s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		paramCount = sscanf((char *)tmpBuf, "%15s %d %15s %15s %15s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 		//printf("paramCount=%d, link_status=%d\n", paramCount, link_status);
 		if(paramCount == 11)
 			printf("=====> link status of wlan is %d\n", link_status);
 	}
 	
-	pclose(fptr);
+	fclose(fptr);
 
 	return link_status==3?1:0;
 }
 
 int expose_wps_status(int statusCode)
 {
-	char command[128]={0};
-
-	sprintf(command, "echo %d > /tmp/hnap_wps_status", statusCode);
-	return system(command);
+	FILE *fp = fopen("/tmp/hnap_wps_status", "w");
+	if (fp) {
+		fprintf(fp, "%d\n", statusCode);
+		fclose(fp);
+		return 0;
+	}
+	return -1;
 }
 
 /*int get_config(char *config_value, char *config_name, char *config_file)
@@ -116,9 +119,17 @@ int main(int argc, char *argv[])
     	sigaction(SIGUSR1, &sa, NULL);   
 
 	printf("Start wps monitor thread..\n");
-	sprintf(buf, "echo %d > /var/run/hnap_wps_status_monitor", getpid());
-	system(buf);
-	system("echo 1 > /var/wpsRunning");
+	fptr = fopen("/var/run/hnap_wps_status_monitor", "w");
+	if(fptr){
+		fprintf(fptr, "%d\n", getpid());
+		fclose(fptr);
+	}
+	fptr = fopen("/var/wpsRunning", "w");
+	if(fptr){
+		fputs("1\n", fptr);
+		fclose(fptr);
+	}
+	fptr = NULL;
 
 	//waitting WPS is running...
 	while(1){
@@ -145,12 +156,12 @@ int main(int argc, char *argv[])
 		result = stat("/tmp/wps_current_status", &statBuf);
 		if(result != -1){
 			retry=0;
-			fptr = popen("cat /tmp/wps_current_status", "r");
+			fptr = fopen("/tmp/wps_current_status", "r");
 			if(fptr==NULL){
 				sleep(1);
 				retry++;
 				if(retry>=5){
-					system("rm /var/wpsRunning");
+					unlink("/var/wpsRunning");
 					printf("EXIT.., because /tmp/wps_current_status can not be open\n");
 					break;
 				}else{
@@ -169,23 +180,23 @@ int main(int argc, char *argv[])
 					printf("Status Code = %d\n", wps_status); //Ricky Trace				
 					if(wps_status==3){
 						//expose_wps_status(wps_status);
-						system("rm /var/wpsRunning");
-						pclose(fptr);
+						unlink("/var/wpsRunning");
+						fclose(fptr);
 						fptr = NULL;
 						break;
 					}else if(wps_status==10 || wps_status==11 || wps_status==12 || wps_status==13){
 						//When status is ERROR, I stop to monitor status
-						system("rm /var/wpsRunning");
+						unlink("/var/wpsRunning");
 						//recover_wildcardssid();
 						printf("Got WPS ERROR event %d .. \n", wps_status);
-						pclose(fptr);
+						fclose(fptr);
 						fptr = NULL;
 						break;
 					}
 				}
 			}
 			if(fptr!=NULL){
-				pclose(fptr);
+				fclose(fptr);
 				fptr = NULL;
 			}
 
@@ -198,7 +209,7 @@ int main(int argc, char *argv[])
 		}else{
 			retry++;
 			if(retry>10){
-				system("rm /var/wpsRunning");
+				unlink("/var/wpsRunning");
 				printf("EXIT.., because /tmp/wps_current_status can not be found\n");
 				break;
 			}else{
@@ -285,7 +296,7 @@ int main(int argc, char *argv[])
 				}
 			}else{
 				retry=0;
-				fptr = popen("cat /tmp/wps_last_code", "r");
+				fptr = fopen("/tmp/wps_last_code", "r");
 				if(fptr!=NULL){
 					memset(buf, 0, 128);
 					if(fgets(buf, 128, fptr)!=NULL){
@@ -328,7 +339,7 @@ int main(int argc, char *argv[])
 							}
 						}
 					}
-					pclose(fptr);
+					fclose(fptr);
 					fptr = NULL;
 				}
 				break;
@@ -338,19 +349,16 @@ int main(int argc, char *argv[])
 
 End:
 	if(fptr!=NULL){
-		pclose(fptr);
+		fclose(fptr);
 		fptr = NULL;
 	}
 	
 	wps_status = 0;
 	expose_wps_status(wps_status);
 
-	system("rm /tmp/wps_last_code");
-	result = stat("/var/wpsRunning", &statBuf);
-	if(result!=-1){
-		system("rm /var/wpsRunning");
-	}
-	system("rm /var/run/hnap_wps_status_monitor");
+	unlink("/tmp/wps_last_code");
+	unlink("/var/wpsRunning");
+	unlink("/var/run/hnap_wps_status_monitor");
 	printf("Terminate WPS monitor thread..\n");
 	
 	return 0;

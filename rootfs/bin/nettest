@@ -18,10 +18,8 @@ case "$MODE" in
         echo "[+] Waiting for incoming stream (Press Ctrl+C to stop)..."
         while true; do
             start_time=$(date +%s)
-            nc -l -p "$PORT" > /tmp/.nettest_sink
+            bytes=$(nc -l -p "$PORT" | wc -c)
             end_time=$(date +%s)
-            bytes=$(wc -c < /tmp/.nettest_sink 2>/dev/null || echo 0)
-            rm -f /tmp/.nettest_sink
             dur=$((end_time - start_time))
             [ "$dur" -le 0 ] && dur=1
             mbps=$((bytes * 8 / dur / 1000000))

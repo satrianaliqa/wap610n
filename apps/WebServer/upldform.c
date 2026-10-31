@@ -67,7 +67,6 @@ static int MT_ReturnCRCClearError()
 
 void *MT_BurnAndVerifyImage(void* data)
 {
-	debug_printf("MT_BurnAndVerifyImage:Into MT_BurnAndVerifyImage function.(pid=%d)\n", getpid());
 	int locWrite = 0;
 	int ferror_val = 0;
 	int locVerify = 0;
@@ -83,6 +82,8 @@ void *MT_BurnAndVerifyImage(void* data)
 	int isLittleEndian = MT_IsLittleEndian();
 	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 	int size;
+
+	debug_printf("MT_BurnAndVerifyImage:Into MT_BurnAndVerifyImage function.(pid=%d)\n", getpid());
 
 	// Checksum for the uploaded file
 	gMTBurnParams.burnState = checksum_e;
@@ -132,11 +133,11 @@ void *MT_BurnAndVerifyImage(void* data)
 	gMTBurnParams.burnState = burning_e;
 	gMTBurnParams.precentComplete = 0;
 
-    locWrite = 0;
-    numLeft = gMTBurnParams.imageSize;
 	//doSystem("ps | grep webs > /dev/console");
 	for (retryCount = 0; retryCount<gMTBurnParams.retryCount && !verifiedOk;retryCount++)
 	{
+		locWrite = 0;
+		numLeft = gMTBurnParams.imageSize;
 		debug_printf("MT_BurnAndVerifyImage: gMTBurnParams.retryCount=%d(pid=%d)\n", gMTBurnParams.retryCount, getpid());
 		
 		if (retryCount>0)
@@ -185,11 +186,14 @@ void *MT_BurnAndVerifyImage(void* data)
 					gMTBurnParams.burnState = error_e;
 					printf("Error can not close file\n");
 				}
+				fp = NULL;
 			} else {
 				sprintf(gMTBurnParams.errorMessage,T("Error : File upload incomplete - numLeft=%d locWrite=%d Size=%d bytes<br>"), numLeft, locWrite,  gMTBurnParams.imageSize);
 				gMTBurnParams.precentComplete = -1;
 				gMTBurnParams.burnState = error_e;
 				printf("Error numLeft=0\n");
+				fclose(fp);
+				fp = NULL;
 			}
 		}
 		else
@@ -203,8 +207,8 @@ void *MT_BurnAndVerifyImage(void* data)
 		debug_printf("MT_BurnAndVerifyImage: Check gMTBurnParams.precentComplete:%d\n", gMTBurnParams.precentComplete);
 		if (gMTBurnParams.precentComplete==100)
 		{
-			debug_printf("MT_BurnAndVerifyImage: gMTBurnParams.precentComplete = 100!!\n");
 			char_t verBuff[1024];
+			debug_printf("MT_BurnAndVerifyImage: gMTBurnParams.precentComplete = 100!!\n");
 
 			// Verifying
 			gMTBurnParams.burnState = verifying_e;
@@ -244,6 +248,7 @@ void *MT_BurnAndVerifyImage(void* data)
 				printf ("Closing\n");
 				ferror_val = ferror_val;
 				fclose(fp);
+				fp = NULL;
 			}
 			
 			debug_printf("MT_BurnAndVerifyImage: Check verifiedOk = %d\n", verifiedOk);
@@ -299,16 +304,34 @@ void *MT_BurnAndVerifyImage(void* data)
 */
 void MT_WriteRedirectScript(webs_t wp, char_t* newUrl)
 {
-	char_t *	 webLocPrefix="/";
+	char_t *webLocPrefix = "/";
+	char_t cleanUrl[512];
+	char_t *src;
+	char_t *dst;
+
+	if (newUrl == NULL || *newUrl == '\0') {
+		return;
+	}
+
+	/* Sanitize URL: filter out dangerous characters ', ", <, >, ;, \ to prevent XSS (W-11) */
+	src = newUrl;
+	dst = cleanUrl;
+	while (*src != '\0' && (dst - cleanUrl) < (int)(sizeof(cleanUrl) - 1)) {
+		if (*src != '\'' && *src != '\"' && *src != '<' && *src != '>' && *src != ';' && *src != '\\') {
+			*dst++ = *src;
+		}
+		src++;
+	}
+	*dst = '\0';
 
 //	websWrite(wp, T("content-type: text/html"));
 	websWrite(wp, T("<HTML><HEAD></HEAD><BODY>"));
 	websWrite(wp, T("<script type=\"text/javascript\">\n"));
 	websWrite(wp, T("<!--\n"));
-	if (strstr(newUrl,"http://"))
-		websWrite(wp, T("window.location = '%s'\n"),newUrl);
+	if (strstr(cleanUrl, "http://"))
+		websWrite(wp, T("window.location = '%s'\n"), cleanUrl);
 	else
-		websWrite(wp, T("window.location = '%s%s'\n"),webLocPrefix,newUrl);
+		websWrite(wp, T("window.location = '%s%s'\n"), webLocPrefix, cleanUrl);
 	websWrite(wp, T("//-->\n"));
 	websWrite(wp, T("</script>\n"));
 	websWrite(wp, T("</BODY></HTML>"));
@@ -447,11 +470,15 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 	{
         locWrite = 0;
         numLeft = wp->FileContentLen;
-		if (configurationfile && numLeft>maxWrite)
+		if (configurationfile && (wp->FileContent == NULL || numLeft <= (int)MT_CONFIG_FILE_SIG_LEN || numLeft > maxWrite))
 		{
 			//Jacky.Yang redirect to management.asp for u-media.
 			//sprintf(redirectPage,T("importexport.asp?error=File+size+limit+exceeded+allowed+maximum+size+of+%d+KB"),maxWrite/1024);
-			sprintf(redirectPage,T("admin/management.asp?error=File+size+limit+exceeded+allowed+maximum+size+of+%d+KB"),maxWrite/1024);
+			if (wp->FileContent == NULL || numLeft <= (int)MT_CONFIG_FILE_SIG_LEN) {
+				sprintf(redirectPage, T("admin/management.asp?error=Invalid+Configuration+File"));
+			} else {
+				sprintf(redirectPage, T("admin/management.asp?error=File+size+limit+exceeded+allowed+maximum+size+of+%d+KB"), maxWrite/1024);
+			}
 			MT_WriteRedirectScript(wp, redirectPage);
 		}
 		else
@@ -465,14 +492,14 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 				//Check Header
 				configHeaderValid = 0;
 	
-				ConfSIGLen = MT_GetConfigHeader(ConfSIG,MT_CONFIG_FILE_SIG_LEN);
+				ConfSIGLen = MT_GetConfigHeader(ConfSIG, MT_CONFIG_FILE_SIG_LEN);
 
-				if (memcmp(wp->FileContent,ConfSIG,ConfSIGLen) == 0)
+				if (wp->FileContent != NULL && ConfSIGLen > 0 && numLeft >= (int)ConfSIGLen && memcmp(wp->FileContent, ConfSIG, ConfSIGLen) == 0)
 					configHeaderValid = 1;
 				
 			}
 
-			while (configHeaderValid && numLeft > 0) {
+			while (configHeaderValid && wp->FileContent != NULL && numLeft > 0) {
 				numWrite = fwrite(&(wp->FileContent[locWrite]), sizeof(*(wp->postData)), numLeft, fp);
 				if (numWrite < numLeft) {
 					if (configurationfile)
@@ -816,6 +843,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 		MT_InitBurnParams(&gMTBurnParams);
 
 	gstrncpy(statusPageName ,websGetVar(wp, T("page_name"), T("admin/upgrade.asp")),MT_MAX_LINE_LENGTH-1);
+	statusPageName[MT_MAX_LINE_LENGTH - 1] = '\0';
 	/* [BUG-03] Hardcode targetFile to /dev/mtdblock2; disallow targeting /dev/mtdblock1 */
 	gstrncpy(targetFile, "/dev/mtdblock2", MT_MAX_LINE_LENGTH-1);
 
@@ -939,17 +967,25 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 	printf("BurnImage: gMTBurnParams.precentComplete:%d\n", gMTBurnParams.precentComplete);
 	doSystem("echo \"BurnImage: gMTBurnParams.precentComplete:%d(pid=%d)\" > /dev/console", gMTBurnParams.precentComplete, getpid());
 	doSystem("ps | grep webs");
-	if (wp->postData)
+	if (wp->postData != NULL)
 	{
-		free(wp->postData);
+		if (wp->flags & WEBS_SYS_MALLOC_POST) {
+			free(wp->postData);
+		} else {
+			bfree(B_L, wp->postData);
+		}
 		wp->postData = NULL;
 		printf("Freeing wp postdata\n");
 	}
 
-    // Redirect to the status page
-	sprintf(redirectPage,T("%s"),statusPageName);
-	//printf("target file '%s' redirct to '%s' (%s)\n",targetFile,redirectPage,statusPageName);
-	MT_WriteRedirectScript(wp,redirectPage);
+    // Redirect to the status page or respond to hidden iframe
+	if (statusPageName[0] == '\0' || strcmp(statusPageName, "admin/upgrade.asp") == 0 || strcmp(statusPageName, "/admin/upgrade.asp") == 0) {
+		websWrite(wp, T("<head><title>OK</title></head><body>OK</body>\r\n"));
+	} else {
+		snprintf(redirectPage, sizeof(redirectPage), "%s", statusPageName);
+		redirectPage[sizeof(redirectPage) - 1] = '\0';
+		MT_WriteRedirectScript(wp, redirectPage);
+	}
     wp->flags &= ~WEBS_KEEP_ALIVE;
     websFooter(wp);
     websDone(wp, 200);
@@ -974,11 +1010,11 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 	if (strcmp(dumpType, "kernel") == 0) {
 		devPath = "/dev/mtd2";
 		outName = "WAP610N_kernel_rootfs_dump.bin";
-		dumpSize = 0x3B0000; /* 3.6875MB = 3,866,624 bytes */
+		dumpSize = 0x3A0000; /* 3.625MB = 3,801,088 bytes */
 	} else if (strcmp(dumpType, "config") == 0) {
 		devPath = "/dev/mtd4";
 		outName = "WAP610N_config_dump.bin";
-		dumpSize = 0x10000; /* 64KB = 65,536 bytes */
+		dumpSize = 0x20000; /* 128KB = 131,072 bytes */
 	}
 
 	fp = fopen(devPath, "rb");

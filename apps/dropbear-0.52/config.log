@@ -27,11 +27,11 @@ uname -v = #1 SMP PREEMPT_DYNAMIC Sat, 18 Jul 2026 18:11:01 +0000
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
-PATH: /home/satszz/.gemini/antigravity/bin
-PATH: /home/satszz/.config/Antigravity/bin
-PATH: /home/satszz/.local/bin
-PATH: /home/satszz/.local/bin
-PATH: /home/satszz/.local/bin
+PATH: 
+PATH: 
+PATH: 
+PATH: 
+PATH: 
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
 PATH: /usr/bin
@@ -45,26 +45,26 @@ PATH: /usr/bin/core_perl
 ## ----------- ##
 
 configure:1726: checking for arm-linux-gcc
-configure:1753: result: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
+configure:1753: result: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
 configure:2031: checking for C compiler version
-configure:2038: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc --version >&5
+configure:2038: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc --version >&5
 arm-linux-uclibc-gcc (GCC) 3.4.6
 Copyright (C) 2006 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 configure:2041: $? = 0
-configure:2048: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -v >&5
-Reading specs from /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/../lib/gcc/arm-linux-uclibc/3.4.6/specs
+configure:2048: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -v >&5
+Reading specs from ../../tools/arm-uclibc-3.4.6/bin/../lib/gcc/arm-linux-uclibc/3.4.6/specs
 Configured with: /home/project/CROSS_GCC/buildroot-20070310/toolchain_build_arm_nofpu/gcc-3.4.6/configure --prefix=/usr/local/arm-linux-uclibc-3.4.6 --build=i386-pc-linux-gnu --host=i386-pc-linux-gnu --target=arm-linux-uclibc --enable-languages=c,c++ --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --enable-shared --disable-nls --enable-threads --disable-multilib --with-float=soft : (reconfigured) /home/project/CROSS_GCC/buildroot-20070310/toolchain_build_arm_nofpu/gcc-3.4.6/configure --prefix=/usr/local/arm-linux-uclibc-3.4.6 --build=i386-pc-linux-gnu --host=i386-pc-linux-gnu --target=arm-linux-uclibc --enable-languages=c,c++ --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --enable-shared --disable-nls --enable-threads --disable-multilib --with-float=soft
 Thread model: posix
 gcc version 3.4.6
 configure:2051: $? = 0
-configure:2058: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -V >&5
+configure:2058: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -V >&5
 arm-linux-uclibc-gcc: `-V' option must have argument
 configure:2061: $? = 1
 configure:2084: checking for C compiler default output file name
-configure:2111: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c  >&5
+configure:2111: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c  >&5
 configure:2114: $? = 0
 configure:2152: result: a.out
 configure:2169: checking whether the C compiler works
@@ -75,23 +75,23 @@ configure:2199: result: yes
 configure:2206: checking whether we are cross compiling
 configure:2208: result: yes
 configure:2211: checking for suffix of executables
-configure:2218: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c  >&5
+configure:2218: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c  >&5
 configure:2221: $? = 0
 configure:2245: result: 
 configure:2251: checking for suffix of object files
-configure:2277: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:2277: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:2280: $? = 0
 configure:2303: result: o
 configure:2307: checking whether we are using the GNU C compiler
-configure:2336: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:2336: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:2342: $? = 0
 configure:2359: result: yes
-configure:2364: checking whether /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc accepts -g
-configure:2394: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -g  conftest.c >&5
+configure:2364: checking whether ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc accepts -g
+configure:2394: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -g  conftest.c >&5
 configure:2400: $? = 0
 configure:2499: result: yes
-configure:2516: checking for /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc option to accept ISO C89
-configure:2590: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc  -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:2516: checking for ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc option to accept ISO C89
+configure:2590: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc  -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:2596: $? = 0
 configure:2619: result: none needed
 configure:2637: checking whether make sets $(MAKE)
@@ -99,7 +99,7 @@ configure:2658: result: yes
 configure:2688: checking for special C compiler options needed for large files
 configure:2781: result: no
 configure:2787: checking for _FILE_OFFSET_BITS value needed for large files
-configure:2822: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:2822: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:14: warning: left shift count >= width of type
 conftest.c:14: warning: left shift count >= width of type
 conftest.c:16: error: size of array `off_t_is_large' is negative
@@ -128,7 +128,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:2872: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:2872: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:2878: $? = 0
 configure:2896: result: 64
 configure:3071: checking build system type
@@ -136,11 +136,11 @@ configure:3089: result: x86_64-unknown-linux-gnu
 configure:3111: checking host system type
 configure:3126: result: arm-unknown-linux-gnu
 configure:3346: checking for arm-linux-ar
-configure:3373: result: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar
+configure:3373: result: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar
 configure:3442: checking for arm-linux-ranlib
-configure:3469: result: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib
+configure:3469: result: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib
 configure:3538: checking for arm-linux-strip
-configure:3565: result: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip
+configure:3565: result: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip
 configure:3634: checking for arm-linux-install
 configure:3664: result: no
 configure:3674: checking for install
@@ -150,9 +150,9 @@ configure:3713: WARNING: In the future, Autoconf will not detect cross-tools
 whose name does not start with the host triplet.  If you think this
 configuration is useful to you, please write to autoconf@gnu.org.
 configure:3733: checking how to run the C preprocessor
-configure:3773: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:3773: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:3779: $? = 0
-configure:3810: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:3810: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:9:28: ac_nonexistent.h: No such file or directory
 configure:3816: $? = 1
 configure: failed program was:
@@ -165,10 +165,10 @@ configure: failed program was:
 | #define _FILE_OFFSET_BITS 64
 | /* end confdefs.h.  */
 | #include <ac_nonexistent.h>
-configure:3849: result: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E
-configure:3878: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:3849: result: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E
+configure:3878: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:3884: $? = 0
-configure:3915: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:3915: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:9:28: ac_nonexistent.h: No such file or directory
 configure:3921: $? = 1
 configure: failed program was:
@@ -186,63 +186,63 @@ configure:4033: result: /usr/bin/grep
 configure:4038: checking for egrep
 configure:4116: result: /usr/bin/grep -E
 configure:4121: checking for ANSI C header files
-configure:4151: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4151: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4157: $? = 0
 configure:4285: result: yes
 configure:4309: checking for sys/types.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for sys/stat.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for stdlib.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for string.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for memory.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for strings.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for inttypes.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for stdint.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4309: checking for unistd.h
-configure:4330: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4330: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4336: $? = 0
 configure:4352: result: yes
 configure:4364: checking whether __UCLIBC__ is declared
-configure:4393: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:4393: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:4399: $? = 0
 configure:4414: result: yes
 configure:4419: Using uClibc - login() and logout() probably don't work, so we won't use them.
 configure:4426: checking for crypt in -lcrypt
-configure:4461: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lcrypt   >&5
+configure:4461: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lcrypt   >&5
 configure:4467: $? = 0
 configure:4485: result: yes
 configure:4608: checking for deflate in -lz
-configure:4643: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lz   -lcrypt >&5
+configure:4643: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lz   -lcrypt >&5
 configure:4649: $? = 0
 configure:4667: result: yes
 configure:4682: Enabling zlib
 configure:4810: Disabling PAM
 configure:4917: Using openpty if available
 configure:4919: checking for library containing openpty
-configure:4960: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lz  -lcrypt >&5
+configure:4960: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lz  -lcrypt >&5
 /tmp/cc4QYjFO.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `openpty'
 collect2: ld returned 1 exit status
@@ -283,16 +283,16 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:4960: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil  -lz  -lcrypt >&5
+configure:4960: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil  -lz  -lcrypt >&5
 configure:4966: $? = 0
 configure:4994: result: -lutil
 configure:5020: Disabling syslog
 configure:5204: checking shadow.h usability
-configure:5221: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5221: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5227: $? = 0
 configure:5241: result: yes
 configure:5245: checking shadow.h presence
-configure:5260: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5260: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5266: $? = 0
 configure:5280: result: yes
 configure:5308: checking for shadow.h
@@ -301,45 +301,45 @@ configure:5329: Using shadow passwords if available
 configure:5338: checking for ANSI C header files
 configure:5502: result: yes
 configure:5512: checking for sys/wait.h that is POSIX.1 compatible
-configure:5548: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5548: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5554: $? = 0
 configure:5569: result: yes
 configure:5619: checking fcntl.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking fcntl.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for fcntl.h
 configure:5731: result: yes
 configure:5619: checking limits.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking limits.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for limits.h
 configure:5731: result: yes
 configure:5619: checking netinet/in.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking netinet/in.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for netinet/in.h
 configure:5731: result: yes
 configure:5619: checking netinet/tcp.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking netinet/tcp.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for netinet/tcp.h
@@ -349,31 +349,31 @@ configure:5615: result: yes
 configure:5609: checking for string.h
 configure:5615: result: yes
 configure:5619: checking sys/socket.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking sys/socket.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for sys/socket.h
 configure:5731: result: yes
 configure:5619: checking sys/time.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking sys/time.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for sys/time.h
 configure:5731: result: yes
 configure:5619: checking termios.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking termios.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for termios.h
@@ -381,27 +381,27 @@ configure:5731: result: yes
 configure:5609: checking for unistd.h
 configure:5615: result: yes
 configure:5619: checking crypt.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking crypt.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for crypt.h
 configure:5731: result: yes
 configure:5619: checking pty.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking pty.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for pty.h
 configure:5731: result: yes
 configure:5619: checking ioctl.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:71:19: ioctl.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -478,7 +478,7 @@ configure: failed program was:
 | #include <ioctl.h>
 configure:5656: result: no
 configure:5660: checking ioctl.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:38:19: ioctl.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -524,7 +524,7 @@ configure:5695: result: no
 configure:5723: checking for ioctl.h
 configure:5731: result: no
 configure:5619: checking libutil.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:71:21: libutil.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -601,7 +601,7 @@ configure: failed program was:
 | #include <libutil.h>
 configure:5656: result: no
 configure:5660: checking libutil.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:38:21: libutil.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -647,11 +647,11 @@ configure:5695: result: no
 configure:5723: checking for libutil.h
 configure:5731: result: no
 configure:5619: checking libgen.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking libgen.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for libgen.h
@@ -659,7 +659,7 @@ configure:5731: result: yes
 configure:5609: checking for inttypes.h
 configure:5615: result: yes
 configure:5619: checking stropts.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:73:21: stropts.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -738,7 +738,7 @@ configure: failed program was:
 | #include <stropts.h>
 configure:5656: result: no
 configure:5660: checking stropts.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:40:21: stropts.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -786,17 +786,17 @@ configure:5695: result: no
 configure:5723: checking for stropts.h
 configure:5731: result: no
 configure:5619: checking utmp.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking utmp.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for utmp.h
 configure:5731: result: yes
 configure:5619: checking utmpx.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:74:19: utmpx.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -876,7 +876,7 @@ configure: failed program was:
 | #include <utmpx.h>
 configure:5656: result: no
 configure:5660: checking utmpx.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:41:19: utmpx.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -925,27 +925,27 @@ configure:5695: result: no
 configure:5723: checking for utmpx.h
 configure:5731: result: no
 configure:5619: checking lastlog.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking lastlog.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for lastlog.h
 configure:5731: result: yes
 configure:5619: checking paths.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking paths.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for paths.h
 configure:5731: result: yes
 configure:5619: checking util.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:76:18: util.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -1027,7 +1027,7 @@ configure: failed program was:
 | #include <util.h>
 configure:5656: result: no
 configure:5660: checking util.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:43:18: util.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -1078,17 +1078,17 @@ configure:5695: result: no
 configure:5723: checking for util.h
 configure:5731: result: no
 configure:5619: checking netdb.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking netdb.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for netdb.h
 configure:5731: result: yes
 configure:5619: checking security/pam_appl.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:77:31: security/pam_appl.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -1171,7 +1171,7 @@ configure: failed program was:
 | #include <security/pam_appl.h>
 configure:5656: result: no
 configure:5660: checking security/pam_appl.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:44:31: security/pam_appl.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -1223,7 +1223,7 @@ configure:5695: result: no
 configure:5723: checking for security/pam_appl.h
 configure:5731: result: no
 configure:5619: checking pam/pam_appl.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c:77:26: pam/pam_appl.h: No such file or directory
 configure:5642: $? = 1
 configure: failed program was:
@@ -1306,7 +1306,7 @@ configure: failed program was:
 | #include <pam/pam_appl.h>
 configure:5656: result: no
 configure:5660: checking pam/pam_appl.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 conftest.c:44:26: pam/pam_appl.h: No such file or directory
 configure:5681: $? = 1
 configure: failed program was:
@@ -1358,47 +1358,47 @@ configure:5695: result: no
 configure:5723: checking for pam/pam_appl.h
 configure:5731: result: no
 configure:5619: checking netinet/in_systm.h usability
-configure:5636: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5636: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5642: $? = 0
 configure:5656: result: yes
 configure:5660: checking netinet/in_systm.h presence
-configure:5675: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:5675: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:5681: $? = 0
 configure:5695: result: yes
 configure:5723: checking for netinet/in_systm.h
 configure:5731: result: yes
 configure:5746: checking for an ANSI C-conforming const
-configure:5821: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5821: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5827: $? = 0
 configure:5842: result: yes
 configure:5852: checking for uid_t in sys/types.h
 configure:5875: result: yes
 configure:5890: checking for mode_t
-configure:5920: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5920: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5926: $? = 0
 configure:5941: result: yes
 configure:5953: checking for pid_t
-configure:5983: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:5983: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:5989: $? = 0
 configure:6004: result: yes
 configure:6016: checking for size_t
-configure:6046: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6046: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6052: $? = 0
 configure:6067: result: yes
 configure:6079: checking whether time.h and sys/time.h may both be included
-configure:6109: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6109: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6115: $? = 0
 configure:6130: result: yes
 configure:6141: checking for uint16_t
-configure:6171: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6171: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6177: $? = 0
 configure:6192: result: yes
 configure:6202: checking for u_int16_t
-configure:6232: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6232: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6238: $? = 0
 configure:6253: result: yes
 configure:6263: checking for struct sockaddr_storage
-configure:6293: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6293: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:87: error: invalid application of `sizeof' to incomplete type `conftest.c' 
 configure:6299: $? = 1
@@ -1496,47 +1496,47 @@ configure: failed program was:
 | }
 configure:6314: result: no
 configure:6325: checking for socklen_t
-configure:6357: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6357: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6363: $? = 0
 configure:6378: result: yes
 configure:6470: checking for struct sockaddr_storage
-configure:6500: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6500: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6506: $? = 0
 configure:6523: result: yes
 configure:6532: checking for struct sockaddr_in6
-configure:6562: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6562: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6568: $? = 0
 configure:6585: result: yes
 configure:6595: checking for struct in6_addr
-configure:6625: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6625: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6631: $? = 0
 configure:6648: result: yes
 configure:6658: checking for struct addrinfo
-configure:6689: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6689: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6695: $? = 0
 configure:6712: result: yes
 configure:6728: checking for gai_strerror
-configure:6784: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:6784: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:6790: $? = 0
 configure:6808: result: yes
-configure:6848: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6848: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:66: warning: assignment discards qualifiers from pointer target type
 configure:6854: $? = 0
 configure:6879: checking for struct utmp.ut_host
-configure:6913: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:6913: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:6919: $? = 0
 configure:6982: result: yes
 configure:6992: checking for struct utmp.ut_pid
-configure:7026: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7026: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7032: $? = 0
 configure:7095: result: yes
 configure:7105: checking for struct utmp.ut_type
-configure:7139: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7139: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7145: $? = 0
 configure:7208: result: yes
 configure:7218: checking for struct utmp.ut_tv
-configure:7252: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7252: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:69: error: invalid operands to binary !=
 configure:7258: $? = 1
@@ -1614,23 +1614,23 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7297: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7297: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7303: $? = 0
 configure:7321: result: yes
 configure:7331: checking for struct utmp.ut_id
-configure:7365: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7365: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7371: $? = 0
 configure:7434: result: yes
 configure:7444: checking for struct utmp.ut_addr
-configure:7478: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7478: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7484: $? = 0
 configure:7547: result: yes
 configure:7557: checking for struct utmp.ut_addr_v6
-configure:7591: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7591: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7597: $? = 0
 configure:7660: result: yes
 configure:7670: checking for struct utmp.ut_exit
-configure:7704: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7704: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:73: error: invalid operands to binary !=
 configure:7710: $? = 1
@@ -1712,15 +1712,15 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7749: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7749: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7755: $? = 0
 configure:7773: result: yes
 configure:7783: checking for struct utmp.ut_time
-configure:7817: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7817: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:7823: $? = 0
 configure:7886: result: yes
 configure:7898: checking for struct utmpx.ut_host
-configure:7933: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7933: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -1806,7 +1806,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:7979: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:7979: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -1894,7 +1894,7 @@ configure: failed program was:
 | }
 configure:8003: result: no
 configure:8013: checking for struct utmpx.ut_syslen
-configure:8048: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8048: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -1980,7 +1980,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8094: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8094: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2068,7 +2068,7 @@ configure: failed program was:
 | }
 configure:8118: result: no
 configure:8128: checking for struct utmpx.ut_type
-configure:8163: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8163: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2154,7 +2154,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8209: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8209: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2242,7 +2242,7 @@ configure: failed program was:
 | }
 configure:8233: result: no
 configure:8243: checking for struct utmpx.ut_id
-configure:8278: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8278: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2328,7 +2328,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8324: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8324: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2416,7 +2416,7 @@ configure: failed program was:
 | }
 configure:8348: result: no
 configure:8358: checking for struct utmpx.ut_addr
-configure:8393: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8393: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2502,7 +2502,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8439: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8439: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2590,7 +2590,7 @@ configure: failed program was:
 | }
 configure:8463: result: no
 configure:8473: checking for struct utmpx.ut_addr_v6
-configure:8508: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8508: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2676,7 +2676,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8554: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8554: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2764,7 +2764,7 @@ configure: failed program was:
 | }
 configure:8578: result: no
 configure:8588: checking for struct utmpx.ut_time
-configure:8623: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8623: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2850,7 +2850,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8669: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8669: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -2938,7 +2938,7 @@ configure: failed program was:
 | }
 configure:8693: result: no
 configure:8703: checking for struct utmpx.ut_tv
-configure:8738: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8738: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -3024,7 +3024,7 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:8784: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8784: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:75: error: storage size of 'ac_aggr' isn't known
 conftest.c:75: error: storage size of `ac_aggr' isn't known
@@ -3112,39 +3112,39 @@ configure: failed program was:
 | }
 configure:8808: result: no
 configure:8820: checking for struct sockaddr_storage.ss_family
-configure:8852: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:8852: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:8858: $? = 0
 configure:8919: result: yes
 configure:8940: checking for endutent
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:8940: checking for getutent
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:8940: checking for getutid
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:8940: checking for getutline
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:8940: checking for pututline
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:8940: checking for setutent
-configure:8996: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:8996: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9002: $? = 0
 configure:9020: result: yes
 configure:9034: checking for utmpname
-configure:9090: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9090: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9096: $? = 0
 configure:9114: result: yes
 configure:9132: checking for endutxent
-configure:9188: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9188: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccOyhzRl.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `endutxent'
 collect2: ld returned 1 exit status
@@ -3261,7 +3261,7 @@ configure: failed program was:
 | }
 configure:9212: result: no
 configure:9132: checking for getutxent
-configure:9188: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9188: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccOrNaMq.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `getutxent'
 collect2: ld returned 1 exit status
@@ -3378,7 +3378,7 @@ configure: failed program was:
 | }
 configure:9212: result: no
 configure:9132: checking for getutxid
-configure:9188: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9188: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccgtEPcu.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `getutxid'
 collect2: ld returned 1 exit status
@@ -3495,7 +3495,7 @@ configure: failed program was:
 | }
 configure:9212: result: no
 configure:9132: checking for getutxline
-configure:9188: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9188: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/cc0xmKZx.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `getutxline'
 collect2: ld returned 1 exit status
@@ -3612,7 +3612,7 @@ configure: failed program was:
 | }
 configure:9212: result: no
 configure:9132: checking for pututxline
-configure:9188: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9188: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccszHaXF.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `pututxline'
 collect2: ld returned 1 exit status
@@ -3729,7 +3729,7 @@ configure: failed program was:
 | }
 configure:9212: result: no
 configure:9227: checking for setutxent
-configure:9283: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9283: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/cc6sbK2N.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `setutxent'
 collect2: ld returned 1 exit status
@@ -3846,7 +3846,7 @@ configure: failed program was:
 | }
 configure:9307: result: no
 configure:9227: checking for utmpxname
-configure:9283: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9283: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccs92T8R.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `utmpxname'
 collect2: ld returned 1 exit status
@@ -3963,19 +3963,19 @@ configure: failed program was:
 | }
 configure:9307: result: no
 configure:9323: checking for logout
-configure:9379: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9379: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9385: $? = 0
 configure:9403: result: yes
 configure:9323: checking for updwtmp
-configure:9379: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9379: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9385: $? = 0
 configure:9403: result: yes
 configure:9323: checking for logwtmp
-configure:9379: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:9379: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:9385: $? = 0
 configure:9403: result: yes
 configure:9697: checking if your system defines LASTLOG_FILE
-configure:9732: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:9732: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:94: error: `LASTLOG_FILE' undeclared (first use in this function)
 conftest.c:94: error: (Each undeclared identifier is reported only once
@@ -4081,19 +4081,19 @@ configure: failed program was:
 | }
 configure:9750: result: no
 configure:9752: checking if your system defines _PATH_LASTLOG
-configure:9784: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:9784: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:9790: $? = 0
 configure:9795: result: yes
 configure:9837: checking if your system defines UTMP_FILE
-configure:9866: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:9866: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:9872: $? = 0
 configure:9877: result: yes
 configure:9913: checking if your system defines WTMP_FILE
-configure:9942: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:9942: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:9948: $? = 0
 configure:9953: result: yes
 configure:9990: checking if your system defines UTMPX_FILE
-configure:10022: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:10022: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:91: error: `UTMPX_FILE' undeclared (first use in this function)
 conftest.c:91: error: (Each undeclared identifier is reported only once
@@ -4196,7 +4196,7 @@ configure: failed program was:
 | }
 configure:10039: result: no
 configure:10061: checking if your system defines WTMPX_FILE
-configure:10093: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:10093: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:92: error: `WTMPX_FILE' undeclared (first use in this function)
 conftest.c:92: error: (Each undeclared identifier is reported only once
@@ -4299,16 +4299,16 @@ configure: failed program was:
 |   return 0;
 | }
 configure:10110: result: no
-configure:10134: checking whether /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc needs -traditional
+configure:10134: checking whether ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc needs -traditional
 configure:10176: result: no
 configure:10183: checking for working memcmp
 configure:10264: result: no
 configure:10289: checking sys/select.h usability
-configure:10306: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:10306: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:10312: $? = 0
 configure:10326: result: yes
 configure:10330: checking sys/select.h presence
-configure:10345: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
+configure:10345: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E  conftest.c
 configure:10351: $? = 0
 configure:10365: result: yes
 configure:10393: checking for sys/select.h
@@ -4316,11 +4316,11 @@ configure:10401: result: yes
 configure:10279: checking for sys/socket.h
 configure:10285: result: yes
 configure:10414: checking types of arguments for select
-configure:10452: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:10452: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 configure:10458: $? = 0
 configure:10479: result: int,fd_set *,struct timeval *
 configure:10502: checking return type of signal handlers
-configure:10530: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  conftest.c >&5
+configure:10530: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -c -Os -I../../tools/arm-uclibc-3.4.6/include  conftest.c >&5
 conftest.c: In function `main':
 conftest.c:91: error: void value not ignored as it ought to be
 configure:10536: $? = 1
@@ -4421,61 +4421,61 @@ configure: failed program was:
 | }
 configure:10551: result: void
 configure:10579: checking for dup2
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for getspnam
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for getusershell
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for memset
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:112: warning: conflicting types for built-in function 'memset'
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for putenv
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for select
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for socket
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for strdup
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 conftest.c:116: warning: conflicting types for built-in function 'strdup'
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for clearenv
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for strlcpy
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for strlcat
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for daemon
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for basename
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for _getpty
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 /tmp/ccCDAbR0.o: In function `main':
 conftest.c:(.text+0x4): undefined reference to `_getpty'
 collect2: ld returned 1 exit status
@@ -4619,19 +4619,19 @@ configure: failed program was:
 | }
 configure:10659: result: no
 configure:10579: checking for getaddrinfo
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for freeaddrinfo
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10579: checking for getnameinfo
-configure:10635: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10635: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10641: $? = 0
 configure:10659: result: yes
 configure:10670: checking for library containing basename
-configure:10711: /home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include  -L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
+configure:10711: ../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -o conftest -Os -I../../tools/arm-uclibc-3.4.6/include  -L../../tools/arm-uclibc-3.4.6/lib conftest.c -lutil -lz  -lcrypt >&5
 configure:10717: $? = 0
 configure:10745: result: none required
 configure:10819: Not checking for /dev/ptc & /dev/pts since we're cross-compiling
@@ -4708,15 +4708,15 @@ ac_cv_build=x86_64-unknown-linux-gnu
 ac_cv_c_compiler_gnu=yes
 ac_cv_c_const=yes
 ac_cv_env_CC_set=set
-ac_cv_env_CC_value=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
+ac_cv_env_CC_value=../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
 ac_cv_env_CFLAGS_set=set
-ac_cv_env_CFLAGS_value='-Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include'
+ac_cv_env_CFLAGS_value='-Os -I../../tools/arm-uclibc-3.4.6/include'
 ac_cv_env_CPPFLAGS_set=
 ac_cv_env_CPPFLAGS_value=
 ac_cv_env_CPP_set=
 ac_cv_env_CPP_value=
 ac_cv_env_LDFLAGS_set=set
-ac_cv_env_LDFLAGS_value=-L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib
+ac_cv_env_LDFLAGS_value=-L../../tools/arm-uclibc-3.4.6/lib
 ac_cv_env_LIBS_set=
 ac_cv_env_LIBS_value=
 ac_cv_env_build_alias_set=
@@ -4827,11 +4827,11 @@ ac_cv_member_struct_utmpx_ut_type=no
 ac_cv_objext=o
 ac_cv_path_EGREP='/usr/bin/grep -E'
 ac_cv_path_GREP=/usr/bin/grep
-ac_cv_prog_AR=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar
-ac_cv_prog_CC=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
-ac_cv_prog_CPP='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E'
-ac_cv_prog_RANLIB=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib
-ac_cv_prog_STRIP=/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip
+ac_cv_prog_AR=../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar
+ac_cv_prog_CC=../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc
+ac_cv_prog_CPP='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E'
+ac_cv_prog_RANLIB=../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib
+ac_cv_prog_STRIP=../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip
 ac_cv_prog_ac_ct_INSTALL=install
 ac_cv_prog_cc_c89=
 ac_cv_prog_cc_g=yes
@@ -4855,10 +4855,10 @@ ac_cv_type_uint16_t=yes
 ## Output variables. ##
 ## ----------------- ##
 
-AR='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar'
-CC='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc'
-CFLAGS='-Os -I/home/satszz/wap610n/tools/arm-uclibc-3.4.6/include'
-CPP='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E'
+AR='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ar'
+CC='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc'
+CFLAGS='-Os -I../../tools/arm-uclibc-3.4.6/include'
+CPP='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc -E'
 CPPFLAGS=''
 DEFS='-DHAVE_CONFIG_H'
 ECHO_C=''
@@ -4868,8 +4868,8 @@ EGREP='/usr/bin/grep -E'
 EXEEXT=''
 GREP='/usr/bin/grep'
 INSTALL='install'
-LD='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc'
-LDFLAGS='-L/home/satszz/wap610n/tools/arm-uclibc-3.4.6/lib'
+LD='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-gcc'
+LDFLAGS='-L../../tools/arm-uclibc-3.4.6/lib'
 LIBOBJS=' ${LIBOBJDIR}${LIBOBJDIR}${LIBOBJDIR}memcmp$U.o'
 LIBS='-lutil -lz  -lcrypt'
 LTLIBOBJS=' ${LIBOBJDIR}${LIBOBJDIR}${LIBOBJDIR}memcmp$U.lo'
@@ -4880,10 +4880,10 @@ PACKAGE_STRING=''
 PACKAGE_TARNAME=''
 PACKAGE_VERSION=''
 PATH_SEPARATOR=':'
-RANLIB='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib'
+RANLIB='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-ranlib'
 SET_MAKE=''
 SHELL='/bin/sh'
-STRIP='/home/satszz/wap610n/tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip'
+STRIP='../../tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip'
 ac_ct_CC=''
 bindir='${exec_prefix}/bin'
 build='x86_64-unknown-linux-gnu'

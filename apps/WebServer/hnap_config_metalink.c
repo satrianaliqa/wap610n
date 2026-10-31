@@ -104,7 +104,7 @@ int hnap_valid_host_ip(unsigned long ip)
 int hnap_valid_host_ip_with_subnet(char *ipStr, char *maskStr)
 {
 	struct in_addr ipaddr, ipnetmask; 
-	unsigned long ip, mask;
+	unsigned long ip, mask, wildcard;
 
 	if(!inet_aton (ipStr, &ipaddr) || !inet_aton (maskStr, &ipnetmask)){
 		return FALSE;
@@ -128,7 +128,7 @@ int hnap_valid_host_ip_with_subnet(char *ipStr, char *maskStr)
 		return FALSE;
 	}
 
-	unsigned long wildcard = ~mask;
+	wildcard = ~mask;
 	if ((ip & wildcard) == wildcard) {
 		printf("ERROR: The IP address is a broadcast address\n");
 		return FALSE;
@@ -463,25 +463,25 @@ int hnap_get_station_link_status(void)
 	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;
-
 	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0}; //for get current setting from configuration
 	char securityMode[2]={0}, authMode[2]={0};
+	FILE *fptr;
 	
-	FILE *fptr = popen("cat /proc/net/wireless", "r");
-
-	//printf("is_station_wlan_link_up..\n");
-	while(fgets(tmpBuf, 512, fptr) != NULL){
-		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
-			continue;
+	fptr = popen("cat /proc/net/wireless", "r");
+	if (fptr != NULL) {
+		//printf("is_station_wlan_link_up..\n");
+		while(fgets(tmpBuf, 512, fptr) != NULL){
+			if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
+				continue;
+			}
+			
+			paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+			//printf("paramCount=%d, link_status=%d\n", paramCount, link_status);
+			//if(paramCount == 11)
+				//printf("=====> link status of wlan is %d\n", link_status);
 		}
-		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
-		//printf("paramCount=%d, link_status=%d\n", paramCount, link_status);
-		//if(paramCount == 11)
-			//printf("=====> link status of wlan is %d\n", link_status);
+		pclose(fptr);
 	}
-	
-	pclose(fptr);
 
 	//If security is configured to WPA-PSK, WEP-OPEN or WEP-AUTO, 
 	//then we need to detect wireless links status by myself.
@@ -513,18 +513,19 @@ int hnap_get_station_layer2_link_status(void)
 	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;
+	FILE *fptr;
 	
-	FILE *fptr = popen("cat /proc/net/wireless", "r");
-
-	while(fgets(tmpBuf, 512, fptr) != NULL){
-		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
-			continue;
+	fptr = popen("cat /proc/net/wireless", "r");
+	if (fptr != NULL) {
+		while(fgets(tmpBuf, 512, fptr) != NULL){
+			if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
+				continue;
+			}
+			
+			paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 		}
-		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		pclose(fptr);
 	}
-	
-	pclose(fptr);
 
 	return link_status==3?1:0;
 }
@@ -532,7 +533,7 @@ int hnap_get_station_layer2_link_status(void)
 int hnap_get_station_wireless_info(char *request, char *result)
 {
 	FILE *fptr;
-	char tmpBuf[256], *tmpPtr, *tmpPtr1, *tmpPtr2;
+	char tmpBuf[256], *tmpPtr, *tmpPtr1, *tmpPtr2, *dbmPtr;
 	int tmpCount=0;
 	char ifname[8]={0}, radioband[16]={0}, essid[41]={0};
 	int isFail=0;
@@ -591,17 +592,20 @@ int hnap_get_station_wireless_info(char *request, char *result)
 		fptr = popen("iwconfig wlan0 |grep Noise", "r");
 		if(fptr!=NULL){
 			if(fgets(tmpBuf, 256, fptr)!=NULL){
-				if(strstr(tmpBuf, "Noise level=")){
-					tmpPtr=strstr(tmpBuf, "Noise level=")+12;
-					//if(strstr(tmpPtr, "dBm")){
-					//	*(strstr(tmpPtr, "dBm"))='\0';
-					//}
-					tmpCount=1;
-					while(*(strstr(tmpPtr, "dBm")-tmpCount)==0x20 || *(strstr(tmpPtr, "dBm")-tmpCount)=='\t'){
-						tmpCount++;
+				if((tmpPtr = strstr(tmpBuf, "Noise level=")) != NULL){
+					tmpPtr += 12;
+					dbmPtr = strstr(tmpPtr, "dBm");
+					if (dbmPtr != NULL) {
+						tmpCount = 1;
+						while((dbmPtr - tmpCount) >= tmpPtr && (*(dbmPtr - tmpCount) == ' ' || *(dbmPtr - tmpCount) == '\t')){
+							tmpCount++;
+						}
+						*(dbmPtr - (tmpCount - 1)) = '\0';
+						strncpy(result, tmpPtr, 127);
+						result[127] = '\0';
+					} else {
+						isFail = 1;
 					}
-					*(strstr(tmpPtr, "dBm")-(tmpCount-1))='\0';
-					strcpy(result, tmpPtr);
 				}else{
 					isFail=1;
 				}
@@ -617,17 +621,20 @@ int hnap_get_station_wireless_info(char *request, char *result)
 		fptr = popen("iwconfig wlan0 |grep Signal", "r");
 		if(fptr!=NULL){
 			if(fgets(tmpBuf, 256, fptr)!=NULL){
-				if(strstr(tmpBuf, "Signal level=")){
-					tmpPtr=strstr(tmpBuf, "Signal level=")+13;
-					//if(strstr(tmpPtr, "dBm")){
-					//	*(strstr(tmpPtr, "dBm"))='\0';
-					//}
-					tmpCount=1;
-					while(*(strstr(tmpPtr, "dBm")-tmpCount)==0x20 || *(strstr(tmpPtr, "dBm")-tmpCount)=='\t'){
-						tmpCount++;
+				if((tmpPtr = strstr(tmpBuf, "Signal level=")) != NULL){
+					tmpPtr += 13;
+					dbmPtr = strstr(tmpPtr, "dBm");
+					if (dbmPtr != NULL) {
+						tmpCount = 1;
+						while((dbmPtr - tmpCount) >= tmpPtr && (*(dbmPtr - tmpCount) == ' ' || *(dbmPtr - tmpCount) == '\t')){
+							tmpCount++;
+						}
+						*(dbmPtr - (tmpCount - 1)) = '\0';
+						strncpy(result, tmpPtr, 127);
+						result[127] = '\0';
+					} else {
+						isFail = 1;
 					}
-					*(strstr(tmpPtr, "dBm")-(tmpCount-1))='\0';
-					strcpy(result, tmpPtr);
 				}else{
 					isFail=1;
 				}
@@ -771,10 +778,10 @@ int hnap_prepare_ap_list(char *listBuf)
 	FILE *fptr;
 	char tmpBuf[1024]={0};
 	int i=0, j=0;
-	char *tagName, *tagValue, *colon, *strEnd;
+	char *tagName = NULL, *tagValue = NULL, *colon = NULL, *strEnd = NULL;
 	char address[18], essid[128];
 	int channel, wepOn, is5G, isHT, is40, supportWPS;
-	char quality[5], signal[5], noise[5];
+	char quality[16], signal[16], noise[16];
 	int mode;
 	struct ie{
 		int wpaType; //1:wpa, 2:wpa2
@@ -783,9 +790,10 @@ int hnap_prepare_ap_list(char *listBuf)
 	}ie1, ie2;
 	int firstAP=1;
 	int NumOfAp=0;
-	char tmpAPInfo[130]={0};
-	//char tmpAPInfo2[130]={0};
+	char tmpAPInfo[512]={0};
 	char *endPtr;
+	char *eq = NULL;
+	int copyLen = 0;
 
 	fptr = fopen("/tmp/ap_list.catch", "r");
 	if(fptr==NULL){
@@ -810,7 +818,7 @@ int hnap_prepare_ap_list(char *listBuf)
 	memset(&ie1, 0, sizeof(struct ie));
 	memset(&ie2, 0, sizeof(struct ie));
 	channel=wepOn=is5G=isHT=is40=supportWPS=mode=0;
-	memset(tmpAPInfo, 0, 130);
+	memset(tmpAPInfo, 0, sizeof(tmpAPInfo));
 	//memset(tmpAPInfo2, 0, 130);
 
 	//Skip first line, "wlan0     Scan completed :"
@@ -866,7 +874,7 @@ int hnap_prepare_ap_list(char *listBuf)
 					//printf("Security=NONE\n");
 					//address,ssid,mode,is5G,channel,enable HT,band width,encryption key,ie1,ie1 pairwise cipher,ie1 authentication suites,ie2,ie2 pairwise cipher,ie2 authentication suites, quality, signal, noise;
 				}
-				sprintf(tmpAPInfo, "%s\r%s\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%s\r%s\r%s\r%d\t", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
+				snprintf(tmpAPInfo, sizeof(tmpAPInfo), "%s\r%s\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%s\r%s\r%s\r%d\t", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 				//sprintf(tmpAPInfo2, "%s %s %d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 				//printf("tmpAPInfo %d =%s\n", i, tmpAPInfo2);
 				//printf("essid=%s(%d)\n", essid, strlen(essid));
@@ -882,7 +890,7 @@ int hnap_prepare_ap_list(char *listBuf)
 				memset(&ie1, 0, sizeof(struct ie));
 				memset(&ie2, 0, sizeof(struct ie));
 				channel=wepOn=is5G=isHT=is40=supportWPS=mode=0;
-				memset(tmpAPInfo, 0, 130);	
+				memset(tmpAPInfo, 0, sizeof(tmpAPInfo));	
 				//memset(tmpAPInfo2, 0, 130);	
 			}else{
 				i++;
@@ -894,16 +902,21 @@ int hnap_prepare_ap_list(char *listBuf)
 			memset(&ie1, 0, sizeof(struct ie));
 			memset(&ie2, 0, sizeof(struct ie));
 			channel=wepOn=is5G=isHT=is40=supportWPS=mode=0;
-			memset(tmpAPInfo, 0, 130);
+			memset(tmpAPInfo, 0, sizeof(tmpAPInfo));
 			//memset(tmpAPInfo2, 0, 130);
 
 			if((tagName = strstr(tmpBuf, "Address")) != NULL){
 				colon = (char *)index(tagName, ':');
-				j=1;
-				while(*(colon+j) == 0x20)
-					j++;
-				tagValue = colon+j;
-				memcpy(address, tagValue, 17);
+				if (colon != NULL) {
+					j=1;
+					while(*(colon+j) == 0x20)
+						j++;
+					tagValue = colon+j;
+					if (strlen(tagValue) >= 17) {
+						memcpy(address, tagValue, 17);
+						address[17] = '\0';
+					}
+				}
 			}
 		}else if((colon = (char *)index(tmpBuf, ':')) != NULL){
 			//get tagName
@@ -919,12 +932,15 @@ int hnap_prepare_ap_list(char *listBuf)
 				j++;
 			tagValue = colon+j;
 			strEnd=(char *)index(tagValue, 0x0a);
-			*strEnd = '\0';
+			if (strEnd != NULL) {
+				*strEnd = '\0';
+			}
 
 			//printf("%s=%s\n", tagName, tagValue);
 
 			if(!strcmp(tagName, "ESSID")){
-				strcpy(essid, tagValue);
+				strncpy(essid, tagValue, sizeof(essid) - 1);
+				essid[sizeof(essid) - 1] = '\0';
 			}else if(!strcmp(tagName, "Channel")){
 				channel = atoi(tagValue);
 			}else if(!strcmp(tagName, "Encryption key")){
@@ -999,23 +1015,50 @@ int hnap_prepare_ap_list(char *listBuf)
 				}
 			}
 		}else if(strstr(tmpBuf, "Quality")){
-			memset(quality, 0, 5);
-			memset(signal, 0, 5);
-			memset(noise, 0, 5);
-			tagName=strstr(tmpBuf, "Quality");
-			tagValue=(char *)index(tagName, '=')+1;
-			strEnd=(char *)index(tagValue, 0x20);
-			memcpy(quality, tagValue, (strEnd-tagValue));
+			memset(quality, 0, sizeof(quality));
+			memset(signal, 0, sizeof(signal));
+			memset(noise, 0, sizeof(noise));
+			strEnd = NULL;
+			tagName = strstr(tmpBuf, "Quality");
+			if (tagName != NULL) {
+				eq = (char *)index(tagName, '=');
+				if (eq != NULL) {
+					tagValue = eq + 1;
+					strEnd = (char *)index(tagValue, 0x20);
+					if (strEnd != NULL && (strEnd - tagValue) > 0) {
+						copyLen = (strEnd - tagValue) < (int)(sizeof(quality) - 1) ? (int)(strEnd - tagValue) : (int)(sizeof(quality) - 1);
+						memcpy(quality, tagValue, copyLen);
+						quality[copyLen] = '\0';
+					}
+				}
+			}
 
-			tagName=strstr(strEnd, "Signal level");
-			tagValue=(char *)index(tagName, '=')+1;
-			strEnd=(char *)index(tagValue, 0x20);
-			memcpy(signal, tagValue, (strEnd-tagValue));
+			if (strEnd != NULL && (tagName = strstr(strEnd, "Signal level")) != NULL) {
+				eq = (char *)index(tagName, '=');
+				if (eq != NULL) {
+					tagValue = eq + 1;
+					strEnd = (char *)index(tagValue, 0x20);
+					if (strEnd != NULL && (strEnd - tagValue) > 0) {
+						copyLen = (strEnd - tagValue) < (int)(sizeof(signal) - 1) ? (int)(strEnd - tagValue) : (int)(sizeof(signal) - 1);
+						memcpy(signal, tagValue, copyLen);
+						signal[copyLen] = '\0';
+					}
+				}
+			}
 
-			tagName=strstr(strEnd, "Noise level");
-			tagValue=(char *)index(tagName, '=')+1;
-			strEnd=(char *)index(tagValue, 0x20);
-			memcpy(noise, tagValue, (strEnd-tagValue));			
+			if (strEnd != NULL && (tagName = strstr(strEnd, "Noise level")) != NULL) {
+				eq = (char *)index(tagName, '=');
+				if (eq != NULL) {
+					tagValue = eq + 1;
+					strEnd = (char *)index(tagValue, 0x20);
+					if (strEnd == NULL) strEnd = (char *)index(tagValue, 0x0a);
+					if (strEnd != NULL && (strEnd - tagValue) > 0) {
+						copyLen = (strEnd - tagValue) < (int)(sizeof(noise) - 1) ? (int)(strEnd - tagValue) : (int)(sizeof(noise) - 1);
+						memcpy(noise, tagValue, copyLen);
+						noise[copyLen] = '\0';
+					}
+				}
+			}
 		}
 		
 		memset(tmpBuf, 0, 1024);
@@ -1081,7 +1124,7 @@ int hnap_prepare_ap_list(char *listBuf)
 		}*/
 		//for test
 		
-		sprintf(tmpAPInfo, "%s\r%s\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%s\r%s\r%s\r%d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
+		snprintf(tmpAPInfo, sizeof(tmpAPInfo), "%s\r%s\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%d\r%s\r%s\r%s\r%d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 		//sprintf(tmpAPInfo2, "Final AP Info : %s %s %d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 		//printf("tmpAPInfo %d =%s\n", i, tmpAPInfo2);
 		//printf("essid=%s(%d)\n", essid, strlen(essid));
@@ -1089,7 +1132,9 @@ int hnap_prepare_ap_list(char *listBuf)
 			printf("Skip NULL SSID at last AP information\n");
 			NumOfAp--;
 			endPtr = rindex(listBuf, '\t');
-			*endPtr = 0x00;
+			if (endPtr != NULL) {
+				*endPtr = 0x00;
+			}
 		}else if(strlen(essid)>2 && strcmp(essid, "\"\"")){ //Skip hidden SSID
 			strcat(listBuf, tmpAPInfo);		
 		}
@@ -1250,16 +1295,18 @@ void hnap_active_station_wlan_security(void)
 	pclose(fptr);
 
 	fptr=popen("cat /mnt/jffs2/sys.conf | grep BridgeMode", "r");
-	while(fgets(tmpBuf1, 256, fptr)!=NULL){
-		if(strstr(tmpBuf1, "BridgeMode")){
-			tmpPtr=strchr(tmpBuf1, '=')+1;
-			if(tmpPtr!=0){
-				bridgeMode=atoi(tmpPtr);
-				printf("BridgeMode=%d\n", bridgeMode);
+	if(fptr!=NULL){
+		while(fgets(tmpBuf1, 256, fptr)!=NULL){
+			if(strstr(tmpBuf1, "BridgeMode")){
+				tmpPtr=strchr(tmpBuf1, '=');
+				if(tmpPtr!=NULL && *(tmpPtr+1)!='\0'){
+					bridgeMode=atoi(tmpPtr+1);
+					printf("BridgeMode=%d\n", bridgeMode);
+				}
 			}
 		}
+		pclose(fptr);
 	}
-	pclose(fptr);
 	
 	if(bridgeMode!=0 && bridgeMode==3){
 		result = stat("/tmp/mac_cloning.addr",&statBuf);
@@ -1421,6 +1468,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	int isLittleEndian = hnap_IsLittleEndian();
 	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 	int precentComplete=0;
+	int size=0;
 
 	printf("Flash update in progress - do not interrupt this process !\n");
 
@@ -1446,7 +1494,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 
 			printf ("imageheader.pcksum2 = %d\n",imageHeader.pcksum2);
 
-			if ((fp = fopen(DEFAULT_FLASH_FILE, "ab")) != NULL){
+			if ((fp = fopen(DEFAULT_FLASH_FILE, "r+b")) != NULL){
 				fseek(fp,imageHeader.pcksum2,SEEK_SET);
 				fwrite(dummy_crc,1,4*sizeof(int),fp);
 				fclose(fp);
@@ -1471,19 +1519,18 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	printf("2. Start burning..\n");
 	precentComplete = 0;
 
-    	locWrite = 0;
-    	numLeft = dataSize;
-
 	system("echo 2 > /dev/gpio2"); //Blink LED to indicate firmware upgrade is progressing
 
 	for (retryCount = 0; retryCount<MAX_RETRY_BURN_TIMES && !verifiedOk; retryCount++){
+		locWrite = 0;
+		numLeft = dataSize;
 		if (retryCount>0){
 			printf("Flash update in progress - do not interrupt this process !(retry %d)\n",retryCount+1);
 		}
 		
 		if ((fp = fopen(DEFAULT_FLASH_FILE, "w+b")) != NULL){
 			while (numLeft > 0) {
-				int size = numLeft > HNAP_FILE_SINGLE_WRITE ? HNAP_FILE_SINGLE_WRITE : numLeft;
+				size = numLeft > HNAP_FILE_SINGLE_WRITE ? HNAP_FILE_SINGLE_WRITE : numLeft;
 				//printf("%d\n",numLeft); //Ricky Trace
 				//printf("Start write Image data..\n");
 				numWrite = fwrite(&(data[locWrite]), sizeof(char_t), size, fp);
@@ -1537,10 +1584,13 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 					precentComplete = -1;
 					printf("Error can not close file\n");
 				}
+				fp = NULL;
 			} else {
 				printf("Error : File upload incomplete - numLeft=%d locWrite=%d Size=%d bytes\n", numLeft, locWrite,  dataSize);
 				precentComplete = -1;
 				printf("Error numLeft=0\n");
+				fclose(fp);
+				fp = NULL;
 			}
 		}else{
 			printf("Error : Flash File could not be Opened\n");
@@ -1622,8 +1672,8 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 	int isLittleEndian = hnap_IsLittleEndian();
 
 	// Validate that header is correct
-	if (imageSize < sizeof(MT_IMAGE_HEADER) + 8){
-		printf("Error: This is not an image file, since \"too small\"\n");
+	if (imageSize <= (int)(sizeof(MT_IMAGE_HEADER) + 8) || imageSize > KERNEL_MTD_PARTITION_SIZE){
+		printf("Error: Invalid image size %d (must be > %d and <= 0x%X)\n", imageSize, (int)(sizeof(MT_IMAGE_HEADER) + 8), KERNEL_MTD_PARTITION_SIZE);
 		return -1;
 	}
 
@@ -2085,7 +2135,7 @@ int hnap_active_wps_monitor(void)
 			fgets(buf, 128, fptr);
 			kill(atoi(buf), SIGUSR1);
 			pclose(fptr);
-			sleep(2);
+			usleep(200000);
 		}
 	}
 
@@ -2129,7 +2179,7 @@ int hnap_do_wps_pbc(void)
 	while(retryCount<15){
 		result = stat("/tmp/wps_action",&statBuf);
 		if(result == -1){
-			sleep(1);
+			usleep(200000);
 			retryCount++;
 			continue;
 		}else{
@@ -2183,7 +2233,7 @@ int hnap_do_wps_pin(char *pinCode, char *bssid)
 	while(retryCount<15){
 		result = stat("/tmp/wps_action",&statBuf);
 		if(result == -1){
-			sleep(1);
+			usleep(200000);
 			retryCount++;
 			continue;
 		}else{
@@ -2221,13 +2271,16 @@ int hnap_stop_wps(void)
 	}
 
 	fptr = popen("cat /tmp/hnap_wps_status", "r");
-	fgets(buf, 128, fptr);
-	if(atoi(buf)==0){
-		printf(" WPS is IDLE, skip the STOP request.\n");
+	if (fptr != NULL) {
+		if (fgets(buf, 128, fptr) != NULL) {
+			if(atoi(buf)==0){
+				printf(" WPS is IDLE, skip the STOP request.\n");
+				pclose(fptr);
+				return 0;		
+			}
+		}
 		pclose(fptr);
-		return 0;		
 	}
-	pclose(fptr);
 
 	//3. Do WPS STOP
 	system("/root/mtlk/web/stop_wps_progress.sh");
@@ -2276,7 +2329,7 @@ int hnap_get_wps_status(char *status)
 						strcpy(status, "IDLE");
 						return 0;					
 					}else{
-						sleep(1);
+						usleep(200000);
 						continue;
 					}
 				}else{
@@ -2318,7 +2371,7 @@ int hnap_get_wps_status(char *status)
 			wpsStatus=0;
 			break;
 		}else{
-			sleep(1);
+			usleep(200000);
 		}
 	}
 
@@ -2474,12 +2527,14 @@ int hnap_get_wps_status(char *status)
 		return -1;
 	}
 	memset(buf, 0, 128);
-	if(fgets(buf, 128, fptr)!=-1){
+	if(fgets(buf, 128, fptr)!=NULL){
 		printf("wps_current_status = %s\n", buf);
 		bufptr = strchr(buf, '=');
-		bufptr = bufptr+1;
-		statusCode = atoi(bufptr);
-		printf("Status Code = %d\n", statusCode); //Ricky Trace
+		if(bufptr != NULL){
+			bufptr = bufptr+1;
+			statusCode = atoi(bufptr);
+			printf("Status Code = %d\n", statusCode); //Ricky Trace
+		}
 
 		if(statusCode==0){
 			return -1;

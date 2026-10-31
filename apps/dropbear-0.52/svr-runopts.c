@@ -239,6 +239,9 @@ void svr_getopts(int argc, char ** argv) {
 				case 'u':
 					/* backwards compatibility with old urandom option */
 					break;
+				case 'B':
+					/* backwards compatibility no-op: blank password supported by default */
+					break;
 #ifdef DEBUG_TRACE
 				case 'v':
 					debug_trace = 1;
