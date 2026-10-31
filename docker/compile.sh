@@ -18,9 +18,13 @@ else
 fi
 
 echo "=========================================================="
-echo " 🔨 Building wap610n-builder container image..."
+echo " 🔨 Ensuring wap610n-builder container image..."
 echo "=========================================================="
-DOCKER_BUILDKIT=0 $CONTAINER_CMD build --network=host -t wap610n-builder "$DIR"
+if ! $CONTAINER_CMD image inspect wap610n-builder >/dev/null 2>&1; then
+    "$DIR/build-builder.sh"
+else
+    echo "✅ Image wap610n-builder already exists."
+fi
 
 # Validate prerequisites
 echo "Validating prerequisites..."

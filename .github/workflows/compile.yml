@@ -19,7 +19,7 @@ on:
 jobs:
   build:
     name: Build & Verify Firmware
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
@@ -27,7 +27,7 @@ jobs:
 
       - name: Build wap610n-builder Container
         run: |
-          DOCKER_BUILDKIT=0 docker build --network=host -t wap610n-builder ./docker
+          ./docker/build-builder.sh
 
       - name: Compile Firmware in 32-bit Container
         run: |

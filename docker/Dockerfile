@@ -50,7 +50,8 @@ RUN cd /tmp && \
     ./configure --prefix=/usr && \
     make -j4 && \
     make install && \
-    rm -rf /tmp/make-3.81*
+    cd /tmp && \
+    rm -rf /tmp/make-3.81 /tmp/make-3.81.tar.bz2
 
 # Generate locale
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && locale-gen
