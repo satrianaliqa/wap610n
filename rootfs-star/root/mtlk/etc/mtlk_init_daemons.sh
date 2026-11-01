@@ -67,17 +67,21 @@ fi
 DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 
-if [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
+if [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
+	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
+	$DIAG_LOG "daemon init: starting DHCP server for Access Point" 2>/dev/null || true
+	if ./mtlk_init_dhcpd.sh; then
+		nice -n 18 udhcpd /tmp/udhcpd.conf &
+		[ $? -ne 0 ] && $DIAG_LOG "daemon init: udhcpd failed to start" 2>/dev/null || true
+	else
+		$DIAG_LOG "daemon init: DHCP server configuration failed; udhcpd not started" 2>/dev/null || true
+	fi
+elif [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
 	# DHCP Client Mode: Obtain dynamic IP from upstream router
 	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
 	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
-elif [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
-	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
-	$DIAG_LOG "daemon init: starting DHCP server for Access Point" 2>/dev/null || true
-	./mtlk_init_dhcpd.sh
-	[ $? -ne 0 ] && $DIAG_LOG "daemon init: DHCP server configuration failed" 2>/dev/null || true
-	nice -n 18 udhcpd /tmp/udhcpd.conf &
-	[ $? -ne 0 ] && $DIAG_LOG "daemon init: udhcpd failed to start" 2>/dev/null || true
+else
+	$DIAG_LOG "daemon init: static IP mode without DHCP server" 2>/dev/null || true
 fi
 
 # Start the upnp Daemon
