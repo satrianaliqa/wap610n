@@ -23,6 +23,7 @@
 #include	<unistd.h> 
 #include	<sys/types.h>
 #include	<sys/wait.h>
+#include	<fcntl.h>
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
 #include	"../wireless.h"
@@ -65,6 +66,28 @@ extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
 extern void formDumpFirmware(webs_t wp, char_t *path, char_t *query);
+
+static void websDiag(const char *message)
+{
+	int fd;
+
+	fd = open("/dev/kmsg", O_WRONLY);
+	if (fd >= 0) {
+		write(fd, "<4>wap610n-webs: ",
+			sizeof("<4>wap610n-webs: ") - 1);
+		write(fd, message, strlen(message));
+		write(fd, "\n", 1);
+		close(fd);
+	}
+	fd = open("/dev/console", O_WRONLY);
+	if (fd >= 0) {
+		write(fd, "[wap610n-webs] ", sizeof("[wap610n-webs] ") - 1);
+		write(fd, message, strlen(message));
+		write(fd, "\n", 1);
+		close(fd);
+	}
+	printf("wap610n-webs: %s\n", message);
+}
 
 /* Safe non-blocking form overrides to eliminate legacy U-Media blocking bugs */
 static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
@@ -134,7 +157,7 @@ int main(int argc, char** argv)
 	//Jacky.Yang 15-May-209, set open debug message value;
 	//openDebug=1;
 	
-	printf("Web Server start to init.\n");
+	websDiag("startup");
 
 	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0666);
 	if(firewallReloadID == -1){
@@ -145,7 +168,10 @@ int main(int argc, char** argv)
 
 	//Jacky.Yang 27-Nov-2008, drop it
 	//MTtask_t* pStatTask = NULL;
-	if (!MT_ParseArguments(argc, argv)) return MT_ShowHelp();
+	if (!MT_ParseArguments(argc, argv)) {
+		websDiag("argument parsing failed");
+		return MT_ShowHelp();
+	}
 
 
 	sigemptyset (&block_mask);
@@ -170,6 +196,7 @@ int main(int argc, char** argv)
  *	Initialize the web server
  */
 	if (initWebs() < 0) {
+		websDiag("web server initialization failed");
 		printf("Failed to initialize web server. Aborting.\n");
 		return -1;
 	}
@@ -182,6 +209,7 @@ int main(int argc, char** argv)
 
 	if (!MT_Read_All_Params())
 	{
+		websDiag("configuration parameters could not be loaded");
 		printf("Cannot read parameters. Aborting.\n");
 		return -1;
 	}
@@ -345,9 +373,11 @@ static int initWebs()
 	//Jacky.Yang 27-Nov-2008
 	//websOpenServer(port, retries);
 	if (websOpenServer(websPort, retries) < 0) {
+		websDiag("HTTP listen socket could not be opened");
 		printf("Failed to open HTTP listen socket.\n");
 		return -1;
 	}
+	websDiag("HTTP listener initialized");
 
 /*
  * 	First create the URL handlers. Note: handlers are called in sorted order

@@ -590,7 +590,187 @@ make build       # Compiles kernel, apps, and packages rootfs
 make clean       # Cleans intermediate build objects
 ```
 
-### 10.2 Quality Assurance Verification Checklist
+### 10.2 Real-Hardware Telnet Diagnosis & Debugging Procedure
+
+Use this procedure after flashing a firmware image to real WAP610N hardware. The
+purpose is to capture a **before/after snapshot** instead of relying only on
+`dmesg | tail -n 30`, which can hide the original boot error when the kernel
+ring buffer is overwritten.
+
+#### 10.2.1 First connection: capture a boot baseline
+
+Connect through Telnet or the serial console as soon as the router finishes
+booting. Run the following commands and save or copy the complete output:
+
+```sh
+echo "===== WAP610N BASELINE ====="
+date 2>/dev/null
+uptime 2>/dev/null
+echo "--- kernel messages ---"
+dmesg
+echo "--- userspace syslog ---"
+logread 2>/dev/null
+echo "--- WAP610N diagnostic messages ---"
+dmesg | grep -i wap610n
+logread 2>/dev/null | grep -i wap610n
+echo "--- processes ---"
+ps
+echo "--- interfaces ---"
+ifconfig
+echo "--- memory ---"
+cat /proc/meminfo
+echo "--- mounted filesystems ---"
+cat /proc/mounts
+echo "--- MTD partitions ---"
+cat /proc/mtd
+echo "--- listening sockets ---"
+netstat -lnt 2>/dev/null
+```
+
+If `date`, `uptime`, `logread`, or `netstat` is unavailable in a particular
+image, continue with the remaining commands. Do not treat the absence of one
+diagnostic applet as a firmware failure.
+
+#### 10.2.2 Verify the GoAhead Web UI and autostart chain
+
+```sh
+echo "--- supervisor and webs ---"
+ps | grep -E 'run_webs|/webs|webs$'
+ls -l /root/mtlk/web/webs /root/mtlk/web/run_webs.sh
+echo "--- HTTP listener ---"
+netstat -lnt 2>/dev/null | grep ':80'
+echo "--- HTTP request from the router itself ---"
+wget -q -O /tmp/webs_probe http://127.0.0.1/ && \
+    echo "HTTP localhost: OK" || echo "HTTP localhost: FAILED"
+wc -c /tmp/webs_probe 2>/dev/null
+```
+
+Interpretation:
+
+- `run_webs.sh` without `webs` usually means the binary exited or the
+  supervisor could not execute it; inspect `dmesg` and `logread` immediately.
+- A running `webs` process without a TCP listener on port 80 indicates a
+  listener, bind, configuration, or socket initialization failure.
+- A successful localhost request but failed access from a client indicates a
+  bridge/IP/firewall/interface problem rather than an HTTP process startup
+  problem.
+- A failed localhost request means the issue is local to GoAhead, its document
+  root, configuration, or the loopback/network stack.
+
+#### 10.2.3 Verify the network and wireless path
+
+```sh
+echo "--- interface counters and addresses ---"
+ifconfig eth0
+ifconfig br0 2>/dev/null
+ifconfig wlan0 2>/dev/null
+cat /proc/net/dev
+echo "--- bridge membership ---"
+brctl show 2>/dev/null
+echo "--- wireless driver/modules ---"
+lsmod 2>/dev/null
+ps | grep -E 'mtlk|wlan|hostapd|udhcpd|upnpd'
+echo "--- relevant logs ---"
+dmesg | grep -Ei 'eth0|br0|wlan0|mtlk|rtl|phy|link|carrier|dhcp'
+logread 2>/dev/null | grep -Ei 'eth0|br0|wlan0|mtlk|rtl|phy|link|carrier|dhcp'
+```
+
+Look for missing `br0`, an absent `wlan0`, repeated carrier up/down messages,
+failed `insmod`, failed driver parameter programming, an incorrect
+`192.168.1.1` address, or DHCP startup failures. These distinguish a dead
+Web UI from a client that simply cannot reach the router.
+
+#### 10.2.4 Verify daemon startup and resource pressure
+
+```sh
+echo "--- required daemons ---"
+ps | grep -E 'dropbear|telnetd|udhcpd|upnpd|syslogd|klogd'
+echo "--- resource pressure ---"
+free 2>/dev/null
+cat /proc/meminfo | grep -E 'MemFree|MemAvailable|Buffers|Cached|Slab'
+echo "--- kernel warnings/errors ---"
+dmesg | grep -Ei 'error|fail|warn|oops|panic|segfault|oom|killed|corrupt|timeout'
+```
+
+Repeated `webs` or daemon instances may indicate `respawn` loops. Repeated OOM,
+segfault, timeout, or allocation failures indicate a resource or crash loop,
+not merely a browser problem. Do not start multiple manual copies of `webs`,
+`dropbear`, or `udhcpd` while diagnosing; this can create false port conflicts.
+
+#### 10.2.5 Factory reset and physical-button diagnosis
+
+Before pressing the reset button, capture:
+
+```sh
+ps | grep -E 'mtlk_pbc_reboot|WPS_PBC'
+ls -l /dev/gpio3 /dev/gpio13 2>/dev/null
+ls -ld /tmp/WPS_PBC_monitor.lock /tmp/*reset* 2>/dev/null
+cat /proc/mtd
+```
+
+Then hold the physical reset button for the documented interval and immediately
+run:
+
+```sh
+dmesg | tail -n 80
+logread 2>/dev/null | tail -n 80
+ps | grep -E 'mtlk_restore_defaults|config_save|config_mount|config_umount|reboot'
+ls -l /tmp/WPS_PBC_monitor.lock /tmp/*reset* 2>/dev/null
+```
+
+Expected evidence includes a GPIO3/reset event, factory configuration
+generation, configuration save or verification, and only then a reboot. A
+reboot without successful config-save messages is a potentially unsafe reset
+path and must be investigated before repeated flashing or reset testing.
+
+#### 10.2.6 Reproduce the problem and collect a second snapshot
+
+After the baseline, reproduce exactly one failure: open
+`http://192.168.1.1`, submit the affected Web UI form, press reset, or
+associate a wireless client. Then run:
+
+```sh
+echo "--- post-reproduction diagnostics ---"
+dmesg | tail -n 120
+logread 2>/dev/null | tail -n 120
+ps
+ifconfig
+cat /proc/net/dev
+free 2>/dev/null
+```
+
+Compare this output with the baseline. Important correlations are:
+
+| Symptom | Primary evidence |
+|---|---|
+| Browser cannot connect | `webs` process, port 80 listener, `br0`/`eth0` address |
+| Web UI starts then disappears | `respawn` process count, segfault/OOM, GoAhead startup logs |
+| Telnet works but Wi-Fi does not | `wlan0`, `br0`, `mtlk.ko`, carrier and DHCP logs |
+| Router reboots during reset | GPIO3 monitor, restore/save/verification messages, watchdog/OOM |
+| Settings return after reboot | MTD4 mount, config image, save/verify messages, `/proc/mtd` |
+| WPS button has no effect | `/dev/gpio13`, `WPS_PBC.sh`, lock directory, WPS event logs |
+| System becomes unstable under load | `MemFree`, `Cached`, OOM messages, process duplication |
+
+#### 10.2.7 Unified logging sources and limitations
+
+Important firmware diagnostics are intended to be visible through all available
+paths:
+
+```sh
+dmesg | grep -i wap610n       # kernel ring buffer via /dev/kmsg
+logread | grep -i wap610n     # BusyBox syslog
+```
+
+`/dev/console` is the direct serial-console path and is not guaranteed to appear
+in `dmesg`; `/dev/kmsg` is the path used for kernel-ring-buffer visibility.
+`logread` depends on `syslogd` being alive and its circular buffer has limited
+capacity. Capture logs soon after reproducing a problem, and avoid tight loops
+that continuously write diagnostics because they can overwrite older evidence.
+
+When persistent storage is needed for a short diagnostic capture, use `/tmp`
+only. Never write debug logs repeatedly to MTD4 or another flash partition.
+
+### 10.3 Quality Assurance Verification Checklist
 Before staging or committing any code changes:
 - [x] **Flash Budget Check**: Ensure compiled `bootpImage` ≤ 3,801,088 bytes (3.625 MB).
 - [x] **C89 Compliance**: Compile userspace C code using `arm-linux-uclibc-gcc` without C99 constructs.

@@ -1,6 +1,7 @@
 #!/bin/sh
 # A pushbutton daemon for factory reset / reboot
 # If the reset gpio pin is defined, use it to trigger the reboot.
+DIAG_LOG=/bin/diag_log.sh
 
 RESET_GPIO=`awk -F "=" '/^RESET_PB/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/HW.ini 2>/dev/null`
 if [ -z "$RESET_GPIO" ] || [ "$RESET_GPIO" = "null" ]; then
@@ -18,16 +19,16 @@ if [ -n "$RESET_GPIO" ]; then
 		if [ -c "$RESET_GPIO" ]; then
 			# Wait for physical Reset button press (blocking read via driver EOF)
 			if cat "$RESET_GPIO" >/dev/null 2>&1; then
-				echo "Reset button pressed! Restoring factory defaults..." > /dev/console
+				$DIAG_LOG "factory reset button: pressed; restoring factory defaults" 2>/dev/null || true
 				echo 2 > /dev/gpio2 2>/dev/null || true
 				if [ -x /root/mtlk/etc/mtlk_restore_defaults.sh ]; then
 					if ! /root/mtlk/etc/mtlk_restore_defaults.sh 1 1; then
-						echo "Factory reset failed; configuration was not rebooted." > /dev/console
+						$DIAG_LOG "factory reset button: restore failed; reboot cancelled" 2>/dev/null || true
 						sleep 2
 						continue
 					fi
 				else
-					echo "Factory reset utility is missing; configuration was not rebooted." > /dev/console
+					$DIAG_LOG "factory reset button: restore utility is missing" 2>/dev/null || true
 					sleep 2
 					continue
 				fi

@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 
 if [ $WPS_PB == 1 ]
 then
@@ -31,14 +32,17 @@ fi
 			nice -n 18 ./upnpd br0 &
 		elif command -v upnpd >/dev/null 2>&1; then
 			nice -n 18 upnpd br0 &
-		fi
+			else
+				$DIAG_LOG "daemon init: UPnP binary is unavailable" 2>/dev/null || true
+			fi
 	fi
 ) &
 
 # Start Telnet and Dropbear SSH daemons in background for remote diagnostics
 if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then
-	echo "Starting Telnet daemon (port 23)..." > /dev/console
+	$DIAG_LOG "daemon init: starting Telnet daemon on port 23" 2>/dev/null || true
 	telnetd -l /bin/sh &
+	[ $? -ne 0 ] && $DIAG_LOG "daemon init: telnetd failed to start" 2>/dev/null || true
 fi
 
 if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
@@ -52,8 +56,9 @@ if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
 			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
 		fi
 		if ! pidof dropbear >/dev/null 2>&1; then
-			echo "Starting Dropbear SSH daemon (port 22)..." > /dev/console
+			$DIAG_LOG "daemon init: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 			/usr/sbin/dropbear -p 22 &
+			[ $? -ne 0 ] && $DIAG_LOG "daemon init: dropbear failed to start" 2>/dev/null || true
 		fi
 	) &
 fi
@@ -64,13 +69,15 @@ IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str);
 
 if [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
 	# DHCP Client Mode: Obtain dynamic IP from upstream router
-	echo "Starting DHCP client (udhcpc)..." > /dev/console
+	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
 	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
 elif [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
 	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
-	echo "Starting DHCP server (udhcpd) for Access Point..." > /dev/console
+	$DIAG_LOG "daemon init: starting DHCP server for Access Point" 2>/dev/null || true
 	./mtlk_init_dhcpd.sh
+	[ $? -ne 0 ] && $DIAG_LOG "daemon init: DHCP server configuration failed" 2>/dev/null || true
 	nice -n 18 udhcpd /tmp/udhcpd.conf &
+	[ $? -ne 0 ] && $DIAG_LOG "daemon init: udhcpd failed to start" 2>/dev/null || true
 fi
 
 # Start the upnp Daemon

@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 
 echo start drvhlpr with param
 
@@ -23,13 +24,16 @@ rc=$?
 if [ $rc -eq 1 ]
   then
   echo drvhlpr return MAC HANG
+  $DIAG_LOG "wireless recovery: drvhlpr reported MAC hang; rebooting" 2>/dev/null || true
   reboot
   #drvhlpr will reboot the system while we have bug in SW Watchdog mechanism
   #(. ./reload_mtlk_driver.sh > /dev/null);
 elif [ $rc -eq 2 ]
   then
   echo drvhlpr return rmmod
+  $DIAG_LOG "wireless recovery: drvhlpr requested driver reload" 2>/dev/null || true
   /root/mtlk/etc/reload_mtlk_driver.sh
 else
   echo return from drvhlpr with error
+  [ $rc -ne 0 ] && $DIAG_LOG "wireless recovery: drvhlpr exited with status $rc" 2>/dev/null || true
 fi

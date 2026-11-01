@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 
 # Apply low-memory sysctl tunings
 if [ -f /etc/sysctl.conf ] && [ -x /sbin/sysctl ]; then
@@ -7,7 +8,7 @@ fi
 
 # 1. Start Telnet daemon with root shell FIRST (Port 23)
 if ! pidof telnetd >/dev/null 2>&1; then
-	echo "--> [Early Boot] Starting Telnet daemon on Port 23..." > /dev/console
+	$DIAG_LOG "early boot: starting Telnet daemon on port 23" 2>/dev/null || true
 	telnetd -l /bin/sh &
 fi
 
@@ -23,7 +24,7 @@ if [ -x /usr/sbin/dropbear ]; then
 			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
 		fi
 		if ! pidof dropbear >/dev/null 2>&1; then
-			echo "--> [Early Boot] Starting Dropbear SSH daemon on Port 22..." > /dev/console
+			$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 			/usr/sbin/dropbear -p 22 &
 		fi
 	) &

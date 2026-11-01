@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 # This is the script that brings up the wireless interface.
 
 #SVN id: $Id: mtlk_init_wls.sh 2278 2008-02-21 15:40:01Z arnonm $
@@ -124,6 +125,7 @@ insmod_driver ()
 				INSMOD_SUCCEEDED=`ifconfig -a | grep wlan | wc -l`
 			else
 				echo "insmod of the driver failed - no reason to continue with wls init" > /dev/console
+				$DIAG_LOG "wireless init: Metalink driver failed to create wlan interface" 2>/dev/null || true
 				echo Wireless driver insmod failed. > /tmp/init_failed
 				break
 			fi
@@ -162,6 +164,7 @@ driver_params ()
 	if [ ! -e /tmp/wlan0.conf ]
 	then
 		echo Can not read file wlan0.conf
+		$DIAG_LOG "wireless init: /tmp/wlan0.conf is missing" 2>/dev/null || true
 		return
 	fi
 	#Update parameters according to DB. 
@@ -169,6 +172,7 @@ driver_params ()
 	if [ $? != 0 ]
 	then
 		echo ERROR: WRITING DRIVER PARAMS FAILED >> /tmp/init_failed
+		$DIAG_LOG "wireless init: driver parameter programming failed" 2>/dev/null || true
 		return
 	fi
 	
@@ -178,6 +182,7 @@ driver_params ()
 		/tmp/set_driver_params.sh
 	else
 		echo ERROR: "set_driver_params.sh is absent" >> /tmp/init_failed
+		$DIAG_LOG "wireless init: generated set_driver_params.sh is absent" 2>/dev/null || true
 	fi
 	
 	echo END DRIVER PARAMS

@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 # Hardware WPS PushButton pairing monitor daemon for WAP610N / WET610N
 
 # The monitor can be started by both early boot and WPS initialization.
@@ -71,12 +72,12 @@ while [ $wait_gpio -lt 30 ]; do
 done
 
 if [ -n "$WPS_PBC_GPIO" ] && [ -e "$WPS_PBC_GPIO" ]; then
-	echo "--> [Hardware Daemon] WPS PBC Monitor started on $WPS_PBC_GPIO" > /dev/console
+	$DIAG_LOG "WPS button monitor started on $WPS_PBC_GPIO" 2>/dev/null || true
 	while true
 	do
 		# Wait for physical WPS button press (blocking read)
 		if cat "$WPS_PBC_GPIO" > /dev/null 2>&1; then
-			echo "[HARDWARE EVENT] WPS Button Pressed! Triggering WPS pairing..." > /dev/console
+			$DIAG_LOG "WPS button pressed; triggering pairing" 2>/dev/null || true
 			if [ -z "$NETWORK_TYPE" ] && [ -n "$2" ]; then
 				NETWORK_TYPE="$2"
 			fi
@@ -100,5 +101,5 @@ if [ -n "$WPS_PBC_GPIO" ] && [ -e "$WPS_PBC_GPIO" ]; then
 		fi
 	done
 else
-	echo "WPS pushbutton: not active (GPIO device not found)" > /dev/console
+	$DIAG_LOG "WPS button monitor inactive; GPIO device not found" 2>/dev/null || true
 fi

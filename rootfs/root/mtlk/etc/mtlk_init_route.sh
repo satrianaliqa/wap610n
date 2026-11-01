@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 
 # This init script sets up the routing to support the Metalink demo scenarios.
 # If running in bridging mode, this script ignores the routing directives and 
@@ -48,7 +49,11 @@ else
 		# Add wlan0 to the bridge
 		ifconfig wlan0 0.0.0.0 
 		ifconfig wlan0 up
-		brctl addif br0 wlan0
+		if ! brctl addif br0 wlan0; then
+			$DIAG_LOG "network init: failed to add wlan0 to br0" 2>/dev/null || true
+			echo "network init: wlan0 bridge attach failed" > /tmp/init_failed
+			return 1
+		fi
 	else 
 		# This is the second pass - set up MAC addr for mac cloning
 
@@ -85,4 +90,3 @@ else
 
 	fi
 fi
-

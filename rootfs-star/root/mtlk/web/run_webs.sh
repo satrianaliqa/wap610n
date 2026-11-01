@@ -1,5 +1,6 @@
 #!/bin/sh
 # Supervisor wrapper for GoAhead Web Server (managed by /etc/inittab respawn)
+DIAG_LOG=/bin/diag_log.sh
 
 touch /root/mtlk/web/lang/STRINGS_EN.txt 2>/dev/null || true
 ln -sf STRINGS_EN.txt /root/mtlk/web/lang/STRINGS_.txt 2>/dev/null || true
@@ -10,4 +11,11 @@ echo "0,-1" > /var/WPS_History 2>/dev/null || true
 echo "0,-1" > /var/WPS_History_temp 2>/dev/null || true
 
 cd /root/mtlk/web
+if [ ! -x ./webs ]; then
+	$DIAG_LOG "webs supervisor: executable /root/mtlk/web/webs is missing" 2>/dev/null || true
+	exit 1
+fi
+if [ ! -f /tmp/sys.conf ]; then
+	$DIAG_LOG "webs supervisor: /tmp/sys.conf is missing before startup" 2>/dev/null || true
+fi
 exec ./webs

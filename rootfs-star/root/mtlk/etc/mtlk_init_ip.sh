@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 # This is the script that configures all the LAN interfaces.
 # It places all the interfaces under a bridge named br0.
 
@@ -38,7 +39,11 @@ fi
 
 
 # Create the bridge interface
-brctl addbr br0
+if ! brctl addbr br0; then
+	$DIAG_LOG "network init: failed to create br0" 2>/dev/null || true
+	echo "network init: br0 creation failed" > /tmp/init_failed
+	return 1
+fi
 # Remove the 30 second delay of the bridge interface:
 brctl setfd br0 0
 
@@ -69,7 +74,11 @@ then
 fi
 
 # Configure the bridge IP
-ifconfig br0 $IP_LAN netmask $IP_NETMASK
+if ! ifconfig br0 $IP_LAN netmask $IP_NETMASK; then
+	$DIAG_LOG "network init: failed to assign $IP_LAN to br0" 2>/dev/null || true
+	echo "network init: br0 address configuration failed" > /tmp/init_failed
+	return 1
+fi
 echo "br0 has the IP $IP_LAN" 
 
 # Disable source address learning in the internal switch (if there is such an option)
