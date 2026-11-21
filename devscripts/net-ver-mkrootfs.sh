@@ -56,7 +56,7 @@ if [ -n "$1" ]; then
 	if [ -d "${STAR_DIR}/root/mtlk" ]; then
 		echo "Overlaying ${STAR_DIR}/root/mtlk onto ${ROOTFS_DIR}/root/mtlk (WAP610N customizations)..."
 		TAR_EXCLUDES=""
-		for built_art in etc/gpio.ko etc/hnap_wps_status_monitor etc/force_ethpc_renew_ip etc/mtlk_init_platform.sh web/webs; do
+		for built_art in etc/gpio.ko etc/hnap_wps_status_monitor etc/force_ethpc_renew_ip web/webs; do
 			if [ -e "${ROOTFS_DIR}/root/mtlk/${built_art}" ]; then
 				TAR_EXCLUDES="${TAR_EXCLUDES} --exclude=${built_art}"
 			fi
