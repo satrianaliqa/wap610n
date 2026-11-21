@@ -155,9 +155,15 @@ sudo $CONTAINER_CMD run --rm --privileged \
             exit 1
         fi
 
-        # Check Dropbear and Web Server
-        if [ -x /tmp/mnt_chk/usr/sbin/dropbear ] && [ -x /tmp/mnt_chk/root/mtlk/web/webs ]; then
-            echo '   - Dropbear SSH & WebServer      : ✅ ADA & EXECUTABLE'
+        # Check Dropbear and Web Server (ensure freshly compiled webs, not legacy 2011 wlan.tar.gz blob)
+        WEBS_BIN=/tmp/mnt_chk/root/mtlk/web/webs
+        if [ -x /tmp/mnt_chk/usr/sbin/dropbear ] && [ -x "\$WEBS_BIN" ]; then
+            if ! grep -qaF 'HTTP listener initialized' "\$WEBS_BIN" 2>/dev/null; then
+                WEBS_SZ=\$(stat -c %s "\$WEBS_BIN" 2>/dev/null || echo 0)
+                echo "   - Dropbear SSH & WebServer      : ❌ STALE WEBS BINARY (\${WEBS_SZ} bytes, missing custom webs build marker)!"
+                exit 1
+            fi
+            echo '   - Dropbear SSH & WebServer      : ✅ ADA, EXECUTABLE & FRESHLY COMPILED'
         else
             echo '   - Dropbear / WebServer          : ❌ ERROR (Missing daemon)'
             exit 1

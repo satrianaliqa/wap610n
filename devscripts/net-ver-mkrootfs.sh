@@ -27,10 +27,10 @@ date >> ${ROOTFS_DIR}/etc/version
 if [ -n "$1" ]; then
 	if [ -d "$1" ]; then
 		echo "Copying WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
-		cp -rf "$1"/* "${ROOTFS_DIR}/root/mtlk/"
+		tar -C "$1" --exclude=web/webs --exclude=./web/webs -cf - . | tar -C "${ROOTFS_DIR}/root/mtlk/" -xf -
 	elif [ -f "$1" ]; then
 		echo "Extracting WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
-		tar -xzf "$1" -C "${ROOTFS_DIR}/root/mtlk/"
+		tar -xzf "$1" --exclude=web/webs --exclude=./web/webs -C "${ROOTFS_DIR}/root/mtlk/"
 	fi
 
 	# Keep all ProgModel microcode files intact for full hardware revision compatibility
@@ -66,6 +66,14 @@ if [ -n "$1" ]; then
 			exit 1
 		}
 	fi
+	# Never allow stale prebuilt web/webs blobs to replace a freshly compiled WebServer binary
+	if [ -x "apps/WebServer/LINUX/webs" ]; then
+		echo "Installing freshly compiled GoAhead WebServer (apps/WebServer/LINUX/webs)..."
+		install -m 755 "apps/WebServer/LINUX/webs" "${ROOTFS_DIR}/root/mtlk/web/webs" || {
+			echo "ERROR: Failed to install compiled WebServer binary"
+			exit 1
+		}
+	fi
 	find "${ROOTFS_DIR}/root/mtlk" -type d -exec chmod 755 {} + 2>/dev/null || true
 	find "${ROOTFS_DIR}/root/mtlk" -type f -exec chmod 644 {} + 2>/dev/null || true
 	find "${ROOTFS_DIR}/root/mtlk" -type f \( -name '*.sh' -o -name '*.tcl' -o -name '*.cgi' \) -exec chmod 755 {} + 2>/dev/null || true
@@ -92,7 +100,7 @@ if [ -n "$1" ]; then
 	      "${ROOTFS_DIR}"/etc/hotplug.d/LICENSE "${ROOTFS_DIR}"/etc/hotplug.d/README 2>/dev/null || true
 	if [ -x "tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip" ]; then
 		STRIP_BIN="tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip"
-		for ubin in "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
+		for ubin in "${ROOTFS_DIR}/root/mtlk/web/webs" "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
 			[ -x "$ubin" ] && "$STRIP_BIN" "$ubin" 2>/dev/null || true
 		done
 		find "${ROOTFS_DIR}" -name '*.ko' -exec "$STRIP_BIN" --strip-unneeded {} + 2>/dev/null || true

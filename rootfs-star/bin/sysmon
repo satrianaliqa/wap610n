@@ -71,10 +71,11 @@ show_system_summary() {
 
 	# 4. Socket Connections
 	if [ -f /proc/net/tcp ]; then
-		ESTAB=$(grep -c ': 01 ' /proc/net/tcp 2>/dev/null || true)
-		LISTEN=$(grep -c ': 0A ' /proc/net/tcp 2>/dev/null || true)
-		CW=$(grep -c ': 08 ' /proc/net/tcp 2>/dev/null || true)
-		echo "Sockets    : Listen: ${LISTEN:-0} | Established: ${ESTAB:-0} | Close_Wait: ${CW:-0}"
+		set -- $(awk 'NR>1 {if ($4 == "01") e++; else if ($4 == "0A") l++; else if ($4 == "08") c++} END {printf "%d %d %d\n", l+0, e+0, c+0}' /proc/net/tcp 2>/dev/null)
+		LISTEN=${1:-0}
+		ESTAB=${2:-0}
+		CW=${3:-0}
+		echo "Sockets    : Listen: ${LISTEN} | Established: ${ESTAB} | Close_Wait: ${CW}"
 	fi
 	echo "--------------------------------------------------------------------------------"
 }
