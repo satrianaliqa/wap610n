@@ -253,12 +253,13 @@ extern void 	websReadEvent(webs_t wp);
 extern void 	 websFormExplain(webs_t wp, char_t *path, char_t *query);
 #endif
 
-#endif /* _h_WEBS */
-int updateLinkStatusTag;
-
-//Jacky.Yang 8-Mar-2009, Recorder WPS status
+/* Recorder WPS status */
 #define wpsArraySize 10
-int wpsArrayIndex, wpsErrorCount;
-int wpsStatusArray[wpsArraySize];
+extern int updateLinkStatusTag;
+extern int wpsArrayIndex;
+extern int wpsErrorCount;
+extern int wpsStatusArray[wpsArraySize];
+
+#endif /* _h_WEBS */
 /******************************************************************************/
 

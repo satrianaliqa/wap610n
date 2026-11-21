@@ -122,14 +122,11 @@ static void printMemStats(int handle, char_t *fmt, ...);
 static void memLeaks();
 #endif
 
-int MT_ParseOnLoad();
-int ReParseOnLoad = 0;
+static volatile sig_atomic_t ReParseOnLoad = 0;
 
 void CatchSIG(int s)
 {
-	char filename[512];
-	debug_printf("CatchSIG: Reload flash content in the Web Server.\n");
-	printf("CatchSIG %d - parseing OnLoad\n",s);
+	(void)s;
 	ReParseOnLoad = 1;
 }
 
@@ -148,7 +145,6 @@ int main(int argc, char** argv)
 	sigset_t block_mask;
 	char cmd[256];
 	int firewallReloadID;
-	int msgSize = 1024;
 	struct msgbuffer {
 		long mtype;
 		char mtext[1024];
@@ -238,24 +234,25 @@ int main(int argc, char** argv)
 		websCgiCleanup();
 		emfSchedProcess();
 		
-		//Jacky.Yang 25-Mar-2008, begin detect wan port ip address change.
-		if (msgrcv(firewallReloadID, &msgInfo, msgSize, 0, IPC_NOWAIT) != -1)
-		{
-			printf("goahead: Get message from send_event, the message is %s\n", msgInfo.mtext);
-			if (!strcmp(msgInfo.mtext, "openDebug")) {
-				printf("goahead: Open Debug message.\n");
-				openDebug = 1;
-				//iptablesAllNATRun();
-			}
-			else if (!strcmp(msgInfo.mtext, "closeDebug")) {
-				printf("goahead: Close Debug message.\n");
-				openDebug = 0;
-				//iptablesAllNATRun();
+		/* Check IPC message queue for debug toggle */
+		if (firewallReloadID != -1) {
+			int mlen = msgrcv(firewallReloadID, &msgInfo, (size_t)(sizeof(msgInfo.mtext) - 1), 0, IPC_NOWAIT);
+			if (mlen >= 0) {
+				msgInfo.mtext[mlen] = '\0';
+				printf("goahead: Get message from send_event, the message is %s\n", msgInfo.mtext);
+				if (!strcmp(msgInfo.mtext, "openDebug")) {
+					printf("goahead: Open Debug message.\n");
+					openDebug = 1;
+				}
+				else if (!strcmp(msgInfo.mtext, "closeDebug")) {
+					printf("goahead: Close Debug message.\n");
+					openDebug = 0;
+				}
 			}
 		}
-		//Jacky.Yang 25-Mar-2008, end detect wan port ip address change.
 		if (ReParseOnLoad == 1) {
 			ReParseOnLoad = 0;
+			debug_printf("CatchSIG: Reload flash content in the Web Server.\n");
 			loadConfigFromFile("/mnt/jffs2/wlan0.conf");
 			loadConfigFromFile("/mnt/jffs2/sys.conf");
 			MT_ParseOnLoad();
@@ -336,8 +333,10 @@ static int initWebs()
  *	Set ../web as the root web. Modify this to suit your needs
  */
 	
-	getcwd(dir, sizeof(dir)); 
-	if ((cp = strrchr(dir, '/'))) {
+	if (getcwd(dir, sizeof(dir)) == NULL) {
+		strncpy(dir, "/root/mtlk", sizeof(dir) - 1);
+		dir[sizeof(dir) - 1] = '\0';
+	} else if ((cp = strrchr(dir, '/'))) {
 		*cp = '\0';
 	}
 	snprintf(webdir, sizeof(webdir), "%s/%s", dir, rootWeb);
@@ -436,12 +435,10 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
  *	If the empty or "/" URL is invoked, redirect default URLs to the home page
  */
 	if (*url == '\0' || gstrcmp(url, T("/")) == 0) {
-		//Jacky.Yang 5-Jun-2008, Modify redirect default page.
-		//websRedirect(wp, T("default.asp"));
-		//websRedirect(wp, T("/station/wireless_basic.asp"));
-		char network_type[4];
+		char network_type[8];
 		memset(network_type, '\0', sizeof(network_type));
-		MT_Get_Param("network_type", network_type, sizeof(network_type));
+		MT_Get_Param("network_type", network_type, sizeof(network_type) - 1);
+		network_type[sizeof(network_type) - 1] = '\0';
 		
 		if (strcmp(network_type, "0") == 0)
 			websRedirect(wp, T("/network/sta_network.asp"));
@@ -516,51 +513,43 @@ char_t *websGetCgiCommName()
 int websLaunchCgiProc(char_t *cgiPath, char_t **argp, char_t **envp,
 					  char_t *stdIn, char_t *stdOut)
 {
-	int	pid, fdin, fdout, hstdin, hstdout, rc;
-	char dir[MT_MAX_PATH_LENGTH];
+	int	pid, fdin, fdout, rc, fd;
+	const char errMsg[] = "content-type: text/html\n\nExecution of cgi process failed\n";
 
-	debug_printf("websLaunchCgiProc: INto websLaunchCgiProc pid=%d\n", getpid());
+	debug_printf("websLaunchCgiProc: Into websLaunchCgiProc pid=%d\n", getpid());
 
-	fdin = fdout = hstdin = hstdout = rc = -1; 
-	if ((fdin = open(stdIn, O_RDWR | O_CREAT, 0666)) < 0 ||
-		(fdout = open(stdOut, O_RDWR | O_CREAT, 0666)) < 0 ||
-		(hstdin = dup(0)) == -1 ||
-		(hstdout = dup(1)) == -1 ||
-		dup2(fdin, 0) == -1 ||
-		dup2(fdout, 1) == -1) {
-		goto DONE;
+	fdin = fdout = rc = -1;
+	if ((fdin = open(stdIn, O_RDONLY | O_CREAT, 0600)) < 0 ||
+		(fdout = open(stdOut, O_WRONLY | O_CREAT | O_TRUNC, 0600)) < 0) {
+		if (fdin >= 0) {
+			close(fdin);
+		}
+		if (fdout >= 0) {
+			close(fdout);
+		}
+		return -1;
 	}
-		
- 	rc = pid = fork();
- 	debug_printf("websLaunchCgiProc: pid=%d\n", pid);
- 	if (pid == 0) {
-/*
- *		if pid == 0, then we are in the child process
- */
+
+	rc = pid = fork();
+	if (pid == 0) {
+		/* Child process: restore default signals, redirect stdio, close inherited FDs */
+		signal(SIGPIPE, SIG_DFL);
+		signal(SIGCHLD, SIG_DFL);
+		if (dup2(fdin, 0) == -1 || dup2(fdout, 1) == -1) {
+			_exit(127);
+		}
+		for (fd = 3; fd < 256; fd++) {
+			close(fd);
+		}
 		gchdir(MT_WebRootDir);
 
-		if (execve(cgiPath, argp, envp) == -1) {
-			printf("content-type: text/html\n\n"
-				"Execution of cgi process failed\n");
-		}
-		exit (0);
-	} 
+		execve(cgiPath, argp, envp);
+		write(1, errMsg, sizeof(errMsg) - 1);
+		_exit(127);
+	}
 
-DONE:
-	if (hstdout >= 0) {
-		dup2(hstdout, 1);
-      close(hstdout);
-	}
-	if (hstdin >= 0) {
-		dup2(hstdin, 0);
-      close(hstdin);
-	}
-	if (fdout >= 0) {
-		close(fdout);
-	}
-	if (fdin >= 0) {
-		close(fdin);
-	}
+	close(fdout);
+	close(fdin);
 	return rc;
 }
 
@@ -573,10 +562,13 @@ int websCheckCgiProc(int handle)
 {
 	int rc;
 /*
- *	Check to see if the CGI child process has terminated or not yet.  
+ *	Check to see if the CGI child process has terminated or not yet.
  *	When SIGCHLD is SIG_IGN, waitpid returns -1 with errno == ECHILD when the child exits.
  */
 	rc = waitpid(handle, NULL, WNOHANG);
+	if (rc == -1 && errno == EINTR) {
+		return 1;
+	}
 	if (rc == handle || rc == -1) {
 		return 0;
 	} else {

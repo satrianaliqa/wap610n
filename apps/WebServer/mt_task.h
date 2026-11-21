@@ -20,8 +20,8 @@ typedef struct {
 	MTtask_t *m_pTask;
 } MTStatistics_t;
 
-extern void MT_TaskScheduler(void);
-extern void MT_PrepareStatisticsTask(void);
+extern void MT_TaskScheduler(MTtask_t *pTask);
+extern MTtask_t *MT_PrepareStatisticsTask(void);
 extern int websStatisticsHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg, char_t *url, char_t *path, char_t *query);
 
 #endif /* _MT_TASK_H_ */

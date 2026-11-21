@@ -1,6 +1,7 @@
 #ifndef _XML_TREE_H_
 #define _XML_TREE_H_
 
+#include <stddef.h>
 #include "linked_list.h"
 #include "stack.h"
 
@@ -39,5 +40,6 @@ extern void pop_xml_tree(xml_tree tree);
 extern void add_text_xml_tree(xml_tree tree, const char *s, int len);
 extern void generate_xml_helper(xml_element el, char *buf);
 extern void generate_xml(xml_tree tree, char *buf);
+extern void generate_xml_n(xml_tree tree, char *buf, size_t buf_size);
 
 #endif /* _XML_TREE_H_ */

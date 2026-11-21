@@ -38,6 +38,10 @@ char_t			websHost[64];			/* Host name for the server */
 char_t			websIpaddr[64];			/* IP address for the server */
 char_t			*websHostUrl = NULL;	/* URL to access server */
 char_t			*websIpaddrUrl = NULL;	/* URL to access server */
+int				updateLinkStatusTag = 0;
+int				wpsArrayIndex = 0;
+int				wpsErrorCount = 0;
+int				wpsStatusArray[wpsArraySize];
 
 /*********************************** Locals ***********************************/
 /*
@@ -81,6 +85,7 @@ static void 	websParseRequest(webs_t wp);
 static void		websSocketEvent(int sid, int mask, int data);
 static int		websGetTimeSinceMark(webs_t wp);
 static void	 extractUploadedFileContent(webs_t wp);
+static char_t	*websSafeUrl(const char_t *url);
 
 #ifdef WEBS_LOG_SUPPORT
 static void 	websLog(webs_t wp, int code);
@@ -124,7 +129,7 @@ static int websVerifyUploadAuth(webs_t wp)
 {
 	char_t adminPass[MT_MAX_PARAM_VALUE_LENGTH];
 	FILE *fp;
-	char line[128];
+	char line[256];
 
 	if (wp == NULL) {
 		return 0;
@@ -137,47 +142,49 @@ static int websVerifyUploadAuth(webs_t wp)
 			return 0;
 		}
 		memset(adminPass, 0, sizeof(adminPass));
-		if (MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, adminPass, sizeof(adminPass) - 1) == 0) {
+		if (MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, adminPass, sizeof(adminPass) - 1) > 0) {
+			adminPass[sizeof(adminPass) - 1] = '\0';
 			if (adminPass[0] != '\0') {
 				return (strcmp(wp->password, adminPass) == 0) ? 1 : 0;
 			}
 		}
-		/* Fallback check in /tmp/sys.conf */
+		/* Fallback check in /tmp/sys.conf (handles optional spaces and '^' prefix) */
 		fp = fopen("/tmp/sys.conf", "r");
 		if (fp != NULL) {
 			while (fgets(line, sizeof(line), fp) != NULL) {
-				char *p = strstr(line, "AdminPassword=");
-				if (p != NULL) {
-					char *val = p + 14;
-					char *nl = strpbrk(val, "\r\n");
-					if (nl != NULL) *nl = '\0';
-					fclose(fp);
-					return (strcmp(wp->password, val) == 0) ? 1 : 0;
+				char *p = line;
+				while (*p == ' ' || *p == '\t') p++;
+				if (*p == '^') p++;
+				if (strncmp(p, "AdminPassword", 13) == 0 &&
+					(p[13] == '=' || p[13] == ' ' || p[13] == '\t')) {
+					char *eq = strchr(p + 13, '=');
+					if (eq != NULL) {
+						char *val = eq + 1;
+						char *nl;
+						while (*val == ' ' || *val == '\t') val++;
+						nl = strpbrk(val, "\r\n");
+						if (nl != NULL) *nl = '\0';
+						fclose(fp);
+						return (val[0] != '\0' && strcmp(wp->password, val) == 0) ? 1 : 0;
+					}
 				}
 			}
 			fclose(fp);
 		}
-		/* Factory default fallback */
-		return (strcmp(wp->password, "admin") == 0) ? 1 : 0;
+		return 0;
 	}
-#ifdef DIGEST_ACCESS_SUPPORT
-	if (wp->flags & WEBS_AUTH_DIGEST) {
-		if (wp->digest != NULL && wp->digest[0] != '\0') {
-			return 1;
-		}
-	}
-#endif
 	return 0;
 }
 
-//Add for WET610N - Ricky Cao on 2008/09/03
-//Use device name to instead of the original realm
+/* Add for WET610N - Ricky Cao on 2008/09/03 */
+/* Use device name to instead of the original realm */
 void websInitRealm(void)
 {
-	char DeviceName[MT_MAX_PARAM_VALUE_LENGTH]={0};
-	MT_Get_Param("HostName", DeviceName, sizeof(DeviceName));
-	printf("DeviceName for realm = %s (len = %d)\n", DeviceName, strlen(DeviceName));
-	//printf("websRealm -1 = %s\n", websRealm);
+	char DeviceName[MT_MAX_PARAM_VALUE_LENGTH];
+	memset(DeviceName, 0, sizeof(DeviceName));
+	MT_Get_Param("HostName", DeviceName, sizeof(DeviceName) - 1);
+	DeviceName[sizeof(DeviceName) - 1] = '\0';
+	printf("DeviceName for realm = %s (len = %d)\n", DeviceName, (int)strlen(DeviceName));
 	if(strcmp(DeviceName, websRealm)){
 		if(strlen(DeviceName)>=64){
 			strcpy(websRealm, "GoAhead");
@@ -186,9 +193,7 @@ void websInitRealm(void)
 			memcpy(websRealm, DeviceName, strlen(DeviceName));
 		}
 	}
-	//printf("websRealm -2 = %s\n", websRealm);
 }
-//Ricky Cao on 2008/09/03
 
 /*
  *	Open the GoAhead WebServer
@@ -263,7 +268,7 @@ void websCloseServer()
 /* 
  *	Close each open browser connection and free all resources
  */
-	for (wid = websMax; webs && wid >= 0; wid--) {
+	for (wid = websMax - 1; webs && wid >= 0; wid--) {
 		if ((wp = webs[wid]) == NULL) {
 			continue;
 		}
@@ -444,22 +449,25 @@ static void websSocketEvent(int sid, int mask, int iwp)
  *	Note: we never block as the socket is always in non-blocking mode.
  */
 
+#define WEBS_MAX_SMALL_POST 65536
+
 void websReadEvent(webs_t wp)
 {
 	char_t 	*text;
 	char_t 	*upldUrl;
+	char_t	*newPost;
 	int		rc, nbytes, len, done, fd;
 
 	a_assert(wp);
 	a_assert(websValid(wp));
-
-	websSetTimeMark(wp);
 
 /*
  *	Read as many lines as possible. socketGets is called to read the header
  *	and socketRead is called to read posted data.
  */
 	text = NULL;
+	upldUrl = NULL;
+	newPost = NULL;
 	fd = -1;
 	for (done = 0; !done; ) {
 		if (text) {
@@ -482,6 +490,7 @@ void websReadEvent(webs_t wp)
 		if (rc < 0) {
 			break;
 		}
+		websSetTimeMark(wp);
 
 /*
  *		This is the state machine for the web server. 
@@ -500,9 +509,13 @@ void websReadEvent(webs_t wp)
 		
 		case WEBS_HEADER:
 /*
- *			Store more of the HTTP header. As we are doing line reads, we
- *			need to separate the lines with '\n'
+ *			Store more of the HTTP header. Reject oversized headers explicitly.
  */
+			if (ringqLen(&wp->header) + gstrlen(text) + 2 >= WEBS_MAX_HEADER) {
+				websError(wp, 400, T("Header too large"));
+				done++;
+				break;
+			}
 			if (ringqLen(&wp->header) > 0) {
 				ringqPutStr(&wp->header, T("\n"));
 			}
@@ -512,173 +525,148 @@ void websReadEvent(webs_t wp)
 		case WEBS_POST_CLEN:
 /*
  *			POST request with content specified by a content length.
- *			If this is a CGI request, write the data to the cgi stdin.
- *			socketGets was used to get the data and it strips \n's so
- *			add them back in here.
  */
-/* LohCT: If WEBS_POST_CLEN ==> socketRead was used to get the data, hence no need to strip \n's */
 #ifndef __NO_CGI_BIN
 			if (wp->flags & WEBS_CGI_REQUEST) {
-				if (fd == -1) {
-					fd = gopen(wp->cgiStdin, O_CREAT | O_WRONLY | O_BINARY,
-						0666);
+				if (wp->clen > WEBS_MAX_SMALL_POST || wp->lenPostData + nbytes > WEBS_MAX_SMALL_POST) {
+					websError(wp, 400, T("CGI POST body too large"));
+					done++;
+					break;
 				}
-/*				gwrite(fd, text, gstrlen(text));
-				gwrite(fd, T("\n"), sizeof(char_t));
-*/
-                gwrite(fd, text, nbytes);
-                wp->postData = bmemdup(B_L, text, nbytes);
-                wp->lenPostData = nbytes;
-/*
- *				Line removed as per BUG02488
- *
-				nbytes += 1;
- */
-			} else 
+				if (fd == -1 && wp->cgiStdin != NULL) {
+					fd = gopen(wp->cgiStdin, O_CREAT | O_WRONLY | O_APPEND | O_BINARY,
+						0600);
+				}
+				if (fd < 0) {
+					websError(wp, 500, T("Unable to open CGI input"));
+					done++;
+					break;
+				}
+				gwrite(fd, text, nbytes);
+				wp->lenPostData += nbytes;
+			} else {
 #endif
-            upldUrl = wp->url;
-            while (upldUrl && *upldUrl == '/' && *(upldUrl + 1) == '/') {
-                upldUrl++;
-            }
-            if ((upldUrl && strcmp(upldUrl, "/goform/upldImage") == 0) || (wp->flags & WEBS_HNAP_FW_UPGRADE))
-            {
-                int isAuth = websVerifyUploadAuth(wp);
-                int idleRetries = 0;
-                int flashSize = getFlashSize();
-                int maxUpload = isAuth ? ((flashSize > 0) ? (flashSize + 0x10000) : (KERNEL_MTD_PARTITION_SIZE + 0x10000)) : 65536;
-                char * buffer = NULL;
+				upldUrl = wp->path;
+				while (upldUrl && *upldUrl == '/' && *(upldUrl + 1) == '/') {
+					upldUrl++;
+				}
+				if ((upldUrl && strcmp(upldUrl, "/goform/upldImage") == 0) || (wp->flags & WEBS_HNAP_FW_UPGRADE))
+				{
+					int isAuth = websVerifyUploadAuth(wp);
+					int idleRetries = 0;
+					int flashSize = getFlashSize();
+					int maxUpload = (flashSize > 0) ? (flashSize + 0x10000) : (KERNEL_MTD_PARTITION_SIZE + 0x10000);
+					char *buffer = NULL;
+					time_t uploadStart = time(0);
 
-                printf("getFlashSize: %d\n", flashSize);
-                printf("wp->clen: %d\n", wp->clen);
+					printf("getFlashSize: %d\n", flashSize);
+					printf("wp->clen: %d\n", wp->clen);
 
-                if (!isAuth || gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 || (wp->clen > maxUpload) || !(buffer = (char *)malloc(wp->clen + wp->lenPostData)))
-                {
-                    char tmp[MAX_LINE];
-                    /* parsing will fail, and an error will be shown */
-                    if (wp->FileContentLen == 0)
-                        wp->FileContentLen = (wp->clen > maxUpload) ? UPLOAD_FILE_TO_BIG : UPLOAD_NO_MEMORY;
-                    /* drain remaining data cleanly */
-                    wp->clen -= nbytes;
-                    while (wp->clen > 0)
-                    {
-                        nbytes = socketRead(wp->sid, tmp, MAX_LINE);
-                        if (nbytes > 0) {
-                            wp->clen -= nbytes;
-                            idleRetries = 0;
-                        } else if (nbytes == 0 && !socketEof(wp->sid)) {
-                            if (++idleRetries > 100) break;
-                            socketSelect(wp->sid, 100);
-                        } else if (nbytes < 0) {
-                            if (++idleRetries > 100) break;
-                            socketSelect(wp->sid, 100);
-                        } else {
-                            break;
-                        }
-                    }
-                    wp->flags |= WEBS_POST_DATA;
-                    websUrlHandlerRequest(wp);
-                    done++;
-                    break;
-                } else
-                {
-                    /* Reset burnState and precentComplete so status polling sees active upload (F-09) */
-                    gMTBurnParams.burnState = 0;
-                    gMTBurnParams.precentComplete = 0;
-                    if (wp->postData)
-                    {
-                        memcpy(buffer, wp->postData, wp->lenPostData);
-                        if (wp->flags & WEBS_SYS_MALLOC_POST) {
-                            free(wp->postData);
-                        } else {
-                            bfree(B_L, wp->postData);
-                        }
-                    }
-                    memcpy(buffer + wp->lenPostData, text, nbytes);
-                    wp->lenPostData += nbytes;
-                    wp->postData = buffer;
-                    wp->flags |= WEBS_SYS_MALLOC_POST;
-                    /* read all data that was left */
-                    wp->clen -= nbytes;
-                    while (wp->clen > 0)
-                    {
-                        nbytes = socketRead(wp->sid, wp->postData + wp->lenPostData, wp->clen);
-                        if (nbytes > 0) {
-                            wp->clen -= nbytes;
-                            wp->lenPostData += nbytes;
-                            idleRetries = 0;
-                        } else if (nbytes == 0 && !socketEof(wp->sid)) {
-                            /* Socket not ready (EWOULDBLOCK) - wait up to 100ms for incoming packets */
-                            if (++idleRetries > 200) { /* 20s timeout */
-                                break;
-                            }
-                            socketSelect(wp->sid, 100);
-                        } else if (nbytes < 0) {
-                            if (++idleRetries > 100) {
-                                break;
-                            }
-                            socketSelect(wp->sid, 100);
-                        } else {
-                            /* Real connection EOF */
-                            break;
-                        }
-                    }
-                    if (wp->clen <= 0) {
-                        wp->flags |= WEBS_POST_DATA;
-                        websUrlHandlerRequest(wp);
-                        done++;
-                        break;
-                    } else {
-                        /* Incomplete upload / early disconnect (W-08) */
-                        websError(wp, 400, T("Incomplete upload"));
-                        done++;
-                        break;
-                    }
-                }
-            } else
-            if (wp->postData) {
-#if 0
-			if (wp->query) {
-				if (wp->query[0] && !(wp->flags & WEBS_POST_DATA)) {
-/*
- *					Special case where the POST request also had query data 
- *					specified in the URL, ie. url?query_data. In this case
- *					the URL query data is separated by a '&' from the posted
- *					query data.
- */
-					len = gstrlen(wp->query);
-					wp->query = brealloc(B_L, wp->query, (len + gstrlen(text) +
-						2) * sizeof(char_t));
-					wp->query[len++] = '&';
-					gstrcpy(&wp->query[len], text);
-
+					if (!isAuth) {
+						websError(wp, 401, T("Unauthorized"));
+						done++;
+						break;
+					}
+					if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 ||
+						wp->clen < 0 || wp->clen > maxUpload ||
+						!(buffer = (char *)malloc((size_t)(wp->clen + wp->lenPostData + 1))))
+					{
+						if (gMTBurnParams.burnState > error_e) {
+							websError(wp, 503, T("Firmware upgrade already in progress"));
+						} else if (wp->clen > maxUpload) {
+							websError(wp, 400, T("File too large"));
+						} else {
+							websError(wp, 400, T("Insufficient memory for upload"));
+						}
+						done++;
+						break;
+					}
+					{
+						/* Reset burnState and precentComplete so status polling sees active upload */
+						gMTBurnParams.burnState = 0;
+						gMTBurnParams.precentComplete = 0;
+						if (wp->postData)
+						{
+							memcpy(buffer, wp->postData, wp->lenPostData);
+							if (wp->flags & WEBS_SYS_MALLOC_POST) {
+								free(wp->postData);
+							} else {
+								bfree(B_L, wp->postData);
+							}
+						}
+						memcpy(buffer + wp->lenPostData, text, nbytes);
+						wp->lenPostData += nbytes;
+						buffer[wp->lenPostData] = '\0';
+						wp->postData = buffer;
+						wp->flags |= WEBS_SYS_MALLOC_POST;
+						/* read all data that was left */
+						wp->clen -= nbytes;
+						while (wp->clen > 0)
+						{
+							if ((time(0) - uploadStart) > 120) {
+								break;
+							}
+							nbytes = socketRead(wp->sid, wp->postData + wp->lenPostData, wp->clen);
+							if (nbytes > 0) {
+								wp->clen -= nbytes;
+								wp->lenPostData += nbytes;
+								wp->postData[wp->lenPostData] = '\0';
+								idleRetries = 0;
+							} else if (nbytes == 0 && !socketEof(wp->sid)) {
+								if (++idleRetries > 200) {
+									break;
+								}
+								socketSelect(wp->sid, 100);
+							} else {
+								/* Fatal error or EOF */
+								break;
+							}
+						}
+						if (wp->clen <= 0) {
+							wp->flags |= WEBS_POST_DATA;
+							websUrlHandlerRequest(wp);
+							done++;
+							break;
+						} else {
+							/* Incomplete upload / early disconnect (W-08) */
+							websError(wp, 400, T("Incomplete upload"));
+							done++;
+							break;
+						}
+					}
 				} else {
-#endif
-/*
- *					The existing query data came from the POST request so just
- *					append it.
- */
-/*
-					len = gstrlen(wp->query);
-					wp->query = brealloc(B_L, wp->query, (len +	gstrlen(text) +
-						1) * sizeof(char_t));
-					if (wp->query) {
-						gstrcpy(&wp->query[len], text);
+					if (wp->lenPostData + wp->clen > WEBS_MAX_SMALL_POST || wp->lenPostData + nbytes > WEBS_MAX_SMALL_POST) {
+						websError(wp, 400, T("Request body too large"));
+						done++;
+						break;
+					}
+					if (wp->postData) {
+						newPost = brealloc(B_L, wp->postData, (wp->lenPostData + nbytes + 1) * sizeof(char_t));
+						if (newPost == NULL) {
+							websError(wp, 503, T("Insufficient memory"));
+							done++;
+							break;
+						}
+						wp->postData = newPost;
+						memcpy(&wp->postData[wp->lenPostData], text, nbytes);
+						wp->lenPostData += nbytes;
+						wp->postData[wp->lenPostData] = '\0';
+					} else {
+						newPost = balloc(B_L, (nbytes + 1) * sizeof(char_t));
+						if (newPost == NULL) {
+							websError(wp, 503, T("Insufficient memory"));
+							done++;
+							break;
+						}
+						memcpy(newPost, text, nbytes);
+						newPost[nbytes] = '\0';
+						wp->postData = newPost;
+						wp->lenPostData = nbytes;
 					}
 				}
-*/
-                    wp->postData = brealloc(B_L, wp->postData,(wp->lenPostData + nbytes +	1) * sizeof(char_t));
-                    
-                    if (wp->postData) {
-                        memcpy(&wp->postData[wp->lenPostData], text, nbytes);
-                        wp->lenPostData += nbytes;
-                    }
-                    
-
-			} else {
-/*				wp->query = bstrdup(B_L, text);*/
-                wp->postData = bmemdup(B_L, text, nbytes);
-                wp->lenPostData = nbytes;
+#ifndef __NO_CGI_BIN
 			}
+#endif
 /*
  *			Calculate how much more post data is to be read.
  */
@@ -696,7 +684,7 @@ void websReadEvent(webs_t wp)
  *			the input file first!).
  */
 			if (fd != -1) {
-				gclose (fd);
+				gclose(fd);
 				fd = -1;
 			}
 			websUrlHandlerRequest(wp);
@@ -706,31 +694,30 @@ void websReadEvent(webs_t wp)
 		case WEBS_POST:
 /*
  *			POST without content-length specification
- *			If this is a CGI request, write the data to the cgi stdin.
- *			socketGets was used to get the data and it strips \n's so
- *			add them back in here.
  */
 
 #ifndef __NO_CGI_BIN
 			if (wp->flags & WEBS_CGI_REQUEST) {
-				if (fd == -1) {
-					fd = gopen(wp->cgiStdin, O_CREAT | O_WRONLY | O_BINARY,
-						0666);
+				if (fd == -1 && wp->cgiStdin != NULL) {
+					fd = gopen(wp->cgiStdin, O_CREAT | O_WRONLY | O_APPEND | O_BINARY,
+						0600);
 				}
-				gwrite(fd, text, gstrlen(text));
-				gwrite(fd, T("\n"), sizeof(char_t));
+				if (fd >= 0) {
+					gwrite(fd, text, gstrlen(text));
+					gwrite(fd, T("\n"), sizeof(char_t));
+				}
 			} else
 #endif
 			if (wp->query && *wp->query && !(wp->flags & WEBS_POST_DATA)) {
 				len = gstrlen(wp->query);
-				wp->query = brealloc(B_L, wp->query, (len + gstrlen(text) +
-					2) * sizeof(char_t));
-				if (wp->query) {
+				newPost = brealloc(B_L, wp->query, (len + gstrlen(text) + 2) * sizeof(char_t));
+				if (newPost != NULL) {
+					wp->query = newPost;
 					wp->query[len++] = '&';
 					gstrcpy(&wp->query[len], text);
 				}
-
 			} else {
+				bfreeSafe(B_L, wp->query);
 				wp->query = bstrdup(B_L, text);
 			}
 			wp->flags |= WEBS_POST_DATA;
@@ -805,6 +792,9 @@ static int websGetInput(webs_t wp, char_t **ptext, int *pnbytes)
 			return -1;
 
 		}  else if (nbytes == 0) {				/* EOF or No data available */
+			if (socketEof(wp->sid)) {
+				websDone(wp, 0);
+			}
 			return -1;
 
 		} else {								/* Valid data */
@@ -903,8 +893,17 @@ static int websGetInput(webs_t wp, char_t **ptext, int *pnbytes)
  *				Valid empty line, now finished with header
  */
 				websParseRequest(wp);
+				if ((wp->flags & WEBS_CLEN) && wp->clen < 0) {
+					websError(wp, 400, T("Invalid Content-Length"));
+					return -1;
+				}
 				if (wp->flags & WEBS_POST_REQUEST) {
 					if (wp->flags & WEBS_CLEN) {
+						if (wp->clen == 0) {
+							wp->flags |= WEBS_POST_DATA;
+							websUrlHandlerRequest(wp);
+							return -1;
+						}
 						wp->state = WEBS_POST_CLEN;
 						clen = wp->clen;
 					} else {
@@ -993,21 +992,24 @@ static int websParseFirst(webs_t wp, char_t *text)
 	}
 
 	wp->url = bstrdup(B_L, url);
+	wp->query = bstrdup(B_L, query);
+	wp->host = bstrdup(B_L, host);
+	wp->path = bstrdup(B_L, path);
+	if (wp->path) {
+		websCondenseMultipleChars(wp->path, '/');
+	}
+	wp->protocol = bstrdup(B_L, proto);
+	wp->protoVersion = bstrdup(B_L, protoVer);
 
 #ifndef __NO_CGI_BIN
-	if (gstrstr(url, CGI_BIN) != NULL) {
+	if (wp->path != NULL && (gstrcmp(wp->path, T("/cgi-bin")) == 0 ||
+		gstrncmp(wp->path, T("/cgi-bin/"), 9) == 0)) {
 		wp->flags |= WEBS_CGI_REQUEST;
 		if (wp->flags & WEBS_POST_REQUEST) {
 			wp->cgiStdin = websGetCgiCommName();
 		}
 	}
 #endif
-
-	wp->query = bstrdup(B_L, query);
-	wp->host = bstrdup(B_L, host);
-	wp->path = bstrdup(B_L, path);
-	wp->protocol = bstrdup(B_L, proto);
-	wp->protoVersion = bstrdup(B_L, protoVer);
 	
     /* LohCT: Initialize to NULL */
     wp->postData = NULL;
@@ -1111,31 +1113,41 @@ static void websParseRequest(webs_t wp)
  *		Track the requesting agent (browser) type
  */
 		if (gstrcmp(key, T("user-agent")) == 0) {
+			bfreeSafe(B_L, wp->userAgent);
 			wp->userAgent = bstrdup(B_L, value);
 
 /*
  *		Parse the user authorization. ie. password
  */
 		} else if (gstricmp(key, T("authorization")) == 0) {
-			if(strlen(value)==0){ //This is add for Linksys Direct TV team report bug when information for authorization is NULL, the web server will crash -Ricky Cao on Nov. 21 2008
+			bfreeSafe(B_L, wp->authType);
+			wp->authType = NULL;
+			bfreeSafe(B_L, wp->userName);
+			wp->userName = NULL;
+			bfreeSafe(B_L, wp->password);
+			wp->password = NULL;
+#ifdef DIGEST_ACCESS_SUPPORT
+			bfreeSafe(B_L, wp->realm); wp->realm = NULL;
+			bfreeSafe(B_L, wp->uri); wp->uri = NULL;
+			bfreeSafe(B_L, wp->digest); wp->digest = NULL;
+			bfreeSafe(B_L, wp->opaque); wp->opaque = NULL;
+			bfreeSafe(B_L, wp->nonce); wp->nonce = NULL;
+			bfreeSafe(B_L, wp->nc); wp->nc = NULL;
+			bfreeSafe(B_L, wp->cnonce); wp->cnonce = NULL;
+			bfreeSafe(B_L, wp->qop); wp->qop = NULL;
+#endif
+			wp->flags &= ~(WEBS_AUTH_BASIC | WEBS_AUTH_DIGEST);
+
+			if(strlen(value)==0){
 				printf("WARNING: The value for authorization header is NULL..\n");
 				wp->userName = bstrdup(B_L, T(""));
 				wp->password = bstrdup(B_L, T(""));
-/*
- *				Set the flags to indicate digest authentication
- */
 				wp->flags |= WEBS_AUTH_BASIC;
-			}else{ //Add by Ricky Cao on Nov. 21 2008
-/*
- *			Determine the type of Authorization Request
- */
+			}else{
 			authType = bstrdup (B_L, value);
 			a_assert (authType);
-/*			
- *			Truncate authType at the next non-alpha character
- */
 			cp = authType;
-			while (gisalpha(*cp)) {
+			while (*cp && gisalpha(*cp)) {
 				cp++;
 			}
 			*cp = '\0';
@@ -1143,37 +1155,18 @@ static void websParseRequest(webs_t wp)
 			wp->authType = bstrdup(B_L, authType);
 			bfree(B_L, authType);
 
-			if (gstricmp(wp->authType, T("basic")) == 0) {
+			if (wp->authType && gstricmp(wp->authType, T("basic")) == 0) {
 				char_t	userAuth[FNAMESIZE];
-/*
- *				The incoming value is username:password (Basic authentication)
- */
 				if ((cp = gstrchr(value, ' ')) != NULL) {
 					*cp = '\0';
-               /*
-                * bugfix 5/24/02 -- we were leaking the memory pointed to by
-                * wp->authType that was allocated just before the if()
-                * statement that we are currently in. Thanks to Simon Byholm.
-                */
-               bfree(B_L, wp->authType);
+					bfreeSafe(B_L, wp->authType);
 					wp->authType = bstrdup(B_L, value);
-					//There are some problems in the websDecode64 of goahead webserber 
-					//It can not decode some character, so I replace it with b64_decode that is port from httpd
-					//U-Media Ricky Cao
-					//websDecode64(userAuth, ++cp, sizeof(userAuth));
 					b64Decode_len= b64_decode(++cp, userAuth, sizeof(userAuth) - 1);
 				} else {
-					//There are some problems in the websDecode64 of goahead webserber 
-					//It can not decode some character, so I replace it with b64_decode that is port from httpd
-					//U-Media Ricky Cao
-					//websDecode64(userAuth, value, sizeof(userAuth));
 					b64Decode_len = b64_decode(value, userAuth, sizeof(userAuth) - 1);
 				}
-				userAuth[b64Decode_len]='\0'; //Add for b64_decode() - U-Media Ricky Cao
+				userAuth[b64Decode_len]='\0';
 
-/*
- *				Split userAuth into userid and password
- */
 				if ((cp = gstrchr(userAuth, ':')) != NULL) {
 					*cp++ = '\0';
 				}
@@ -1184,96 +1177,80 @@ static void websParseRequest(webs_t wp)
 					wp->userName = bstrdup(B_L, T(""));
 					wp->password = bstrdup(B_L, T(""));
 				}
-/*
- *				Set the flags to indicate digest authentication
- */
 				wp->flags |= WEBS_AUTH_BASIC;
 			} else {
 #ifdef DIGEST_ACCESS_SUPPORT
-/*
- *				The incoming value is slightly more complicated (Digest)
- */
-				char_t *np;		/* pointer to end of tag name */
-				char_t tp;		/* temporary character holding space */
-				char_t *vp;		/* pointer to value */
-				char_t *npv;	/* pointer to end of value, "next" pointer */
-				char_t tpv;		/* temporary character holding space */
-/*
- *				Set the flags to indicate digest authentication
- */
+				char_t *np;
+				char_t tp;
+				char_t *vp;
+				char_t *npv;
+				char_t tpv;
 				wp->flags |= WEBS_AUTH_DIGEST;
-/*
- *				Move cp to Next word beyond "Digest",
- *				vp to first char after '='.
- */
  				cp = value;
-				while (isgoodchar(*cp)) {
+				while (*cp && isgoodchar(*cp)) {
 					cp++;
 				}
-				while (!isgoodchar(*cp)) {
+				while (*cp && !isgoodchar(*cp)) {
 					cp++;
 				}
 
-/*
- *				Find beginning of value
- */
-				vp = gstrchr(cp, '=');
+				vp = (*cp != '\0') ? gstrchr(cp, '=') : NULL;
 				while (vp) {
-/*
- *					Zero-terminate tag name
- */
 					np = cp;
-					while (isgoodchar(*np)) {
+					while (*np && isgoodchar(*np)) {
 						np++;
 					}
 					tp = *np;
 					*np = 0;
-/*
- *					Advance value pointer to first legit character
- */
+
 					vp++;
-					while (!isgoodchar(*vp)) {
+					while (*vp && !isgoodchar(*vp)) {
 						vp++;
 					}
-/*
- *					Zero-terminate value
- */
+					if (*vp == '\0') {
+						*np = tp;
+						break;
+					}
+
 					npv = vp;
-					while (isgoodchar(*npv)) {
+					while (*npv && isgoodchar(*npv)) {
 						npv++;
 					}
 					tpv = *npv;
 					*npv = 0;
-/*
- *					Extract the fields
- */
+
 					if (gstricmp(cp, T("username")) == 0) {
+						bfreeSafe(B_L, wp->userName);
 						wp->userName = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("response")) == 0) {
+						bfreeSafe(B_L, wp->digest);
 						wp->digest = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("opaque")) == 0) {
+						bfreeSafe(B_L, wp->opaque);
 						wp->opaque = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("uri")) == 0) {
+						bfreeSafe(B_L, wp->uri);
 						wp->uri = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("realm")) == 0) {
+						bfreeSafe(B_L, wp->realm);
 						wp->realm = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("nonce")) == 0) {
+						bfreeSafe(B_L, wp->nonce);
 						wp->nonce = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("nc")) == 0) {
+						bfreeSafe(B_L, wp->nc);
 						wp->nc = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("cnonce")) == 0) {
+						bfreeSafe(B_L, wp->cnonce);
 						wp->cnonce = bstrdup(B_L, vp);
 					} else if (gstricmp(cp, T("qop")) == 0) {
+						bfreeSafe(B_L, wp->qop);
 						wp->qop = bstrdup(B_L, vp);
 					}
-/*
- *					Restore tag name and value zero-terminations
- */
+
 					*np = tp;
 					*npv = tpv;
-/*
- *					Advance tag name and value pointers
- */
+
  					cp = npv;
 					while (*cp && isgoodchar(*cp)) {
 						cp++;
@@ -1289,41 +1266,45 @@ static void websParseRequest(webs_t wp)
 					}
 				}
 #endif /* DIGEST_ACCESS_SUPPORT */
-			} /* if (gstrcmp(wp->authType)) */
-				}//Add by Ricky Cao on Nov. 21 2008
+			}
+				}
 /*
  *		Parse the content length
  */
 		} else if (gstrcmp(key, T("content-length")) == 0) {
-         /*
-          * 11 Oct 02 BgP -- The server would crash if an attacker sent a POST
-          * message with a content-length value <= 0. We assume that anyone
-          * sending this is malicious, and the POST is read from the socket,
-          * but it is ignored, and the socket is closed.
-          */
-         wp->clen = gatoi(value);
-         if (wp->clen > 0)
-         {
-			   wp->flags |= WEBS_CLEN;			
-			   websSetVar(wp, T("CONTENT_LENGTH"), value);
-         }
-         else
-         {
-            wp->clen = 0;
-         }
+			char *endp = NULL;
+			long clenVal;
+			errno = 0;
+			clenVal = strtol(value, &endp, 10);
+			if (errno == ERANGE || endp == value || clenVal < 0 || clenVal > 0x4000000L) {
+				wp->clen = -1;
+				wp->flags |= WEBS_CLEN;
+			} else {
+				while (*endp == ' ' || *endp == '\t' || *endp == '\r') {
+					endp++;
+				}
+				if (*endp != '\0') {
+					wp->clen = -1;
+					wp->flags |= WEBS_CLEN;
+				} else if ((wp->flags & WEBS_CLEN) && wp->clen != (int)clenVal) {
+					wp->clen = -1;
+				} else if (wp->clen != -1) {
+					wp->clen = (int)clenVal;
+					wp->flags |= WEBS_CLEN;
+					websSetVar(wp, T("CONTENT_LENGTH"), value);
+				}
+			}
 
 /*
  *		Parse the content type
  */
 		} else if (gstrcmp(key, T("content-type")) == 0) {
 			websSetVar(wp, T("CONTENT_TYPE"), value);
-/* begin   support multipart form for file upload */
 			if (gstrncmp(value, CTYPE_MULTIPART, gstrlen(CTYPE_MULTIPART)) == 0) {
 				char_t* p;
 				wp->flags |= WEBS_MULTIPART_FORM;
 				if ((p = gstrstr(value, BOUNDARY_KWD)) != NULL) {
-					/* skip over the 'boundary=' part */
-					p+= gstrlen(BOUNDARY_KWD);
+					p += gstrlen(BOUNDARY_KWD);
 					if (*p == '"') {
 						char_t *endq;
 						p++;
@@ -1331,11 +1312,13 @@ static void websParseRequest(webs_t wp)
 							*endq = '\0';
 						}
 					}
+					bfreeSafe(B_L, wp->multiPartBoundary);
 					wp->multiPartBoundary = balloc(B_L, gstrlen(p) + 3);
-					gsprintf(wp->multiPartBoundary , "--%s", p);
+					if (wp->multiPartBoundary != NULL) {
+						gsprintf(wp->multiPartBoundary, "--%s", p);
+					}
 				}
 			}
-/* end  */
 #ifdef WEBS_KEEP_ALIVE_SUPPORT
 		} else if (gstrcmp(key, T("connection")) == 0) {
 			strlower(value);
@@ -1345,10 +1328,6 @@ static void websParseRequest(webs_t wp)
 #endif
 
 #ifdef WEBS_PROXY_SUPPORT
-/*
- *		This may be useful if you wish to keep a local cache of web pages
- *		for proxied requests.
- */
 		} else if (gstrcmp(key, T("pragma")) == 0) {
 			char_t	tmp[256];
 			gstrncpy(tmp, value, TSZ(tmp));
@@ -1363,6 +1342,7 @@ static void websParseRequest(webs_t wp)
  */
 		} else if (gstrcmp(key, T("cookie")) == 0) {
 			wp->flags |= WEBS_COOKIE;
+			bfreeSafe(B_L, wp->cookie);
 			wp->cookie = bstrdup(B_L, value);
 
 #ifdef WEBS_IF_MODIFIED_SUPPORT
@@ -1405,10 +1385,31 @@ static void websParseRequest(webs_t wp)
  *	a variable for each name=value pair.
  */
 
+static int isReservedCgiVar(char_t *k)
+{
+	if (k == NULL) {
+		return 0;
+	}
+	if (strncasecmp(k, T("HTTP_"), 5) == 0 ||
+		strncasecmp(k, T("SERVER_"), 7) == 0 ||
+		strncasecmp(k, T("REMOTE_"), 7) == 0 ||
+		strncasecmp(k, T("CONTENT_"), 8) == 0 ||
+		gstricmp(k, T("REQUEST_METHOD")) == 0 ||
+		gstricmp(k, T("QUERY_STRING")) == 0 ||
+		gstricmp(k, T("PATH_INFO")) == 0 ||
+		gstricmp(k, T("PATH_TRANSLATED")) == 0 ||
+		gstricmp(k, T("SCRIPT_NAME")) == 0 ||
+		gstricmp(k, T("GATEWAY_INTERFACE")) == 0 ||
+		gstricmp(k, T("CGI_WEB_VAR_FILE")) == 0) {
+		return 1;
+	}
+	return 0;
+}
+
 void websSetEnv(webs_t wp)
 {
 	char_t	portBuf[8];
-	char_t	*keyword, *value, *valCheck, *valNew;
+	char_t	*keyword, *value, *valCheck, *valNew, *tmpQuery;
     int len;
 /*	char_t*	startOfQuery; */	
 
@@ -1454,22 +1455,20 @@ void websSetEnv(webs_t wp)
  *					query data.
  */
 					len = gstrlen(wp->query);
-                    wp->query = brealloc(B_L, wp->query, (len + wp->lenPostData +
+                    tmpQuery = brealloc(B_L, wp->query, (len + wp->lenPostData +
 						2) * sizeof(char_t));
-                    if (wp->query) {
+                    if (tmpQuery) {
+                        wp->query = tmpQuery;
                         wp->query[len++] = '&';
                         memcpy(&wp->query[len], wp->postData, wp->lenPostData);
                         wp->query[len + wp->lenPostData] = '\0';
                     }
 				} else {
-/*
- *					The existing query data came from the POST request so just
- *					append it.
- */
                     len = gstrlen(wp->query);
-                    wp->query = brealloc(B_L, wp->query, (len + wp->lenPostData +
+                    tmpQuery = brealloc(B_L, wp->query, (len + wp->lenPostData +
 						1) * sizeof(char_t));
-                    if (wp->query) {
+                    if (tmpQuery) {
+                        wp->query = tmpQuery;
                         memcpy(&wp->query[len], wp->postData, wp->lenPostData);
                         wp->query[len + wp->lenPostData] = '\0';
                     }
@@ -1514,6 +1513,7 @@ void websSetEnv(webs_t wp)
 */
 
 
+	bfreeSafe(B_L, wp->decodedQuery);
 	wp->decodedQuery = bstrdup(B_L, wp->query);
 	keyword = gstrtok(wp->decodedQuery, T("&"));
 	while (keyword != NULL) {
@@ -1521,21 +1521,17 @@ void websSetEnv(webs_t wp)
 			*value++ = '\0';
 			websDecodeUrl(keyword, keyword, gstrlen(keyword));
 			websDecodeUrl(value, value, gstrlen(value));
-			//Jacky.Yang 11-Jul-2008, solved access contorl will set fail value.
-			//MT_Set_Param(keyword, value, MT_DONT_SET_FIRST_VALUE); // Update the parameter value in our temporary array
 		} else {
 			value = T("");
 		}
 
-		if (*keyword) {
-/*
- *			If keyword has already been set, append the new value to what has 
- *			been stored.
- */
+		if (*keyword && !isReservedCgiVar(keyword)) {
 			if ((valCheck = websGetVar(wp, keyword, NULL)) != 0) {
 				fmtAlloc(&valNew, 256, T("%s %s"), valCheck, value);
-				websSetVar(wp, keyword, valNew);
-				bfreeSafe(B_L, valNew);
+				if (valNew != NULL) {
+					websSetVar(wp, keyword, valNew);
+					bfreeSafe(B_L, valNew);
+				}
 			} else {
 				websSetVar(wp, keyword, value);
 			}
@@ -1759,7 +1755,8 @@ void websResponse(webs_t wp, int code, char_t *message, char_t *redirect)
 
 void websRedirect(webs_t wp, char_t *url)
 {
-	char_t	*msgbuf, *urlbuf, *redirectFmt;
+	char_t	*msgbuf, *urlbuf, *redirectFmt, *hostHdr, *p, *safeUrl;
+	int		hostValid = 1;
 
 	a_assert(websValid(wp));
 	a_assert(url);
@@ -1767,9 +1764,12 @@ void websRedirect(webs_t wp, char_t *url)
 	websStats.redirects++;
 	msgbuf = urlbuf = NULL;
 
-/*
- *	Some browsers require a http://host qualified URL for redirection
- */
+	/* Reject CRLF/quote/angle-bracket characters in redirect target */
+	if (strpbrk(url, "\r\n\"<>") != NULL) {
+		websError(wp, 400, T("Invalid redirect target"));
+		return;
+	}
+
 	if (gstrstr(url, T("http://")) == NULL) {
 		if (*url == '/') {
 			url++;
@@ -1782,23 +1782,34 @@ void websRedirect(webs_t wp, char_t *url)
 			redirectFmt = T("https://%s/%s");
 		}
 #endif
-
-		fmtAlloc(&urlbuf, WEBS_MAX_URL + 80, redirectFmt,
-			websGetVar(wp, T("HTTP_HOST"), 	websHostUrl), url);
-		url = urlbuf;
+		hostHdr = websGetVar(wp, T("HTTP_HOST"), websHostUrl);
+		if (hostHdr == NULL || *hostHdr == '\0') {
+			hostValid = 0;
+		} else {
+			for (p = hostHdr; *p != '\0'; p++) {
+				if (!gisalnum(*p) && *p != '.' && *p != ':' && *p != '-') {
+					hostValid = 0;
+					break;
+				}
+			}
+		}
+		if (!hostValid) {
+			hostHdr = (websHostUrl && *websHostUrl) ? websHostUrl : websIpaddr;
+		}
+		fmtAlloc(&urlbuf, WEBS_MAX_URL + 80, redirectFmt, hostHdr, url);
+		url = urlbuf ? urlbuf : T("/");
 	}
 
-/*
- *	Add human readable message for completeness. Should not be required.
- */
+	safeUrl = websSafeUrl(url);
 	fmtAlloc(&msgbuf, WEBS_MAX_URL + 80, 
 		T("<html><head></head><body>\r\n\
 		This document has moved to a new <a href=\"%s\">location</a>.\r\n\
 		Please update your documents to reflect the new location.\r\n\
-		</body></html>\r\n"), url);
+		</body></html>\r\n"), safeUrl ? safeUrl : T("/"));
 
 	websResponse(wp, 302, msgbuf, url);
 
+	bfreeSafe(B_L, safeUrl);
 	bfreeSafe(B_L, msgbuf);
 	bfreeSafe(B_L, urlbuf);
 }
@@ -2049,7 +2060,7 @@ int websWrite(webs_t wp, char_t *fmt, ...)
 
 int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 {
-	int		len, done;
+	int		len, done, retries;
 	char	*asciiBuf, *pBuf;
 
 	a_assert(wp);
@@ -2057,13 +2068,16 @@ int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 	a_assert(buf);
 	a_assert(nChars >= 0);
 
-	done = len = 0;
+	done = len = retries = 0;
 
 /*
  *	ballocUniToAsc will convert Unicode to strings to Ascii.  If Unicode is
  *	not turned on then ballocUniToAsc will not do the conversion.
  */
 	pBuf = asciiBuf = ballocUniToAsc(buf, nChars);
+	if (asciiBuf == NULL) {
+		return -1;
+	}
 
 	while (nChars > 0) {  
 #ifdef WEBS_SSL_SUPPORT
@@ -2080,10 +2094,12 @@ int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 			}
 			socketFlush(wp->sid);
 			if (len == 0) {
-				if (socketSelect(wp->sid, 100) <= 0) {
+				if (++retries > 20 || socketSelect(wp->sid, 100) <= 0) {
 					bfree(B_L, asciiBuf);
 					return -1;
 				}
+			} else {
+				retries = 0;
 			}
 		}
 #else /* ! WEBS_SSL_SUPPORT */
@@ -2093,10 +2109,22 @@ int websWriteBlock(webs_t wp, char_t *buf, int nChars)
 		}
 		socketFlush(wp->sid);
 		if (len == 0) {
-			if (socketSelect(wp->sid, 100) <= 0) {
+			socket_t *sp = socketPtr(wp->sid);
+			int oldMask = sp ? sp->handlerMask : 0;
+			int selRc;
+			if (sp) {
+				sp->handlerMask = SOCKET_WRITABLE;
+			}
+			selRc = socketSelect(wp->sid, 100);
+			if (sp) {
+				sp->handlerMask = oldMask;
+			}
+			if (++retries > 20 || selRc <= 0) {
 				bfree(B_L, asciiBuf);
 				return -1;
 			}
+		} else {
+			retries = 0;
 		}
 #endif /* WEBS_SSL_SUPPORT */
 		nChars -= len;
@@ -2174,8 +2202,14 @@ void websDecodeUrl(char_t *decoded, char_t *token, int len)
 					num = (num * 16) + c - '0';
 				}
 			}
-			*op = (char_t) num;
-			ip--;
+			if (num == 0) {
+				/* Reject %00 NUL-byte injection that truncates C string paths */
+				*op = '%';
+				ip -= 2;
+			} else {
+				*op = (char_t) num;
+				ip--;
+			}
 
 		} else {
 			*op = *ip;
@@ -2390,7 +2424,13 @@ int websAlloc(int sid)
  *	both the CGI variables and for the global functions. The function table
  *	is common to all webs instances (ie. all browsers)
  */
-	wp->cgiVars = symOpen(WEBS_SYM_INIT_4099);
+	wp->cgiVars = symOpen(127);
+	if (wp->cgiVars < 0) {
+		ringqClose(&wp->header);
+		hFree((void***) &webs, wid);
+		bfree(B_L, wp);
+		return -1;
+	}
 
 	return wid;
 }
@@ -2440,8 +2480,11 @@ void websFree(webs_t wp)
 		bfree(B_L, wp->protocol);
 	if (wp->protoVersion)
 		bfree(B_L, wp->protoVersion);
-	if (wp->cgiStdin)
+	if (wp->cgiStdin) {
+		gunlink(wp->cgiStdin);
 		bfree(B_L, wp->cgiStdin);
+		wp->cgiStdin = NULL;
+	}
     if (wp->multiPartBoundary)
 		bfree(B_L, wp->multiPartBoundary);
 
@@ -2840,7 +2883,8 @@ void websSetTimeMark(webs_t wp)
 
 static int websGetTimeSinceMark(webs_t wp)
 {
-	return time(0) - wp->timestamp;
+	int diff = (int)(time(0) - wp->timestamp);
+	return (diff < 0) ? 0 : diff;
 }
 
 /******************************************************************************/
@@ -2856,7 +2900,6 @@ static void extractUploadedFileContent(webs_t wp)
     char_t* part = wp->postData;
     char_t* endPart = wp->postData;
     char_t* endLine;
-    char_t* fileContent = NULL;
     int lineLen;
     char_t buf[MAX_LINE];
     int len;
@@ -2882,26 +2925,26 @@ static void extractUploadedFileContent(webs_t wp)
  *                  query data.
  */
                     len = gstrlen(wp->query);
-                    wp->query = brealloc(B_L, wp->query, (len + wp->lenPostData +
-                            2) * sizeof(char_t));
-                    if (wp->query) {
-                        wp->query[len++] = '&';
-                        memcpy(&wp->query[len], wp->postData, wp->lenPostData);
-                        wp->query[len + wp->lenPostData] = '\0';
-                    }    /* if (wp->query) */
+                    {
+                        char_t *tmpQ = brealloc(B_L, wp->query, (len + wp->lenPostData + 2) * sizeof(char_t));
+                        if (tmpQ) {
+                            wp->query = tmpQ;
+                            wp->query[len++] = '&';
+                            memcpy(&wp->query[len], wp->postData, wp->lenPostData);
+                            wp->query[len + wp->lenPostData] = '\0';
+                        }
+                    }
                 } else {
-/*
- *                  The existing query data came from the POST request so just
- *                  append it.
- */
                     len = gstrlen(wp->query);
-                    wp->query = brealloc(B_L, wp->query, (len + wp->lenPostData +
-                            1) * sizeof(char_t));
-                    if (wp->query) {
-                        memcpy(&wp->query[len], wp->postData, wp->lenPostData);
-                        wp->query[len + wp->lenPostData] = '\0';
-                    }    /* if (wp->query) */
-                }    /* if (wp->query[0]) */
+                    {
+                        char_t *tmpQ = brealloc(B_L, wp->query, (len + wp->lenPostData + 1) * sizeof(char_t));
+                        if (tmpQ) {
+                            wp->query = tmpQ;
+                            memcpy(&wp->query[len], wp->postData, wp->lenPostData);
+                            wp->query[len + wp->lenPostData] = '\0';
+                        }
+                    }
+                }
             } else {
                 wp->query = balloc(B_L, wp->lenPostData + 1);
                 if (wp->query) {
@@ -2944,14 +2987,18 @@ static void extractUploadedFileContent(webs_t wp)
                             break;
                         } else {
                             part++;
+                            if (part >= wp->postData + wp->lenPostData) {
+                                break;
+                            }
                             if ((*part) == '\n') {
                                 part +=1;
                                 endOfHeader = 1;
-                            } else if (((*part) == '\r') && ((*(part+1)) == '\n')) {
+                            } else if ((part + 1) < (wp->postData + wp->lenPostData) &&
+                                       ((*part) == '\r') && ((*(part+1)) == '\n')) {
                                 part += 2;
                                 endOfHeader = 1;
                             }
-                        }    /* if (part != NULL) */
+                        }
                     }    /* while (!endOfHeader) */
 
                     if (endOfHeader) {
@@ -3009,26 +3056,26 @@ static void extractUploadedFileContent(webs_t wp)
  *                                      query data.
  */
                                         len = gstrlen(wp->query);
-                                        wp->query = brealloc(B_L, wp->query, (len + gstrlen(tmpNameStr) +
-                                            2) * sizeof(char_t));
-                                        if (wp->query) {
-                                            wp->query[len++] = '&';
-                                            memcpy(&wp->query[len], tmpNameStr, gstrlen(tmpNameStr));
-                                            wp->query[len + gstrlen(tmpNameStr)] = '\0';
-                                        }    /* if (wp->query) */
+                                        {
+                                            char_t *tmpQ = brealloc(B_L, wp->query, (len + gstrlen(tmpNameStr) + 2) * sizeof(char_t));
+                                            if (tmpQ) {
+                                                wp->query = tmpQ;
+                                                wp->query[len++] = '&';
+                                                memcpy(&wp->query[len], tmpNameStr, gstrlen(tmpNameStr));
+                                                wp->query[len + gstrlen(tmpNameStr)] = '\0';
+                                            }
+                                        }
                                     } else {
-/*
- *                                      The existing query data came from the POST request so just
- *                                      append it.
- */
                                         len = gstrlen(wp->query);
-                                        wp->query = brealloc(B_L, wp->query, (len + gstrlen(tmpNameStr) +
-                                            1) * sizeof(char_t));
-                                        if (wp->query) {
-                                            memcpy(&wp->query[len], tmpNameStr, gstrlen(tmpNameStr));
-                                            wp->query[len + gstrlen(tmpNameStr)] = '\0';
-                                        }    /* if (wp->query) */
-                                    }    /* if (wp->query[0]) */
+                                        {
+                                            char_t *tmpQ = brealloc(B_L, wp->query, (len + gstrlen(tmpNameStr) + 1) * sizeof(char_t));
+                                            if (tmpQ) {
+                                                wp->query = tmpQ;
+                                                memcpy(&wp->query[len], tmpNameStr, gstrlen(tmpNameStr));
+                                                wp->query[len + gstrlen(tmpNameStr)] = '\0';
+                                            }
+                                        }
+                                    }
                                 } else {
                                     wp->query = balloc(B_L, gstrlen(tmpNameStr) + 1);
                                     if (wp->query) {
@@ -3040,8 +3087,10 @@ static void extractUploadedFileContent(webs_t wp)
                         }    /* if (endPart != NULL) */
                     } else {
                         endPart = part;
-                    }    /* if (endOfHeader) */
-                }    /* if (endLine == NULL) */
+                    }
+                } else {
+                    break;
+                }
             }    /* if (gstrstr(part, "Content-Disposition") == NULL) */
         }    /* if (part == NULL) */
     }    /* while ((endPart != NULL) && ((part = gstrstr(endPart, wp->multiPartBoundary)) != NULL)) */

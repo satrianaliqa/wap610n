@@ -30,7 +30,7 @@ static int					urlHandlerOpenCount = 0;	/* count of apps */
 static int 		websUrlHandlerSort(const void *p1, const void *p2);
 static int 		websPublishHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, 
 				int sid, char_t *url, char_t *path, char_t *query);
-static char_t	*websCondenseMultipleChars(char_t *strToCondense, char_t cCondense);
+char_t	*websCondenseMultipleChars(char_t *strToCondense, char_t cCondense);
 
 /*********************************** Code *************************************/
 /*
@@ -275,18 +275,20 @@ int websUrlHandlerRequest(webs_t wp)
 	first = 1;
 	for (i = 0; i < websUrlHandlerMax; i++) {
 		sp = &websUrlHandler[i];
-		if (sp->handler && gstrncmp(sp->urlPrefix, wp->path, sp->len) == 0) {
+		if (sp->handler && gstrncmp(sp->urlPrefix, wp->path, sp->len) == 0 &&
+			(sp->len == 0 || sp->urlPrefix[sp->len - 1] == '/' ||
+			 wp->path[sp->len] == '\0' || wp->path[sp->len] == '/')) {
 			if (first) {
-				//printf("wp->flags & WEBS_HNAP_FW_UPGRADE = %0xx\n", (wp->flags & WEBS_HNAP_FW_UPGRADE)); //Ricky Trace
-				if(!(wp->flags & WEBS_HNAP_FW_UPGRADE)){// Add for HNAP Firmware Upgrade feature - Ricky Cao
+				if (!(wp->flags & WEBS_HNAP_FW_UPGRADE)) {
 					websSetEnv(wp);
 				}
 				first = 0;
 			}
 			if ((*sp->handler)(wp, sp->urlPrefix, sp->webDir, sp->arg, 
 					wp->url, wp->path, wp->query)) {
-				/* Handler processed request but forgot to finish and has no background writer */
-				if (websValid(wp) && wp->writeSocket == NULL) {
+				/* Asynchronous handlers (such as CGI) complete via callbacks later */
+				if (websValid(wp) && wp->writeSocket == NULL &&
+					sp->handler != websCgiHandler) {
 					websDone(wp, 200);
 				}
 				return 1;
@@ -389,7 +391,7 @@ static int websTidyUrl(webs_t wp)
  *	instance.
  */
 
-static char_t *websCondenseMultipleChars(char_t *strToCondense, char_t cCondense)
+char_t *websCondenseMultipleChars(char_t *strToCondense, char_t cCondense)
 {
 	if (strToCondense != NULL) {
 		char_t *pStr, *pScan;

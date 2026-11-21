@@ -11,11 +11,24 @@
 
 extern int waitOtherProcess;
 
+static void closeInheritedFds(void)
+{
+	int fd;
+
+	for (fd = 3; fd < 256; fd++) {
+		close(fd);
+	}
+}
+
 void childFinishAndExit(void)
 {
+	pid_t ppid = getppid();
+
 	waitOtherProcess = 0;
 	unlink("/var/old_web_pid");
-	kill(getppid(), SIGHUP);
+	if (ppid > 1) {
+		kill(ppid, SIGHUP);
+	}
 	_exit(0);
 }
 
@@ -26,6 +39,11 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 
 	if (checkLoadDefault() == 1) {
 		websRedirect(wp, T("/admin/upgrade.asp"));
+		return;
+	}
+
+	if (waitOtherProcess != 0) {
+		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
 
@@ -47,10 +65,14 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		websRedirect(wp, T("/reboot_page.asp"));
 		return;
 	} else {
+		closeInheritedFds();
 		debug_printf("resetToDefault: 2. pid=%d\n", getpid());
 		waitRedirectPage();
-		if (system("/root/mtlk/etc/mtlk_restore_defaults.sh 1 1 > /dev/null 2>&1") != 0) {
+		if (system("/root/mtlk/etc/mtlk_restore_defaults.sh 1 0 > /dev/null 2>&1") != 0) {
 			debug_printf("resetToDefault: factory reset failed\n");
+			if (getppid() > 1) {
+				kill(getppid(), SIGHUP);
+			}
 			_exit(1);
 		}
 		system("echo 2 > /dev/gpio2");
@@ -58,6 +80,21 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		system("sleep 3 ; reboot&");
 		_exit(0);
 	}
+}
+
+static int isValidDigits(const char *s)
+{
+	const char *p;
+
+	if (s == NULL || *s == '\0') {
+		return 0;
+	}
+	for (p = s; *p != '\0'; p++) {
+		if (*p < '0' || *p > '9') {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 void management(webs_t wp, char_t *path, char_t *query)
@@ -69,10 +106,16 @@ void management(webs_t wp, char_t *path, char_t *query)
 	char_t *timeOut;
 	char_t *wirelessMgmt;
 	int paramCount = 0;
+	long tval;
 	pid_t pid;
 
 	if (checkLoadDefault() == 1) {
 		websRedirect(wp, T("/admin/upgrade.asp"));
+		return;
+	}
+
+	if (waitOtherProcess != 0) {
+		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
 
@@ -89,6 +132,7 @@ void management(webs_t wp, char_t *path, char_t *query)
 			websRedirect(wp, T("/reboot_page.asp"));
 			return;
 		} else {
+			closeInheritedFds();
 			debug_printf("management(reboot): 2. pid=%d\n", getpid());
 			system("echo 2 > /dev/gpio2");
 			system("sync");
@@ -96,12 +140,42 @@ void management(webs_t wp, char_t *path, char_t *query)
 			_exit(0);
 		}
 	} else {
+		/* Validate parameters before forking background apply */
+		admPass = websGetVar(wp, T("submit_admPassword"), T(""));
+		timeOut = websGetVar(wp, T("timeOut"), T(""));
+		wirelessMgmt = websGetVar(wp, T("wirelessMgmt"), T(""));
+
+		if (admPass != NULL && admPass[0] != '\0') {
+			if (strlen(admPass) > 64 || strpbrk(admPass, "\r\n") != NULL) {
+				websError(wp, 400, T("Invalid administrator password"));
+				return;
+			}
+		}
+		if (timeOut != NULL && timeOut[0] != '\0') {
+			if (!isValidDigits(timeOut)) {
+				websError(wp, 400, T("Invalid authentication timeout"));
+				return;
+			}
+			tval = atol(timeOut);
+			if (tval < 0 || tval > 86400) {
+				websError(wp, 400, T("Authentication timeout out of range"));
+				return;
+			}
+		}
+		if (wirelessMgmt != NULL && wirelessMgmt[0] != '\0') {
+			if (strcmp(wirelessMgmt, "0") != 0 && strcmp(wirelessMgmt, "1") != 0) {
+				websError(wp, 400, T("Invalid wireless management setting"));
+				return;
+			}
+		}
+
 		/* When rebootTag is empty or "false", save settings */
 		saveOldWebPid(getpid(), "management.asp");
 		waitOtherProcess = 1;
 		pid = fork();
 		if (pid < 0) {
 			waitOtherProcess = 0;
+			unlink("/var/old_web_pid");
 			websError(wp, 500, T("Unable to save settings"));
 			return;
 		} else if (pid != 0) {
@@ -109,14 +183,11 @@ void management(webs_t wp, char_t *path, char_t *query)
 			websRedirect(wp, T("/wait_page.asp"));
 			return;
 		} else {
+			closeInheritedFds();
 			debug_printf("management(save): 2. pid=%d\n", getpid());
 			waitRedirectPage();
 			stopWPS_PBC();
 			memset(tmp, 0, sizeof(tmp));
-
-			admPass = websGetVar(wp, T("submit_admPassword"), T(""));
-			timeOut = websGetVar(wp, T("timeOut"), T(""));
-			wirelessMgmt = websGetVar(wp, T("wirelessMgmt"), T(""));
 
 			if (admPass != NULL && admPass[0] != '\0') {
 				snprintf(tmp, sizeof(tmp), "%s", admPass);
@@ -143,22 +214,20 @@ void management(webs_t wp, char_t *path, char_t *query)
 
 void updateBurnProgress(webs_t wp, char_t *path, char_t *query)
 {
-	char stateStr[8];
-	char progressStr[8];
-	char errStr[512];
+	char stateStr[16];
+	char progressStr[16];
 	char resp[64];
-	char_t *err;
+	char_t *st;
+	char_t *prog;
 
 	debug_printf("updateBurnProgress: Into updateBurnProgress function.\n");
 	memset(stateStr, 0, sizeof(stateStr));
-	strcpy(stateStr, WebImageUpdateState());
+	st = WebImageUpdateState();
+	snprintf(stateStr, sizeof(stateStr), "%s", st ? st : "0");
 
 	memset(progressStr, 0, sizeof(progressStr));
-	strcpy(progressStr, WebImageUpdateProgress());
-
-	err = WebImageUpdateErr();
-	memset(errStr, 0, 512);
-	if (err) strcpy(errStr, err);
+	prog = WebImageUpdateProgress();
+	snprintf(progressStr, sizeof(progressStr), "%s", prog ? prog : "0");
 
 	snprintf(resp, sizeof(resp), "%s,%s", stateStr, progressStr);
 	wp->flags &= ~WEBS_KEEP_ALIVE;

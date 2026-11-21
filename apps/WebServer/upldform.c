@@ -16,6 +16,7 @@ SEE ALSO:
 
 #include "webs.h"
 #include "mt_api.h"
+#include "utils.h"
 
 #ifndef WIN
 #include "zlib.h"
@@ -23,9 +24,12 @@ SEE ALSO:
 #include <sys/select.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <errno.h>
 pthread_t gBurnThread;
+static int gBurnPostIsSysMalloc = 0;
 #endif
 
 /* forward declarations */
@@ -116,12 +120,18 @@ void *MT_BurnAndVerifyImage(void* data)
 			
 			printf ("imageheader.pcksum2 = %d\n",imageHeader.pcksum2);
 
-			if (imageHeader.magic == 0xEA000006 && imageHeader.pcksum2 < KERNEL_MTD_PARTITION_SIZE)
+			if (imageHeader.magic == 0xEA000006 &&
+				imageHeader.pcksum2 >= sizeof(MT_IMAGE_HEADER) &&
+				imageHeader.pcksum2 <= (unsigned int)(KERNEL_MTD_PARTITION_SIZE - 16))
 			{
 				if ((fp = fopen(gMTBurnParams.fName, "r+b")) != NULL)
 				{
-					fseek(fp,imageHeader.pcksum2,SEEK_SET);
-					fwrite(dummy_crc,1,4*sizeof(int),fp);
+					if (fseek(fp, (long)imageHeader.pcksum2, SEEK_SET) == 0) {
+						fwrite(dummy_crc, 1, 4 * sizeof(int), fp);
+						fflush(fp);
+						fsync(fileno(fp));
+						ioctl(fileno(fp), BLKFLSBUF, 0);
+					}
 					fclose(fp);
 					fp = NULL;
 				}
@@ -159,9 +169,9 @@ void *MT_BurnAndVerifyImage(void* data)
 				printf("%d\n",numLeft);
 				numWrite = fwrite(&(gMTBurnParams.fileContent[locWrite]), sizeof(*(gMTBurnParams.postData)), size, fp);
 				debug_printf("MT_BurnAndVerifyImage: numWrite=%d\n", numWrite);
-                fflush(fp);
-				if (!numWrite) 
+				if (numWrite <= 0 || ferror(fp))
 				{
+					ferror_val = ferror(fp);
 					sprintf(gMTBurnParams.errorMessage,T("Error : File could not be written<br>ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), ferror_val, locWrite, numLeft, numWrite, gMTBurnParams.imageSize);
 					gMTBurnParams.precentComplete = -1;
 					gMTBurnParams.burnState = error_e;
@@ -180,8 +190,17 @@ void *MT_BurnAndVerifyImage(void* data)
 			debug_printf("MT_BurnAndVerifyImage: Exit loop, numLeft > 0(numLef=%d)\n", numLeft);
 			
 			if (numLeft == 0) {
+				if (fflush(fp) != 0) {
+					ferror_val = ferror(fp);
+					sprintf(gMTBurnParams.errorMessage,T("Error : File flush failed.<br> errno=%d ferror=%d locWrite=%d Size=%d bytes"), errno, ferror_val, locWrite, gMTBurnParams.imageSize);
+					gMTBurnParams.precentComplete = -1;
+					gMTBurnParams.burnState = error_e;
+				} else {
+					fsync(fileno(fp));
+					ioctl(fileno(fp), BLKFLSBUF, 0);
+				}
 				if (fclose(fp) != 0) {
-					sprintf(gMTBurnParams.errorMessage,T("Error : File close failed.<br> errno=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), errno, locWrite, numLeft, numWrite, gMTBurnParams.imageSize);             
+					sprintf(gMTBurnParams.errorMessage,T("Error : File close failed.<br> errno=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), errno, locWrite, numLeft, numWrite, gMTBurnParams.imageSize);
 					gMTBurnParams.precentComplete = -1;
 					gMTBurnParams.burnState = error_e;
 					printf("Error can not close file\n");
@@ -220,19 +239,17 @@ void *MT_BurnAndVerifyImage(void* data)
 			if ((fp = fopen(gMTBurnParams.fName, "rb")) != NULL)
 			{
 				debug_printf("MT_BurnAndVerifyImage: We can open file %s and set verifiedOk = 1\n", gMTBurnParams.fName);
+				ioctl(fileno(fp), BLKFLSBUF, 0);
 				verifiedOk = 1;
 				while (numLeft > 0 && verifiedOk == 1) {
-					printf("Reading file\n");
 					numRead = fread(verBuff,sizeof(char_t),1024,fp);
-                    // make sure you don't exceed buffer , because this isn't really a file ...
-                    if (numRead > numLeft) 
-                         numRead = numLeft;
-					
-                    if (numRead>0)
+					if (numRead > numLeft)
+						numRead = numLeft;
+					if (numRead > 0)
 					{
-						for (i = 0; i < numRead;i++)
+						for (i = 0; i < numRead; i++)
 						{
-							if (verBuff[i]!=gMTBurnParams.fileContent[locVerify]) {
+							if (verBuff[i] != gMTBurnParams.fileContent[locVerify]) {
 								verifiedOk = 0;
 								printf ("ERROR FOUND !\n");
 								break;
@@ -240,13 +257,17 @@ void *MT_BurnAndVerifyImage(void* data)
 							locVerify++;
 							gMTBurnParams.precentComplete = locVerify*100/gMTBurnParams.imageSize;
 						}
-						numLeft-=numRead;
-						printf("%d\n",numLeft);
+						numLeft -= numRead;
+					} else {
+						ferror_val = ferror(fp);
+						verifiedOk = 0;
+						printf("Error reading flash during verify (numLeft=%d)\n", numLeft);
+						break;
 					}
 				}
 				debug_printf("MT_BurnAndVerifyImage: Closing\n");
 				printf ("Closing\n");
-				ferror_val = ferror_val;
+				ferror_val = ferror(fp);
 				fclose(fp);
 				fp = NULL;
 			}
@@ -263,9 +284,15 @@ void *MT_BurnAndVerifyImage(void* data)
 
 	debug_printf("MT_BurnAndVerifyImage: Done.(pid=%d)\n", getpid());
 	// Done !
-	if (gMTBurnParams.postData)
-		free(gMTBurnParams.postData);
-
+	if (gMTBurnParams.postData) {
+		if (gBurnPostIsSysMalloc) {
+			free(gMTBurnParams.postData);
+		} else {
+			bfree(B_L, gMTBurnParams.postData);
+		}
+		gMTBurnParams.postData = NULL;
+	}
+	gBurnPostIsSysMalloc = 0;
 	gMTBurnParams.fileContent = NULL;
 
 	debug_printf("MT_BurnAndVerifyImage: Check verifiedOk != 1\n");
@@ -284,9 +311,8 @@ void *MT_BurnAndVerifyImage(void* data)
 		gMTBurnParams.precentComplete = 100;
 		
 		
-		doSystem("rm -f /var/firmware_upgrading"); //Ricky add, I'll also use this flag.
+		doSystem("rm -f /var/firmware_upgrading");
 		debug_printf("MT_BurnAndVerifyImage: Start to reboot\n");
-		checkStartToWait();
 		system("sleep 3 ; reboot &");
 	}
 
@@ -365,6 +391,8 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 	char_t		 targetFile[FNAMESIZE];
 	int			 configHeaderValid = 1;
 	int 		rebootNeed=0;
+	pid_t		pid;
+	int			fd;
 	
     a_assert(websValid(wp));
     websHeader(wp);
@@ -373,6 +401,11 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 	cf = websGetVar(wp, T("configurationfile"), T("0"));
 	configurationfile = atoi(cf);
 	maxWrite = atoi(mw) * 1024;
+	if (maxWrite < 0) {
+		maxWrite = 0;
+	} else if (maxWrite > 65536) {
+		maxWrite = 65536;
+	}
     bn = websGetVar(wp, T("remote_filename"), T(""));
 
 	if (configurationfile)
@@ -438,10 +471,7 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 
 	if (!configurationfile)
 	{
-		//sprintf(redirectPage,T("upload.asp?error=OK&size=%d&lf=%s&rf=%s&reload=%s"),wp->FileContentLen,fn,targetFile,fn);
-		//MT_WriteRedirectScript(wp, redirectPage);
-		websWrite(wp, T("Filename = %s<br>Filename on dongle = %s<BR>Size = %d bytes<br>"), fn,bn, wp->FileContentLen);
-
+		websWrite(wp, T("Size = %d bytes<br>"), wp->FileContentLen);
 	}
 
     if ((fp = fopen((targetFile == NULL ? "upldForm.bin" : targetFile), "w+b")) == NULL) 
@@ -472,8 +502,9 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
         numLeft = wp->FileContentLen;
 		if (configurationfile && (wp->FileContent == NULL || numLeft <= (int)MT_CONFIG_FILE_SIG_LEN || numLeft > maxWrite))
 		{
-			//Jacky.Yang redirect to management.asp for u-media.
-			//sprintf(redirectPage,T("importexport.asp?error=File+size+limit+exceeded+allowed+maximum+size+of+%d+KB"),maxWrite/1024);
+			fclose(fp);
+			fp = NULL;
+			unlink(targetFile);
 			if (wp->FileContent == NULL || numLeft <= (int)MT_CONFIG_FILE_SIG_LEN) {
 				sprintf(redirectPage, T("admin/management.asp?error=Invalid+Configuration+File"));
 			} else {
@@ -525,26 +556,27 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 
 			if (configHeaderValid == 0 && configurationfile)
 			{
-				//sprintf(redirectPage,T("importexport.asp?error=Invalid+Configuration+File"));
+				fclose(fp);
+				fp = NULL;
+				unlink(targetFile);
 				sprintf(redirectPage,T("admin/management.asp?error=Invalid+Configuration+File"));
 				MT_WriteRedirectScript(wp, redirectPage);
 			}
 			else if (numLeft == 0) {
 				if (fclose(fp) != 0) {
+					fp = NULL;
+					unlink(targetFile);
 					if (configurationfile)
 					{
-						//Jacky.Yang redirect to management.asp for u-media.
-						//sprintf(redirectPage,T("importexport.asp?error=File+close+failed.<br>+errno=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), errno, locWrite, numLeft, numWrite, wp->FileContentLen);
 						sprintf(redirectPage,T("admin/management.asp?error=File+close+failed.<br>+errno=%d+locWrite=%d+numLeft=%d+numWrite=%d+Size=%d+bytes"), errno, locWrite, numLeft, numWrite, wp->FileContentLen);
 						MT_WriteRedirectScript(wp, redirectPage);
 					}
 					else
 					{
-						//sprintf(redirectPage,T("upload.asp?error=Could+No+Close+File&size=%d&lf=%s&rf=%s"),wp->FileContentLen,fn,targetFile);
-						websWrite(wp, T("Erro : File close failed.<br> errno=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), errno, locWrite, numLeft, numWrite, wp->FileContentLen);
+						websWrite(wp, T("Error : File close failed.<br> errno=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes"), errno, locWrite, numLeft, numWrite, wp->FileContentLen);
 					}
-
 				} else {
+					fp = NULL;
 					for (i=0;i<strlen(targetFile);i++)
 					{
 						if (targetFile[i]=='\\')
@@ -552,54 +584,57 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 					}
 					if (configurationfile)
 					{
-						//Jacky.Yang
-						//sprintf(redirectPage,T("commit.asp?ProfileName=%s"), targetFile);
-						sprintf(redirectPage,T("reboot_page.asp"), "");
+						sprintf(redirectPage,T("reboot_page.asp"));
 						MT_WriteRedirectScript(wp, redirectPage);
 						rebootNeed = 1;
 					}
 					else 
 					{
-						websWrite(wp, T("Upload Complete<br>"));	
-						//sprintf(redirectPage,T("upload.asp?error=Complete&size=%d&lf=%s&rf=%s"),wp->FileContentLen,fn,targetFile);
-						//MT_WriteRedirectScript(wp, redirectPage);
-					}					
-
+						websWrite(wp, T("Upload Complete<br>"));
+					}
 				}
 			} else {
+				if (fp != NULL) {
+					fclose(fp);
+					fp = NULL;
+				}
+				unlink(targetFile);
 				websWrite(wp, T("Error : File upload incomplete - numLeft=%d locWrite=%d Size=%d bytes<br>"), numLeft, locWrite, wp->FileContentLen);
 			}
 		}
     }
 	if (rebootNeed == 1) {
-		if (fork() != 0) {
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+		pid = fork();
+		if (pid < 0) {
+			unlink(targetFile);
+			websWrite(wp, T("Error : unable to fork apply process<br>"));
+			websFooter(wp);
+			websDone(wp, 200);
+		} else if (pid != 0) {
 			debug_printf("upldForm: fork 1: pid is %d\n", getpid());
-    		websFooter(wp);
-    		websDone(wp, 200);
-    		debug_printf("upldForm: Leave here.(1) (pid=%d)\n", getpid());
-    	}
-    	else
-    	{
-    		//Jacky.Yang 13-Aug-2008, add LED blinking when the DUT rebooting
-    		debug_printf("upldForm: fork 2: pid is %d\n", getpid());
+			websFooter(wp);
+			websDone(wp, 200);
+			debug_printf("upldForm: Leave here.(1) (pid=%d)\n", getpid());
+		} else {
+			for (fd = 3; fd < 256; fd++) {
+				close(fd);
+			}
+			debug_printf("upldForm: fork 2: pid is %d\n", getpid());
 			system("echo 2 > /dev/gpio2");
-    		printf("jacky - targetFile:%s\n", targetFile);
 			loadConfigFromFile(targetFile);
-			commitToFlash(wp, &path, &query);
-    		//system("sleep 3 ; reboot");
-    		websFooter(wp);
-    		websDone(wp, 200);
-    		debug_printf("upldForm: Leave here.(2) (pid=%d)\n", getpid());
-			/* [BUG-11] Terminate child cleanly to prevent duplicate HTTP listener loop */
+			commitToFlash(wp, path, query);
+			debug_printf("upldForm: Leave here.(2) (pid=%d)\n", getpid());
 			_exit(0);
-    	}
-    }
-    else
-    {
-    	websFooter(wp);
-    	websDone(wp, 200);
-    	debug_printf("upldForm: Leave here.(3) (pid=%d)\n", getpid());
-    }
+		}
+	}
+	else
+	{
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+		websFooter(wp);
+		websDone(wp, 200);
+		debug_printf("upldForm: Leave here.(3) (pid=%d)\n", getpid());
+	}
 }    /* void upldForm(webs_t wp, char_t * path, char_t * query) */
 
 
@@ -618,10 +653,11 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 	char_t		buff[512];
 
 	size_t		fsize=0;
+	long		ftellRet = 0;
 	size_t		freadBytes = 0;
-	char_t		redirectPage[256]; 
+	char_t		redirectPage[256];
 
-    a_assert(websValid(wp));
+	a_assert(websValid(wp));
 
 	sendFileName   = websGetVar(wp, T("filename"), T(""));
 	profileToolTip = websGetVar(wp, T("Tooltip"), T(""));
@@ -636,77 +672,79 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 	}
 	else
 	{
-		/* Disallow opening arbitrary filesystem files like /etc/passwd */
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+		websHeader(wp);
 		snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Access+Denied"));
 		MT_WriteRedirectScript(wp, redirectPage);
+		websFooter(wp);
 		websDone(wp, 200);
 		return;
 	}
 
-	if (strlen(sendFileName)>0)	
+	if (strlen(sendFileName) > 0)
 	{
-		fileHandle = fopen(sendFileName,"rb");
-		if (fileHandle != NULL)	
+		fileHandle = fopen(sendFileName, "rb");
+		if (fileHandle != NULL)
 		{
-			if (strcmp(isConfig,"1") != 0)
+			if (strcmp(isConfig, "1") != 0)
 			{
 				char *slash = strrchr(sendFileName, '/');
 				fileNameWithNoPath = slash ? slash + 1 : sendFileName;
 			}
-			else 
+			else
 			{
 				fileNameWithNoPath = "configfile.conf";
 			}
 
-			
-			/*
-				Find file size
-			*/
-			fseek(fileHandle,0,SEEK_END);
-			fsize = ftell(fileHandle);
-			fseek(fileHandle,0,SEEK_SET);
-
-			/*
-				Write the force file send headers.
-			*/
-			websWrite(wp, T("HTTP/1.0 200 OK\n"));
-			websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
-			websWrite(wp, T("Pragma: no-cache\n"));
-			websWrite(wp, T("Cache-control: no-cache\n"));
-			websWrite(wp, T("Content-Length: %d\n"),fsize);
-			websWrite(wp, T("Content-Type: application/x-unknown\n"));
-			websWrite(wp, T("content-disposition: attachment; filename=\"%s\"\n"),fileNameWithNoPath);
-			websWrite(wp, T("\n"));
-
-			/*
-				Send the file as binary block
-			*/
-			do {
-				freadBytes=fread(buff,1,512,fileHandle);
-				websWriteBlock(wp,buff,freadBytes);
+			if (fseek(fileHandle, 0, SEEK_END) != 0 || (ftellRet = ftell(fileHandle)) < 0 ||
+				fseek(fileHandle, 0, SEEK_SET) != 0)
+			{
+				fclose(fileHandle);
+				wp->flags &= ~WEBS_KEEP_ALIVE;
+				websHeader(wp);
+				snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+could+not+read+%s"), sendFileName);
+				MT_WriteRedirectScript(wp, redirectPage);
+				websFooter(wp);
+				websDone(wp, 200);
+				return;
 			}
-			while (freadBytes>0);
+			fsize = (size_t)ftellRet;
+
+			wp->flags &= ~WEBS_KEEP_ALIVE;
+			websWrite(wp, T("HTTP/1.0 200 OK\r\n"));
+			websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
+			websWrite(wp, T("Connection: close\r\n"));
+			websWrite(wp, T("Pragma: no-cache\r\n"));
+			websWrite(wp, T("Cache-control: no-cache\r\n"));
+			websWrite(wp, T("Content-Length: %lu\r\n"), (unsigned long)fsize);
+			websWrite(wp, T("Content-Type: application/x-unknown\r\n"));
+			websWrite(wp, T("Content-Disposition: attachment; filename=\"%s\"\r\n"), fileNameWithNoPath);
+			websWrite(wp, T("\r\n"));
+
+			while ((freadBytes = fread(buff, 1, sizeof(buff), fileHandle)) > 0) {
+				if (websWriteBlock(wp, buff, (int)freadBytes) < 0) {
+					break;
+				}
+			}
 
 			fclose(fileHandle);
-		} 
-		else // Error - can not find file
+		}
+		else
 		{
-			if (strcmp(isConfig,"1") == 0)
-			{
-				//Jacky.Yang redirect to management.asp for u-media.
-				//sprintf(redirectPage,T("importexport.asp?error=Internal+Failure+could+not+find+%s"),sendFileName);
-				snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+could+not+find+%s"), sendFileName);
-				MT_WriteRedirectScript(wp, redirectPage);
-			}
-
+			wp->flags &= ~WEBS_KEEP_ALIVE;
+			websHeader(wp);
+			snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+could+not+find+%s"), sendFileName);
+			MT_WriteRedirectScript(wp, redirectPage);
+			websFooter(wp);
 		}
 	}
-	else // Error - file name is invalid
+	else
 	{
-		//Jacky.Yang redirect to management.asp for u-media.
-		//sprintf(redirectPage,T("importexport.asp?error=Internal+Failure+Invalid+file+name+%s"),sendFileName);
-		snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+Invalid+file+name+%s"), sendFileName);
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+		websHeader(wp);
+		snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+Invalid+file+name"));
 		MT_WriteRedirectScript(wp, redirectPage);
+		websFooter(wp);
 	}
 
 	websDone(wp, 200);
@@ -733,10 +771,9 @@ static int MT_ValidateImage(const char_t* imageBuf, int imageSize)
 	int mtdDeviceID = 0;
 	int isLittleEndian = MT_IsLittleEndian();
 
-	// Validate that header is correct
-	if (imageSize < sizeof(MT_IMAGE_HEADER) + 8)
+	if (imageBuf == NULL || imageSize < (int)(sizeof(MT_IMAGE_HEADER) + 16) || imageSize > KERNEL_MTD_PARTITION_SIZE)
 	{
-		gsprintf(gMTBurnParams.errorMessage,T("Error: This is not an image file (too small)!!!<br>"));
+		gsprintf(gMTBurnParams.errorMessage,T("Error: Invalid firmware image size (%d bytes)<br>"), imageSize);
 		return MT_ReturnValidationError();
 	}
 
@@ -756,9 +793,10 @@ static int MT_ValidateImage(const char_t* imageBuf, int imageSize)
 		return MT_ReturnValidationError();
 	}
 
-	if (imageHeader.pcksum2 + 16 != imageSize) // 12 empty bytes, then CRC
+	if (imageHeader.pcksum2 < sizeof(MT_IMAGE_HEADER) ||
+		imageHeader.pcksum2 != (unsigned int)imageSize - 16)
 	{
-		gsprintf(gMTBurnParams.errorMessage,T("Error: Wrong image size in header %d<br>"), imageHeader.pcksum2);
+		gsprintf(gMTBurnParams.errorMessage,T("Error: Wrong image size in header %u<br>"), imageHeader.pcksum2);
 		return MT_ReturnValidationError();
 	}
 
@@ -778,6 +816,7 @@ static int MT_ValidateImage(const char_t* imageBuf, int imageSize)
 		fscanf(tmpFile, "%x", &mtdDeviceID);
 		fclose(tmpFile);
 	}
+	unlink(tmpOutputFile);
 
 	if (mtdDeviceID != 0) // If there's information in mtdblock3, compare device ID
 	{
@@ -835,6 +874,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
     char_t*      sourceFile;
 #endif
 	int			 fileNameValid = 1;
+	int			 retryVal = 3;
 
     a_assert(websValid(wp));
 
@@ -886,9 +926,9 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
     if (wp->FileContentLen < 0)
     {
 		/* already in burn process? */
-		if (gMTBurnParams.burnState>error_e)
+		if (gMTBurnParams.burnState > error_e)
 		{
-			printf("Allready burning !\n");
+			printf("Already burning !\n");
 		}
         /* we couldn't allocate memory */
         else if (wp->FileContentLen == UPLOAD_NO_MEMORY)
@@ -898,15 +938,17 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
 		/* file is too big */
-        else  if (wp->FileContentLen == UPLOAD_FILE_TO_BIG)
+        else if (wp->FileContentLen == UPLOAD_FILE_TO_BIG)
 		{
 			gsprintf(gMTBurnParams.errorMessage,T("Error : File length exceeded Maximum<br>"));
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
-
-		wp->postData = NULL;
     }
+	else if (gMTBurnParams.burnState > error_e)
+	{
+		printf("Already burning !\n");
+	}
 	else
 	{
 		if (wp->FileContentLen > IMAGE_MAX_SIZE)
@@ -914,7 +956,6 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			sprintf(gMTBurnParams.errorMessage,T("Error : File length exceeded Maximum<br>"));
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
-
 		}
 		else if (wp->FileContentLen > KERNEL_MTD_PARTITION_SIZE)
 		{
@@ -928,7 +969,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
-		else if (!targetFile || !gstrlen(targetFile)) 
+		else if (!targetFile || !gstrlen(targetFile))
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : File could not be opened<br>"));
 			gMTBurnParams.precentComplete = -1;
@@ -936,31 +977,41 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 		}
 		else if (MT_ValidateImage(wp->FileContent, wp->FileContentLen))
 		{
-			gMTBurnParams.retryCount = gatoi(websGetVar(wp, T("retry_max"), T("3")));
-
-			gMTBurnParams.burnState = idle_e;
+			retryVal = gatoi(websGetVar(wp, T("retry_max"), T("3")));
+			if (retryVal < 1 || retryVal > 5) {
+				retryVal = 3;
+			}
+			gMTBurnParams.retryCount = retryVal;
+			gMTBurnParams.burnState = checksum_e;
 			gMTBurnParams.fileContent = wp->FileContent;
-			gstrcpy(gMTBurnParams.fName ,targetFile);
+			gstrcpy(gMTBurnParams.fName, targetFile);
 			gMTBurnParams.imageSize = wp->FileContentLen;
 			gMTBurnParams.postData = wp->postData;
+			gBurnPostIsSysMalloc = (wp->flags & WEBS_SYS_MALLOC_POST) ? 1 : 0;
 			gMTBurnParams.precentComplete = 0;
-			printf("Creating thread\n");
 			wp->postData = NULL;
-			//Jacky.Yang 13-Aug-2008, add LED blinking when the user upgrade firmware.
+
 			system("echo 2 > /dev/gpio2");
-			
-			//Jacky.Yang 7-Nov-2008, f/w upgrade prcess, delete other process.
 			doSystem("killall upnpd");
-			doSystem("killall udhcpc");	
+			doSystem("killall udhcpc");
 			doSystem("cd /root/mtlk/etc/; /root/mtlk/etc/mtlk_wps_cmd.tcl stop");
 			doSystem("killall wpa_supplicant");
 			doSystem("kill `ps |grep 'mtlk_pbc_reboot.sh'|grep -v 'grep'|awk '{print $1}'`");
 			doSystem("kill `ps |grep 'WPS_PBC.sh'|grep -v 'grep'|awk '{print $1}'`");
-			doSystem("echo 1 > /var/firmware_upgrading"); //Ricky add, I'll also use this flag.
-			
-			pthread_create( &gBurnThread, NULL, &MT_BurnAndVerifyImage, NULL);
+			doSystem("echo 1 > /var/firmware_upgrading");
+
+			if (pthread_create(&gBurnThread, NULL, &MT_BurnAndVerifyImage, NULL) != 0) {
+				gMTBurnParams.burnState = error_e;
+				gMTBurnParams.precentComplete = -1;
+				gsprintf(gMTBurnParams.errorMessage, T("Error : Failed to start burn thread<br>"));
+				wp->postData = gMTBurnParams.postData;
+				gMTBurnParams.postData = NULL;
+				gMTBurnParams.fileContent = NULL;
+				gBurnPostIsSysMalloc = 0;
+			} else {
+				pthread_detach(gBurnThread);
+			}
 		}
-		
 	}
     
 #endif
@@ -1006,6 +1057,12 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 	const char *outName = "WAP610N_full_flash_dump.bin";
 	unsigned long dumpSize = 0x400000; /* 4MB = 4,194,304 bytes */
 	int sockFd = -1;
+	socket_t *sp = NULL;
+
+	if (gMTBurnParams.burnState > error_e) {
+		websError(wp, 503, T("Firmware upgrade in progress"));
+		return;
+	}
 
 	if (strcmp(dumpType, "kernel") == 0) {
 		devPath = "/dev/mtd2";
@@ -1041,8 +1098,31 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 	websWrite(wp, T("Content-Length: %lu\r\n"), dumpSize);
 	websWrite(wp, T("\r\n"));
 
-	socketFlush(wp->sid);
 	sockFd = socketGetHandle(wp->sid);
+	sp = socketPtr(wp->sid);
+	while (sp != NULL && ringqLen(&sp->outBuf) > 0) {
+		fd_set wfds;
+		struct timeval tv;
+		int selRet;
+
+		if (socketFlush(wp->sid) < 0) {
+			goto dump_done;
+		}
+		if (ringqLen(&sp->outBuf) == 0 || sockFd < 0) {
+			break;
+		}
+		FD_ZERO(&wfds);
+		FD_SET(sockFd, &wfds);
+		tv.tv_sec = 10;
+		tv.tv_usec = 0;
+		selRet = select(sockFd + 1, NULL, &wfds, NULL, &tv);
+		if (selRet < 0 && errno == EINTR) {
+			continue;
+		}
+		if (selRet <= 0) {
+			goto dump_done;
+		}
+	}
 
 	if (sockFd >= 0) {
 		while ((n = fread(buff, 1, sizeof(buff), fp)) > 0) {
@@ -1059,6 +1139,9 @@ void formDumpFirmware(webs_t wp, char_t * path, char_t * query)
 				tv.tv_usec = 0;
 
 				selRet = select(sockFd + 1, NULL, &wfds, NULL, &tv);
+				if (selRet < 0 && errno == EINTR) {
+					continue;
+				}
 				if (selRet <= 0) {
 					goto dump_done;
 				}

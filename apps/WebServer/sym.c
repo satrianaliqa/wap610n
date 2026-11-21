@@ -112,6 +112,12 @@ sym_fd_t symOpen(int hash_size)
 	tp->hash_size = calcPrime(hash_size);
 	tp->hash_table = (sym_t**) balloc(B_L, tp->hash_size * sizeof(sym_t*));
 	a_assert(tp->hash_table);
+	if (tp->hash_table == NULL) {
+		sym[sd] = NULL;
+		symMax = hFree((void***) &sym, sd);
+		bfree(B_L, tp);
+		return -1;
+	}
 	memset(tp->hash_table, 0, tp->hash_size * sizeof(sym_t*));
 
 	return sd;
@@ -177,7 +183,7 @@ sym_t* symFirst(sym_fd_t sd)
 
 			if (forw == NULL) {
 				htIndex = i + 1;
-				next = tp->hash_table[htIndex];
+				next = (htIndex < tp->hash_size) ? tp->hash_table[htIndex] : NULL;
 			} else {
 				htIndex = i;
 				next = forw;
@@ -212,14 +218,14 @@ sym_t* symNext(sym_fd_t sd)
 
 			if (forw == NULL) {
 				htIndex = i + 1;
-				next = tp->hash_table[htIndex];
+				next = (htIndex < tp->hash_size) ? tp->hash_table[htIndex] : NULL;
 			} else {
 				htIndex = i;
 				next = forw;
 			}
 			return sp;
 		}
-		next = tp->hash_table[i + 1];
+		next = ((i + 1) < tp->hash_size) ? tp->hash_table[i + 1] : NULL;
 	}
 	return NULL;
 }

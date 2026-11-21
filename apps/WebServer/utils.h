@@ -11,7 +11,10 @@ extern void startWPS_PBC(void);
 extern int checkLoadDefault(void);
 extern void submitToFlash(void);
 extern void formDefineUtils(void);
+extern int checkStartToWait(int eid, webs_t wp, int argc, char_t **argv);
 extern int lang_init(void);
+extern int lang_get(const char *key, char **val);
+extern void lang_free(void);
 
 #endif /* _UTILS_H_ */
 

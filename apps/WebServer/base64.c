@@ -186,8 +186,14 @@ void websEncode64(char_t *outbuf, char_t *string, int outlen)
 	char_t			*cp, *op;
 	int				x, i, j, shift;
 
+	if (outbuf == NULL || outlen <= 0) {
+		return;
+	}
 	op = outbuf;
 	*op = '\0';
+	if (string == NULL) {
+		return;
+	}
 	cp = string;
 	while (*cp) {
 /*
@@ -202,15 +208,15 @@ void websEncode64(char_t *outbuf, char_t *string, int outlen)
  *		how many letters need to be output.
  */
 		shift = 18;
-		for (i = ++j; i < 4 && op < &outbuf[outlen] ; i++) {
+		for (i = ++j; i < 4 && op < &outbuf[outlen - 1]; i++) {
 			x = (shiftbuf >> shift) & 0x3f;
-			*op++ = alphabet64[(shiftbuf >> shift) & 0x3f];
+			*op++ = alphabet64[x];
 			shift -= 6;
 		}
 /*
  *		Pad at the end with '='
  */
-		while (j-- > 0) {
+		while (j-- > 0 && op < &outbuf[outlen - 1]) {
 			*op++ = '=';
 		}
 		*op = '\0';

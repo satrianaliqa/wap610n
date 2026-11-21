@@ -81,9 +81,14 @@ int ejLexOpenScript(ej_t* ep, char_t *script)
  *	Create the parse token buffer and script buffer
  */
 	if (ringqOpen(&ip->tokbuf, EJ_INC, -1) < 0) {
+		bfree(B_L, ip);
+		ep->input = NULL;
 		return -1;
 	}
 	if (ringqOpen(&ip->script, EJ_SCRIPT_INC, -1) < 0) {
+		ringqClose(&ip->tokbuf);
+		bfree(B_L, ip);
+		ep->input = NULL;
 		return -1;
 	}
 /*
@@ -634,6 +639,7 @@ static int tokenAddChar(ej_t *ep, int c)
 static int inputGetc(ej_t* ep)
 {
 	ejinput_t	*ip;
+	char_t		*newLine;
 	int			c, len;
 
 	a_assert(ep);
@@ -651,7 +657,12 @@ static int inputGetc(ej_t* ep)
 	} else {
 		if ((ip->lineColumn + 2) >= ip->lineLength) {
 			ip->lineLength += EJ_INC;
-			ip->line = brealloc(B_L, ip->line, ip->lineLength * sizeof(char_t));
+			newLine = brealloc(B_L, ip->line, ip->lineLength * sizeof(char_t));
+			if (newLine == NULL) {
+				ip->lineLength -= EJ_INC;
+				return -1;
+			}
+			ip->line = newLine;
 		}
 		ip->line[ip->lineColumn++] = c;
 		ip->line[ip->lineColumn] = '\0';
@@ -670,10 +681,15 @@ static void inputPutback(ej_t* ep, int c)
 
 	a_assert(ep);
 
+	if (c < 0) {
+		return;
+	}
 	ip = ep->input;
 	ringqInsertc(&ip->script, (char_t) c);
-	ip->lineColumn--;
-	ip->line[ip->lineColumn] = '\0';
+	if (ip->line != NULL && ip->lineColumn > 0) {
+		ip->lineColumn--;
+		ip->line[ip->lineColumn] = '\0';
+	}
 }
 
 /******************************************************************************/

@@ -20,6 +20,7 @@
 
 /*********************************** Includes *********************************/
 #include	"wsIntrn.h"
+#include	"mt_api.h"
 #ifdef UEMF
 	#include	"uemf.h"
 #else
@@ -43,6 +44,34 @@ static int		cgiMax;			/* Size of hAlloc list */
 
 /************************************* Code ***********************************/
 
+static int cgiIsWhitelistedEnv(const char_t *name)
+{
+	if (name == NULL || *name == '\0') {
+		return 0;
+	}
+	if (gstrncmp(name, T("HTTP_"), 5) == 0) {
+		return (gstrcmp(name, T("HTTP_AUTHORIZATION")) != 0);
+	}
+	if (gstrcmp(name, T("REQUEST_METHOD")) == 0 ||
+		gstrcmp(name, T("QUERY_STRING")) == 0 ||
+		gstrcmp(name, T("CONTENT_TYPE")) == 0 ||
+		gstrcmp(name, T("CONTENT_LENGTH")) == 0 ||
+		gstrcmp(name, T("GATEWAY_INTERFACE")) == 0 ||
+		gstrcmp(name, T("SERVER_HOST")) == 0 ||
+		gstrcmp(name, T("SERVER_NAME")) == 0 ||
+		gstrcmp(name, T("SERVER_URL")) == 0 ||
+		gstrcmp(name, T("SERVER_PORT")) == 0 ||
+		gstrcmp(name, T("SERVER_ADDR")) == 0 ||
+		gstrcmp(name, T("SERVER_SOFTWARE")) == 0 ||
+		gstrcmp(name, T("SERVER_PROTOCOL")) == 0 ||
+		gstrcmp(name, T("SERVER_TYPE")) == 0 ||
+		gstrcmp(name, T("REMOTE_ADDR")) == 0 ||
+		gstrcmp(name, T("PATH_INFO")) == 0) {
+		return 1;
+	}
+	return 0;
+}
+
 /*
  *	Process a form request. Returns 1 always to indicate it handled the URL
  */
@@ -51,21 +80,21 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 {
 	cgiRec		*cgip;
 	sym_t		*s;
-	char_t		cgiBuf[FNAMESIZE], *stdIn, *stdOut, cwd[FNAMESIZE],cgiWebVars[FNAMESIZE]="";
-	char_t		*cp, *cgiName, *cgiPath, **argp, **envp, **ep;
-	int			n, envpsize, argpsize, pHandle, cid, i;
-	int			randFileId = 0;
-	int			cgiWebVarsFile;
+	char_t		cgiBuf[FNAMESIZE], *stdIn, *stdOut, cwd[FNAMESIZE], cgiWebVars[FNAMESIZE];
+	char_t		*cp, *cgiName, *cgiPath, **argp, **envp, **ep, **newPtr;
+	int			n, envpsize, argpsize, pHandle, cid;
 	int			tempFd = -1;
 	a_assert(websValid(wp));
 	a_assert(url && *url);
 	a_assert(path && *path == '/');
 	websStats.cgiHits++;
+	cgiWebVars[0] = '\0';
 /*
  *	Extract the form name and then build the full path name.  The form
  *	name will follow the first '/' in path.
  */
-	gstrncpy(cgiBuf, path, TSZ(cgiBuf));
+	gstrncpy(cgiBuf, path, TSZ(cgiBuf) - 1);
+	cgiBuf[TSZ(cgiBuf) - 1] = '\0';
 	if ((cgiName = gstrchr(&cgiBuf[1], '/')) == NULL) {
 		websError(wp, 200, T("Missing CGI name"));
 		return 1;
@@ -80,6 +109,10 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 	/* [BUG-12] Restrict CGI path: only execute scripts from cgi-bin directory */
 	fmtAlloc(&cgiPath, FNAMESIZE, T("%s/cgi-bin/%s"), websGetDefaultDir(), cgiName);
+	if (cgiPath == NULL) {
+		websError(wp, 503, T("Insufficient memory"));
+		return 1;
+	}
 #ifndef VXWORKS
 /*
  *	See if the file exists and is executable.  If not error out.
@@ -89,7 +122,7 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	{
 		gstat_t		sbuf;
 		if (gstat(cgiPath, &sbuf) != 0 || (sbuf.st_mode & S_IFREG) == 0) {
-			websError(wp, 200, T("CGI process file does not exist (%s)"),cgiPath);
+			websError(wp, 404, T("CGI process file does not exist"));
 			bfree(B_L, cgiPath);
 			return 1;
 		}
@@ -103,7 +136,7 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 #else
 		if (gaccess(cgiPath, X_OK) != 0) {
 #endif /* WIN || CE */
-			websError(wp, 200, T("CGI process file is not executable"));
+			websError(wp, 403, T("CGI process file is not executable"));
 			bfree(B_L, cgiPath);
 			return 1;
 		}
@@ -112,26 +145,24 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 
 
 	/*
-		Generate a temprorary output file name for use by the current CGI proces,
-		To allow it to update web parameters. File format is varname=varvalue, each var in new line. The file is deleted when 
-		the cgi process is done.
-	*/
-
-	sprintf(cgiWebVars, "%s/cgivarsXXXXXX", MT_WebTmpDir);
+	 * Generate a temporary output file name for the CGI process.
+	 */
+	snprintf(cgiWebVars, sizeof(cgiWebVars), "%s/cgivarsXXXXXX", MT_WebTmpDir);
+	cgiWebVars[sizeof(cgiWebVars) - 1] = '\0';
 	tempFd = mkstemp(cgiWebVars);
 	if (tempFd >= 0) {
 		close(tempFd);
 	} else {
-		/* Fallback just in case mkstemp fails */
-		srand(time(NULL));
-		randFileId = rand() % 10000;
-		sprintf(cgiWebVars, "%s/cgivars%d", MT_WebTmpDir, randFileId);
+		cgiWebVars[0] = '\0';
 	}
-         
+
 /*
  *	Get the CWD for resetting after launching the child process CGI
  */
-	ggetcwd(cwd, FNAMESIZE);
+	if (ggetcwd(cwd, FNAMESIZE) == NULL) {
+		gstrncpy(cwd, websGetDefaultDir(), FNAMESIZE - 1);
+		cwd[FNAMESIZE - 1] = '\0';
+	}
 /*
  *	Retrieve the directory of the child process CGI
  */
@@ -142,121 +173,98 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 /*
  *	Build command line arguments.  Only used if there is no non-encoded
- *	= character.  This is indicative of a ISINDEX query.  POST separators
- *	are & and others are +.  argp will point to a balloc'd array of 
- *	pointers.  Each pointer will point to substring within the
- *	query string.  This array of string pointers is how the spawn or 
- *	exec routines expect command line arguments to be passed.  Since 
- *	we don't know ahead of time how many individual items there are in
- *	the query string, the for loop includes logic to grow the array 
- *	size via brealloc.
+ *	= character.
  */
 	argpsize = 10;
-
 	argp = balloc(B_L, argpsize * sizeof(char_t *));
+	if (argp == NULL) {
+		if (cgiWebVars[0] != '\0') {
+			gunlink(cgiWebVars);
+		}
+		bfreeSafe(B_L, cgiPath);
+		gchdir(cwd);
+		websError(wp, 503, T("Insufficient memory"));
+		return 1;
+	}
 	*argp = cgiPath;
 	n = 1;
-	if (gstrchr(query, '=') == NULL) {
+	if (query && gstrchr(query, '=') == NULL) {
 		websDecodeUrl(query, query, gstrlen(query));
 		for (cp = gstrtok(query, T(" ")); cp != NULL; ) {
-			*(argp+n) = cp;
-			n++;
-			if (n >= argpsize) {
+			if (n + 1 >= argpsize) {
 				argpsize *= 2;
-				argp = brealloc(B_L, argp, argpsize * sizeof(char_t *));
+				newPtr = brealloc(B_L, argp, argpsize * sizeof(char_t *));
+				if (newPtr == NULL) {
+					break;
+				}
+				argp = newPtr;
 			}
+			*(argp + n) = cp;
+			n++;
 			cp = gstrtok(NULL, T(" "));
 		}
 	}
-	*(argp+n) = NULL;
+	*(argp + n) = NULL;
 /*
- *	Add all CGI variables to the environment strings to be passed
- *	to the spawned CGI process.  This includes a few we don't 
- *	already have in the symbol table, plus all those that are in
- *	the cgiVars symbol table.  envp will point to a balloc'd array of 
- *	pointers.  Each pointer will point to a balloc'd string containing
- *	the keyword value pair in the form keyword=value.  Since we don't
- *	know ahead of time how many environment strings there will be the
- *	for loop includes logic to grow the array size via brealloc.
+ *	Add whitelisted standard CGI environment strings (do not export raw query params).
  */
-	envpsize = WEBS_SYM_INIT_521;
+	envpsize = 64;
 	envp = balloc(B_L, envpsize * sizeof(char_t *));
-	n = 0;
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH_TRANSLATED"), cgiPath);
-	n++;
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("SCRIPT_NAME"), cgiName);
-	n++;
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("CGI_WEB_VAR_FILE"), cgiWebVars);
-	n++;
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("REMOTE_USER"), wp->userName);
-	n++;
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("AUTH_TYPE"), wp->authType);
-	n++;
-//Jacky.Yang 26-Nov-2008, drop it.
-/*	for (i=0; i<numMTparams; ++i)
-	{
-		if (*MTparams[MT_CardIndex][i]->value.string) 
-		{
-			fmtAlloc(envp+n, FNAMESIZE, T("ASP_%s=%s"), MTparams[MT_CardIndex][i]->name, MTparams[MT_CardIndex][i]->value.string);
-			n++;
+	if (envp == NULL) {
+		bfreeSafe(B_L, argp);
+		if (cgiWebVars[0] != '\0') {
+			gunlink(cgiWebVars);
 		}
+		bfreeSafe(B_L, cgiPath);
+		gchdir(cwd);
+		websError(wp, 503, T("Insufficient memory"));
+		return 1;
 	}
-#if defined (WIN)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("OS_TYPE"), "WIN");
-#elif defined (CE)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("OS_TYPE"), "WINCE");
-#elif defined (VXWORKS)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("OS_TYPE"), "VXWORKS");
-#elif defined (NW)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("OS_TYPE"), "NW");
-#else
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("OS_TYPE"), "LINUX");
-#endif
+	n = 0;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("PATH"), T("/sbin:/bin:/usr/sbin:/usr/bin"));
+	n++;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("PATH_TRANSLATED"), cgiPath);
+	n++;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("SCRIPT_NAME"), cgiName);
+	n++;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("CGI_WEB_VAR_FILE"), cgiWebVars);
+	n++;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("REMOTE_USER"),
+		wp->userName ? wp->userName : T(""));
+	n++;
+	fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), T("AUTH_TYPE"),
+		wp->authType ? wp->authType : T(""));
 	n++;
 
-#if defined (WIN)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH"), "");
-#elif defined (CE)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH"), "");
-#elif defined (VXWORKS)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH"), "");
-#elif defined (NW)
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH"), "");
-#else
-	fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"),T("PATH"), "/sbin:/bin:/usr/sbin:/usr/bin:/mnt/jffs2/bin");
-#endif
-	n++;
-*/
 	for (s = symFirst(wp->cgiVars); s != NULL; s = symNext(wp->cgiVars)) {
 		if (s->content.valid && s->content.type == string &&
-			gstrcmp(s->name.value.string, T("REMOTE_HOST")) != 0 &&
-			gstrcmp(s->name.value.string, T("HTTP_AUTHORIZATION")) != 0) {
-			fmtAlloc(envp+n, FNAMESIZE, T("%s=%s"), s->name.value.string,
-				s->content.value.string);
-			n++;
-			if (n >= envpsize) {
+			cgiIsWhitelistedEnv(s->name.value.string)) {
+			if (n + 1 >= envpsize) {
 				envpsize *= 2;
-				envp = brealloc(B_L, envp, envpsize * sizeof(char_t *));
+				newPtr = brealloc(B_L, envp, envpsize * sizeof(char_t *));
+				if (newPtr == NULL) {
+					break;
+				}
+				envp = newPtr;
+			}
+			fmtAlloc(envp + n, FNAMESIZE, T("%s=%s"), s->name.value.string,
+				s->content.value.string);
+			if (envp[n] != NULL) {
+				n++;
 			}
 		}
 	}
-	*(envp+n) = NULL;
+	*(envp + n) = NULL;
 /*
  *	Create temporary file name(s) for the child's stdin and stdout.
  *	For POST data the stdin temp file (and name) should already exist.
  */
 	if (wp->cgiStdin == NULL) {
 		wp->cgiStdin = websGetCgiCommName();
-	} 
+	}
 	stdIn = bstrdupA(B_L, wp->cgiStdin);
 	stdOut = websGetCgiCommName();
-/*
- *	Now launch the process.  If not successful, do the cleanup of resources.
- *	If successful, the cleanup will be done after the process completes.
- */
-	if ((pHandle = websLaunchCgiProc(cgiPath, argp, envp, stdIn, stdOut)) 
-		== -1) {
-		websError(wp, 200, T("failed to spawn CGI task"));
+	if (stdIn == NULL || stdOut == NULL) {
 		for (ep = envp; *ep != NULL; ep++) {
 			bfreeSafe(B_L, *ep);
 		}
@@ -265,23 +273,67 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		bfreeSafe(B_L, envp);
 		bfreeSafe(B_L, stdIn);
 		bfreeSafe(B_L, stdOut);
-	} else {
+		if (cgiWebVars[0] != '\0') {
+			gunlink(cgiWebVars);
+		}
+		gchdir(cwd);
+		websError(wp, 503, T("Insufficient memory"));
+		return 1;
+	}
 /*
- *		If the spawn was successful, put this wp on a queue to be
- *		checked for completion.
+ *	Transfer ownership of wp->cgiStdin to cgip->stdIn so websFree() will not
+ *	prematurely unlink stdin if wp terminates early.
  */
+	bfreeSafe(B_L, wp->cgiStdin);
+	wp->cgiStdin = NULL;
+/*
+ *	Now launch the process.
+ */
+	if ((pHandle = websLaunchCgiProc(cgiPath, argp, envp, stdIn, stdOut)) == -1) {
+		websError(wp, 500, T("failed to spawn CGI task"));
+		for (ep = envp; *ep != NULL; ep++) {
+			bfreeSafe(B_L, *ep);
+		}
+		bfreeSafe(B_L, cgiPath);
+		bfreeSafe(B_L, argp);
+		bfreeSafe(B_L, envp);
+		gunlink(stdIn);
+		gunlink(stdOut);
+		bfreeSafe(B_L, stdIn);
+		bfreeSafe(B_L, stdOut);
+		if (cgiWebVars[0] != '\0') {
+			gunlink(cgiWebVars);
+		}
+	} else {
 		cid = hAllocEntry((void***) &cgiList, &cgiMax, sizeof(cgiRec));
-		cgip = cgiList[cid];
-		cgip->handle = pHandle;
-		cgip->stdIn = stdIn;
-		cgip->stdOut = stdOut;
-		cgip->cgiPath = cgiPath;
-		cgip->argp = argp;
-		cgip->envp = envp;
-		cgip->wp = wp;
-		cgip->fplacemark = 0;
-		fmtAlloc(&cgip->cgiWebVarFile,gstrlen(cgiWebVars)+1,T("%s"),cgiWebVars);
-		websTimeoutCancel(wp);
+		if (cid < 0) {
+			websError(wp, 503, T("Insufficient memory"));
+			for (ep = envp; *ep != NULL; ep++) {
+				bfreeSafe(B_L, *ep);
+			}
+			bfreeSafe(B_L, cgiPath);
+			bfreeSafe(B_L, argp);
+			bfreeSafe(B_L, envp);
+			gunlink(stdIn);
+			gunlink(stdOut);
+			bfreeSafe(B_L, stdIn);
+			bfreeSafe(B_L, stdOut);
+			if (cgiWebVars[0] != '\0') {
+				gunlink(cgiWebVars);
+			}
+		} else {
+			cgip = cgiList[cid];
+			cgip->handle = pHandle;
+			cgip->stdIn = stdIn;
+			cgip->stdOut = stdOut;
+			cgip->cgiPath = cgiPath;
+			cgip->argp = argp;
+			cgip->envp = envp;
+			cgip->wp = wp;
+			cgip->fplacemark = 0;
+			fmtAlloc(&cgip->cgiWebVarFile, gstrlen(cgiWebVars) + 1, T("%s"), cgiWebVars);
+			websTimeoutCancel(wp);
+		}
 	}
 /*
  *	Restore the current working directory after spawning child CGI
@@ -300,6 +352,9 @@ void websCgiGatherOutput (cgiRec *cgip)
 {
 	gstat_t	sbuf;
 	char_t	cgiBuf[FNAMESIZE];
+	if (cgip == NULL || !websValid(cgip->wp)) {
+		return;
+	}
 	if ((gstat(cgip->stdOut, &sbuf) == 0) && 
 		(sbuf.st_size > cgip->fplacemark)) {
 		int fdout;
@@ -319,7 +374,9 @@ void websCgiGatherOutput (cgiRec *cgip)
 			}
 			glseek(fdout, cgip->fplacemark, SEEK_SET);
 			while ((nRead = gread(fdout, cgiBuf, FNAMESIZE)) > 0) {
-				websWriteBlock(wp, cgiBuf, nRead);
+				if (websWriteBlock(wp, cgiBuf, nRead) < 0) {
+					break;
+				}
 				cgip->fplacemark += nRead;
 			}
 			gclose(fdout);
@@ -339,62 +396,68 @@ void websCgiCleanup()
 	cgiRec	*cgip;
 	webs_t	wp;
 	char_t	**ep;
-	int		cid, nTries;
+	int		cid;
+#ifdef WIN
+	int		nTries;
+#endif
 	for (cid = 0; cid < cgiMax; cid++) {
 		if ((cgip = cgiList[cid]) != NULL) {
 			wp = cgip->wp;
-			websCgiGatherOutput (cgip);
+			if (!websValid(wp)) {
+				/* Client connection disappeared before CGI exited; wait for exit to unlink files */
+				if (websCheckCgiProc(cgip->handle) != 0) {
+					continue;
+				}
+			} else {
+				websCgiGatherOutput(cgip);
+			}
 			if (websCheckCgiProc(cgip->handle) == 0) {
 /*
  *				We get here if the CGI process has terminated.  Clean up.
  */
+#ifdef WIN
 				nTries = 0;
-/*				
- *				Make sure we didn't miss something during a task switch.
- *				Maximum wait is 100 times 10 msecs (1 second).
- */
 				while ((cgip->fplacemark == 0) && (nTries < 100)) {
 					websCgiGatherOutput(cgip);
-/*					
- *					There are some cases when we detect app exit 
- *					before the file is ready. 
- */
 					if (cgip->fplacemark == 0) {
-#ifdef WIN
 						Sleep(10);
-#endif /* WIN*/
 					}
 					nTries++;
 				}
-				if (cgip->fplacemark == 0) {
-					websError(wp, 200, T("CGI generated no output"));
-				} else {
-					websDone(wp, 200);
+#else
+				if (websValid(wp)) {
+					websCgiGatherOutput(cgip);
+				}
+#endif
+				if (websValid(wp)) {
+					if (cgip->fplacemark == 0) {
+						websError(wp, 200, T("CGI generated no output"));
+					} else {
+						websDone(wp, 200);
+					}
 				}
 
 /*
  *				Collect WebVar output from CGI and parse it
  */
-				MT_CollectExecWebParams(cgip->cgiWebVarFile);
+				if (cgip->cgiWebVarFile && cgip->cgiWebVarFile[0] != '\0') {
+					MT_CollectExecWebParams(cgip->cgiWebVarFile);
+					gunlink(cgip->cgiWebVarFile);
+				}
 
 /*
  *				Remove the temporary re-direction files
  */
-
-				// Sometimes the stdIn is not valid. make sure it's limited to the path size limit before doing any other action
-				if (cgip->stdIn)
-				{
-					cgip->stdIn[MT_MAX_PATH_LENGTH-1] = '\0';
+				if (cgip->stdIn) {
 					gunlink(cgip->stdIn);
 				}
 				bfreeSafe(B_L, cgip->stdIn);
 
-				gunlink(cgip->stdOut);
-				gunlink(cgip->cgiWebVarFile);
+				if (cgip->stdOut) {
+					gunlink(cgip->stdOut);
+				}
 /*
  *				Free all the memory buffers pointed to by cgip.
- *				The stdin file name (wp->cgiStdin) gets freed as
- *				part of websFree().
  */
 				cgiMax = hFree((void***) &cgiList, cid);
 				for (ep = cgip->envp; ep != NULL && *ep != NULL; ep++) {

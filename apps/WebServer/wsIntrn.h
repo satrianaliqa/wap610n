@@ -306,6 +306,7 @@ extern void 	 websCloseServer();
 extern char_t*	 websGetDateString(websStatType* sbuf);
 
 extern int		strcmpci(char_t* s1, char_t* s2);
+extern char_t	*websCondenseMultipleChars(char_t *strToCondense, char_t cCondense);
 
 /*
  *	Prototypes for functions available when running as part of the 

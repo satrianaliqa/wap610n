@@ -92,7 +92,7 @@ void socketClose()
 	int		i;
 
 	if (--socketOpenCount <= 0) {
-		for (i = socketMax; i >= 0; i--) {
+		for (i = socketMax - 1; i >= 0; i--) {
 			if (socketList && socketList[i]) {
 				socketCloseConnection(i);
 			}
@@ -384,14 +384,13 @@ static void socketAccept(socket_t *sp)
  *	Create a socket structure and insert into the socket list
  */
 	nid = socketAlloc(sp->host, sp->port, sp->accept, sp->flags);
-	nsp = socketList[nid];
+	if (nid < 0 || socketList == NULL || (nsp = socketList[nid]) == NULL) {
+		gclose(newSock);
+		return;
+	}
 	a_assert(nsp);
 	nsp->sock = newSock;
 	nsp->flags &= ~SOCKET_LISTENING;
-
-	if (nsp == NULL) {
-		return;
-	}
 /*
  *	Set the blocking mode before calling the accept callback.
  */
@@ -471,7 +470,7 @@ int socketGetInput(int sid, char *buf, int toRead, int *errCode)
       *errCode = socketGetError();
       if (*errCode == ECONNRESET) 
       {
-         sp->flags |= SOCKET_CONNRESET;
+         sp->flags |= SOCKET_CONNRESET | SOCKET_EOF;
          return 0;
       }
       return -1;
@@ -606,7 +605,10 @@ int socketReady(int sid)
 			}
 		} 
 		if (sp->flags & SOCKET_CONNRESET) {
-			socketCloseConnection(sid);
+			if (sp->handlerMask & SOCKET_READABLE) {
+				sp->currentEvents |= SOCKET_READABLE;
+				return 1;
+			}
 			return 0;
 		}
 		if (sp->currentEvents & sp->handlerMask) {
@@ -744,10 +746,16 @@ int socketSelect(int sid, int timeout)
 	len = nwords * sizeof(int);
 
 	readFds = balloc(B_L, len);
-	memset(readFds, 0, len);
 	writeFds = balloc(B_L, len);
-	memset(writeFds, 0, len);
 	exceptFds = balloc(B_L, len);
+	if (readFds == NULL || writeFds == NULL || exceptFds == NULL) {
+		bfreeSafe(B_L, readFds);
+		bfreeSafe(B_L, writeFds);
+		bfreeSafe(B_L, exceptFds);
+		return -1;
+	}
+	memset(readFds, 0, len);
+	memset(writeFds, 0, len);
 	memset(exceptFds, 0, len);
 
 	tv.tv_sec = timeout / 1000;

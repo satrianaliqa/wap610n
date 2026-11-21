@@ -10,6 +10,7 @@
 #include <net/route.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
@@ -161,18 +162,26 @@ int hnap_validate_gateway_with_ip(char *ipStr, char *gatewayStr, char *netmaskSt
 
 int hnap_validate_ipaddr(char *ipStr)
 {
+	struct in_addr ipaddr;
+	unsigned int ip[4];
+	char tail;
+	const char *cp;
 
-	struct in_addr ipaddr; 
-	int ip[4], ret = 0; 
-  
-   	ret = sscanf (ipStr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]); 
-  
-   	if (ret != 4 || !inet_aton (ipStr, &ipaddr)){ 
+	if (ipStr == NULL || *ipStr == '\0') {
+		return FALSE;
+	}
+	for (cp = ipStr; *cp != '\0'; cp++) {
+		if ((*cp < '0' || *cp > '9') && *cp != '.') {
+			return FALSE;
+		}
+	}
+	if (sscanf(ipStr, "%u.%u.%u.%u%c", &ip[0], &ip[1], &ip[2], &ip[3], &tail) != 4 ||
+		ip[0] > 255 || ip[1] > 255 || ip[2] > 255 || ip[3] > 255 ||
+		!inet_aton(ipStr, &ipaddr)) {
 		printf("ERROR: hnap_validate_ipaddr fail..\n");
-     		return FALSE; 
-   	}else{
-     		return TRUE; 
-   	}
+		return FALSE;
+	}
+	return TRUE;
 }
 
 //substitution of getNthValue which dosen't destroy the original value
@@ -347,9 +356,12 @@ int hnap_getClientGateway(char *gateway)
 	while (fgets(buff, sizeof(buff), fp) != NULL) {
 		if (nl) {
 			int ifl = 0;
-			while (buff[ifl]!=' ' && buff[ifl]!='\t' && buff[ifl]!='\0')
+			while (buff[ifl] != ' ' && buff[ifl] != '\t' && buff[ifl] != '\n' && buff[ifl] != '\0')
 				ifl++;
-			buff[ifl]=0;    /* interface */
+			if (buff[ifl] == '\0') {
+				continue;
+			}
+			buff[ifl] = '\0';    /* interface */
 			
 			if (sscanf(buff+ifl+1, "%lx%lx%X%d%d%d%lx%d%d%d",
 						&d, &g, &flgs, &ref, &use, &metric, &m, &mtu, &window, &irtt)!=10) {
@@ -380,6 +392,7 @@ int MT_detect_link_with_ping(char *gateway)
 {
 	char command[128];
 	if (!gateway || !*gateway || strcmp(gateway, "0.0.0.0") == 0) return 0;
+	if (!hnap_validate_ipaddr(gateway)) return 0;
 	snprintf(command, sizeof(command), "/bin/ping -c 1 -W 1 %s >/dev/null 2>&1", gateway);
 	return (system(command) == 0) ? 1 : 0;
 }
@@ -560,7 +573,9 @@ int hnap_get_station_wireless_info(char *request, char *result)
 					}else{
 						tmpPtr1=tmpPtr+6;
 					}
-					strcpy(result, tmpPtr1);
+					snprintf(result, 33, "%s", tmpPtr1);
+				} else {
+					isFail=1;
 				}
 			}else{
 				isFail=1;
@@ -601,8 +616,7 @@ int hnap_get_station_wireless_info(char *request, char *result)
 							tmpCount++;
 						}
 						*(dbmPtr - (tmpCount - 1)) = '\0';
-						strncpy(result, tmpPtr, 127);
-						result[127] = '\0';
+						snprintf(result, 16, "%s", tmpPtr);
 					} else {
 						isFail = 1;
 					}
@@ -630,8 +644,7 @@ int hnap_get_station_wireless_info(char *request, char *result)
 							tmpCount++;
 						}
 						*(dbmPtr - (tmpCount - 1)) = '\0';
-						strncpy(result, tmpPtr, 127);
-						result[127] = '\0';
+						snprintf(result, 16, "%s", tmpPtr);
 					} else {
 						isFail = 1;
 					}
@@ -650,17 +663,8 @@ int hnap_get_station_wireless_info(char *request, char *result)
 		fptr = popen("iwconfig wlan0 |grep wlan0", "r");
 		if(fptr!=NULL){
 			if(fgets(tmpBuf, 256, fptr)!=NULL){
-				if(sscanf(tmpBuf, "%s %s %s", ifname, radioband, essid)==3){
-					if(!strcmp(radioband, "802.11bg"))
-						strcpy(result, "802.11bg");
-					else if(!strcmp(radioband, "802.11bgn"))
-						strcpy(result, "802.11bgn");
-					else if(!strcmp(radioband, "802.11a"))
-						strcpy(result, "802.11a");
-					else if(!strcmp(radioband, "802.11an"))
-						strcpy(result, "802.11an");
-					else if(!strcmp(radioband, "802.11b"))
-						strcpy(result, "802.11b");
+				if(sscanf(tmpBuf, "%7s %15s %40s", ifname, radioband, essid)==3){
+					snprintf(result, 16, "%s", radioband);
 				}else{
 					isFail=1;
 				}
@@ -738,7 +742,9 @@ int hnap_get_station_wireless_info(char *request, char *result)
 		fptr = popen("iwpriv wlan0 g_ConInfo", "r");
 		if(fptr!=NULL){
 			if(fgets(tmpBuf, 256, fptr)!=NULL){
-				hnap_getNthValueSafe(1, tmpBuf, ',', result, sizeof(tmpBuf));
+				if (hnap_getNthValueSafe(1, tmpBuf, ',', result, 16) < 0) {
+					isFail = 1;
+				}
 			}else{
 				isFail=1;
 			}
@@ -794,6 +800,14 @@ int hnap_prepare_ap_list(char *listBuf)
 	char *endPtr;
 	char *eq = NULL;
 	int copyLen = 0;
+	size_t listUsed = 0;
+	const size_t listCap = 76800;
+	int curHasCell = 0, curIsHidden = 0;
+
+	if (listBuf == NULL) {
+		return -1;
+	}
+	listBuf[0] = '\0';
 
 	fptr = fopen("/tmp/ap_list.catch", "r");
 	if(fptr==NULL){
@@ -801,20 +815,33 @@ int hnap_prepare_ap_list(char *listBuf)
 		return -1;
 	}
 
-	//count the number of AP
+	/* Pass 1: count non-hidden APs accurately before writing count header */
 	while(fgets(tmpBuf, 1024, fptr)!=NULL){
 		if(strstr(tmpBuf, "Cell")){
-			NumOfAp++;
+			if (curHasCell && !curIsHidden) {
+				NumOfAp++;
+			}
+			curHasCell = 1;
+			curIsHidden = 1;
+		} else if (curHasCell && strstr(tmpBuf, "ESSID:")) {
+			if (!strstr(tmpBuf, "ESSID:\"\"")) {
+				curIsHidden = 0;
+			}
 		}
 	}
-	//printf("The total number of AP = %d\n", NumOfAp);
-	sprintf(tmpBuf, "%d;", NumOfAp);
-	strcat(listBuf, tmpBuf);
-	//reset the read/write position
+	if (curHasCell && !curIsHidden) {
+		NumOfAp++;
+	}
+	snprintf(tmpBuf, sizeof(tmpBuf), "%d;", NumOfAp);
+	snprintf(listBuf, listCap, "%s", tmpBuf);
+	listUsed = strlen(listBuf);
 	rewind(fptr);
 
 	memset(address, 0, 18);
 	memset(essid, 0, 128);
+	memset(quality, 0, sizeof(quality));
+	memset(signal, 0, sizeof(signal));
+	memset(noise, 0, sizeof(noise));
 	memset(&ie1, 0, sizeof(struct ie));
 	memset(&ie2, 0, sizeof(struct ie));
 	channel=wepOn=is5G=isHT=is40=supportWPS=mode=0;
@@ -878,19 +905,23 @@ int hnap_prepare_ap_list(char *listBuf)
 				//sprintf(tmpAPInfo2, "%s %s %d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 				//printf("tmpAPInfo %d =%s\n", i, tmpAPInfo2);
 				//printf("essid=%s(%d)\n", essid, strlen(essid));
-				if(!strcmp(essid, "\"\"")){
-					printf("Skip NULL SSID\n");
-					NumOfAp--;
-				}else if(strlen(essid)>2 && strcmp(essid, "\"\"")){ //Skip hidden SSID
-					strcat(listBuf, tmpAPInfo);
+				if(strlen(essid)>2 && strcmp(essid, "\"\"")){ //Skip hidden SSID
+					size_t addLen = strlen(tmpAPInfo);
+					if (listUsed + addLen < listCap) {
+						memcpy(listBuf + listUsed, tmpAPInfo, addLen + 1);
+						listUsed += addLen;
+					}
 				}
 				i++;
 				memset(address, 0, 18);
 				memset(essid, 0, 128);
+				memset(quality, 0, sizeof(quality));
+				memset(signal, 0, sizeof(signal));
+				memset(noise, 0, sizeof(noise));
 				memset(&ie1, 0, sizeof(struct ie));
 				memset(&ie2, 0, sizeof(struct ie));
 				channel=wepOn=is5G=isHT=is40=supportWPS=mode=0;
-				memset(tmpAPInfo, 0, sizeof(tmpAPInfo));	
+				memset(tmpAPInfo, 0, sizeof(tmpAPInfo));
 				//memset(tmpAPInfo2, 0, 130);	
 			}else{
 				i++;
@@ -1128,15 +1159,17 @@ int hnap_prepare_ap_list(char *listBuf)
 		//sprintf(tmpAPInfo2, "Final AP Info : %s %s %d %d %d %d %d %d %d %d %d %d %d %d %s %s %s %d", address, essid, mode, is5G, channel, isHT, is40, wepOn, ie1.wpaType, ie1.cipherType, ie1.authType, ie2.wpaType, ie2.cipherType, ie2.authType, quality, signal, noise, supportWPS);
 		//printf("tmpAPInfo %d =%s\n", i, tmpAPInfo2);
 		//printf("essid=%s(%d)\n", essid, strlen(essid));
-		if(!strcmp(essid, "\"\"")){
-			printf("Skip NULL SSID at last AP information\n");
-			NumOfAp--;
+		if(!strcmp(essid, "\"\"") || strlen(essid) <= 2){
 			endPtr = rindex(listBuf, '\t');
 			if (endPtr != NULL) {
 				*endPtr = 0x00;
 			}
-		}else if(strlen(essid)>2 && strcmp(essid, "\"\"")){ //Skip hidden SSID
-			strcat(listBuf, tmpAPInfo);		
+		}else{ //Skip hidden SSID
+			size_t addLen = strlen(tmpAPInfo);
+			if (listUsed + addLen < listCap) {
+				memcpy(listBuf + listUsed, tmpAPInfo, addLen + 1);
+				listUsed += addLen;
+			}
 		}
 	}
 	//printf("Completed!!!!\n");
@@ -1197,6 +1230,9 @@ void hnap_reload_driver(void)
 
 void hnap_active_lan_basic(char *lanIP, char *lanNetmask)
 {
+	if (!hnap_validate_ipaddr(lanIP) || !hnap_validate_ipaddr(lanNetmask)) {
+		return;
+	}
 	hnap_doSystem("/sbin/ifconfig %s %s netmask %s", LAN_IF_NAME, lanIP, lanNetmask);
 	hnap_doSystem("/root/mtlk/web/post_apply.tcl");
 }
@@ -1240,8 +1276,15 @@ void hnap_active_wlan_basic(int isRadioOn)
 
 	hnap_doSystem("/root/mtlk/web/post_apply.tcl");
 
-	//if(isRadioOn)
+	if (isRadioOn) {
 		hnap_doSystem("/sbin/ifconfig wlan0 up");
+		memset(paramValue, 0, sizeof(paramValue));
+		hnap_get_config(CONFIG_NETWORK_TYPE, paramValue);
+		if (strncmp(paramValue, "2", 1) == 0) {
+			hnap_doSystem("killall hostapd >/dev/null 2>&1");
+			hnap_doSystem("/root/mtlk/etc/hostapd -d /mnt/jffs2/hostapd0.conf >/dev/null 2>/dev/null &");
+		}
+	}
 }
 
 void hnap_active_wlan_security(void)
@@ -1393,13 +1436,13 @@ int system_reset(system_restart_types reset_type)
 {
 	switch(reset_type){
        	case srt_restart:
-            		return kill(1, SIGHUP);
+					return kill(1, SIGHUP);
         	case srt_reboot:
 			//printf("Device Rebooting..");
             		//return system("/sbin/reboot");
            		return kill(1, SIGTERM);
         	case srt_servicerestart:
-            		return kill(1, SIGUSR1);
+					return kill(1, SIGHUP);
         	default:
             		return -1;
     	}
@@ -1469,6 +1512,15 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	int dummy_crc[] = {0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF,0xFFFFFFFF};
 	int precentComplete=0;
 	int size=0;
+	int i = 0;
+
+	if (data == NULL || dataSize <= 0 || dataSize > KERNEL_MTD_PARTITION_SIZE) {
+		return -1;
+	}
+	if (gMTBurnParams.burnState > error_e) {
+		return -1;
+	}
+	gMTBurnParams.burnState = checksum_e;
 
 	printf("Flash update in progress - do not interrupt this process !\n");
 
@@ -1494,9 +1546,16 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 
 			printf ("imageheader.pcksum2 = %d\n",imageHeader.pcksum2);
 
-			if ((fp = fopen(DEFAULT_FLASH_FILE, "r+b")) != NULL){
-				fseek(fp,imageHeader.pcksum2,SEEK_SET);
-				fwrite(dummy_crc,1,4*sizeof(int),fp);
+			if (imageHeader.magic == 0xEA000006 &&
+				imageHeader.pcksum2 >= sizeof(MT_IMAGE_HEADER) &&
+				imageHeader.pcksum2 <= (unsigned int)(KERNEL_MTD_PARTITION_SIZE - 16) &&
+				(fp = fopen(DEFAULT_FLASH_FILE, "r+b")) != NULL){
+				if (fseek(fp, (long)imageHeader.pcksum2, SEEK_SET) == 0) {
+					fwrite(dummy_crc, 1, 4 * sizeof(int), fp);
+					fflush(fp);
+					fsync(fileno(fp));
+					ioctl(fileno(fp), BLKFLSBUF, 0);
+				}
 				fclose(fp);
 				fp = NULL;
 			}else{
@@ -1505,7 +1564,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 			}
 			
 		}else{
-			printf("Error : Could not read header (read %d bytes out of %d)\n",numRead,sizeof(MT_IMAGE_HEADER));
+			printf("Error : Could not read header (read %d bytes out of %d)\n",numRead,(int)sizeof(MT_IMAGE_HEADER));
 			return -1;
 		}
 	}else{
@@ -1529,17 +1588,13 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 		}
 		
 		if ((fp = fopen(DEFAULT_FLASH_FILE, "w+b")) != NULL){
+			gMTBurnParams.burnState = burning_e;
 			while (numLeft > 0) {
 				size = numLeft > HNAP_FILE_SINGLE_WRITE ? HNAP_FILE_SINGLE_WRITE : numLeft;
-				//printf("%d\n",numLeft); //Ricky Trace
-				//printf("Start write Image data..\n");
 				numWrite = fwrite(&(data[locWrite]), sizeof(char_t), size, fp);
-				//printf("End write Image data..\n");
-                		//fflush(fp);
-				if (!numWrite) {
+				if (numWrite <= 0 || ferror(fp)) {
 					printf("Error : File could not be written\n ferror=%d locWrite=%d numLeft=%d numWrite=%d Size=%d bytes", ferror(fp), locWrite, numLeft, numWrite, dataSize);
 					precentComplete = -1;
-					printf("Error numWrite=0");
 					break;
 				}
         
@@ -1579,6 +1634,12 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 				//////////////////////////////////////////////////////////////////////////
 			}
 			if (numLeft == 0) {
+				if (fflush(fp) != 0) {
+					precentComplete = -1;
+				} else {
+					fsync(fileno(fp));
+					ioctl(fileno(fp), BLKFLSBUF, 0);
+				}
 				if (fclose(fp) != 0) {
 					printf("Error : File close failed.\n locWrite=%d numLeft=%d numWrite=%d Size=%d bytes\n", locWrite, numLeft, numWrite, dataSize);             
 					precentComplete = -1;
@@ -1598,45 +1659,41 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 			printf("can not open file\n");
 		}
 
-		if (precentComplete==100){
-			/*char_t verBuff[1024];
+		if (precentComplete == 100){
+			char_t verBuff[1024];
 
-			// Verifying
-			printf("Image burning completed!!\n");
+			gMTBurnParams.burnState = verifying_e;
 			printf("Verifying burned image ..\n");
 			precentComplete = 0;
 			numLeft = dataSize;
 			locVerify = 0;
-			printf("Trying to open file %s for verifying..\n",DEFAULT_FLASH_FILE);
 			if ((fp = fopen(DEFAULT_FLASH_FILE, "rb")) != NULL){
+				ioctl(fileno(fp), BLKFLSBUF, 0);
 				verifiedOk = 1;
 				while (numLeft > 0 && verifiedOk == 1) {
-					//printf("Reading file\n"); //Ricky Trace
-					numRead = fread(verBuff,sizeof(char_t),1024,fp);
-                   			 // make sure you don't exceed buffer , because this isn't really a file ...
-                    			if (numRead > numLeft) 
-                         			numRead = numLeft;
-					//printf("%d bytes be read\n", numRead); //Ricky Trace
-                    			if (numRead>0){
-						for (i = 0; i < numRead;i++){
-							if (verBuff[i]!=data[locVerify]) {
+					numRead = fread(verBuff, sizeof(char_t), 1024, fp);
+					if (numRead > numLeft)
+						numRead = numLeft;
+					if (numRead > 0){
+						for (i = 0; i < numRead; i++){
+							if (verBuff[i] != data[locVerify]) {
 								verifiedOk = 0;
-								printf ("ERROR FOUND !\n");
+								printf("ERROR FOUND during flash verify!\n");
 								break;
 							}
 							locVerify++;
 							precentComplete = locVerify*100/dataSize;
 						}
-						numLeft-=numRead;
-						//printf("%d%%completed, left %d bytes to verifying\n", precentComplete, numLeft); //Ricky Trace
+						numLeft -= numRead;
+					} else {
+						verifiedOk = 0;
+						break;
 					}
 				}
-				printf ("Closing\n");
 				fclose(fp);
 			}else{
 				printf("ERROR:Fail to load image for verifying ..\n");
-			}*/
-			verifiedOk = 1;
+			}
 			if (verifiedOk == 1){
 				precentComplete = 100;
 				break;
@@ -1645,11 +1702,13 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	}
 
 	if (verifiedOk != 1){
+		gMTBurnParams.burnState = error_e;
 		precentComplete = -1;
 		printf("Error : Error verifying image at location %d\n", locVerify);
 		printf("Firmware upgrade fail.. Orz..\n");
 		return -1;
 	}else{
+		gMTBurnParams.burnState = done_e;
 		precentComplete = 100;
 		printf("Firmware upgrade full successful.. \\^o^/ \\^o^/ \\^o^/\n");
 	}
@@ -1671,9 +1730,8 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 	int mtdDeviceID = 0;
 	int isLittleEndian = hnap_IsLittleEndian();
 
-	// Validate that header is correct
-	if (imageSize <= (int)(sizeof(MT_IMAGE_HEADER) + 8) || imageSize > KERNEL_MTD_PARTITION_SIZE){
-		printf("Error: Invalid image size %d (must be > %d and <= 0x%X)\n", imageSize, (int)(sizeof(MT_IMAGE_HEADER) + 8), KERNEL_MTD_PARTITION_SIZE);
+	if (imageBuf == NULL || imageSize < (int)(sizeof(MT_IMAGE_HEADER) + 16) || imageSize > KERNEL_MTD_PARTITION_SIZE){
+		printf("Error: Invalid image size %d (must be >= %d and <= 0x%X)\n", imageSize, (int)(sizeof(MT_IMAGE_HEADER) + 16), KERNEL_MTD_PARTITION_SIZE);
 		return -1;
 	}
 
@@ -1691,8 +1749,9 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 		return -1;
 	}
 
-	if (imageHeader.pcksum2 + 16 != imageSize){ // 12 empty bytes, then CRC
-		printf("Error: Wrong image size in header \"%d\"\n", imageHeader.pcksum2);
+	if (imageHeader.pcksum2 < sizeof(MT_IMAGE_HEADER) ||
+		imageHeader.pcksum2 != (unsigned int)imageSize - 16){
+		printf("Error: Wrong image size in header \"%u\"\n", imageHeader.pcksum2);
 		return -1;
 	}
 
@@ -1711,6 +1770,7 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 		fscanf(tmpFile, "%x", &mtdDeviceID);
 		fclose(tmpFile);
 	}
+	unlink(tmpOutputFile);
 
 	if (mtdDeviceID != 0) // If there's information in mtdblock3, compare device ID
 	{
@@ -1760,60 +1820,37 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 
 int hnap_ap_wbridge_upgrade( webs_t wp, int len, char *msg )
 {
-	//int i = 0, j=0;
-	char_t *pstarTag, *pendTag;
-	char_t *imageBuf;
-	int imageLen_before_b64decode = 0, imageLen_after_b64decode=0;
+	char_t *pstarTag, *pendTag, *endBound;
+	int imageLen_after_b64decode = 0;
 
-	/*printf("The length of POST data is %d, and the content as below\n", wp->lenPostData);
-	while(i<wp->lenPostData){
-		printf("%c", *((wp->postData)+i));
-		if(i!=0&&(*((wp->postData)+i-1) != '<')&&(*((wp->postData)+i) == '>'))
-			printf("\n");
-		i++;
-	}
-	printf("\n");*/
-	
-	if (wp->postData == NULL) {
+	if (wp == NULL || wp->postData == NULL || wp->lenPostData <= 0) {
 		return -1;
 	}
+	if (gMTBurnParams.burnState > error_e) {
+		return -1;
+	}
+	endBound = wp->postData + wp->lenPostData;
+	*endBound = '\0';
 
 	pstarTag = strstr(wp->postData, "<Base64Image>");
-	pendTag = strstr(wp->postData, "</Base64Image>");
-	if (pstarTag == NULL || pendTag == NULL) {
+	if (pstarTag == NULL || pstarTag >= endBound) {
 		return -1;
 	}
-	pstarTag += 13; //skip "<Base64Image>", and the pointer will locate the first byte of firmware image
-
-	//This will replace '<' to '\0. we don't use the XML tag later, so just modify it ..
-	//This is for b64_decode input string
-	*pendTag = '\0'; 
-	//printf("pendTag=%d(%x), Last 3 characters in firmware image is '%c%c%c'\n", pendTag, pendTag, *(pendTag-2), *(pendTag-1), *pendTag);
-
-	printf("Got the frimware image from HNAP message ..\n");
-	imageLen_before_b64decode = pendTag-pstarTag+1;
-	printf("The size of firmware image before base64 decode is %d bytes\n", imageLen_before_b64decode-1);
-	/*printf("The full image before base64 decode is as below..\n");
-	printf("%s\n", pstarTag);*/
-
-	//alloc memory buffer for base 64 decode operation of firmware image
-	imageBuf = (char_t *)balloc(B_L, imageLen_before_b64decode* sizeof(char_t));
-	if(imageBuf == NULL){
-		printf("ERROR:allocate memory for base 64 decode fail\n");
-		//bfree(B_L, wp->postData);
+	pstarTag += 13;
+	pendTag = strstr(pstarTag, "</Base64Image>");
+	if (pendTag == NULL || pendTag <= pstarTag || pendTag > endBound) {
 		return -1;
-	}else{
-		printf("allocate %d bytes buffer for base 64 decode\n", imageLen_before_b64decode);
 	}
-	
-	//start to decode and b64_decode will return the length of firmware image after decode.
-	imageLen_after_b64decode = b64_decode(pstarTag, imageBuf, imageLen_before_b64decode);
-	printf("The size of firmware image after base64 decode is %d bytes\n", imageLen_after_b64decode);
-	//since firmware image is so big, it will consume larger memory, so I use ourginal postData buffer to keep the 
-	//decoded firmware image, and free the buffer of b64_decode operation
-	memset(wp->postData, 0, wp->lenPostData);
-	memcpy(wp->postData, imageBuf, imageLen_after_b64decode);
-	bfree(B_L, imageBuf);
+	*pendTag = '\0';
+
+	/* Decode Base64 in-place directly into wp->postData (avoids 2nd ~5MB allocation) */
+	imageLen_after_b64decode = b64_decode(pstarTag, wp->postData, (int)(pendTag - pstarTag));
+	if (imageLen_after_b64decode <= 0 || imageLen_after_b64decode > wp->lenPostData) {
+		return -1;
+	}
+	if (imageLen_after_b64decode < wp->lenPostData) {
+		memset(wp->postData + imageLen_after_b64decode, 0, (size_t)(wp->lenPostData - imageLen_after_b64decode));
+	}
 	
 	/*printf("The full image after base64 decode is as below..\n");*/
 	/*i=0, j=0;
@@ -1849,7 +1886,11 @@ int hnap_translate_month_string(char *month)
 {
 	char tmpBuf[4]={0};
 
-	strcpy(tmpBuf, month);
+	if (month == NULL) {
+		return -1;
+	}
+	strncpy(tmpBuf, month, sizeof(tmpBuf) - 1);
+	tmpBuf[sizeof(tmpBuf) - 1] = '\0';
 
 	if(!strcasecmp(tmpBuf, "Jan")){
 		strcpy(month, "01");
@@ -1900,14 +1941,26 @@ int hnap_get_frimware_version_date(char *Version, char *releaseDate)
 		if(strstr(tmpBuf, "ProjectFirmwareVersionDate")){
 			if((tmpPtr1=strchr(tmpBuf, '"'))!=0){
 				if((tmpPtr2=strchr(tmpBuf, ','))!=0){
-					memcpy(Version, tmpPtr1+1, tmpPtr2-tmpPtr1-1);
+					if (tmpPtr2 > tmpPtr1 + 1) {
+						size_t vlen = (size_t)(tmpPtr2 - tmpPtr1 - 1);
+						if (vlen > 63) vlen = 63;
+						memcpy(Version, tmpPtr1 + 1, vlen);
+						Version[vlen] = '\0';
+					} else {
+						Version[0] = '\0';
+					}
 					printf("The firmware version is %s\n", Version);
 
 					tmpPtr1 = tmpPtr2+1;
-					if((tmpPtr2=strchr(tmpPtr1, '"'))!=0){
+					if((tmpPtr2=strchr(tmpPtr1, '"'))!=0 && tmpPtr2 > tmpPtr1){
+						size_t dlen;
 						while(*tmpPtr1==0x20 && *tmpPtr1!='\0')
 							tmpPtr1++;
-						memcpy(releaseDate, tmpPtr1, tmpPtr2-tmpPtr1);
+						dlen = (size_t)(tmpPtr2 - tmpPtr1);
+						if (dlen > 63) dlen = 63;
+						memcpy(releaseDate, tmpPtr1, dlen);
+						releaseDate[dlen] = '\0';
+						i = 0;
 						while(*(releaseDate+i) != '\0'){
 							if(*(releaseDate+i) == '-'){
 								*(releaseDate+i) = 0x20;
@@ -1919,13 +1972,13 @@ int hnap_get_frimware_version_date(char *Version, char *releaseDate)
 							i++;
 						}
 						if(dateType==1){
-							if(sscanf(releaseDate, "%s %s %s", dd, mm, yyyy)!=3){
+							if(sscanf(releaseDate, "%2s %3s %4s", dd, mm, yyyy)!=3){
 								printf("ERROR:get release date string fail !!\n");//Ricky Trace
 								fclose(fptr);
 								return -1;
 							}
 						}else if(dateType==2){
-							if(sscanf(releaseDate, "%s %s %s", mm, dd, yyyy)!=3){
+							if(sscanf(releaseDate, "%3s %2s %4s", mm, dd, yyyy)!=3){
 								printf("ERROR:get release date string fail !!\n");//Ricky Trace
 								fclose(fptr);
 								return -1;
@@ -2023,21 +2076,20 @@ int hnap_do_wps_pbc_direct_tv(void)
 	if(fptr==NULL)
 		return -1;
 	
-	while(fgets(tmpBuf, 128, fptr)!=NULL){
+	while(fgets(tmpBuf, sizeof(tmpBuf), fptr)!=NULL){
 		if(!strstr(tmpBuf, "grep") && strstr(tmpBuf, "/dev/gpio13")){
-			while(tmpBuf[i]==0x20)
+			i = 0;
+			while(i < (int)(sizeof(tmpBuf) - 1) && tmpBuf[i] == 0x20)
 				i++;
-			
-			while(tmpBuf[i]!=0x20 && tmpBuf[i]!='\t')
+			while(i < (int)(sizeof(tmpBuf) - 1) && tmpBuf[i] != 0x20 && tmpBuf[i] != '\t' && tmpBuf[i] != '\0')
 				i++;
-			
-			tmpBuf[i]='\0'; //Got pid
-			pid=atoi(tmpBuf);
-			pclose(fptr);
-			memset(tmpBuf, 0, 128);
-			sprintf(tmpBuf, "kill -9 %d", pid);
-			system(tmpBuf);
-			return 0;
+			tmpBuf[i] = '\0';
+			pid = atoi(tmpBuf);
+			if (pid > 1) {
+				pclose(fptr);
+				kill((pid_t)pid, SIGKILL);
+				return 0;
+			}
 		}
 	}
 	pclose(fptr);
@@ -2130,11 +2182,16 @@ int hnap_active_wps_monitor(void)
 	//3. Detect whether has another WPS status monitor is running.., If yes, then just kill it.
 	result = stat("/var/run/hnap_wps_status_monitor", &statBuf);
 	if(result != -1){
-		fptr = popen("cat /var/run/hnap_wps_status_monitor", "r");
+		fptr = fopen("/var/run/hnap_wps_status_monitor", "r");
 		if(fptr!=NULL){
-			fgets(buf, 128, fptr);
-			kill(atoi(buf), SIGUSR1);
-			pclose(fptr);
+			memset(buf, 0, sizeof(buf));
+			if (fgets(buf, sizeof(buf), fptr) != NULL) {
+				int monPid = atoi(buf);
+				if (monPid > 1) {
+					kill((pid_t)monPid, SIGUSR1);
+				}
+			}
+			fclose(fptr);
 			usleep(200000);
 		}
 	}
@@ -2225,8 +2282,25 @@ int hnap_do_wps_pin(char *pinCode, char *bssid)
 			//hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl ap_selected_from_list %s", bssid);
 		}
     	}else{
-    		printf("Trigger WPS-PIN for Access Point\n");//Ricky Test
-    		hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl get_conf_via_pin &");
+		size_t k;
+		int validPin = 0;
+		printf("Trigger WPS-PIN for Access Point\n");
+		if (pinCode != NULL) {
+			size_t plen = strlen(pinCode);
+			if (plen == 4 || plen == 8) {
+				validPin = 1;
+				for (k = 0; k < plen; k++) {
+					if (pinCode[k] < '0' || pinCode[k] > '9') {
+						validPin = 0;
+						break;
+					}
+				}
+			}
+		}
+		if (!validPin) {
+			return -1;
+		}
+		hnap_doSystem("/root/mtlk/etc/mtlk_wps_cmd.tcl conf_via_pin %s 0 &", pinCode);
 	}
 
 	//Check whether WPS is real running
@@ -2292,11 +2366,16 @@ int hnap_stop_wps(void)
 	//2. Detect whether has another WPS status monitor is running.., If yes, then just kill it.
 	result = stat("/var/run/hnap_wps_status_monitor", &statBuf);
 	if(result != -1){
-		fptr = popen("cat /var/run/hnap_wps_status_monitor", "r");
+		fptr = fopen("/var/run/hnap_wps_status_monitor", "r");
 		if(fptr!=NULL){
-			fgets(buf, 128, fptr);
-			kill(atoi(buf), SIGUSR1);
-			pclose(fptr);
+			memset(buf, 0, sizeof(buf));
+			if (fgets(buf, sizeof(buf), fptr) != NULL) {
+				int monPid = atoi(buf);
+				if (monPid > 1) {
+					kill((pid_t)monPid, SIGUSR1);
+				}
+			}
+			fclose(fptr);
 		}
 	}
 
@@ -2337,6 +2416,9 @@ int hnap_get_wps_status(char *status)
 					strcpy(status, "IDLE");
 					return 0;					
 				}		
+			}else{
+				strcpy(status, "IDLE");
+				return -1;
 			}
 		}else{
 			break;
@@ -2629,75 +2711,73 @@ int hnap_get_interface_statistics(char *ifName, void *data)
 	FILE *fptr;
 	char tmpBuf[512];
 	struct netStats *netStatistic = (struct netStats *)data;
-	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0}; //for get current setting from configuration
+	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0};
 	int networkMode = 0;
+	int found = 0;
 
-	fptr =  popen("cat /proc/net/dev", "r");
+	if (ifName == NULL || netStatistic == NULL) {
+		return -1;
+	}
+	memset(netStatistic, 0, sizeof(*netStatistic));
+
+	fptr = fopen("/proc/net/dev", "r");
 	if(fptr == NULL){
 		printf("ERROR:%s\n", strerror(errno));
 		return -1;
 	}
 
-	while(fgets(tmpBuf, 512, fptr)!=NULL){
-		if(strstr(tmpBuf, ifName)){
-			sscanf(tmpBuf, "%s %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu", netStatistic->if_name, 
-				&netStatistic->rx_bytes, &netStatistic->rx_packets, &netStatistic->rx_errs, &netStatistic->rx_drop, 
-				&netStatistic->rx_fifo, &netStatistic->rx_frame, &netStatistic->rx_compressed, &netStatistic->rx_multicast, 
-				&netStatistic->tx_bytes, &netStatistic->tx_packets, &netStatistic->tx_errs, &netStatistic->tx_drop, 
-				&netStatistic->tx_fifo, &netStatistic->tx_frame, &netStatistic->tx_compressed, &netStatistic->tx_multicast);
-			if(!strcmp(ifName, "eth0")){
-				strcpy(netStatistic->if_name, "LAN");
-			}else if(!strcmp(ifName, "wlan0")){
-				hnap_get_config(CONFIG_WLAN_NETWORK_MODE, paramValue);
-				networkMode = atoi(paramValue);
-				printf("NetworkMode in configuration is %d\n", networkMode);
-				switch(networkMode){
-					case 17: //b only
-						strcpy(netStatistic->if_name, "WLAN 802.11b");
-						break;
-					case 18: //g only
-					case 19: //b/g mixed
-						strcpy(netStatistic->if_name, "WLAN 802.11g");
-						break;
-					case 22: //n only
-					case 23: //b/g/n mixed
-						strcpy(netStatistic->if_name, "WLAN 802.11n");
-						break;
-					case 10: //a only
-						strcpy(netStatistic->if_name, "WLAN 802.11a");
-						break;
-					case 12: //n only
-					case 14: //a/n mixed
-						strcpy(netStatistic->if_name, "WLAN 802.11n");
-						break;
-					default:
-						strcpy(netStatistic->if_name, "WLAN 802.11n");
-						break;
-				};			
-			}
-			
-			printf("%s statistics as below..\n", ifName);
-			printf("rx bytes = %lu\n", netStatistic->rx_bytes);
-			printf("rx packets = %lu\n", netStatistic->rx_packets);
-			printf("rx errs = %lu\n", netStatistic->rx_errs);
-			printf("rx drop = %lu\n", netStatistic->rx_drop);
-			printf("rx fifo = %lu\n", netStatistic->rx_fifo);
-			printf("rx frame = %lu\n", netStatistic->rx_frame);
-			printf("rx compressed = %lu\n", netStatistic->rx_compressed);
-			printf("rx multicast = %lu\n", netStatistic->rx_multicast);
-			printf("tx bytes = %lu\n", netStatistic->tx_bytes);
-			printf("tx packets = %lu\n", netStatistic->tx_packets);
-			printf("tx errs = %lu\n", netStatistic->tx_errs);
-			printf("tx drop = %lu\n", netStatistic->tx_drop);
-			printf("tx fifo = %lu\n", netStatistic->tx_fifo);
-			printf("tx frame = %lu\n", netStatistic->tx_frame);
-			printf("tx compressed = %lu\n", netStatistic->tx_compressed);
-			printf("tx multicast = %lu\n", netStatistic->tx_multicast);			
+	while(fgets(tmpBuf, sizeof(tmpBuf), fptr)!=NULL){
+		char *colon = strchr(tmpBuf, ':');
+		char *ifaceStart = tmpBuf;
+		if (colon == NULL) {
+			continue;
 		}
+		*colon = '\0';
+		while (*ifaceStart == ' ' || *ifaceStart == '\t') {
+			ifaceStart++;
+		}
+		if (strcmp(ifaceStart, ifName) != 0) {
+			continue;
+		}
+		if (sscanf(colon + 1, "%lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+			&netStatistic->rx_bytes, &netStatistic->rx_packets, &netStatistic->rx_errs, &netStatistic->rx_drop,
+			&netStatistic->rx_fifo, &netStatistic->rx_frame, &netStatistic->rx_compressed, &netStatistic->rx_multicast,
+			&netStatistic->tx_bytes, &netStatistic->tx_packets, &netStatistic->tx_errs, &netStatistic->tx_drop,
+			&netStatistic->tx_fifo, &netStatistic->tx_frame, &netStatistic->tx_compressed, &netStatistic->tx_multicast) != 16) {
+			continue;
+		}
+		if(!strcmp(ifName, "eth0")){
+			snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "LAN");
+		}else if(!strcmp(ifName, "wlan0")){
+			hnap_get_config(CONFIG_WLAN_NETWORK_MODE, paramValue);
+			networkMode = atoi(paramValue);
+			switch(networkMode){
+				case 17:
+					snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "WLAN 802.11b");
+					break;
+				case 18:
+				case 19:
+					snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "WLAN 802.11g");
+					break;
+				case 10:
+					snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "WLAN 802.11a");
+					break;
+				case 22:
+				case 23:
+				case 12:
+				case 14:
+				default:
+					snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "WLAN 802.11n");
+					break;
+			}
+		} else {
+			snprintf(netStatistic->if_name, sizeof(netStatistic->if_name), "%s", ifName);
+		}
+		found = 1;
+		break;
 	}
 
-	pclose(fptr);
-
-	return 0;
+	fclose(fptr);
+	return found ? 0 : -1;
 }
 

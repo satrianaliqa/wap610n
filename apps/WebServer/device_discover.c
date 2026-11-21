@@ -34,7 +34,7 @@
 #define HOST_MAX_LEN	22
 #define ST_MAX_LEN		32
 #define PHY_MAX_LEN	18
-#define PHY_MAX_LEN	18
+#define DD_MAX_XML_DEPTH 64
 
 static int discoverSocket=-1;
 
@@ -42,6 +42,7 @@ static int discoverSocket=-1;
 static int dd_error_flag = 0;
 static int pushed = 0; // when parsing and the first tag is seen 
 static int rb = 0;
+static int dd_depth = 0;
 
 struct device_discover_instance {
 	uint8_t action; //0x01:Location Discovery, 0x02:Capability Discovery, 0x04:Conifigure IP Network
@@ -137,12 +138,16 @@ int dd_getIfMacStr(uint8_t *ifname, uint8_t *if_hw)
 	unsigned char *ptr;
 	int skfd;
 
+	if (ifname == NULL || if_hw == NULL) {
+		return -1;
+	}
 	if((skfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		printf("open socket error !!\n");
 		return -1;
 	}
 
-	strncpy(ifr.ifr_name, ifname, 16);
+	memset(&ifr, 0, sizeof(ifr));
+	strncpy(ifr.ifr_name, (const char *)ifname, IFNAMSIZ - 1);
 	if(ioctl(skfd, SIOCGIFHWADDR, &ifr) < 0) {
 		printf("get mac address of device fail !!\n");
 		close(skfd);
@@ -150,7 +155,7 @@ int dd_getIfMacStr(uint8_t *ifname, uint8_t *if_hw)
 	}
 
 	ptr = (unsigned char *)&ifr.ifr_addr.sa_data;
-	sprintf(if_hw, "%02X:%02X:%02X:%02X:%02X:%02X",
+	snprintf((char *)if_hw, PHY_MAX_LEN, "%02X:%02X:%02X:%02X:%02X:%02X",
 			(ptr[0] & 0377), (ptr[1] & 0377), (ptr[2] & 0377),
 			(ptr[3] & 0377), (ptr[4] & 0377), (ptr[5] & 0377));
 	
@@ -299,8 +304,8 @@ extern int fill_action_list(xml_element element, xml_tree tree);
 #define DD_DEFAULT_NETMASK "255.255.255.255"
 
 #define VENDOR_NAME	"Linksys, A Division of Cisco"
-#define MODEL_NAME		"WET610N"
-#define MODEL_DESC		"Wireless-N Ethernet Bridge with Dual-Band"
+#define MODEL_NAME		"WAP610N"
+#define MODEL_DESC		"Wireless-N Dual-Band Access Point"
 
 #define GEN_HEADER_MEM_CHECK( z ) \
     if ( z == NULL )          \
@@ -326,6 +331,11 @@ void dd_start(void *userData, const char *elname, const char **attr)
        	xml_tree tree;
       		xml_element el;
 
+		if (dd_depth >= DD_MAX_XML_DEPTH) {
+		dd_error_flag = 1;
+		return;
+	}
+		dd_depth++;
        	tree = ( xml_tree ) userData;
        	el = new_xml_element( elname );
 
@@ -348,6 +358,9 @@ void dd_start(void *userData, const char *elname, const char **attr)
 
 void dd_end(void *userData, const char *el)
 {
+	if (dd_depth > 0) {
+		dd_depth--;
+	}
 	if ( !dd_error_flag ){
        	pop_xml_tree( (xml_tree) userData );
     	}
@@ -422,13 +435,17 @@ char *dd_report_error(xml_tree tree, xml_element el)
 // reports an error if there's an initial parsing error
 int dd_initial_error(char **packetBuf, char *str, int is_ext)
 {
-	char ret[5000];
+	char *ret;
     	xml_tree err_tree;
     	xml_element el;
 	char replyHeader[]={"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Type: text/xml; charset=utf-8\r\n\r\n"};
 	int dataLen=0;
+	char *newBuf;
 
-    	memset( ret, 0, sizeof( ret ) );
+	ret = (char *)calloc(1, 5000);
+	if (ret == NULL) {
+		return -1;
+	}
     	err_tree = new_xml_tree();
     	if ( !err_tree ){
        	goto send;
@@ -452,15 +469,22 @@ int dd_initial_error(char **packetBuf, char *str, int is_ext)
 
 send:
     	generate_return_msg_header( ret );
-    	generate_xml( err_tree, ret );
-    	deep_free_xml_tree( err_tree );
+		generate_xml_n( err_tree, ret, 5000 );
+		deep_free_xml_tree( err_tree );
 
 	dataLen = strlen(replyHeader)+strlen(ret);
 	printf("dataLen=%d\n", dataLen);
 	
-	*packetBuf = (char *)realloc(*packetBuf, dataLen);
+	newBuf = (char *)realloc(*packetBuf, (size_t)dataLen + 1);
+	if (newBuf == NULL) {
+		free(ret);
+		return -1;
+	}
+	*packetBuf = newBuf;
 	memcpy(*packetBuf, replyHeader, strlen(replyHeader));
 	memcpy(*packetBuf+strlen(replyHeader), ret, strlen(ret));
+	(*packetBuf)[dataLen] = '\0';
+	free(ret);
 
 	return dataLen;
 }
@@ -607,22 +631,32 @@ int dd_verify_authorization(char *value)
 	}
 
 	b64decode_authCert = (char *)malloc(strlen(authCert)+1);
+	if (b64decode_authCert == NULL) {
+		free(authType);
+		free(authCert);
+		return -1;
+	}
 	memset(b64decode_authCert, 0, strlen(authCert)+1);
 	b64_decode(authCert, b64decode_authCert, strlen(authCert));
-	//dd_print_string("authCert after b64 decode: \"%s\"\n", b64decode_authCert);
 	free(authType);
 	free(authCert);
 
 	if(strchr(b64decode_authCert, ':')){
-		dd_extract_header_value(b64decode_authCert, &username, &password, ':');
-		MT_Get_Param(MTSECURITY_USER_NAME_VAR_NAME, sysUserName,MT_MAX_PARAM_VALUE_LENGTH-1);
-		MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, sysPassword,MT_MAX_PARAM_VALUE_LENGTH-1);
-		/* Do not log plaintext credentials to console/stdout */
-		//WET610N doesn't check username
-		if(strcmp(password, sysPassword)){
+		if (dd_extract_header_value(b64decode_authCert, &username, &password, ':') != 0 ||
+			username == NULL || password == NULL) {
 			free(b64decode_authCert);
 			free(username);
-			free(password);		
+			free(password);
+			return -1;
+		}
+		MT_Get_Param(MTSECURITY_USER_NAME_VAR_NAME, sysUserName,MT_MAX_PARAM_VALUE_LENGTH-1);
+		MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, sysPassword,MT_MAX_PARAM_VALUE_LENGTH-1);
+		sysPassword[MT_MAX_PARAM_VALUE_LENGTH - 1] = '\0';
+		/* Fail closed if system password is empty or mismatched */
+		if(sysPassword[0] == '\0' || strcmp((char *)password, sysPassword) != 0){
+			free(b64decode_authCert);
+			free(username);
+			free(password);
 			return -1;
 		}
 	}else{
@@ -677,8 +711,14 @@ int dd_parse_header(uint8_t *hvPair, struct device_discover_instance *ddi)
 		ddi->action |= ACTION_CONFIG_IP_NETWORK;
 		dd_print_string("Got a Config IP Network request .. \n");
 	}else if(strchr(hvPair, ':')){
-		dd_extract_header_value(hvPair, &header, &value, ':');
-		//dd_print_string("header=%s\tvalue=%s\n", header, value);
+		header = NULL;
+		value = NULL;
+		if (dd_extract_header_value(hvPair, &header, &value, ':') != 0 ||
+			header == NULL || value == NULL) {
+			free(header);
+			free(value);
+			return 0;
+		}
 
 		if(!strcmp(header, "HOST")){
 			if(strlen(value)<HOST_MAX_LEN)
@@ -762,7 +802,7 @@ char *dd_capability_discovery(xml_tree request)
     	DD_HANDLER_MEM_CHECK( get_dev_s, get_dev_s );
     	dd_generate_common_header( get_dev_s, "GetDeviceSettingsResponse", NOTEXT );
     	if ( dd_error_flag ){
-       	deep_free_xml_tree( get_dev_s );
+		deep_free_xml_tree( get_dev_s );
        	return report_memory_error();
     	}
 		
@@ -819,9 +859,11 @@ char *dd_capability_discovery(xml_tree request)
     	push_pop_xml_tree( get_dev_s, curr_el );
 
    	// model name
-    	curr_el = new_xml_element( "ModelName" );
+		curr_el = new_xml_element( "ModelName" );
     	DD_HANDLER_MEM_CHECK( curr_el, get_dev_s );
-    	set_xml_element_text( curr_el, MODEL_NAME);
+	memset(paramValue, 0, sizeof(paramValue));
+		hnap_get_config("ModelName", paramValue);
+	set_xml_element_text( curr_el, (paramValue[0] != '\0') ? paramValue : MODEL_NAME);
     	DD_HANDLER_MEM_CHECK( curr_el->text, get_dev_s );
     	push_pop_xml_tree( get_dev_s, curr_el );
 
@@ -913,7 +955,7 @@ char *dd_capability_discovery(xml_tree request)
     	memset( ret, 0, sizeof( char ) * RET_MSG_SIZE );
     	generate_return_msg_header( ret );
     	generate_xml( get_dev_s, ret );
-    	deep_free_xml_tree( get_dev_s );
+		deep_free_xml_tree( get_dev_s );
 
     	return ret;
 }
@@ -922,23 +964,35 @@ int dd_process_capability_discovery(struct device_discover_instance *ddi, char *
 {
 	char content[]="HTTP/1.1 200 OK\r\nCSeq: %d GET\r\nSPhy: %s\r\nDPhy: %s\r\nContent-Type: text/xml; charset=utf-8\r\nContent-Length: %d\r\n\r\n";
 	char *ret;
+	char *newBuf;
+	char *memErr;
 	char tmpHeaderBuf[256]={0};
 	int dataLen=0;
 
 	ret = dd_capability_discovery(request);
-	printf("ret=\n%s\n", ret);
+	if (ret == NULL) {
+		return -1;
+	}
+	memErr = report_memory_error();
 	
-	sprintf(tmpHeaderBuf, content, ddi->cseq, ddi->devphy, ddi->sphy, strlen(ret));
-	printf("header=\n%s\n", tmpHeaderBuf);
-	
+	snprintf(tmpHeaderBuf, sizeof(tmpHeaderBuf), content, ddi->cseq, ddi->devphy, ddi->sphy, (int)strlen(ret));
 	dataLen = strlen(tmpHeaderBuf)+strlen(ret);
-	printf("dataLen=%d\n", dataLen);
 	
-	*packetBuf = (char *)realloc(*packetBuf, dataLen);
+	newBuf = (char *)realloc(*packetBuf, (size_t)dataLen + 1);
+	if (newBuf == NULL) {
+		if (ret != memErr) {
+			free(ret);
+		}
+		return -1;
+	}
+	*packetBuf = newBuf;
 	memcpy(*packetBuf, tmpHeaderBuf, strlen(tmpHeaderBuf));
 	memcpy(*packetBuf+strlen(tmpHeaderBuf), ret, strlen(ret));
+	(*packetBuf)[dataLen] = '\0';
 
-	free(ret);
+	if (ret != memErr) {
+		free(ret);
+	}
 	return dataLen;
 }
 
@@ -958,7 +1012,7 @@ char *dd_set_ip_settings(xml_tree request)
     	DD_HANDLER_MEM_CHECK( set_wireless_client_lan_settings , set_wireless_client_lan_settings );
     	dd_generate_common_header( set_wireless_client_lan_settings, "SetIpSettingsResponse", NOTEXT );
     	if ( dd_error_flag ){
-       	deep_free_xml_tree( set_wireless_client_lan_settings );
+		deep_free_xml_tree( set_wireless_client_lan_settings );
 		dd_print_string("report memory error !!\n");//Ricky Trace
         	return report_memory_error();
     	}
@@ -1029,6 +1083,9 @@ char *dd_set_ip_settings(xml_tree request)
 		dd_print_string("Unknow IP mode (%s) !!\n", lanIPConfigureMode);
 		return dd_report_error( set_wireless_client_lan_settings, curr_el );
     	}
+	if(!strcmp(lanIPConfigureMode, "Static") && (lanIP == NULL || netmask == NULL)){
+		return dd_report_error( set_wireless_client_lan_settings, curr_el );
+	}
 
 	if(!strcmp( lanIPConfigureMode, "Static") && 
 		(!hnap_validate_ipaddr(lanIP) ||
@@ -1084,7 +1141,7 @@ char *dd_set_ip_settings(xml_tree request)
     	memset( ret, 0, sizeof( char ) * RET_MSG_SIZE );
     	generate_return_msg_header( ret );
     	generate_xml( set_wireless_client_lan_settings, ret );
-    	deep_free_xml_tree( set_wireless_client_lan_settings );
+		deep_free_xml_tree( set_wireless_client_lan_settings );
 		
     	return ret;
 }
@@ -1093,23 +1150,35 @@ int dd_process_config_ip_network(struct device_discover_instance *ddi, char **pa
 {
 	char content[]="HTTP/1.1 200 OK\r\nCSeq: %d POST\r\nSPhy: %s\r\nDPhy: %s\r\nContent-Type: text/xml; charset=utf-8\r\nContent-Length: %d\r\n\r\n";
 	char *ret;
+	char *newBuf;
+	char *memErr;
 	char tmpHeaderBuf[256]={0};
 	int dataLen=0;
 
 	ret = dd_set_ip_settings(request);
-	printf("ret=\n%s\n", ret);
+	if (ret == NULL) {
+		return -1;
+	}
+	memErr = report_memory_error();
 	
-	sprintf(tmpHeaderBuf, content, ddi->cseq, ddi->devphy, ddi->sphy, strlen(ret));
-	printf("header=\n%s\n", tmpHeaderBuf);
-	
+	snprintf(tmpHeaderBuf, sizeof(tmpHeaderBuf), content, ddi->cseq, ddi->devphy, ddi->sphy, (int)strlen(ret));
 	dataLen = strlen(tmpHeaderBuf)+strlen(ret);
-	printf("dataLen=%d\n", dataLen);
 	
-	*packetBuf = (char *)realloc(*packetBuf, dataLen);
+	newBuf = (char *)realloc(*packetBuf, (size_t)dataLen + 1);
+	if (newBuf == NULL) {
+		if (ret != memErr) {
+			free(ret);
+		}
+		return -1;
+	}
+	*packetBuf = newBuf;
 	memcpy(*packetBuf, tmpHeaderBuf, strlen(tmpHeaderBuf));
 	memcpy(*packetBuf+strlen(tmpHeaderBuf), ret, strlen(ret));
+	(*packetBuf)[dataLen] = '\0';
 
-	free(ret);
+	if (ret != memErr) {
+		free(ret);
+	}
 	return dataLen;
 }
 
@@ -1120,14 +1189,20 @@ int dd_process_unauthenticated_request(struct device_discover_instance *ddi, cha
 		<body><h2>Access Error: Unauthorized</h2>\r\n\
 		<p>Please provide correct authorization information !!!</p></body></html>\r\n";
 	char tmpHeaderBuf[256]={0};
+	char *newBuf;
 	int dataLen=0;
 
-	sprintf(tmpHeaderBuf, contentHeader, ddi->cseq, ddi->devphy, ddi->sphy, strlen(contentBody));
+	snprintf(tmpHeaderBuf, sizeof(tmpHeaderBuf), contentHeader, ddi->cseq, ddi->devphy, ddi->sphy, (int)strlen(contentBody));
 	dataLen=strlen(tmpHeaderBuf)+strlen(contentBody);
 
-	*packetBuf = (char *)realloc(*packetBuf, dataLen);
+	newBuf = (char *)realloc(*packetBuf, (size_t)dataLen + 1);
+	if (newBuf == NULL) {
+		return -1;
+	}
+	*packetBuf = newBuf;
 	memcpy(*packetBuf, tmpHeaderBuf, strlen(tmpHeaderBuf));
 	memcpy(*packetBuf+strlen(tmpHeaderBuf), contentBody, strlen(contentBody));
+	(*packetBuf)[dataLen] = '\0';
 
 	return dataLen;
 }
@@ -1135,21 +1210,26 @@ int dd_process_unauthenticated_request(struct device_discover_instance *ddi, cha
 int dd_process_none_location_discovery(struct device_discover_instance *ddi, char **packetBuf, char *bodyContent, int bodyLen)
 {
 	xml_tree request;
-    	XML_Parser p = NULL;
+		XML_Parser p = NULL;
 	int dataLen=0;
 	int content_len=ddi->content_length;
-	char line[10000]={0};
+	char *line = NULL;
     	int buffersize = 10000;
 	int xml_start=0;
 
 	if (content_len > bodyLen)
 		content_len = bodyLen;
 
-	 pushed = dd_error_flag = rb = 0;
+	pushed = dd_error_flag = rb = dd_depth = 0;
+	line = (char *)calloc(1, (size_t)buffersize);
+	if (line == NULL) {
+		return dd_initial_error(packetBuf, "OUT OF MEMORY", NOTEXT);
+	}
 		
 	// create the expat parser
-    	p = XML_ParserCreate( NULL );
+		p = XML_ParserCreate( NULL );
 	if (!p){
+		free(line);
        	dd_print_string("XML PARSE CREATE ERROR\n");
 		return dd_initial_error(packetBuf, "XML PARSE CREATE ERROR", NOTEXT);
 	}
@@ -1157,6 +1237,7 @@ int dd_process_none_location_discovery(struct device_discover_instance *ddi, cha
     	// start the request tree
     	request = new_xml_tree();
     	if (!request){
+		free(line);
 		XML_ParserFree(p);
 		dd_print_string("NEW XML TREE ERROR\n");
 		return dd_initial_error(packetBuf, "NEW XML TREE ERROR", NOTEXT);
@@ -1200,16 +1281,25 @@ int dd_process_none_location_discovery(struct device_discover_instance *ddi, cha
             		}
 
             		if (xml_start){
-                		if (XML_Parse(p, start, (int) strlen( start), 0 )  != XML_STATUS_OK){
-					dd_print_string("XML PARSE STATUS NOT OK ERROR\n"); //Ricky Trace
-                    			XML_ParserFree(p);
-                    			deep_free_xml_tree(request);
-                    			dataLen = dd_initial_error(packetBuf, "XML PARSE STATUS NOT OK ERROR", NOTEXT);
+						if (XML_Parse(p, start, (int) strlen( start), 0 )  != XML_STATUS_OK){
+					dd_print_string("XML PARSE STATUS NOT OK ERROR\n");
+								free(line);
+								XML_ParserFree(p);
+								deep_free_xml_tree(request);
+								dataLen = dd_initial_error(packetBuf, "XML PARSE STATUS NOT OK ERROR", NOTEXT);
                     			return dataLen;
                 		}
             		}
-        	}	
 	}
+			if (xml_start && XML_Parse(p, "", 0, 1) != XML_STATUS_OK) {
+					free(line);
+					XML_ParserFree(p);
+					deep_free_xml_tree(request);
+					return dd_initial_error(packetBuf, "XML PARSE STATUS NOT OK ERROR", NOTEXT);
+	}
+	}
+	free(line);
+	line = NULL;
 
 	if(ddi->action == ACTION_CAPABILITY_DISCOVERY){
 		dataLen = dd_process_capability_discovery(ddi, packetBuf, request);
@@ -1221,8 +1311,8 @@ int dd_process_none_location_discovery(struct device_discover_instance *ddi, cha
 		}
 	}
 
-    	deep_free_xml_tree( request );
-    	XML_ParserFree( p );
+		deep_free_xml_tree( request );
+		XML_ParserFree( p );
 
 	return dataLen;
 }
@@ -1231,15 +1321,26 @@ int dd_process_location_discovery(struct device_discover_instance *ddi, char **p
 {
 	char nmask[16]={0};
 	char tmpBuf[256]={0};
-	char content[]="HTTP/1.1 200 OK\r\nCSeq: %d SEARCH\r\nSPhy: %s\r\nDPhy: %s\r\nST: hnap:WifiBridge\r\nNMask: %s\r\n\r\n";
+	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0};
+	const char *devSt = "hnap:WiFiAccessPoint";
+	char *newBuf;
+	char content[]="HTTP/1.1 200 OK\r\nCSeq: %d SEARCH\r\nSPhy: %s\r\nDPhy: %s\r\nST: %s\r\nNMask: %s\r\n\r\n";
 
+	hnap_get_config(CONFIG_NETWORK_TYPE, paramValue);
+	if (strncmp(paramValue, "0", 1) == 0) {
+		devSt = "hnap:WifiBridge";
+	}
 	dd_getIfNetmask("br0", nmask);
 
-	sprintf(tmpBuf, content, ddi->cseq, ddi->devphy, ddi->sphy, nmask);
-	*packetBuf = (char *)realloc(*packetBuf, strlen(tmpBuf));
-	memcpy(*packetBuf, tmpBuf, strlen(tmpBuf));
+	snprintf(tmpBuf, sizeof(tmpBuf), content, ddi->cseq, ddi->devphy, ddi->sphy, devSt, nmask);
+	newBuf = (char *)realloc(*packetBuf, strlen(tmpBuf) + 1);
+	if (newBuf == NULL) {
+		return -1;
+	}
+	*packetBuf = newBuf;
+	memcpy(*packetBuf, tmpBuf, strlen(tmpBuf) + 1);
 
-	return strlen(tmpBuf);
+	return (int)strlen(tmpBuf);
 }
 
 int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
@@ -1248,7 +1349,7 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	uint8_t *sPtr, *tmpPtr, *ePtr, *tmpBuf;
 	int hvLen=0;
 	int foundHeaderEnd=0;
-	uint8_t devMac[17]={0};
+	uint8_t devMac[PHY_MAX_LEN]={0};
 	char *txPacket = NULL;
 	int result=0;
 	int dataRead=0;
@@ -1256,6 +1357,7 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	char *bodyContent=NULL;
 	int curOffset=0;
 	int eOffset=0;
+	uint8_t *headerEndPtr = NULL;
 
 	if (data == NULL || dataLen < 4) {
 		return -1;
@@ -1267,7 +1369,10 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	}
 	memset(ddi, 0, sizeof(struct device_discover_instance));
 
-	dd_getIfMacStr("br0", devMac);
+	if (dd_getIfMacStr((uint8_t *)"br0", devMac) < 0) {
+		free(ddi);
+		return -1;
+	}
 	strcpy(ddi->devphy, devMac);	
 	//dd_print_string("MAC address for br0 is %s\n", ddi->devphy);
 	//printf("===== Start to parse data header =====\n");
@@ -1286,6 +1391,7 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 		if (eOffset + 1 < dataLen && *(ePtr+1) == '\n'){
 			if (eOffset + 3 < dataLen && *(ePtr+2) == '\r' && *(ePtr+3) == '\n'){
 				foundHeaderEnd = 1;
+				headerEndPtr = ePtr + 4;
 			}
 			ePtr = ePtr + 1;
 			sPtr = tmpPtr;	
@@ -1312,12 +1418,12 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 			break;
 	}
 
-	if (!foundHeaderEnd) {
+	if (!foundHeaderEnd || headerEndPtr == NULL) {
 		free(ddi);
 		return -1;
 	}
 
-	dataRead = dataRead + 2;
+	dataRead = (int)(headerEndPtr - (uint8_t *)data);
 	printf("dataRead=%d, dataLen=%d\n", dataRead, dataLen);
 	bodyLen = dataLen - dataRead;
 	if(bodyLen > 0 && bodyLen <= 65536){
@@ -1360,8 +1466,10 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	}
 
 	//2. Check the ST from this request
-	if(ddi->action == ACTION_LOCATION_DISCOVERY && 
-		strcmp(ddi->st, "hnap:WifiBridge") && strcmp(ddi->st, "hnap:all")){
+	if(ddi->action == ACTION_LOCATION_DISCOVERY &&
+		strcmp(ddi->st, "hnap:WiFiAccessPoint") &&
+		strcmp(ddi->st, "hnap:WifiBridge") &&
+		strcmp(ddi->st, "hnap:all")){
 		dd_print_string("WARNING: The device type (%s) in ST header does not agree with this device..\n", ddi->st);
 		goto end;
 	}
@@ -1379,16 +1487,22 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 
 	if(ddi->action == ACTION_LOCATION_DISCOVERY){
 		result = dd_process_location_discovery(ddi, &txPacket);
-		dd_print_packet(txPacket, result);
-		dd_send_reply(sp, rport, txPacket, result);
+		if (result > 0 && txPacket != NULL) {
+			dd_print_packet(txPacket, result);
+			dd_send_reply(sp, rport, txPacket, result);
+		}
 	}else if(ddi->action == ACTION_CAPABILITY_DISCOVERY){
 		result = dd_process_none_location_discovery(ddi, &txPacket, NULL, 0);
-		dd_print_packet(txPacket, result);
-		dd_send_reply(sp, rport, txPacket, result);		
+		if (result > 0 && txPacket != NULL) {
+			dd_print_packet(txPacket, result);
+			dd_send_reply(sp, rport, txPacket, result);
+		}
 	}else if(ddi->action == ACTION_CONFIG_IP_NETWORK){
 		result = dd_process_none_location_discovery(ddi, &txPacket, bodyContent, bodyLen);
-		dd_print_packet(txPacket, result);
-		dd_send_reply(sp, rport, txPacket, result);				
+		if (result > 0 && txPacket != NULL) {
+			dd_print_packet(txPacket, result);
+			dd_send_reply(sp, rport, txPacket, result);
+		}
 	}
 	
 end:
@@ -1404,9 +1518,9 @@ end:
 static void dd_socket_Event(int sid, int mask, int iwp)
 {
 	socket_t	*sp;
-	uint8_t receive_buffer[MAX_RECEIVE_BUFFER] = {0}; //buffer for receive data
-	struct sockaddr_in host_addr; //keep bind address and address information of received packets
-	socklen_t address_len; //size of address
+	static uint8_t receive_buffer[MAX_RECEIVE_BUFFER];
+	struct sockaddr_in host_addr;
+	socklen_t address_len;
 	int result;
 
 	address_len = sizeof(host_addr);
@@ -1416,12 +1530,12 @@ static void dd_socket_Event(int sid, int mask, int iwp)
 	}
 
 	if (mask & SOCKET_READABLE) {
-		//result=socketRead(sid, receive_buffer, sizeof(receive_buffer));
-		result = recvfrom(sp->sock, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr *)&host_addr, &address_len);
+		result = recvfrom(sp->sock, receive_buffer, sizeof(receive_buffer) - 1, 0, (struct sockaddr *)&host_addr, &address_len);
 		if(result>0){
+			receive_buffer[result] = '\0';
 			dd_print_string("Got %d bytes data for device discovery or IP configuration as below..\n", result);
 			dd_print_string("%s", receive_buffer);
-			dd_process_packet(sp, ntohs(host_addr.sin_port), receive_buffer, result);
+			dd_process_packet(sp, ntohs(host_addr.sin_port), (char *)receive_buffer, result);
 		}
 	}
 

@@ -230,7 +230,7 @@ void *balloc(B_ARGS_DEC, int size)
 #ifdef B_VERIFY_CAUSES_SEVERE_OVERHEAD
 	verifyBallocSpace();
 #endif
-	if (size < 0) {
+	if (size < 0 || size > 0x10000000) {
 		return NULL;
 	}
 
@@ -375,6 +375,9 @@ void bfree(B_ARGS_DEC, void *mp)
 #ifdef B_VERIFY_CAUSES_SEVERE_OVERHEAD
 	verifyBallocSpace();
 #endif
+	if (mp == NULL) {
+		return;
+	}
 	bp = (bType*) ((char*) mp - sizeof(bType));
 
 	a_assert((bp->flags & B_INTEGRITY_MASK) == B_INTEGRITY);
@@ -497,11 +500,17 @@ void *brealloc(B_ARGS_DEC, void *mp, int newsize)
 	bType	*bp;
 	void	*newbuf;
 
+	if (newsize < 0) {
+		return NULL;
+	}
 	if (mp == NULL) {
 		return balloc(B_ARGS, newsize);
 	}
 	bp = (bType*) ((char*) mp - sizeof(bType));
 	a_assert((bp->flags & B_INTEGRITY_MASK) == B_INTEGRITY);
+	if ((bp->flags & B_INTEGRITY_MASK) != B_INTEGRITY) {
+		return NULL;
+	}
 
 /*
  *	If the allocated memory already has enough room just return the previously

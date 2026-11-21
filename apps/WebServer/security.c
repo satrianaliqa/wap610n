@@ -179,31 +179,34 @@ int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
 int isIPFromWLS(const char* ip)
 {
 	char mac[256];
-	int i = 0;
-	int port = 0;
+	unsigned int i = 0;
+	int port = -1;
+	int wlsPort = -1;
 
+	if (ip == NULL || ip[0] == '\0') {
+		return 0;
+	}
 	memset(mac, 0, sizeof(mac));
+	IPtoMAC(ip, mac, sizeof(mac));
 
-	IPtoMAC(ip,mac,255);
+	/* Need to convert mac to lower case */
+	for (i = 0; mac[i] != '\0'; i++) {
+		mac[i] = (char)tolower((unsigned char)mac[i]);
+	}
 
-	// Need to convert mac to lower case
-	for (i=0;i<strlen(mac);i++)
-	{
-		mac[i] = tolower(mac[i]);
+	if (mac[0] == '\0') {
+		return 0;
 	}
 
 	port = GetBridgPortForMAC(mac);
+	wlsPort = getWLSBridgePort();
 
-	if (port == getWLSBridgePort())
-	{
-		printf ("ip %s (%s) is from WLS\n",ip,mac);
+	if (port > 0 && wlsPort > 0 && port == wlsPort) {
+		printf("ip %s (%s) is from WLS\n", ip, mac);
 		return 1;
 	}
-	else
-	{
-		printf ("ip %s (%s) is from eth0\n",ip,mac);
-		return 0;
-	}
+	printf("ip %s (%s) is from eth0\n", ip, mac);
+	return 0;
 }
 
 /*********************************** Code *************************************/
@@ -217,73 +220,56 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	char_t			*type, *userid, *password, *accessLimit;
 	int				flags, nRet;
 	accessMeth_t	am;
-	char_t			MTuserName[MT_MAX_PARAM_VALUE_LENGTH] = "";
-	char_t			MTuserPass[MT_MAX_PARAM_VALUE_LENGTH] = "";
-	char_t			MTAuthTimeout[MT_MAX_PARAM_VALUE_LENGTH] = "";
-	char_t			MTPasswordOpen[MT_MAX_PARAM_VALUE_LENGTH] = "";
-	char_t			wirelessMgmtDisabled[10];
+	char_t			MTuserName[MT_MAX_PARAM_VALUE_LENGTH];
+	char_t			MTuserPass[MT_MAX_PARAM_VALUE_LENGTH];
+	char_t			MTAuthTimeout[MT_MAX_PARAM_VALUE_LENGTH];
+	char_t			MTPasswordOpen[MT_MAX_PARAM_VALUE_LENGTH];
+	char_t			wirelessMgmtDisabled[16];
 	static time_t   lastAuth = 0;
 	time_t			now = 0;
 	int				AuthTimeout = 0;
-	int				passwordOpen = 0;
 
 	a_assert(websValid(wp));
 	a_assert(url && *url);
 	a_assert(path && *path);
 
-	/*
+	memset(MTuserName, 0, sizeof(MTuserName));
+	memset(MTuserPass, 0, sizeof(MTuserPass));
+	memset(MTAuthTimeout, 0, sizeof(MTAuthTimeout));
+	memset(MTPasswordOpen, 0, sizeof(MTPasswordOpen));
+	memset(wirelessMgmtDisabled, 0, sizeof(wirelessMgmtDisabled));
 
-		Password is saved encrypted in the sys.conf file.
-		In order to change it manually, follow these steps :
-		1. Set the AdminPassword to an unencrypted value
-		2. Set AdminPasswordOpen = 1 to indicate that the password is not encrypted
-		3. load the main page, to allow the webserver to encrypt and save the password.
-
-		The password is now saved as encrypted.
-	*/
-
-	MT_Get_Param(MTSECURITY_USER_NAME_VAR_NAME,MTuserName,MT_MAX_PARAM_VALUE_LENGTH-1);
-	MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME,MTuserPass,MT_MAX_PARAM_VALUE_LENGTH-1);
-	MT_Get_Param(MTSECURITY_INACTIVE_TIMEOUT, MTAuthTimeout,MT_MAX_PARAM_VALUE_LENGTH-1);
-	MT_Get_Param(MTSECURITY_ADMINPASS_OPEN, MTPasswordOpen,MT_MAX_PARAM_VALUE_LENGTH-1);
-
-/*
- *	If no user and password are defined, let the user see the page.
- */
-	if (gstrlen(MTuserName) == 0 || gstrlen(MTuserPass) == 0)
-		return 0;
-
-/*
- *	Get more authentication parameters from the configuration file.
- */	
-
-	AuthTimeout = atoi(MTAuthTimeout);
-/*
-	passwordOpen = atoi(MTPasswordOpen);
-
-
- //	If the password is not encrypted, encrypt it and rewrite it to the configuration file.
- 
-	if (passwordOpen == 1)
+	/* Block path traversal attempts BEFORE credential checks */
+	if ((path != NULL && gstrstr(path, T("..")) != NULL) ||
+	    (url != NULL && gstrstr(url, T("..")) != NULL))
 	{
-		char_t *argp[] ={{MTSECURITY_USER_PASSWD_VAR_NAME},{MTSECURITY_ADMINPASS_OPEN}};
-		int n = 0;
-
-		// Encrypt the password
-		umEncryptString(MTuserPass);
-
-		// Set the new parameters
-		MT_Set_Param(MTSECURITY_USER_PASSWD_VAR_NAME,MTuserPass,MT_SET_FIRST_VALUE);
-		MT_Set_Param(MTSECURITY_ADMINPASS_OPEN,"",MT_SET_FIRST_VALUE);
-		
-		// Save the changed parameters
-		MT_WriteConfFiles(2, argp);
-
+		websError(wp, 403, T("Access Denied"));
+		return 1;
 	}
 
-	// decrypt the password
-	umEncryptString(MTuserPass);
-*/
+	/* Enforce wireless management block regardless of credential state */
+	MT_Get_Param("WirelessMgmtEnabled", wirelessMgmtDisabled, sizeof(wirelessMgmtDisabled) - 1);
+	wirelessMgmtDisabled[sizeof(wirelessMgmtDisabled) - 1] = '\0';
+	if (strcmp(wirelessMgmtDisabled, "0") == 0 && isIPFromWLS(wp->ipaddr))
+	{
+		websError(wp, 403, T("Access Denied\nWireless management is forbidden"));
+		return 1;
+	}
+
+	MT_Get_Param(MTSECURITY_USER_NAME_VAR_NAME, MTuserName, sizeof(MTuserName) - 1);
+	MTuserName[sizeof(MTuserName) - 1] = '\0';
+	MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, MTuserPass, sizeof(MTuserPass) - 1);
+	MTuserPass[sizeof(MTuserPass) - 1] = '\0';
+	MT_Get_Param(MTSECURITY_INACTIVE_TIMEOUT, MTAuthTimeout, sizeof(MTAuthTimeout) - 1);
+	MTAuthTimeout[sizeof(MTAuthTimeout) - 1] = '\0';
+	MT_Get_Param(MTSECURITY_ADMINPASS_OPEN, MTPasswordOpen, sizeof(MTPasswordOpen) - 1);
+	MTPasswordOpen[sizeof(MTPasswordOpen) - 1] = '\0';
+
+	/* Only bypass auth when no password is configured */
+	if (gstrlen(MTuserPass) == 0)
+		return 0;
+
+	AuthTimeout = atoi(MTAuthTimeout);
 	
 /*
  *	Get the critical request details
@@ -293,7 +279,6 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	userid = websGetRequestUserName(wp);
 	flags = websGetRequestFlags(wp);
 
-
 	/*
 		Check Authentication Timeout. If timed out from last activity, re-ask for authentication information.
 	*/
@@ -302,61 +287,21 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		time(&now);
 		if (lastAuth != 0 && now > lastAuth + AuthTimeout)
 		{
-			//Jacky.Yang3-Dec-2008, fix timeout didn't pop login window again, if password is blank.
 			userid = "";
 			password = "";
-			//password = NULL;
 		}
 	}
-
-	/* Block path traversal attempts */
-	if ((path != NULL && gstrstr(path, T("..")) != NULL) ||
-	    (url != NULL && gstrstr(url, T("..")) != NULL))
-	{
-		websError(wp, 403, T("Access Denied"));
-		return 1;
-	}
-
-	if (password == NULL)
-	{
-		MT_Get_Param("WirelessMgmtEnabled",wirelessMgmtDisabled,10);
-
-		if (strcmp(wirelessMgmtDisabled, "0") == 0 && isIPFromWLS(wp->ipaddr))
-		{
-			websError(wp, 403, T("Access Denied\nWireless management is fordidden"));
-			return 1;
-		}
-	}
-	//june.chen, 2011-02-17, add for solving issue that after disabling wireless management, without closimg window already, user could still set DUT through opened window.
-//This is extremely ugly, but I don't want to change the original code structure.
-	else{
-		MT_Get_Param("WirelessMgmtEnabled",wirelessMgmtDisabled,10);
-
-		if (strcmp(wirelessMgmtDisabled, "0") == 0 && isIPFromWLS(wp->ipaddr))
-		{
-			websError(wp, 403, T("Access Denied\nWireless management is fordidden"));
-			return 1;
-		}
-
-	}
-//june.chen end
-
 
 /*
  *	Get the access limit for the URL.  Exit if none found. By default, all pages require user name and password.
  */
-	accessLimit = url; //umGetAccessLimit(path);
+	accessLimit = url; /* umGetAccessLimit(path); */
 
-#ifdef MT_USE_STAT_TASK
-	if (path != NULL && gstrncmp(path, T("/mt_stat"), 8) == 0) return 0;
-#endif
-
-	//Add for HNAP support - U-Media Ricky Cao
-	//Only skip GoAhead Basic Auth when the URL path itself is /HNAP1 (HNAP handler enforces its own Basic Auth)
+	/* Add for HNAP support - U-Media Ricky Cao */
+	/* Only skip GoAhead Basic Auth when the URL path itself is /HNAP1 (HNAP handler enforces its own Basic Auth) */
 	if (path != NULL && (gstrcmp(path, T("/HNAP1")) == 0 || gstrncmp(path, T("/HNAP1/"), 7) == 0)){
 		return 0;
 	}
-	//U-Media Ricky Cao
 	
 	if (accessLimit == NULL) {
 		return 0;
@@ -371,10 +316,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		websStats.access++;
 		websError(wp, 405, T("Access Denied\nSecure access is required."));
 		trace(3, T("SEC: Non-secure access attempted on <%s>\n"), path);
-      /* bugfix 5/24/02 -- we were leaking the memory pointed to by
-       * 'accessLimit'. Thanks to Simon Byholm.
-       */
-      bfree(B_L, accessLimit);
+		bfree(B_L, accessLimit);
 		return 1;
 	}
 #endif
@@ -382,7 +324,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 /*
  *	Get the access limit for the URL
  */
-	am = AM_BASIC;//umGetAccessMethodForURL(accessLimit);
+	am = AM_BASIC;
 
 	nRet = 0;
 	if ((flags & WEBS_LOCAL_REQUEST) && (debugSecurity == 0)) {
@@ -396,15 +338,8 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		websStats.access++;
 		websError(wp, 404, T("Page Not Found"));
 		nRet = 1;
-	//Jacky.Yang 24-Jul-2008, don't chekc user name
-	//} else 	if (userid && *userid) {
-	} else 	if (1) {
-		
-		/*if (gstrcmp(userid,MTuserName) != 0) {
-			websStats.access++;
-			websError(wp, 401, T("Access Denied\nUnknown User"));
-			nRet = 1;
-		} else*/ if (password && * password) {
+	} else {
+		if (password && *password) {
 			char_t * userpass = MTuserPass;
 			if (userpass) {
 				if (gstrcmp(password, userpass) != 0) {
@@ -421,33 +356,34 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				}
 			}
 #ifdef DIGEST_ACCESS_SUPPORT
-		} else if (flags & WEBS_AUTH_DIGEST) {
+		} else if ((flags & WEBS_AUTH_DIGEST) && (am == AM_DIGEST)) {
+			char_t *digestCalc = NULL;
 
-			char_t *digestCalc;
-
-/*
- *			Check digest for equivalence
- */
-			
-			wp->password = bstrdup(B_L, MTuserPass);
-
-			a_assert(wp->digest);
-			a_assert(wp->nonce);
-			a_assert(wp->password);
-							 
-			digestCalc = websCalcDigest(wp);
-			a_assert(digestCalc);
-
-			if (gstrcmp(wp->digest, digestCalc) != 0) {
+			if (wp->digest == NULL || wp->nonce == NULL || wp->uri == NULL ||
+				wp->realm == NULL || wp->userName == NULL ||
+				gstrcmp(wp->uri, wp->path) != 0) {
 				websStats.access++;
-            /* 16 Jun 03 -- error code changed from 405 to 401 -- thanks to
-             * Jay Chalfant.
-             */
-				websError(wp, 401, T("Access Denied\nWrong Password"));
+				websError(wp, 401, T("Access Denied\nInvalid Digest Auth"));
 				nRet = 1;
+			} else if (AuthTimeout > 0 && lastAuth != 0 && now > lastAuth + AuthTimeout) {
+				websStats.access++;
+				websError(wp, 401, T("Access Denied\nSession Timeout"));
+				nRet = 1;
+			} else {
+				bfreeSafe(B_L, wp->password);
+				wp->password = bstrdup(B_L, MTuserPass);
+				if (wp->password != NULL) {
+					digestCalc = websCalcDigest(wp);
+				}
+				if (digestCalc == NULL || gstrcmp(wp->digest, digestCalc) != 0) {
+					websStats.access++;
+					websError(wp, 401, T("Access Denied\nWrong Password"));
+					nRet = 1;
+				} else if (AuthTimeout > 0) {
+					lastAuth = now;
+				}
+				bfreeSafe(B_L, digestCalc);
 			}
-
-			bfree (B_L, digestCalc);
 #endif
 		} else {
 /*
@@ -463,22 +399,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				T("Access to this document requires a password"));
 			nRet = 1;
 		}
-	} else if (am != AM_FULL) {
-/*
- *		This will cause the browser to display a password / username
- *		dialog
- */
-#ifdef DIGEST_ACCESS_SUPPORT
-		if (am == AM_DIGEST) {
-			wp->flags |= WEBS_AUTH_DIGEST;
-		}
-#endif
-		websStats.errors++;
-		websError(wp, 401, T("Access to this document requires a User ID"));
-		nRet = 1;
 	}
-
-	//bfree(B_L, accessLimit);
 
 	return nRet;
 }

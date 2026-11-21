@@ -250,6 +250,10 @@ int	socketGets(int sid, char_t **buf)
 			len = ringqLen(lq);
 			if (len > 0) {
 				*buf = ballocAscToUni((char *)lq->servp, len);
+				if (*buf == NULL) {
+					ringqFlush(lq);
+					return -1;
+				}
 			} else {
 				*buf = NULL;
 			}
@@ -259,7 +263,10 @@ int	socketGets(int sid, char_t **buf)
 		} else if (c == '\r') {
 			continue;
 		}
-		ringqPutcA(lq, c);
+		if (ringqPutcA(lq, c) < 0) {
+			ringqFlush(lq);
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -608,7 +615,7 @@ int socketAlloc(char *host, int port, socketAccept_t accept, int flags)
  */
 	ringqOpen(&sp->inBuf, SOCKET_BUFSIZ, SOCKET_BUFSIZ);
 	ringqOpen(&sp->outBuf, SOCKET_BUFSIZ + 1, SOCKET_BUFSIZ + 1);
-	ringqOpen(&sp->lineBuf, SOCKET_BUFSIZ, -1);
+	ringqOpen(&sp->lineBuf, SOCKET_BUFSIZ, SOCKET_BUFSIZ * 8);
 
 	return sid;
 }

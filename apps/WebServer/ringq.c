@@ -563,7 +563,7 @@ static int ringqGrow(ringq_t *rq)
 	rq->buf = newbuf;
 	rq->endbuf = &rq->buf[rq->buflen];
 
-	ringqPutBlk(rq, newbuf, len);
+	rq->endp = newbuf + len;
 
 /*
  *	Double the increment so the next grow will line up with balloc'ed memory

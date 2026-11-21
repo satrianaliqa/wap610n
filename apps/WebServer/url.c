@@ -126,9 +126,9 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
 				break;
 			}
 			if (*cp == ':') {
-				*cp++ = '\0';
-				port = cp;
-				tok = cp;
+				*cp = '\0';
+				port = cp + 1;
+				tok = cp + 1;
 			}
 		}
 		if ((cp = gstrchr(tok, '/')) != NULL) {
@@ -139,7 +139,9 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
 			c = *cp;
 			*cp = '\0';
 			gstrncpy(hostbuf, host, ulen);
+			hostbuf[ulen] = '\0';
 			gstrncpy(portbuf, port, MAX_PORT_LEN);
+			portbuf[MAX_PORT_LEN] = '\0';
 			*cp = c;
 			host = hostbuf;
 			port = portbuf;

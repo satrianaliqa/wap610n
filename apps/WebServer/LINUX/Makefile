@@ -76,7 +76,7 @@ ADDITIONAL_OBJS ?=
 ############### END Settings for Snapgear ################
 
 # CFLAGS	= -DWEBS -DUEMF $(PLATFORM_CFLAGS) $(UMSW) $(DASW) $(SSLSW) $(IFMODSW) -DOS="LINUX" -DLINUX 
-CFLAGS  = -DMT_USE_STAT_TASK -DWEBS -DUEMF $(PLATFORM_CFLAGS) $(UMSW) $(DASW) $(SSLSW) $(IFMODSW) -DOS="LINUX" -DLINUX 
+CFLAGS  = -DWEBS -DUEMF $(PLATFORM_CFLAGS) $(UMSW) $(DASW) $(SSLSW) $(IFMODSW) -DOS="LINUX" -DLINUX
 OTHERS	= -DB_STATS -DB_FILL -DDEBUG
 DEBUG	= -g -Wall
 IFLAGS 	= -I.. 
@@ -84,7 +84,7 @@ LDFLAGS	= $(SSLLIB) $(IFMODLIB) $(ADDITIONAL_LIBS)
 
 #Add for HNAP - U-Media Ricky Cao on Jun 04 2008
 CFLAGS += -I../../expat/lib -I../../expat -DWITH_METALINK -DDUAL_BAND
-LDFLAGS += -L../../expat -lexpat
+LDFLAGS += -L../../expat/.libs -L../../expat -lexpat
 #U-Media Ricky Cao on Jun 04 2008
 
 .PHONY: compile clean

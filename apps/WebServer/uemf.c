@@ -222,7 +222,8 @@ char_t *stritoa(int n, char_t *string, int width)
 {
 	char_t	*cp, *lim, *s;
 	char_t	buf[16];						/* Just temp to hold number */
-	int		next, minus;
+	int		minus;
+	unsigned int	un, unext;
 
 	a_assert(string && width > 0);
 
@@ -236,21 +237,22 @@ char_t *stritoa(int n, char_t *string, int width)
 	}
 	if (n < 0) {
 		minus = 1;
-		n = -n;
+		un = (unsigned int)(-(n + 1)) + 1U;
 		width--;
 	} else {
 		minus = 0;
+		un = (unsigned int)n;
 	}
 
 	cp = buf;
 	lim = &buf[width - 1];
-	while (n > 9 && cp < lim) {
-		next = n;
-		n /= 10;
-		*cp++ = (char_t) (next - n * 10 + '0');
+	while (un > 9 && cp < lim) {
+		unext = un;
+		un /= 10;
+		*cp++ = (char_t) (unext - un * 10 + '0');
 	}
 	if (cp < lim) {
-		*cp++ = (char_t) (n + '0');
+		*cp++ = (char_t) (un + '0');
 	}
 
 	s = string;

@@ -19,6 +19,8 @@
 /********************************* Includes ***********************************/
 
 #include	"wsIntrn.h"
+#include	"mt_api.h"
+#include	"utils.h"
 /********************************** Locals ************************************/
 
 sym_fd_t	websAspFunctions = -1;	/* Symbol table of functions */
@@ -453,9 +455,9 @@ done:
 	//MT_PostParsePage(lpath);
 	if (websValid(wp)) {
 		websPageClose(wp);
-		if (ejid >= 0) {
-			ejCloseEngine(ejid);
-		}
+	}
+	if (ejid >= 0) {
+		ejCloseEngine(ejid);
 	}
 	bfreeSafe(B_L, buf);
 	bfreeSafe(B_L, rbuf);
@@ -492,7 +494,7 @@ int websAspWrite(int ejid, webs_t wp, int argc, char_t **argv)
 			return -1;
 		}
 		if (++i < argc) {
-			if (websWriteBlock(wp, T(" "), 2) < 0) {
+			if (websWriteBlock(wp, T(" "), 1) < 0) {
 				return -1;
 			}
 		}

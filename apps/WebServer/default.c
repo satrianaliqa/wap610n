@@ -76,7 +76,7 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 						char_t *url, char_t *path, char_t *query)
 {
 	websStatType	sbuf;
-	char_t			*lpath, *tmp, *date;
+	char_t			*lpath, *tmp, *date, *ext;
 	int				bytes, flags, nchars;
 
 	debug_printf("websDefaultHandler: Into websDefaultHandler function. (We will not display Exit message.)\n");
@@ -105,7 +105,7 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	}
 	lpath = websGetRequestLpath(wp);
 	nchars = gstrlen(lpath) - 1;
-	if (lpath[nchars] == '/' || lpath[nchars] == '\\') {
+	if (nchars >= 0 && (lpath[nchars] == '/' || lpath[nchars] == '\\')) {
 		lpath[nchars] = '\0';
 	}
 
@@ -115,7 +115,7 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
  */
 	if (websPageIsDirectory(lpath)) {
 		nchars = gstrlen(path);
-		if (path[nchars-1] == '/' || path[nchars-1] == '\\') {
+		if (nchars > 0 && (path[nchars-1] == '/' || path[nchars-1] == '\\')) {
 			path[--nchars] = '\0';
 		}
 		nchars += gstrlen(websDefaultPage) + 2;
@@ -156,6 +156,13 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
        */
 		websError(wp, 400, T("Cannot stat page for URL"));
 		return 1;
+	}
+
+	/* Re-check final resolved extension so trailing /. cannot bypass ASP execution */
+	ext = gstrrchr(lpath, '.');
+	if (ext != NULL && (gstrcmp(ext, T(".asp")) == 0 || gstrcmp(ext, T(".js")) == 0)) {
+		flags |= WEBS_ASP;
+		wp->flags |= WEBS_ASP;
 	}
 
 /*
@@ -414,7 +421,6 @@ int websValidateUrl(webs_t wp, char_t *path)
  *	Copy the string so we don't destroy the original
  */
 	path = bstrdup(B_L, path);
-	websDecodeUrl(path, path, gstrlen(path));
 
 	len = npart = 0;
 	parts[0] = NULL;
@@ -549,6 +555,7 @@ static void websDefaultWriteEvent(webs_t wp)
  */
 		if ((buf = balloc(B_L, PAGE_READ_BUFSIZE)) == NULL) {
 			websError(wp, 200, T("Can't get memory"));
+			return;
 		} else {
 			while ((len = websPageReadData(wp, buf, PAGE_READ_BUFSIZE)) > 0) {
 				if ((wrote = websWriteDataNonBlock(wp, buf, len)) < 0) {
@@ -566,6 +573,8 @@ static void websDefaultWriteEvent(webs_t wp)
 			if (len == 0) {
 				a_assert(written >= bytes);
 				written = bytes;
+			} else if (len < 0) {
+				wrote = -1;
 			}
 			bfree(B_L, buf);
 		}

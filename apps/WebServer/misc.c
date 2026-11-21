@@ -120,9 +120,13 @@ char_t *dirname(char_t *buf, char_t *name, int bufsize)
 		return buf;
 	}
 
+	if (bufsize <= 0) {
+		return buf;
+	}
+
 	if ((*(cp + 1) == '\0' && cp == name)) {
-		gstrncpy(buf, T("."), TSZ(bufsize));
-		gstrcpy(buf, T("."));
+		gstrncpy(buf, T("."), bufsize - 1);
+		buf[bufsize - 1] = '\0';
 		return buf;
 	}
 
@@ -132,7 +136,7 @@ char_t *dirname(char_t *buf, char_t *name, int bufsize)
 		gstrncpy(buf, name, len);
 		buf[len] = '\0';
 	} else {
-		gstrncpy(buf, name, TSZ(bufsize));
+		gstrncpy(buf, name, bufsize - 1);
 		buf[bufsize - 1] = '\0';
 	}
 
@@ -406,12 +410,8 @@ static int dsnprintf(char_t **s, int size, char_t *fmt, va_list arg, int msize)
 		*s = buf.s;
 	}
 
-	if (*s != NULL && size > 0) {
-		if (buf.count < size) {
-			(*s)[buf.count] = '\0';
-		} else {
-			(*s)[buf.size - 1] = '\0';
-		}
+	if (*s != NULL && size > 0 && buf.size > 0) {
+		(*s)[min(buf.count, buf.size - 1)] = '\0';
 	}
 
 	if (msize != 0) {
@@ -440,23 +440,34 @@ static int strnlen(char_t *s, unsigned int n)
 
 static void put_char(strbuf_t *buf, char_t c)
 {
+	char_t	*newbuf;
+	int		newsize;
+
 	if (buf->count >= (buf->size - 1)) {
 		if (! (buf->flags & STR_REALLOC)) {
 			return;
 		}
-		buf->size += STR_INC;
-		if (buf->size > buf->max && buf->size > STR_INC) {
-/*
- *			Caller should increase the size of the calling buffer
- */
-			buf->size -= STR_INC;
-			return;
+		newsize = buf->size + STR_INC;
+		if (buf->max > 0 && newsize > buf->max && newsize > STR_INC) {
+			if (buf->size < buf->max) {
+				newsize = buf->max;
+			} else {
+				return;
+			}
 		}
 		if (buf->s == NULL) {
-			buf->s = balloc(B_L, buf->size * sizeof(char_t));
+			newbuf = balloc(B_L, newsize * sizeof(char_t));
 		} else {
-			buf->s = brealloc(B_L, buf->s, buf->size * sizeof(char_t));
+			newbuf = brealloc(B_L, buf->s, newsize * sizeof(char_t));
 		}
+		if (newbuf == NULL) {
+			return;
+		}
+		buf->s = newbuf;
+		buf->size = newsize;
+	}
+	if (buf->s == NULL || buf->count >= buf->size) {
+		return;
 	}
 	buf->s[buf->count] = c;
 	if (c != '\0') {

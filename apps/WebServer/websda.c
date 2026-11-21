@@ -67,7 +67,9 @@ char *websMD5binary(unsigned char *buf, int length)
  *	Allocate a new copy of the hash string
  */
 	strReturn = balloc(B_L, sizeof(result));
-	strcpy(strReturn, result);
+	if (strReturn != NULL) {
+		strcpy(strReturn, result);
+	}
 
     return strReturn;
 }
@@ -92,10 +94,17 @@ char_t *websMD5(char_t *string)
  */
 		nLen = gstrlen(string);
 		strTemp = ballocUniToAsc(string, nLen + 1);
+		if (strTemp == NULL) {
+			return NULL;
+		}
 /*
  *		Execute the digest calculation
  */
 		strHash = websMD5binary((unsigned char *)strTemp, nLen);
+		if (strHash == NULL) {
+			bfree(B_L, strTemp);
+			return NULL;
+		}
 /*
  *		Convert the returned char string digest to a char_t string
  */

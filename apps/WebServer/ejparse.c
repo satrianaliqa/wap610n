@@ -536,10 +536,9 @@ static int parseStmt(ej_t *ep, int state, int flags)
 						ejError(ep, T("Undefined variable %s\n"), identifier);
 						goto error;
 					}
-					setString(B_L, &ep->result, value);
-					if (evalExpr(ep, value, (int) *ep->token, T("1")) < 0) {
-						state = STATE_ERR;
-						break;
+					setString(B_L, &ep->result, value ? value : T(""));
+					if (evalExpr(ep, value ? value : T(""), (int) *ep->token, T("1")) < 0) {
+						goto error;
 					}
 
 					if (ejVarType > 0) {
@@ -612,6 +611,7 @@ static int parseStmt(ej_t *ep, int state, int flags)
 			setString(B_L, &ep->result, T(""));
 			if (ejLexGetToken(ep, state) != TOK_LPAREN) {
 				freeFunc(&func);
+				ep->func = saveFunc;
 				goto error;
 			}
 
@@ -780,6 +780,10 @@ static int parseStmt(ej_t *ep, int state, int flags)
 
 				switch (parse(ep, STATE_STMT, flags)) {
 				case STATE_RET:
+					ejLexFreeInputState(ep, &condScript);
+					ejLexFreeInputState(ep, &incrScript);
+					ejLexFreeInputState(ep, &endScript);
+					ejLexFreeInputState(ep, &bodyScript);
 					return STATE_RET;
 				case STATE_STMT_DONE:
 					break;
@@ -993,6 +997,9 @@ static int parseArgs(ej_t *ep, int state, int flags)
 		}
 		if (state == STATE_RELEXP_DONE) {
 			aid = hAlloc((void***) &ep->func->args);
+			if (aid < 0) {
+				return STATE_ERR;
+			}
 			ep->func->args[aid] = bstrdup(B_L, ep->result);
 			ep->func->nArgs++;
 		}
@@ -1366,6 +1373,9 @@ void ejError(ej_t* ep, char_t* fmt, ...)
 
 	a_assert(ep);
 	a_assert(fmt);
+	if (ep == NULL) {
+		return;
+	}
 	ip = ep->input;
 
 	va_start(args, fmt);
@@ -1373,9 +1383,9 @@ void ejError(ej_t* ep, char_t* fmt, ...)
 	fmtValloc(&msgbuf, E_MAX_ERROR, fmt, args);
 	va_end(args);
 
-	if (ep && ip) {
+	if (ip) {
 		fmtAlloc(&errbuf, E_MAX_ERROR, T("%s\n At line %d, line => \n\n%s\n"),
-			msgbuf, ip->lineNumber, ip->line);
+			msgbuf, ip->lineNumber, ip->line ? ip->line : T(""));
 		bfreeSafe(B_L, ep->error);
 		ep->error = errbuf;
 	}
@@ -1419,14 +1429,22 @@ static void setString(B_ARGS_DEC, char_t **ptr, char_t *s)
 
 static void appendString(char_t **ptr, char_t *s)
 {
+	char_t	*newptr;
 	int	len, oldlen;
 
 	a_assert(ptr);
+	if (s == NULL) {
+		return;
+	}
 
 	if (*ptr) {
 		len = gstrlen(s);
 		oldlen = gstrlen(*ptr);
-		*ptr = brealloc(B_L, *ptr, (len + oldlen + 1) * sizeof(char_t));
+		newptr = brealloc(B_L, *ptr, (len + oldlen + 1) * sizeof(char_t));
+		if (newptr == NULL) {
+			return;
+		}
+		*ptr = newptr;
 		gstrcpy(&(*ptr)[oldlen], s);
 	} else {
 		*ptr = bstrdup(B_L, s);

@@ -75,12 +75,14 @@ int strcmpci(char_t *s1, char_t *s2)
 	int		rc;
 
 	a_assert(s1 && s2);
-	if (s1 == NULL || s2 == NULL) {
-		return 0;
-	}
-
 	if (s1 == s2) {
 		return 0;
+	}
+	if (s1 == NULL) {
+		return -1;
+	}
+	if (s2 == NULL) {
+		return 1;
 	}
 
 	do {
@@ -147,7 +149,7 @@ void emfReschedCallback(int schedid, int delay)
 {
 	sched_t	*s;
 
-	if (sched == NULL || schedid == -1 || schedid >= schedMax || 
+	if (sched == NULL || schedid < 0 || schedid >= schedMax ||
 		(s = sched[schedid]) == NULL) {
 		return;
 	}
@@ -160,7 +162,7 @@ void emfUnschedCallback(int schedid)
 {
 	sched_t	*s;
 
-	if (sched == NULL || schedid == -1 || schedid >= schedMax || 
+	if (sched == NULL || schedid < 0 || schedid >= schedMax ||
 		(s = sched[schedid]) == NULL) {
 		return;
 	}
