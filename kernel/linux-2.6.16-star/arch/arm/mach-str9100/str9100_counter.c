@@ -154,11 +154,18 @@ static int
 str9100_counter_write_proc(struct file *file, const char __user *buffer,
 	unsigned long count, void *data)
 {
+	char kbuf[64];
 	char *str;
 	char *cmd;
+	size_t len;
 
 	if (count > 0) {
-		str = (char *)buffer,
+		len = (count >= sizeof(kbuf)) ? (sizeof(kbuf) - 1) : count;
+		if (copy_from_user(kbuf, buffer, len)) {
+			return -EFAULT;
+		}
+		kbuf[len] = '\0';
+		str = kbuf;
 		cmd = strsep(&str, "\t \n");
 		if (!cmd) goto err_out;
 		if (strcmp(cmd, "match1") == 0) {

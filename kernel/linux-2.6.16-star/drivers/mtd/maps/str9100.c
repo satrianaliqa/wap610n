@@ -102,7 +102,7 @@ static char *get_boot_env_param (char *param_name)
 		return NULL;
 	}
 
-	for (i=0; env_get_char(i, env_ptr) != '\0'; i=nxt+1) {
+	for (i=0; i < CFG_ENV_DATA_SIZE && env_get_char(i, env_ptr) != '\0'; i=nxt+1) {
 		int val;
 
 		for (nxt=i; nxt < CFG_ENV_DATA_SIZE &&
@@ -112,7 +112,8 @@ static char *get_boot_env_param (char *param_name)
 			iounmap(virt);
 			return (NULL);
 		}
-		if ((val=envmatch((unsigned char *)param_name, i, env_ptr, strlen(param_name))) < 0)
+		if ((val=envmatch((unsigned char *)param_name, i, env_ptr, strlen(param_name))) < 0 ||
+		    val >= CFG_ENV_DATA_SIZE)
 			continue;
 		strncpy(param_value, (char *)env_get_addr(val, env_ptr),
 			sizeof(param_value) - 1);
@@ -245,10 +246,13 @@ static int get_config_part_offset (void)
  */
 static int envmatch (unsigned char *s1, int i2, env_t *env_ptr, unsigned int str_len)
 {
-	while ((str_len--) && (*s1 == env_get_char(i2++, env_ptr)))
+	while (str_len-- && i2 < CFG_ENV_DATA_SIZE) {
+		if (*s1 != env_get_char(i2++, env_ptr))
+			return(-1);
 		if (*s1++ == '=')
 			return(i2);
-	if (*s1 == '\0' && env_get_char(i2, env_ptr) == '=')
+	}
+	if (*s1 == '\0' && i2 < CFG_ENV_DATA_SIZE && env_get_char(i2, env_ptr) == '=')
 		return(i2+1);
 	return(-1);
 }
@@ -271,6 +275,7 @@ static struct mtd_partition str9100_partitions[] = {
 		.name =		"ARMBOOT",
 		.offset =	CONFIG_ARMBOOT_OFFSET,
 		.size =		CFG_BOOT_SIZE,
+		.mask_flags =	MTD_WRITEABLE,
 	},{
 		.name =		"Linux Kernel",
 		.offset =	CONFIG_KERNEL_OFFSET,

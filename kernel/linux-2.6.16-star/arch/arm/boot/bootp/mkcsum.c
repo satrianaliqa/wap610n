@@ -47,7 +47,9 @@ int main(int argc, char *argv[])
   header head;
   char buf[512*100];
   int fd;
+  struct stat st;
   uLong crc = crc32(0L, Z_NULL, 0);
+  unsigned int crc32_val;
   int length;
 
   if (argc < 2) {
@@ -60,6 +62,13 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Can't open file: %s\n", argv[1]);
     exit(1);
   }
+  if (fstat(fd, &st) != 0 || st.st_size < (off_t)(sizeof(head) + 16) ||
+      st.st_size > 0x3A0000) {
+    fprintf(stderr, "Invalid image size (%ld bytes): %s\n",
+            (long)st.st_size, argv[1]);
+    close(fd);
+    exit(1);
+  }
   if (read(fd, (void *)&head, (sizeof head)) != (sizeof head)) {
     fprintf(stderr, "Can't read header: %s\n", argv[1]);
     close(fd);
@@ -67,6 +76,13 @@ int main(int argc, char *argv[])
   }
   if (head.magic != HEADER_MAGIC) {
     fprintf(stderr, "Illegal magic in header - exiting crc calculation\n");
+    close(fd);
+    exit(1);
+  }
+  if (head.pcksum2 < sizeof(head) ||
+      head.pcksum2 + 16 > (unsigned long)st.st_size) {
+    fprintf(stderr, "Illegal pcksum2 0x%08x in header: %s\n",
+            head.pcksum2, argv[1]);
     close(fd);
     exit(1);
   }
@@ -80,21 +96,32 @@ int main(int argc, char *argv[])
       crc = crc32(crc, buf, len);
     } else {
       fprintf(stderr,"Can't read: %s\n", argv[1]);
+      close(fd);
       exit(1);
     }
     length -= len;
   }
-  printf("csum 0x%08.8x\n", crc);
-  head.cksum= crc;
+  crc32_val = (unsigned int)crc;
+  printf("csum 0x%08.8x\n", crc32_val);
+  head.cksum= crc32_val;
   
-  lseek(fd, 0, SEEK_SET);
+  if (lseek(fd, 0, SEEK_SET) == (off_t)-1) {
+    fprintf(stderr, "Can't seek head\n");
+    close(fd);
+    exit(1);
+  }
   if(write(fd, (void *)&head, sizeof head) != sizeof head) {
     fprintf(stderr,"Can't write head\n");
+    close(fd);
     exit(1);
   }
   
-  lseek(fd, head.pcksum2 + 12, SEEK_SET); // skip three ulong's
-  if(write(fd, (void *)&crc, sizeof crc) != sizeof crc) {
+  if (lseek(fd, (off_t)(head.pcksum2 + 12), SEEK_SET) == (off_t)-1) { /* skip three ulong's */
+    fprintf(stderr, "Can't seek tail\n");
+    close(fd);
+    exit(1);
+  }
+  if(write(fd, (void *)&crc32_val, sizeof crc32_val) != sizeof crc32_val) {
     fprintf(stderr,"Can't write tail\n");
     close(fd);
     exit(1);

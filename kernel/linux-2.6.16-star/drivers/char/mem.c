@@ -833,17 +833,19 @@ static ssize_t kmsg_write(struct file * file, const char __user * buf,
 {
 	char *tmp;
 	ssize_t ret;
+	size_t len;
 
-	tmp = kmalloc(count + 1, GFP_KERNEL);
+	len = (count > 1023) ? 1023 : count;
+	tmp = kmalloc(len + 1, GFP_KERNEL);
 	if (tmp == NULL)
 		return -ENOMEM;
 	ret = -EFAULT;
-	if (!copy_from_user(tmp, buf, count)) {
-		tmp[count] = 0;
+	if (!copy_from_user(tmp, buf, len)) {
+		tmp[len] = 0;
 		ret = printk("%s", tmp);
-		if (ret > count)
+		if (ret > len)
 			/* printk can add a prefix */
-			ret = count;
+			ret = len;
 	}
 	kfree(tmp);
 	return ret;

@@ -155,7 +155,7 @@ static unsigned long str9100_gettimeoffset(void)
 	/*
 	 * Interrupt pending?  If so, we've reloaded once already.
 	 */
-	if (interrupt_status) {
+	if (interrupt_status & (1 << TIMER1_OVERFLOW_INTERRUPT_BIT_INDEX)) {
 		ticks1 += timer_counter_value;
 	}
 

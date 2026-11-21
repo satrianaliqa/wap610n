@@ -161,7 +161,6 @@ static int get_system_info(void)
 	str9100_info.cpu = temp;
 
 	temp = (PWRMGT_REGULATOR_CONTROL_REG >> 11) & 0x7;
-	temp = ((temp >> 11)&0x7);
 	str9100_info.v18regular = temp;
 
 #if defined(CONFIG_STR9100_PCI66M)
@@ -420,16 +419,19 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 
 #ifdef CONFIG_SWITCH_IOCTL
         case STR9100_GSW_GET_SHNAT_WANGID:
-		copy_from_user(&shnat_wangid, (u32*)arg, sizeof(u32));
+		if (copy_from_user(&shnat_wangid, (u32*)arg, sizeof(u32)))
+			return -EFAULT;
                 GSW_READ_HNAT_CONFIGURATION(hnat_cfg);
 		shnat_wangid = hnat_cfg >> 16;
 
-  		copy_to_user((u32*)arg, &shnat_wangid, sizeof(u32));
+		if (copy_to_user((u32*)arg, &shnat_wangid, sizeof(u32)))
+			return -EFAULT;
 
 		return 0;
 
         case STR9100_GSW_SET_SHNAT_WANGID:
-		copy_from_user(&shnat_wangid, (u32 *)arg, sizeof(u32));
+		if (copy_from_user(&shnat_wangid, (u32 *)arg, sizeof(u32)))
+			return -EFAULT;
 
 
                 GSW_READ_HNAT_CONFIGURATION(hnat_cfg);
@@ -441,7 +443,10 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 		return 0;
 #if 1
         case STR9100_GSW_LOOKUP_ARL:
-		copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+		if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
+		if (vgid_mac.gid_ < 0 || vgid_mac.gid_ > 7)
+			return -EINVAL;
 		#if 0
 		printk("[kernel mode] STR9100_GSW_LOOKUP_ARL\n");
 		printk("[kernel mode] gid : %d\n", vgid_mac.gid_);
@@ -470,14 +475,16 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
                 #if 0
                 printk("[kernel mode] STR9100_GSW_ADD_VID_MAC\n");
                 #endif
-                copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+                if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
                 add_mac_into_arl(vgid_mac.gid_, vgid_mac.mac_);
                 return 0;
 
         //  unrelated variable star_gsw_info
         //  unrelated hnat
         case STR9100_GSW_PURE_DEL_VID_MAC:
-                copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+                if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
 		//star_gsw_del_arl_table(vgid_mac.mac_, vgid_mac.gid_);
 		del_mac_from_arl(vgid_mac.gid_, vgid_mac.mac_);
                 return 0;
@@ -488,13 +495,15 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 		#if 0
 		printk("[kernel mode] STR9100_GSW_DEL_VID_MAC\n");
 		#endif
-		copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+		if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
 
 		del_my_vlan_mac(vgid_mac.gid_);
 		return 0;
 #endif
         case STR9100_GSW_SET_VID_MAC:
-		copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+		if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
 		#if 0
 		printk("[kernel mode] STR9100_GSW_SET_VID_MAC\n");
 		//printk("[kernel mode] net_device_index_ : %d\n", vgid_mac.net_device_index_);
@@ -512,7 +521,10 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 
 
         case STR9100_GSW_GET_VID_MAC:
-		copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC));
+		if (copy_from_user(&vgid_mac, (VGIDMAC *)arg, sizeof(VGIDMAC)))
+			return -EFAULT;
+		if (vgid_mac.gid_ < 0 || vgid_mac.gid_ > 7)
+			return -EINVAL;
         	star_gsw_info.vlan[vgid_mac.gid_].vlan_gid;
 	        vgid_mac.vid_ = star_gsw_info.vlan[vgid_mac.gid_].vlan_vid;
 	        //vgid_mac.net_device_index_ = 
@@ -524,14 +536,16 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 		printk("[kernel mode] vid : %d\n", vgid_mac.vid_);
 		printk("[kernel mode] mac # %x:%x:%x:%x:%x:%x\n", vgid_mac.mac_[0], vgid_mac.mac_[1],vgid_mac.mac_[2],vgid_mac.mac_[3],vgid_mac.mac_[4],vgid_mac.mac_[5]);
 		#endif
-	  	copy_to_user((VGIDMAC*)arg, &vgid_mac, sizeof(VGIDMAC));
+		if (copy_to_user((VGIDMAC*)arg, &vgid_mac, sizeof(VGIDMAC)))
+			return -EFAULT;
 
 
 		return 0;
 
 
         case STR9100_GSW_SET_VID:
-		copy_from_user(&vgid_pair, (VGIDPair*)arg, sizeof(VGIDPair));
+		if (copy_from_user(&vgid_pair, (VGIDPair*)arg, sizeof(VGIDPair)))
+			return -EFAULT;
 
 		//printk("SET_VID\n");
 		//printk("vgid_pair.vid_", vgid_pair.vid_);
@@ -548,7 +562,8 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 		}
 
         case STR9100_GSW_GET_VID:
-		copy_from_user(&vgid_pair, (VGIDPair*)arg, sizeof(VGIDPair));
+		if (copy_from_user(&vgid_pair, (VGIDPair*)arg, sizeof(VGIDPair)))
+			return -EFAULT;
 		
 		//printk("GET_VID\n");
 		//printk("vgid_pair.vid_", vgid_pair.vid_);
@@ -558,7 +573,8 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 			u16 vid=get_vid(vgid_pair.gid_);
 			vgid_pair.vid_=vid;
 			//printk("vid : %d\n", vid);
-	  		copy_to_user((VGIDPair*)arg, &vgid_pair, sizeof (VGIDPair));
+			if (copy_to_user((VGIDPair*)arg, &vgid_pair, sizeof (VGIDPair)))
+				return -EFAULT;
 			return 0;
 		}
 		else
@@ -570,7 +586,8 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 #ifdef CONFIG_VVID
         case STR9100_GSW_SET_VVID:
 		//copy_from_user(&vvid_data, (VVID *)arg, sizeof(VVID));
-		copy_from_user(&vvid_content, (VVIDContent *)arg, sizeof(VVIDContent));
+		if (copy_from_user(&vvid_content, (VVIDContent *)arg, sizeof(VVIDContent)))
+			return -EFAULT;
 		//printk("vvid.pri_: %d\n", vvid_data.pri_);
 		//printk("vvid.vid_: %d\n", vvid_data.vid_);
          	merge_int = (vvid_content.pri_ << 12 | vvid_content.vid_);
@@ -590,12 +607,14 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 
 
         case STR9100_GSW_GET_VVID:
-		copy_from_user(&vvid_content, (VVIDContent *)arg, sizeof(VVIDContent));
+		if (copy_from_user(&vvid_content, (VVIDContent *)arg, sizeof(VVIDContent)))
+			return -EFAULT;
 		//printk("in kernel vvid_content.vvid_num_: %d\n", vvid_content.vvid_num_);
 		vvid_content.pri_ = vvid_ary[vvid_content.vvid_num_].pri_;
 		vvid_content.vid_ = vvid_ary[vvid_content.vvid_num_].vid_;
 		printk("in get kernel vvid_ary[%d] => (%d, %d)\n", vvid_content.vvid_num_, vvid_content.pri_, vvid_content.vid_);
-	  	copy_to_user((VVIDContent*)arg, &vvid_content, sizeof (VVIDContent));
+		if (copy_to_user((VVIDContent*)arg, &vvid_content, sizeof (VVIDContent)))
+			return -EFAULT;
 		return 0;
 	   	break;
 
@@ -605,7 +624,8 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
 
         case STR9100_INFO_IOCGETD:    
 	   printk("STR9100_INFO_IOCGETD \n");
-           copy_to_user((unsigned char *)arg, (unsigned char *)&str9100_info, sizeof(str9100_info));
+           if (copy_to_user((unsigned char *)arg, (unsigned char *)&str9100_info, sizeof(str9100_info)))
+               return -EFAULT;
 	   goto ioctlexit;
 
         case STR9100_INFO_IOCSETD:
@@ -642,7 +662,8 @@ static int str9100_info_ioctl(struct inode *inode, struct file *file, unsigned i
      }
 
 
-	  copy_to_user((unsigned char *)arg,temp,len+1);
+	  if (copy_to_user((unsigned char *)arg,temp,len+1))
+	     return -EFAULT;
 
 
 
@@ -740,7 +761,7 @@ static int __init str9100_info_init(void)
 
 	misc_register(&str9100_info_miscdev);
 
-	return 1;
+	return 0;
 }
 #endif
 

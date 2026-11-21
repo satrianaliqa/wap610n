@@ -27,6 +27,7 @@
  ********************************************************************************/
 
 #include <linux/fs.h>
+#include <asm/uaccess.h>
 #include "star_gsw.h"
 
 #ifdef LINUX24
@@ -189,44 +190,44 @@ void show_reg(void)
       printk("0x114: FS Descriptor Base Address               0x%x\n",GSW_MEM_MAP_VALUE(0x114));
       printk("0x118: Delayed Interrupt Configuration          0x%x\n",GSW_MEM_MAP_VALUE(0x118));
       printk("0x200: HNAT Configuration                       0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x204: PIB                                      0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x208: DMAC0_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));      
-      printk("0x20C: DMAC0_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x210: DMAC1_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x214: DMAC1_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x218: DMAC2_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x21C: DMAC2_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x220: DMAC3_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x224: DMAC3_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x228: RULE_FW_START_ADDR                       0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x22C: RULE_FW_END_ADDR                         0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x230: RULE_FL_START_ADDR                       0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x234: RULE_FL_END_ADDR                         0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x238: ALG_START_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x23C: ALG_END_ADDR                             0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x240: SIP_BASE_ADDR                            0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x244: NAPT_BASE_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x248: NAPT_PORT_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x24C: ARP_BASE_ADDR                            0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x250: TCP_SNA_THRESHOLD                        0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x254: SMAC0_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x258: SMAC0_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x25C: SMAC1_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x260: SMAC1_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x264: SMAC2_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x268: SMAC2_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x26C: SMAC3_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x270: SMAC3_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x274: SMAC4_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x278: SMAC4_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x27C: SMAC5_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x280: SMAC5_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x284: SMAC6_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x288: SMAC6_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x28C: SMAC7_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x290: SMAC7_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x294: MISS_LIMIT                               0x%x\n",GSW_MEM_MAP_VALUE(0x200));
-      printk("0x298: AGING_CFG                                0x%x\n",GSW_MEM_MAP_VALUE(0x200));
+      printk("0x204: PIB                                      0x%x\n",GSW_MEM_MAP_VALUE(0x204));
+      printk("0x208: DMAC0_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x208));
+      printk("0x20C: DMAC0_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x20C));
+      printk("0x210: DMAC1_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x210));
+      printk("0x214: DMAC1_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x214));
+      printk("0x218: DMAC2_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x218));
+      printk("0x21C: DMAC2_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x21C));
+      printk("0x220: DMAC3_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x220));
+      printk("0x224: DMAC3_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x224));
+      printk("0x228: RULE_FW_START_ADDR                       0x%x\n",GSW_MEM_MAP_VALUE(0x228));
+      printk("0x22C: RULE_FW_END_ADDR                         0x%x\n",GSW_MEM_MAP_VALUE(0x22C));
+      printk("0x230: RULE_FL_START_ADDR                       0x%x\n",GSW_MEM_MAP_VALUE(0x230));
+      printk("0x234: RULE_FL_END_ADDR                         0x%x\n",GSW_MEM_MAP_VALUE(0x234));
+      printk("0x238: ALG_START_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x238));
+      printk("0x23C: ALG_END_ADDR                             0x%x\n",GSW_MEM_MAP_VALUE(0x23C));
+      printk("0x240: SIP_BASE_ADDR                            0x%x\n",GSW_MEM_MAP_VALUE(0x240));
+      printk("0x244: NAPT_BASE_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x244));
+      printk("0x248: NAPT_PORT_ADDR                           0x%x\n",GSW_MEM_MAP_VALUE(0x248));
+      printk("0x24C: ARP_BASE_ADDR                            0x%x\n",GSW_MEM_MAP_VALUE(0x24C));
+      printk("0x250: TCP_SNA_THRESHOLD                        0x%x\n",GSW_MEM_MAP_VALUE(0x250));
+      printk("0x254: SMAC0_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x254));
+      printk("0x258: SMAC0_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x258));
+      printk("0x25C: SMAC1_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x25C));
+      printk("0x260: SMAC1_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x260));
+      printk("0x264: SMAC2_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x264));
+      printk("0x268: SMAC2_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x268));
+      printk("0x26C: SMAC3_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x26C));
+      printk("0x270: SMAC3_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x270));
+      printk("0x274: SMAC4_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x274));
+      printk("0x278: SMAC4_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x278));
+      printk("0x27C: SMAC5_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x27C));
+      printk("0x280: SMAC5_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x280));
+      printk("0x284: SMAC6_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x284));
+      printk("0x288: SMAC6_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x288));
+      printk("0x28C: SMAC7_H                                  0x%x\n",GSW_MEM_MAP_VALUE(0x28C));
+      printk("0x290: SMAC7_L                                  0x%x\n",GSW_MEM_MAP_VALUE(0x290));
+      printk("0x294: MISS_LIMIT                               0x%x\n",GSW_MEM_MAP_VALUE(0x294));
+      printk("0x298: AGING_CFG                                0x%x\n",GSW_MEM_MAP_VALUE(0x298));
       printk("\n");
       printk("RTL 8201CP\n");
       printk("---------------------------------------------------------------------\n");
@@ -294,7 +295,8 @@ void show_ring(void)
                {
                   printk("\n");
                   myskb = txring.skb_ptr[i];
-                  print_packet(myskb->data,myskb->len);
+                  if (myskb)
+                     print_packet(myskb->data,myskb->len);
                }
             printk("\n");
          }
@@ -304,7 +306,7 @@ void show_ring(void)
       for(i=0;i<STAR_GSW_MAX_RFD_NUM;i++)
          {
             rxptr = rxring.vir_addr +i;
-            printk("txring [%02d]\n",i);
+            printk("rxring [%02d]\n",i);
             printk("-------------------------------------------\n");
             printk("data_ptr  = 0x%x\n",rxptr->data_ptr);
             printk("length    = 0x%x\n",rxptr->length);
@@ -321,7 +323,8 @@ void show_ring(void)
                {
                   printk("\n");
                   myskb = rxring.skb_ptr[i];
-                  print_packet(myskb->data,myskb->len);
+                  if (myskb)
+                     print_packet(myskb->data,myskb->len);
                }
          }
       return;
@@ -1151,13 +1154,27 @@ static int star_gsw_read_proc(char *page, char **start, off_t off, int count, in
 
 int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long count, void *data)
 {
+#if defined(CONFIG_CONF_VID) || defined(CONFIG_NIC_MODE) || defined(CHANGE_DELAY_INT) || defined(ADJUSTMENT_TX_RX_SKEW)
+	char kbuf[64];
+	size_t copy_len;
+
+	if (count == 0) {
+		return 0;
+	}
+	copy_len = (count >= sizeof(kbuf)) ? (sizeof(kbuf) - 1) : count;
+	if (copy_from_user(kbuf, buffer, copy_len)) {
+		return -EFAULT;
+	}
+	kbuf[copy_len] = '\0';
+#endif
 
 // 20061103 descent
 #ifdef CONFIG_CONF_VID
+	{
 	char *str, *pos;
 	u16 gid, vid;
 
-	str=buffer;
+	str=kbuf;
 
 	if (count)
 	{
@@ -1246,16 +1263,18 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 		printk("GSW_VLAN_VID_4_5: %x\n", GSW_VLAN_VID_4_5);
 		printk("GSW_VLAN_VID_6_7: %x\n", GSW_VLAN_VID_6_7);
 	}
+	}
 
 #endif
 // 20061103 descent end
 
 // 20060922 descent
 #ifdef CONFIG_NIC_MODE
+	{
        	u32 sw_config = GSW_SWITCH_CONFIG;
 
 	// NIC mode on
-	if (count && buffer[0]=='1') {
+	if (count && kbuf[0]=='1') {
 		sw_config |= (1 << 30);
 
 		star_gsw_info.vlan[0].vlan_tag_flag	= 0;
@@ -1265,7 +1284,7 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 	}
 
 	// NIC mode off
-	if (count && buffer[0]=='0') {
+	if (count && kbuf[0]=='0') {
 		sw_config &= ~(1 << 30);
 
 		star_gsw_info.vlan[0].vlan_tag_flag	= VLAN0_VLAN_TAG;
@@ -1277,13 +1296,15 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 	GSW_SET_VLAN_1_TAG(star_gsw_info.vlan[1].vlan_tag_flag);
 
        	GSW_SWITCH_CONFIG = sw_config;
+	}
 #endif
 // 20060922 descent end
 
 #ifdef CHANGE_DELAY_INT
+	{
 	int i=0, j=0;
-	int c=count;
-	char *str=buffer;
+	int c=copy_len;
+	char *str=kbuf;
 	char str_num[5];
 	unsigned long n[2];
 	int index=0;
@@ -1325,6 +1346,7 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 #ifdef STAR_GSW_DELAYED_INTERRUPT
 	GSW_DELAYED_INTERRUPT_CONFIG = (1 << 16) | (max_pend_int_cnt << 8) | (max_pend_time);
 #endif
+	}
 
 #endif
 
@@ -1332,26 +1354,26 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 // ADJUSTMENT TX RX SKEW
 #ifdef ADJUSTMENT_TX_RX_SKEW
 	// adjust MAC port 0/1 RX/TX clock skew
-	if (count && buffer[0]=='0')
+	if (count && kbuf[0]=='0')
 	{
 		printk("port 1 tx skew 0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 30);
 		GSW_BIST_RESULT_TEST_0 |= (0x0 << 30);
 
 	}
-	if (count && buffer[0]=='1')
+	if (count && kbuf[0]=='1')
 	{
 		printk("port 1 tx skew 1.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 30);
 		GSW_BIST_RESULT_TEST_0 |= (0x1 << 30);
 	}
-	if (count && buffer[0]=='2')
+	if (count && kbuf[0]=='2')
 	{
 		printk("port 1 tx skew 2.0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 30);
 		GSW_BIST_RESULT_TEST_0 |= (0x2 << 30);
 	}
-	if (count && buffer[0]=='3')
+	if (count && kbuf[0]=='3')
 	{
 		printk("port 1 tx skew 2.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 30);
@@ -1360,25 +1382,25 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 
 
 
-	if (count && buffer[0]=='4')
+	if (count && kbuf[0]=='4')
 	{
 		printk("port 1 rx skew 0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 28);
 		GSW_BIST_RESULT_TEST_0 |= (0x0 << 28);
 	}
-	if (count && buffer[0]=='5')
+	if (count && kbuf[0]=='5')
 	{
 		printk("port 1 rx skew 1.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 28);
 		GSW_BIST_RESULT_TEST_0 |= (0x1 << 28);
 	}
-	if (count && buffer[0]=='6')
+	if (count && kbuf[0]=='6')
 	{
 		printk("port 1 rx skew 2.0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 28);
 		GSW_BIST_RESULT_TEST_0 |= (0x2 << 28);
 	}
-	if (count && buffer[0]=='7')
+	if (count && kbuf[0]=='7')
 	{
 		printk("port 1 rx skew 2.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 28);
@@ -1386,25 +1408,25 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 	}
 
 
-	if (count && buffer[0]=='8')
+	if (count && kbuf[0]=='8')
 	{
 		printk("port 0 tx skew 0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 26);
 		GSW_BIST_RESULT_TEST_0 |= (0x0 << 26);
 	}
-	if (count && buffer[0]=='9')
+	if (count && kbuf[0]=='9')
 	{
 		printk("port 0 tx skew 1.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 26);
 		GSW_BIST_RESULT_TEST_0 |= (0x1 << 26);
 	}
-	if (count && buffer[0]=='a')
+	if (count && kbuf[0]=='a')
 	{
 		printk("port 0 tx skew 2.0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 26);
 		GSW_BIST_RESULT_TEST_0 |= (0x2 << 26);
 	}
-	if (count && buffer[0]=='b')
+	if (count && kbuf[0]=='b')
 	{
 		printk("port 0 tx skew 2.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 26);
@@ -1412,25 +1434,25 @@ int star_gsw_write_proc(struct file *file, const char *buffer, unsigned long cou
 	}
 
 
-	if (count && buffer[0]=='c')
+	if (count && kbuf[0]=='c')
 	{
 		printk("port 0 rx skew 0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 24);
 		GSW_BIST_RESULT_TEST_0 |= (0x0 << 24);
 	}
-	if (count && buffer[0]=='d')
+	if (count && kbuf[0]=='d')
 	{
 		printk("port 0 rx skew 1.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 24);
 		GSW_BIST_RESULT_TEST_0 |= (0x1 << 24);
 	}
-	if (count && buffer[0]=='e')
+	if (count && kbuf[0]=='e')
 	{
 		printk("port 0 rx skew 2.0 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 24);
 		GSW_BIST_RESULT_TEST_0 |= (0x2 << 24);
 	}
-	if (count && buffer[0]=='f')
+	if (count && kbuf[0]=='f')
 	{
 		printk("port 0 rx skew 2.5 ns\n");
                 GSW_BIST_RESULT_TEST_0 &= ~(0x3 << 24);
@@ -1905,6 +1927,8 @@ static int star_gsw_uninstall_isr(struct net_device *dev)
 	--install_isr_account;
 	if (install_isr_account == 0) {
 		PDEBUG("star gsw uninstall isr\n");
+		GSW_FS_DMA_STOP();
+		GSW_TS_DMA_STOP();
 		free_irq(INTC_GSW_FSRC_BIT_INDEX, STAR_GSW_LAN_DEV);
 
 #ifdef STAR_GSW_FSQF_ISR
@@ -1955,6 +1979,7 @@ static int star_gsw_install_isr(struct net_device *dev)
 
 		if (retval) {
 			PRINT_INFO("%s: unable to get IRQ %d (irqval=%d).\n", "GSW FSQF INT", INTC_GSW_FSQF_BIT_INDEX, retval);
+			free_irq(INTC_GSW_FSRC_BIT_INDEX, STAR_GSW_LAN_DEV);
 			return 2;
 		}
 #endif	
@@ -1965,6 +1990,10 @@ static int star_gsw_install_isr(struct net_device *dev)
 
 		if (retval) {
 			PRINT_INFO("%s: unable to get IRQ %d (irqval=%d).\n", "GSW STATUS INT", INTC_GSW_STATUS_BIT_INDEX, retval);
+#ifdef STAR_GSW_FSQF_ISR
+			free_irq(INTC_GSW_FSQF_BIT_INDEX, STAR_GSW_LAN_DEV);
+#endif
+			free_irq(INTC_GSW_FSRC_BIT_INDEX, STAR_GSW_LAN_DEV);
 			return 3;
 		}
 		GSW_ENABLE_ALL_INTERRUPT_STATUS_SOURCES();
@@ -2041,13 +2070,24 @@ printk("%s: mac_int=%.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n",__FUNCTION__,mac_int[0],mac
 
 	//CUR_NAPI_DEV = dev;
 
+	if (star_gsw_install_isr(dev) != 0) {
+#ifdef CONFIG_STAR_GSW_NAPI
+		netif_poll_disable(&STAR_NAPI_DEV);
+#endif
+#ifdef MODULE
+		MOD_DEC_USE_COUNT;
+#endif
+		CLOSE_PORT(dev)
+		return -EAGAIN;
+	}
+
 	star_gsw_enable(dev);
 
 	netif_start_queue(dev);
 
+#ifdef STAR_GSW_STATUS_ISR
 	GSW_ENABLE_ALL_INTERRUPT_STATUS_SOURCES();
-
-	star_gsw_install_isr(dev);
+#endif
 
 	return 0;
 }
@@ -2065,6 +2105,7 @@ static void star_gsw_timeout(struct net_device *dev)
 {
 	PRINT_INFO("%s:star_gsw_timeout\n", dev->name);
 	star_gsw_enable(dev);
+	GSW_TS_DMA_START();
 	netif_wake_queue(dev);
 	dev->trans_start = jiffies;
 }
@@ -2181,6 +2222,8 @@ static int __init star_gsw_buffer_alloc(void)
 		rxring.skb_ptr[i]	= skb_ptr;
 		rxdesc_ptr->data_ptr	= (u32)virt_to_phys(skb_ptr->data);
 		rxdesc_ptr->length	= MAX_PACKET_LEN;
+		consistent_sync(skb_ptr->data, MAX_PACKET_LEN, PCI_DMA_FROMDEVICE);
+		wmb();
 	}
 
 	// Clean TX Memory
@@ -2241,16 +2284,21 @@ static int star_gsw_poll(struct net_device *netdev, int *budget)
 		}
 	}
 #else
-        if (work_done) {
-                if (is_qf) {
-                        is_qf = 0;
-                        HAL_GSW_FS_DMA_START();
-                        return 1;
-                }
+        if (test_and_clear_bit(0, &is_qf)) {
+                HAL_GSW_FS_DMA_START();
+                return 1;
         }
-        else {
+        if (work_done) {
+                return 1;
+        } else {
                 netif_rx_complete(&STAR_NAPI_DEV);
                 enable_irq(INTC_GSW_FSRC_BIT_INDEX);
+                if (((rxring.vir_addr + rxring.cur_index)->cown != 0 ||
+                     test_and_clear_bit(0, &is_qf)) &&
+                    netif_rx_schedule_prep(&STAR_NAPI_DEV)) {
+                        disable_irq_nosync(INTC_GSW_FSRC_BIT_INDEX);
+                        __netif_rx_schedule(&STAR_NAPI_DEV);
+                }
                 return 0;
         }
 
@@ -2297,16 +2345,21 @@ static int star_gsw_poll(struct net_device *netdev, int *budget)
 		}
 	}
 #else
-	if (work_done) {
-		if (is_qf) {
-			is_qf = 0;
-			HAL_GSW_FS_DMA_START();
-			return 1;
-		}				
+	if (test_and_clear_bit(0, &is_qf)) {
+		HAL_GSW_FS_DMA_START();
+		return 1;
 	}
-        else {
+	if (work_done) {
+		return 1;
+	} else {
 		netif_rx_complete(&STAR_NAPI_DEV);
 		enable_irq(INTC_GSW_FSRC_BIT_INDEX);
+		if (((rxring.vir_addr + rxring.cur_index)->cown != 0 ||
+		     test_and_clear_bit(0, &is_qf)) &&
+		    netif_rx_schedule_prep(&STAR_NAPI_DEV)) {
+			disable_irq_nosync(INTC_GSW_FSRC_BIT_INDEX);
+			__netif_rx_schedule(&STAR_NAPI_DEV);
+		}
 		return 0;
 	}
 
@@ -2336,6 +2389,15 @@ static int star_gsw_get_rfd_buff(int index)
 	rxdesc_ptr = rxring.vir_addr + index;
 	skb_ptr = rxring.skb_ptr[index];
 	len = rxdesc_ptr->length;
+
+	if (unlikely(len <= 0 || len > MAX_PACKET_LEN ||
+		     !rxdesc_ptr->fs || !rxdesc_ptr->ls)) {
+		if (STAR_GSW_LAN_DEV) {
+			priv = netdev_priv(STAR_GSW_LAN_DEV);
+			priv->stats.rx_length_errors++;
+		}
+		goto freepacket;
+	}
 
 	consistent_sync(skb_ptr->data, len, PCI_DMA_FROMDEVICE);
 
@@ -2654,14 +2716,27 @@ void star_gsw_receive_packet(int mode)
 				star_gsw_get_rfd_buff(rxring.cur_index);
 				rxring.skb_ptr[rxring.cur_index] = skb_ptr;
 				rxdesc_ptr->data_ptr	= (u32)virt_to_phys(skb_ptr->data);
-				rxdesc_ptr->length	= MAX_PACKET_LEN;	
-				rxdesc_ptr->cown	= 0; // set cbit to 0 for CPU Transfer	
+				rxdesc_ptr->length	= MAX_PACKET_LEN;
+				consistent_sync(skb_ptr->data, MAX_PACKET_LEN, PCI_DMA_FROMDEVICE);
+				wmb();
+				rxdesc_ptr->cown	= 0; // set cbit to 0 for CPU Transfer
 			} else {
-				// TODO:
-				// I will add dev->lp.stats->rx_dropped, it will effect the performance
-				PDEBUG("%s: Alloc sk_buff failed\n", __FUNCTION__);
-				// Exit immediately, cown bit remains 1	
-				return;
+				struct sk_buff *old_skb = rxring.skb_ptr[rxring.cur_index];
+				PDEBUG("%s: Alloc sk_buff failed, recycling descriptor\n", __FUNCTION__);
+				if (STAR_GSW_LAN_DEV) {
+					struct star_gsw_private *priv_lan = netdev_priv(STAR_GSW_LAN_DEV);
+					priv_lan->stats.rx_dropped++;
+				}
+#ifdef CONFIG_STAR_GSW_NAPI
+				++(*work_done);
+#endif
+				if (old_skb != NULL) {
+					rxdesc_ptr->data_ptr	= (u32)virt_to_phys(old_skb->data);
+					rxdesc_ptr->length	= MAX_PACKET_LEN;
+					consistent_sync(old_skb->data, MAX_PACKET_LEN, PCI_DMA_FROMDEVICE);
+					wmb();
+					rxdesc_ptr->cown	= 0;
+				}
 			}
 		}
 		else
@@ -2702,13 +2777,13 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 {
 	struct star_gsw_private *priv = netdev_priv(dev);
 	STAR_GSW_TXDESC volatile *txdesc_ptr;
+	struct sk_buff *orig_skb_free = NULL;
+	struct sk_buff *nskb = NULL;
 	unsigned long flags;
 	u16 vlan_tag;
 
 #ifdef FREE_TX_SKB_MULTI
 	int i;
-	int tssd_index;
-	int tssd_current;
 	int skb_free_count = 0;
 	struct sk_buff *skb_free[MAX_TX_SKB_FREE_NUM];
 #endif
@@ -2733,35 +2808,10 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 #endif
 #endif /* defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG) */
 
-	/* Pad short frames to MIN_PACKET_LEN before DMA mapping to prevent etherleak */
-	if (skb->len < MIN_PACKET_LEN) {
-		skb = skb_padto(skb, MIN_PACKET_LEN);
-		if (!skb)
-			return 0;
-	}
-
-#if defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG)
-	nr_frags = skb_shinfo(skb)->nr_frags;
-	len = skb->len - skb->data_len;
-#endif
-
-	HAL_GSW_TS_DMA_STOP();
 	spin_lock_irqsave(&star_gsw_send_lock, flags);
 
 #ifdef FREE_TX_SKB_MULTI
-
-#if 0
-	HAL_GSW_READ_TSSD(tssd_current);
-	tssd_index = (tssd_current - (u32)txring.phy_addr) >> 4;
-
-	if (tssd_index > txring.to_free_index) {
-		skb_free_count = tssd_index - txring.to_free_index;
-	} else if (tssd_index < txring.to_free_index) {
-		skb_free_count = STAR_GSW_MAX_TFD_NUM + tssd_index - txring.to_free_index;
-	}
-
-	if (skb_free_count >= MAX_TX_SKB_FREE_NUM) {
-#endif
+	{
 		int count = 0;
 		for (i = 0; i < FREE_TX_SKB_MULTI_MAX; i++) {
 			txdesc_ptr = txring.vir_addr + txring.to_free_index;
@@ -2781,6 +2831,7 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 			}
 		}
 		skb_free_count = count;
+	}
 #endif
 
 
@@ -2788,15 +2839,56 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 	cur_index = txring.cur_index;
 
 #if defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG)
+	nr_frags = skb_shinfo(skb)->nr_frags;
+	len = skb->len - skb->data_len;
+
+	for (f = 0; f < (nr_frags + 1); f++) {
+		int check_idx = (cur_index + f) % STAR_GSW_MAX_TFD_NUM;
+		txdesc_ptr = txring.vir_addr + check_idx;
+		if (txdesc_ptr->cown == 0) {
+			GSW_TS_DMA_START();
+			spin_unlock_irqrestore(&star_gsw_send_lock, flags);
+#ifdef FREE_TX_SKB_MULTI
+			for (i = 0; i < skb_free_count; i++) {
+				dev_kfree_skb_any(skb_free[i]);
+			}
+#endif
+			/* re-queue the skb */
+			return 1;
+		}
+	}
+
+	if (skb->len < MIN_PACKET_LEN) {
+		unsigned int pad = MIN_PACKET_LEN - skb->len;
+		if (!skb_cloned(skb) && skb_tailroom(skb) >= pad) {
+			memset(skb->data + skb->len, 0x00, pad);
+		} else {
+			nskb = skb_copy_expand(skb, skb_headroom(skb), pad, GFP_ATOMIC);
+			if (!nskb) {
+				priv->stats.tx_dropped++;
+				GSW_TS_DMA_START();
+				spin_unlock_irqrestore(&star_gsw_send_lock, flags);
+#ifdef FREE_TX_SKB_MULTI
+				for (i = 0; i < skb_free_count; i++) {
+					dev_kfree_skb_any(skb_free[i]);
+				}
+#endif
+				dev_kfree_skb_any(skb);
+				return 0;
+			}
+			memset(nskb->data + nskb->len, 0x00, pad);
+			orig_skb_free = skb;
+			skb = nskb;
+			nr_frags = skb_shinfo(skb)->nr_frags;
+			len = skb->len - skb->data_len;
+		}
+	}
+
+	HAL_GSW_TS_DMA_STOP();
+
 	//printk("nr_frags: %d\n", nr_frags);
 	for (f = 0; f < (nr_frags + 1); f++) {
 		txdesc_ptr = txring.vir_addr + cur_index;
-
-		if (txdesc_ptr->cown == 0) {
-			spin_unlock_irqrestore(&star_gsw_send_lock, flags);
-			// re-queue the skb
-			return 1;
-		}
 
 //#ifndef FREE_TX_SKB_MULTI
 		if (txring.skb_ptr[cur_index]) {
@@ -2931,6 +3023,7 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 		}
 	}
 
+	wmb();
 	for (f = 0; f < (nr_frags + 1); f++) {
 		txdesc_ptr = txring.vir_addr + org_index;
 
@@ -2947,10 +3040,42 @@ static int star_gsw_send_packet(struct sk_buff *skb, struct net_device *dev)
 
 
 	if (txdesc_ptr->cown == 0) { // This TFD is busy
+		GSW_TS_DMA_START();
 		spin_unlock_irqrestore(&star_gsw_send_lock, flags);
+#ifdef FREE_TX_SKB_MULTI
+		for (i = 0; i < skb_free_count; i++) {
+			dev_kfree_skb_any(skb_free[i]);
+		}
+#endif
 		// re-queue the skb
 		return 1;
 	}
+
+	if (skb->len < MIN_PACKET_LEN) {
+		unsigned int pad = MIN_PACKET_LEN - skb->len;
+		if (!skb_cloned(skb) && skb_tailroom(skb) >= pad) {
+			memset(skb->data + skb->len, 0x00, pad);
+		} else {
+			nskb = skb_copy_expand(skb, skb_headroom(skb), pad, GFP_ATOMIC);
+			if (!nskb) {
+				priv->stats.tx_dropped++;
+				GSW_TS_DMA_START();
+				spin_unlock_irqrestore(&star_gsw_send_lock, flags);
+#ifdef FREE_TX_SKB_MULTI
+				for (i = 0; i < skb_free_count; i++) {
+					dev_kfree_skb_any(skb_free[i]);
+				}
+#endif
+				dev_kfree_skb_any(skb);
+				return 0;
+			}
+			memset(nskb->data + nskb->len, 0x00, pad);
+			orig_skb_free = skb;
+			skb = nskb;
+		}
+	}
+
+	HAL_GSW_TS_DMA_STOP();
 
 #ifndef FREE_TX_SKB_MULTI
 	if (txdesc_ptr->data_ptr != 0) {
@@ -3191,6 +3316,7 @@ SEND_PACKET:
 	txdesc_ptr->ls		= 1;
 	// Wake interrupt
 	txdesc_ptr->interrupt	= 0;
+	wmb();
 	txdesc_ptr->cown	= 0;
 
 
@@ -3215,19 +3341,22 @@ sendpacket_exit:
 
 #ifdef FREE_TX_SKB_MULTI
 	for (i = 0; i < skb_free_count; i++) {
-		dev_kfree_skb(skb_free[i]);
+		dev_kfree_skb_any(skb_free[i]);
 	}
 #else
 #if defined(MAX_SKB_FRAGS) && defined(STAR_GSW_SG)
 	for (f = 0; f < skb_free_count; f++) {
-		dev_kfree_skb(skb_free[f]);
+		dev_kfree_skb_any(skb_free[f]);
 	}
 #else
 	if (skb_free) {
-		dev_kfree_skb(skb_free);
+		dev_kfree_skb_any(skb_free);
 	}
 #endif
 #endif
+	if (orig_skb_free) {
+		dev_kfree_skb_any(orig_skb_free);
+	}
 
 #ifdef STAR_GSW_TIMER
 	mod_timer(&star_gsw_timer, jiffies + 10);
@@ -3270,6 +3399,7 @@ static int star_gsw_set_lan_mac_addr(struct net_device *dev, void *addr)
 	struct star_gsw_private *priv = netdev_priv(dev);
 
 	spin_lock_irq(&priv->lock);
+	memcpy(dev->dev_addr, sock_addr->sa_data, dev->addr_len);
 	star_gsw_set_mac_addr(LAN_GID, sock_addr->sa_data, dev->addr_len);
 	//star_gsw_set_mac_addr(0, sock_addr->sa_data, dev->addr_len);
 	spin_unlock_irq(&priv->lock);

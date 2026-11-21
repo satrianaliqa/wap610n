@@ -26,6 +26,8 @@
  *
  ********************************************************************************/
 #include <linux/fs.h>
+#include <asm/uaccess.h>
+#include <linux/delay.h>
 #include "star_gsw_phy.h"
 #include "star_gsw.h"
 #include "star_gsw_config.h"
@@ -4174,13 +4176,16 @@ int32 rtl8306_getAsic1dPortState(uint32 port, uint32 *state) {
 
 int rtl_init (void)
 {
-	u16 phy_data;
+	u16 phy_data = 0;
 	u8 phy_reg=0;	
+	int bmcr_wait;
 #if defined(CONFIG_PHY_RESET_GPIO3)
 	int reset_cnt,i;		
 #endif
 
-	star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data);
+	if (!star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data)) {
+		phy_data = 0;
+	}
 	PRINT_INFO("PHY 1, reg 3, PHY Identifier 2=0x%04x\n", phy_data);
 	if (phy_data==0xC852) {
 		//For RTL8201CP, the reg 3, PHY 	Identifier 2 should be 0xc852, refer the RTL8306SG datasheet
@@ -4225,14 +4230,24 @@ int rtl_init (void)
 	} else {
 		PRINT_INFO("init RTL8201CP\n");
 		//for RTL8201CP, we only need to set the correct PHY address, that's 1.
-		star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data);
+		if (!star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data)) {
+			phy_data = 0;
+		}
 		if (phy_data==0x8201) {
 			star_gsw_set_phy_addr(0, RTL8201CP_PHY_ADDR);
 			GSW_MAC_PORT_0_CONFIG |= (0x1 << 7);  //enable AN
-			star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data);
-			phy_data &= (~(0x1 << 11));  //power on
-			phy_data |= (0x1 << 15);  //software reset
-			star_gsw_write_phy(RTL8201CP_PHY_ADDR, phy_reg, phy_data);
+			if (star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data)) {
+				phy_data &= (~(0x1 << 11));  //power on
+				phy_data |= (0x1 << 15);  //software reset
+				star_gsw_write_phy(RTL8201CP_PHY_ADDR, phy_reg, phy_data);
+				for (bmcr_wait = 0; bmcr_wait < 50; bmcr_wait++) {
+					mdelay(1);
+					if (star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data) &&
+					    !(phy_data & (0x1 << 15))) {
+						break;
+					}
+				}
+			}
 		} else {
 			//Tim Wang, send reset PHY signal from GPIO 3
 			// GPIO 3 is the physical active-low factory reset button on WAP610N/WET610N.
@@ -4253,14 +4268,24 @@ int rtl_init (void)
 				for (i=0;i<100;i++) {			
 					udelay(1000);		
 				}		
-				star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data);
+				if (!star_gsw_read_phy(RTL8201CP_PHY_ADDR, 3, &phy_data)) {
+					phy_data = 0;
+				}
 				if (phy_data==0x8201) {
 					star_gsw_set_phy_addr(0, RTL8201CP_PHY_ADDR);
 					GSW_MAC_PORT_0_CONFIG |= (0x1 << 7);  //enable AN
-					star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data);
-					phy_data &= (~(0x1 << 11));  //power on
-					phy_data |= (0x1 << 15);  //software reset
-					star_gsw_write_phy(RTL8201CP_PHY_ADDR, phy_reg, phy_data);
+					if (star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data)) {
+						phy_data &= (~(0x1 << 11));  //power on
+						phy_data |= (0x1 << 15);  //software reset
+						star_gsw_write_phy(RTL8201CP_PHY_ADDR, phy_reg, phy_data);
+						for (bmcr_wait = 0; bmcr_wait < 50; bmcr_wait++) {
+							mdelay(1);
+							if (star_gsw_read_phy(RTL8201CP_PHY_ADDR, phy_reg, &phy_data) &&
+							    !(phy_data & (0x1 << 15))) {
+								break;
+							}
+						}
+					}
 					break;
 				} 
 			}
@@ -4951,9 +4976,16 @@ int icp_101a_phy_reset (int port)
 /* Trigger a phy reset when the user writes 1 to /proc/str9100/phy_reset */
 int star_phy_reset_write_proc(struct file *file, const char *buffer, unsigned long count, void *data)
 {
-	if (count && buffer[0]=='1') {
-		PORT0_PHY_RESET
-		PORT1_PHY_RESET
+	char ch = 0;
+
+	if (count > 0) {
+		if (get_user(ch, buffer)) {
+			return -EFAULT;
+		}
+		if (ch == '1') {
+			PORT0_PHY_RESET
+			PORT1_PHY_RESET
+		}
 	}
 	return count;
 }
@@ -4961,17 +4993,24 @@ int star_phy_reset_write_proc(struct file *file, const char *buffer, unsigned lo
 //Jacky.Yang 26-Aug-2009, Begin - Add command line for control port0~3.
 int star_switch_set_port_enable(struct file *file, const char *buffer, unsigned long count, void *data)
 {
-	if (count && (buffer[0]=='0' || buffer[0]=='1' || buffer[0]=='2' || buffer[0]=='3' || buffer[0]=='5')) {
-		printk("star_switch_set_port_enable: Switch port %c entering forwarding state\n", buffer[0]);
-		if (buffer[0]=='0')
+	char ch = 0;
+
+	if (count > 0) {
+		if (get_user(ch, buffer)) {
+			return -EFAULT;
+		}
+	}
+	if (count && (ch=='0' || ch=='1' || ch=='2' || ch=='3' || ch=='5')) {
+		printk("star_switch_set_port_enable: Switch port %c entering forwarding state\n", ch);
+		if (ch=='0')
 			rtl8306_setAsic1dPortState(0,RTL8306_SPAN_FORWARD);
-		else if (buffer[0]=='1')
+		else if (ch=='1')
 				rtl8306_setAsic1dPortState(1,RTL8306_SPAN_FORWARD);
-		else if (buffer[0]=='2')
+		else if (ch=='2')
 				rtl8306_setAsic1dPortState(2,RTL8306_SPAN_FORWARD);
-		else if (buffer[0]=='3')
+		else if (ch=='3')
 				rtl8306_setAsic1dPortState(3,RTL8306_SPAN_FORWARD);
-		else if (buffer[0]=='5')
+		else if (ch=='5')
 				rtl8306_setAsic1dPortState(5,RTL8306_SPAN_FORWARD);
 	}
 	else if (count)
@@ -4983,17 +5022,24 @@ int star_switch_set_port_enable(struct file *file, const char *buffer, unsigned 
 
 int star_switch_set_port_disable(struct file *file, const char *buffer, unsigned long count, void *data)
 {
-	if (count && (buffer[0]=='0' || buffer[0]=='1' || buffer[0]=='2' || buffer[0]=='3' || buffer[0]=='5')) {
-		printk("star_switch_set_port_disable: Switch port %c entering blocking state\n", buffer[0]);
-		if (buffer[0]=='0')
+	char ch = 0;
+
+	if (count > 0) {
+		if (get_user(ch, buffer)) {
+			return -EFAULT;
+		}
+	}
+	if (count && (ch=='0' || ch=='1' || ch=='2' || ch=='3' || ch=='5')) {
+		printk("star_switch_set_port_disable: Switch port %c entering blocking state\n", ch);
+		if (ch=='0')
 			rtl8306_setAsic1dPortState(0,RTL8306_SPAN_BLOCK);
-		else if (buffer[0]=='1')
+		else if (ch=='1')
 				rtl8306_setAsic1dPortState(1,RTL8306_SPAN_BLOCK);
-		else if (buffer[0]=='2')
+		else if (ch=='2')
 				rtl8306_setAsic1dPortState(2,RTL8306_SPAN_BLOCK);
-		else if (buffer[0]=='3')
+		else if (ch=='3')
 				rtl8306_setAsic1dPortState(3,RTL8306_SPAN_BLOCK);
-		else if (buffer[0]=='5')
+		else if (ch=='5')
 				rtl8306_setAsic1dPortState(5,RTL8306_SPAN_BLOCK);
 	}
 	else if (count)
@@ -5009,15 +5055,14 @@ int star_switch_get_port_link_status(char *buffer, char **start, off_t offset,
 {
 	char last_status_trans[4]={'0', '0', '0', '0'};
 	char out_last_status[10] = {0};
-	u16 phy_data;
+	u16 phy_data = 0;
 	int port_cnt;
-	
-	int count;
 	int num = 0;
 	
 	for (port_cnt=0;port_cnt<4;port_cnt++) {
-		star_gsw_read_phy(port_cnt, STATUS_REGISTER, &phy_data);
-		if (phy_data & LINK_STATUS_BIT_MASK) {
+		phy_data = 0;
+		if (star_gsw_read_phy(port_cnt, STATUS_REGISTER, &phy_data) &&
+		    (phy_data & LINK_STATUS_BIT_MASK)) {
 			last_status_trans[port_cnt] = '1';
 		} else {
 			last_status_trans[port_cnt] = '0';
@@ -5028,8 +5073,7 @@ int star_switch_get_port_link_status(char *buffer, char **start, off_t offset,
 	snprintf(out_last_status, sizeof(out_last_status), "%c;%c;%c;%c;", last_status_trans[0], last_status_trans[1], last_status_trans[2], last_status_trans[3]);
 	
 	
-	sprintf(buffer, out_last_status, sizeof(out_last_status));
-	num += sizeof(out_last_status);
+	num = sprintf(buffer, "%s", out_last_status);
 
 	return num;
 }
@@ -5049,9 +5093,7 @@ int star_switch_get_port_enable(char *buffer, char **start, off_t offset,
 		tmpBuf[3 - i] = (char) (tmp + '0');
 	}
 
-	sprintf(buffer, "%s", tmpBuf);
-	
-	num += sizeof(tmpBuf);
+	num = sprintf(buffer, "%s", tmpBuf);
 	return num;
 }
 //june.chen end

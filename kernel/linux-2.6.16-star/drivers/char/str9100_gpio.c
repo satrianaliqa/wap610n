@@ -69,6 +69,7 @@ void stop_blinking_SYS_LED(int stop_value)
 {
 	if (stop_value > 0) {
 		sys_blinking_flag = 0;
+		del_timer_sync(&sysled_timer);
 	}
 }
 
@@ -140,15 +141,12 @@ int str9100_gpio_in_bit(volatile __u32 *data, int bit)
 /* Write GPIO Data, but only one bit */
 int str9100_gpio_out_bit(__u32 data, int bit)
 {
-	unsigned long flags;
-	u32 temp;
 	if (bit >= 0 && bit <= 20) {
-		spin_lock_irqsave(&str9100_gpio_lock, flags);
-		str9100_gpio_in(&temp);
-		temp &= ~(1 << bit);
-		temp |= (data & 0x1) << bit;
-		str9100_gpio_out(temp);
-		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
+		if (data & 0x1) {
+			GPIO_DATA_SET_REG = (1 << bit);
+		} else {
+			GPIO_DATA_CLEAR_REG = (1 << bit);
+		}
 	}
 	return 0;
 }
@@ -405,26 +403,29 @@ static irqreturn_t str9100_gpio_irq_handler(int this_irq, void *dev_id, struct p
 {
 	int i;
 	u32 gpio_intr;
+	unsigned long flags;
+	void (*handlers[MAX_GPIO_LINE])(int);
 
-	// Clean System irq status
 	INTC_CLEAR_EDGE_TRIGGER_INTERRUPT(INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
-	INTC_INTERRUPT_MASK_REG |= (0x1 << INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
 
+	spin_lock_irqsave(&str9100_gpio_lock, flags);
 	str9100_gpio_read_intrmaskedstatus(&gpio_intr);
+	if (gpio_intr) {
+		str9100_gpio_write_intrclear(gpio_intr);
+	}
+	for (i = 0; i < MAX_GPIO_LINE; i++) {
+		handlers[i] = ((gpio_intr & (1 << i)) != 0) ? gpio_isr[i] : NULL;
+	}
+	spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 
 	if (gpio_intr) {
-		/* Clear active masked interrupt status before calling handler */
-		str9100_gpio_write_intrclear(gpio_intr);
-
 		for (i = 0; i < MAX_GPIO_LINE; i++) {
-			if ((gpio_intr & (1 << i)) && gpio_isr[i] != NULL) {
-				gpio_isr[i](i);
+			if (handlers[i] != NULL) {
+				handlers[i](i);
 			}
 		}
 	}
 
-	/* Unmask Intc Interrupt Status */
-	INTC_INTERRUPT_MASK_REG &= ~(0x1 << INTC_GPIO_EXTERNAL_INT_BIT_INDEX);
 	return IRQ_HANDLED;
 }
 
@@ -434,8 +435,10 @@ static irqreturn_t str9100_gpio_irq_handler(int this_irq, void *dev_id, struct p
 void str9100_gpio_set_edgeintr(void (*funcptr)(int),int trig_both,int trig_rising, int gpio_pin)
 {
 	u32 intrtmp;
+	unsigned long flags;
 	
 	if (gpio_pin >= 0 && gpio_pin < MAX_GPIO_LINE) {
+		spin_lock_irqsave(&str9100_gpio_lock, flags);
 		str9100_gpio_write_direction_bit(PIN_INPUT,gpio_pin);
 
 		/* Set Triggle Level */
@@ -458,10 +461,11 @@ void str9100_gpio_set_edgeintr(void (*funcptr)(int),int trig_both,int trig_risin
 
 		gpio_isr[gpio_pin] = funcptr;
 
-		// Enable Interrupt
+		/* Enable Interrupt */
 		str9100_gpio_read_intrenable(&intrtmp);
 		intrtmp |= (0x1 << gpio_pin);
 		str9100_gpio_write_intrenable(intrtmp);
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 	}
 }
 /*  
@@ -470,12 +474,15 @@ void str9100_gpio_set_edgeintr(void (*funcptr)(int),int trig_both,int trig_risin
 void str9100_gpio_clear_intr(int gpio_pin)
 {
 	u32 intrtmp;
+	unsigned long flags;
 	if (gpio_pin >= 0 && gpio_pin < MAX_GPIO_LINE) {
+		spin_lock_irqsave(&str9100_gpio_lock, flags);
 		gpio_isr[gpio_pin] = NULL;
-		// Disable Interrupt
+		/* Disable Interrupt */
 		str9100_gpio_read_intrenable(&intrtmp);
 		intrtmp &= ~( 0x1 << gpio_pin);
 		str9100_gpio_write_intrenable(intrtmp);
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 	}
 }
 
@@ -485,7 +492,9 @@ void str9100_gpio_clear_intr(int gpio_pin)
 void str9100_gpio_set_levelintr(void (*funcptr)(int),int trig_level, int gpio_pin)
 {
 	u32 intrtmp;
+	unsigned long flags;
 	if (gpio_pin >= 0 && gpio_pin < MAX_GPIO_LINE) {
+		spin_lock_irqsave(&str9100_gpio_lock, flags);
 		str9100_gpio_write_direction_bit(PIN_INPUT,gpio_pin);
 		/* Set Triggle Level */
 		str9100_gpio_read_intrtrigger(&intrtmp);
@@ -501,10 +510,11 @@ void str9100_gpio_set_levelintr(void (*funcptr)(int),int trig_level, int gpio_pi
 
 		gpio_isr[gpio_pin] = funcptr;
 
-		// Enable Interrupt
+		/* Enable Interrupt */
 		str9100_gpio_read_intrenable(&intrtmp);
 		intrtmp |= (0x1 << gpio_pin);
 		str9100_gpio_write_intrenable(intrtmp);
+		spin_unlock_irqrestore(&str9100_gpio_lock, flags);
 	}
 }
 EXPORT_SYMBOL(str9100_gpio_set_edgeintr);
@@ -544,8 +554,6 @@ void blinking_system_led(unsigned long gpio_onoff)
 		sysled_timer.data = led_on_off;
 		sysled_timer.function = blinking_system_led;
 	 	add_timer(&sysled_timer);
-	} else {
-		str9100_gpio_out_bit(GPIO_OFF, SYSTEM_LED_GPIO);	
 	}
 
 }

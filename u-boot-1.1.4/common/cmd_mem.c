@@ -349,17 +349,24 @@ int do_cksum_cmp (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
     printf("Bad magic number 0x%08.8x(0x%08.8x)\n", phead->magic, MAGIC);
     return(1);
   }
-#ifdef DO_FULL_CRC_CHECK
-  // compute crc32
-  crc= crc32(0, paddr1 + (sizeof (header)), phead->pcksum2 - sizeof (header));
+  if (phead->pcksum2 < sizeof(header) || (phead->pcksum2 & 3) != 0 ||
+      phead->pcksum2 > (0x3A0000 - 16)) {
+    printf("Bad header size 0x%08.8x\n", phead->pcksum2);
+    return(1);
+  }
+  if (phead->cksum == 0 || phead->cksum == 0xFFFFFFFF) {
+    printf("Bad checksum 0x%08.8x\n", phead->cksum);
+    return(1);
+  }
+  /* compute crc32 over entire image payload */
+  crc= crc32(0, (uchar *)(paddr1 + sizeof(header)), phead->pcksum2 - sizeof(header));
 
-  // check if the crc32 is correct
+  /* check if the crc32 is correct */
   if (crc != phead->cksum) {
     printf("Bad checksum 0x%08.8x(0x%08.8x)\n", crc, phead->cksum);
     return(1);
   }
-#endif
-  // check if the header and trailer checksum are identical
+  /* check if the header and trailer checksum are identical */
   cksum2= *(unsigned int *)&paddr1[phead->pcksum2+12];
   if(cksum2 != phead->cksum) {
     rcode= 1;

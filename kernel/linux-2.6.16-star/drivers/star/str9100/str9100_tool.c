@@ -47,6 +47,9 @@
 #include <asm/io.h>
 #include <asm/system.h>
 #include <linux/delay.h>
+#ifdef CONFIG_MTD
+#include <linux/mtd/mtd.h>
+#endif
 
 
 
@@ -98,20 +101,30 @@ struct proc_dir_entry *create_proc_str9100(const char* proc_str)
 
 void copy_from_flash(unsigned long from, void *to,ssize_t len)
 {   
-        int i;  
-        u8 *dest = (u8*)to;
-        u16 data;
-        unsigned long remap = (unsigned long)ioremap(FLASH_BASE_ADDR,FLASH_SIZE);
-        u16 *src = (u16 *)(remap + from);
+	int i;
+	u8 *dest = (u8*)to;
+	u16 data;
+	void __iomem *remap;
+	u16 *src;
 
-        for(i = 0; i < (len / 2);i++){
-                data = src[i];
-                dest[i * 2] = B0(data);
-                dest[i * 2 + 1] = B1(data);
+	if (!to || len <= 0 || from >= FLASH_SIZE ||
+	    (unsigned long)len > (FLASH_SIZE - from)) {
+		return;
+	}
+	remap = ioremap(FLASH_BASE_ADDR, FLASH_SIZE);
+	if (!remap) {
+		return;
+	}
+	src = (u16 *)((unsigned long)remap + from);
 
-        }
-        if(len & 1)
-                dest[len - 1] = B0(src[i]);
+	for(i = 0; i < (len / 2);i++){
+		data = src[i];
+		dest[i * 2] = B0(data);
+		dest[i * 2 + 1] = B1(data);
+
+	}
+	if(len & 1)
+		dest[len - 1] = B0(src[i]);
 	iounmap(remap);
 }
 
@@ -162,32 +175,56 @@ char *get_flash_env(const char *env_name)
 {
 	const int ENV_SIZE = 0x8000;
 	unsigned long from = 0x20000;
+	static char env_val[256];
+	u8 *remap;
+	volatile u8 *src;
+	int i;
+	size_t name_len;
 
-	u8 *remap = ioremap(FLASH_BASE_ADDR, FLASH_SIZE);
-	volatile u8 *src = (volatile u8 *)(remap + from);
-
-	char *str_p = env_name;
-	char *beg_p = src;
-	char *p;
-
-	while (1) {
-		p = strstr(beg_p, str_p);
-		if (p) { // found
-			char *asign_p = strchr(p, '=');
-			if (asign_p) {
-				iounmap(remap);
-				return asign_p + 1;
-			} else
-				break; // should not this case
-		} else {
-			++beg_p;
-		}
-		if (p > (src + ENV_SIZE)) {
-			break;
-		}
+	if (!env_name || !env_name[0]) {
+		return NULL;
 	}
-        iounmap(remap);
-	return 0; // not found
+	remap = ioremap(FLASH_BASE_ADDR, FLASH_SIZE);
+	if (!remap) {
+		return NULL;
+	}
+	src = (volatile u8 *)(remap + from);
+	name_len = strlen(env_name);
+
+	/* Skip 4-byte CRC header and scan NUL-delimited U-Boot env strings */
+	i = 4;
+	while (i < ENV_SIZE && src[i] != '\0') {
+		int start = i;
+		int match = 1;
+		size_t k;
+
+		for (k = 0; k < name_len; k++) {
+			if (i >= ENV_SIZE || (char)src[i] != env_name[k]) {
+				match = 0;
+				break;
+			}
+			i++;
+		}
+		if (match && i < ENV_SIZE && src[i] == '=') {
+			int v = 0;
+			i++;
+			while (i < ENV_SIZE && src[i] != '\0' &&
+			       v < (int)(sizeof(env_val) - 1)) {
+				env_val[v++] = (char)src[i++];
+			}
+			env_val[v] = '\0';
+			iounmap(remap);
+			return env_val;
+		}
+		i = start;
+		while (i < ENV_SIZE && src[i] != '\0') {
+			i++;
+		}
+		i++;
+	}
+
+	iounmap(remap);
+	return NULL;
 }
 
 #endif
@@ -255,37 +292,22 @@ const char *get_flash_type(volatile u16 *saddr)
 #ifdef LINUX26
 const char *get_flash_type(void)
 {
-	u8 *remap = ioremap(FLASH_BASE_ADDR, FLASH_SIZE);
-	volatile u16 *saddr = (volatile u16 *)remap;
-	u16 mid;
-	u16 did;
-	int name_index = 0;
-	const char *flash_name[] = {
-		0,
-		"EON_EN29LV640HL(8MB)",
-		"MXIC_MX29LV640BT(8MB)"
-	};
+#ifdef CONFIG_MTD
+	struct mtd_info *mtd;
+	static char flash_type[64];
 
-	/* Write auto select command: read Manufacturer ID */
-	saddr[0x555] = 0xAA;
-	saddr[0x2AA] = 0x55;
-	saddr[0x555] = 0x90;
-
-	mid = saddr[0];
-	did = saddr[1];
-
-	if (((mid & 0xffff) == 0x007f) && ((did & 0xFFFF) == 0x227e) ) // "EON_EN29LV640HL(8MB)"
-		name_index=1;
-	if (((mid & 0xffff) == 0x00c2) && ((did & 0xFFFF) == 0x22c9) ) // "MXIC_MX29LV640BT(8MB)"
-		name_index=2;
-
-	/* reset to read mode */
-	saddr[0] = 0xF0; /* reset the bank */
-	udelay(1000);
-
-	iounmap(remap);
-
-	return flash_name[name_index];
+	mtd = get_mtd_device(NULL, 0);
+	if (!mtd) {
+		return "Unknown";
+	}
+	snprintf(flash_type, sizeof(flash_type), "%s (%luKB)",
+		 mtd->name ? mtd->name : "NOR Flash",
+		 (unsigned long)(mtd->size >> 10));
+	put_mtd_device(mtd);
+	return flash_type;
+#else
+	return "Unknown";
+#endif
 }
 #endif
 

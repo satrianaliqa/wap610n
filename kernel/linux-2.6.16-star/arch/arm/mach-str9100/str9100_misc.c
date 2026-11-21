@@ -31,6 +31,7 @@
 #include <linux/proc_fs.h>
 #include <asm/mach/map.h>
 #include <asm/hardware.h>
+#include <asm/uaccess.h>
 
 #include <linux/delay.h>
 #include "star_gsw_phy.h"
@@ -227,18 +228,15 @@ u32 str9100_query_map_desc_by_vir(u32 addr)
 static int star_reg_debug_read_proc(char *buffer, char **start, off_t offset,
 	int length, int *eof, void *data)
 {
-	int count;
 	int num = 0;
 
-	if (str9100_reg_debug_cmd_buf[0]) {
-		count = strlen(str9100_reg_debug_cmd_buf);
-		sprintf(buffer, str9100_reg_debug_cmd_buf, count);
-		num += count;
+	if (str9100_reg_debug_cmd_buf[0] && num < length) {
+		num += snprintf(buffer + num, length - num, "%s",
+				str9100_reg_debug_cmd_buf);
 	}
-	if (str9100_reg_debug_result_buf[0]) {
-		count = strlen(str9100_reg_debug_result_buf);
-		sprintf(buffer + num, str9100_reg_debug_result_buf, count);
-		num += count;
+	if (str9100_reg_debug_result_buf[0] && num < length) {
+		num += snprintf(buffer + num, length - num, "%s",
+				str9100_reg_debug_result_buf);
 	}
 
 	return num;
@@ -435,11 +433,18 @@ static int
 star_reg_debug_write_proc(struct file *file, const char __user *buffer,
 	unsigned long count, void *data)
 {
+	char kbuf[128];
 	char *str;
 	char *cmd;
+	size_t len;
 
 	if (count > 0) {
-		str = (char *)buffer,
+		len = (count >= sizeof(kbuf)) ? (sizeof(kbuf) - 1) : count;
+		if (copy_from_user(kbuf, buffer, len)) {
+			return -EFAULT;
+		}
+		kbuf[len] = '\0';
+		str = kbuf;
 		cmd = strsep(&str, "\t \n");
 		if (!cmd) goto err_out;
 		if (strcmp(cmd, "dump") == 0) {

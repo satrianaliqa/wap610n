@@ -290,6 +290,11 @@ int do_check_restore_default ( cmd_tbl_t *cmdtp, int flag, int argc, char *argv[
 	int rcode,i;
 	int gpio; //gpio index of Restore Default button
 	/* Read Restore Default gpio*/
+	if (argc < 2)
+	{
+		printf ("Usage:\n%s\n", cmdtp->usage);
+		return 1;
+	}
 	gpio = simple_strtoul(argv[1], NULL, 10);
     if (gpio < 0 || gpio > 20)
 	{

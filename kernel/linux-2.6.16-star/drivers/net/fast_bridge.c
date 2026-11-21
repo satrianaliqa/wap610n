@@ -53,6 +53,7 @@
 #include <asm/bitops.h>
 #include <asm/io.h>
 #include <asm/irq.h>
+#include <asm/uaccess.h>
 #include <linux/capability.h>
 #include <linux/in.h>
 #include <linux/ip.h>
@@ -129,11 +130,7 @@ int fast_bridge_forward_skb(struct sk_buff *skb)
 	}
 	skb->ip_summed = CHECKSUM_NONE;
 	skb_push(skb, ETH_HLEN);
-#if 0
 	dev_queue_xmit(skb);
-#else
-	skb->dev->hard_start_xmit(skb, skb->dev);
-#endif
 
 	return 0;
 }
@@ -145,25 +142,46 @@ int fast_bridge_read_proc(char *page, char **start, off_t off, int count, int *e
 
 int fast_bridge_write_proc(struct file *file, const char *buffer, unsigned long count, void *data)
 {
+	char kbuf[64];
 	char *str;
 	char *dev1;
 	char *dev2;
+	struct net_device *new_dev1;
+	struct net_device *new_dev2;
+	size_t len;
 
 	if (count > 0) {
-		str = (char *)buffer;
+		len = (count >= sizeof(kbuf)) ? (sizeof(kbuf) - 1) : count;
+		if (copy_from_user(kbuf, buffer, len)) {
+			return -EFAULT;
+		}
+		kbuf[len] = '\0';
+		str = kbuf;
 		dev1 = strsep(&str, "\t \n");
 		if (!dev1) goto out;
 		dev2 = strsep(&str, "\t \n");
 		if (!dev2) goto out;
-		fast_bridge_dev1 = dev_get_by_name(dev1);
-		if (!fast_bridge_dev1) goto out;
+		new_dev1 = dev_get_by_name(dev1);
+		if (!new_dev1) goto out;
 
-		fast_bridge_dev2 = dev_get_by_name(dev2);
-		if (!fast_bridge_dev2) {
-			dev_put(fast_bridge_dev1);
+		new_dev2 = dev_get_by_name(dev2);
+		if (!new_dev2) {
+			dev_put(new_dev1);
 			goto out;
 		}
 		rtnl_shlock();
+		fast_bridge_dev1_ready = 0;
+		fast_bridge_dev2_ready = 0;
+		if (fast_bridge_dev1) {
+			dev_put(fast_bridge_dev1);
+			fast_bridge_dev1 = NULL;
+		}
+		if (fast_bridge_dev2) {
+			dev_put(fast_bridge_dev2);
+			fast_bridge_dev2 = NULL;
+		}
+		fast_bridge_dev1 = new_dev1;
+		fast_bridge_dev2 = new_dev2;
 		if (!(fast_bridge_dev1->flags & IFF_UP)) {
 			dev_open(fast_bridge_dev1);
 		}
@@ -176,6 +194,7 @@ int fast_bridge_write_proc(struct file *file, const char *buffer, unsigned long 
 		if (!(fast_bridge_dev2->flags & IFF_PROMISC)) {
 			dev_set_promiscuity(fast_bridge_dev2, 1);
 		}
+		wmb();
 		fast_bridge_dev1_ready = 1;
 		fast_bridge_dev2_ready = 1;
 		rtnl_shunlock();
@@ -205,7 +224,19 @@ static int __init fast_bridge_init_module(void)
 
 static void __exit fast_bridge_exit_module(void)
 {
-
+	rtnl_shlock();
+	fast_bridge_dev1_ready = 0;
+	fast_bridge_dev2_ready = 0;
+	if (fast_bridge_dev1) {
+		dev_put(fast_bridge_dev1);
+		fast_bridge_dev1 = NULL;
+	}
+	if (fast_bridge_dev2) {
+		dev_put(fast_bridge_dev2);
+		fast_bridge_dev2 = NULL;
+	}
+	rtnl_shunlock();
+	remove_proc_entry("fast_bridge", NULL);
 }
 
 module_init(fast_bridge_init_module);

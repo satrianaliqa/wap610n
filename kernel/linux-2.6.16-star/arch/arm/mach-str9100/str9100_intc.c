@@ -77,7 +77,7 @@ static inline void str9100_set_irq_mode(unsigned int irq, unsigned int mode)
 {
 	unsigned int val;
 
-	if (irq < 0 || irq > NR_IRQS) {
+	if (irq >= NR_IRQS) {
 		return;
 	}
 
@@ -108,7 +108,7 @@ static inline void str9100_set_irq_level(unsigned int irq, unsigned int level)
 {
 	unsigned int val;
 
-	if (irq < 0 || irq > NR_IRQS) {
+	if (irq >= NR_IRQS) {
 		return;
 	}
 
@@ -146,11 +146,26 @@ void str9100_set_interrupt_trigger(unsigned int irq, unsigned int mode, unsigned
 EXPORT_SYMBOL(str9100_set_interrupt_trigger);
 
 /*
+ * Ack/Mask this interrupt source
+ */
+static void str9100_ack_irq(unsigned int irq)
+{
+	if (irq >= NR_IRQS) {
+		return;
+	}
+	INTC_INTERRUPT_MASK_REG |= (1UL << irq);
+	INTC_INTERRUPT_CLEAR_EDGE_TRIGGER_REG = (1UL << irq);
+}
+
+/*
  * Mask/Disable this interrupt source
  */
 static void str9100_mask_irq(unsigned int irq)
 {
-	// Mask/Disable this interrupt source
+	if (irq >= NR_IRQS) {
+		return;
+	}
+	/* Mask/Disable this interrupt source */
 	INTC_INTERRUPT_MASK_REG |= (1UL << irq);
 }
 
@@ -159,15 +174,15 @@ static void str9100_mask_irq(unsigned int irq)
  */
 static void str9100_unmask_irq(unsigned int irq)
 {
-	// Clear interrupt status of the interrupt source which is edge-triggered
-	INTC_INTERRUPT_CLEAR_EDGE_TRIGGER_REG |= (1UL << irq);
-
-	// Mask/Disable this interrupt source
+	if (irq >= NR_IRQS) {
+		return;
+	}
+	/* Un-Mask/Enable this interrupt source */
 	INTC_INTERRUPT_MASK_REG &= ~(1UL << irq);
 }
 
 struct irqchip str9100_irqchip = {
-	.ack	= str9100_mask_irq,
+	.ack	= str9100_ack_irq,
 	.mask	= str9100_mask_irq,
 	.unmask	= str9100_unmask_irq,
 };

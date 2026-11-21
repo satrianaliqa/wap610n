@@ -82,14 +82,16 @@ int do_led (cmd_tbl_t *cmdtp, int flag, int argc, char *argv[])
 	int i;
 	int led =0, state=0, duration =5; //Default 
 	/* Read Led index, state (on/off/blink) and duration if exist*/
-	if (argc > 1)
+	if (argc < 3)
 	{
-		led = simple_strtoul(argv[1], NULL, 10);
-		state = simple_strtoul(argv[2], NULL, 10);
-		if (argc > 3)
-		{
-			duration = simple_strtoul(argv[3], NULL, 10);
-		}
+		printf ("Usage:\n%s\n", cmdtp->usage);
+		return 1;
+	}
+	led = simple_strtoul(argv[1], NULL, 10);
+	state = simple_strtoul(argv[2], NULL, 10);
+	if (argc > 3)
+	{
+		duration = simple_strtoul(argv[3], NULL, 10);
 	}
     if (led < 0 || led > 20)
 	{

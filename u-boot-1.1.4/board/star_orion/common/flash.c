@@ -138,11 +138,13 @@ static ulong flash_get_size(vu_long *addr, flash_info_t *info)
 		info->flash_id = FLASH_MAN_MX;
 		break;
 	case (EON_MANUFACT & 0xFFFF):
+	case 0x001C:
 		printf("Flash Manufacturer: EON\n");
 		info->flash_id = FLASH_MAN_EON;
 		break;
 	default:
 		printf("Flash Manufacturer: Unknown(0x%lx)\n", mid);
+		saddr[0] = 0xF0; /* reset flash to read mode */
 		info->flash_id = FLASH_UNKNOWN;
 		info->sector_count = 0;
 		info->size = 0;
@@ -151,6 +153,21 @@ static ulong flash_get_size(vu_long *addr, flash_info_t *info)
 
 	did = saddr[1];
 	switch (did) {
+	case (AMD_ID_LV320B & 0xFFFF):
+		printf("Flash Device: EN29LV320BB(4MB)\n");
+		info->flash_id += FLASH_AMLV320B;
+		info->sector_count = 71;
+		info->size = 0x00400000;
+		memset(info->protect, 0, 71);
+		for (i = 0; i < 8; i++) {
+			info->start[i] = base;
+			base += 0x00002000;
+		}
+		for (; i < info->sector_count; i++) {
+			info->start[i] = base;
+			base += 0x00010000;
+		}
+		break;
 	case (SPANSION_ID_S29GL064A):
 		printf("Flash Device: S29GL064A(8MB)\n");
 		info->flash_id += FLASH_S29GL064A;
@@ -209,7 +226,10 @@ static ulong flash_get_size(vu_long *addr, flash_info_t *info)
 		break;
 	default:
 		printf("Flash Device: Unknown(0x%lx)\n", did);
+		saddr[0] = 0xF0; /* reset flash to read mode */
 		info->flash_id = FLASH_UNKNOWN;
+		info->sector_count = 0;
+		info->size = 0;
 		return (0);				/* => no or unknown flash */
 		break;
 	}
@@ -242,7 +262,7 @@ int flash_erase(flash_info_t *info, int s_first, int s_last)
 		return (ERR_UNKNOWN_FLASH_TYPE);
 	}
 
-	if ((s_first < 0) || (s_first > s_last)) {
+	if ((s_first < 0) || (s_first > s_last) || (s_last >= info->sector_count)) {
 		printf("- No sectors to erase\n");
 		return (ERR_INVAL);
 	}
@@ -290,21 +310,23 @@ int flash_erase(flash_info_t *info, int s_first, int s_last)
 
 				result = saddr_s[0];
 
-				if (result & 0x8080) {
+				if (result & 0x0080) {
 					break;
 				}
-				if (result & 0x2020) {
+				if (result & 0x0020) {
 					rc = ERR_PROG_ERROR;
 					break;
 				}
 			} while (!rc);
 
-			saddr[0xAAA] = 0x0F;
+			saddr[0] = 0xF0; /* reset bank to read mode */
 
 			if (rc == ERR_OK) {
 				printf("OK\n");
 			} else {
-				printf("Failed");
+				printf("Failed\n");
+				if (flag)
+					enable_interrupts();
 				return (rc);
 			}
 		}
@@ -436,8 +458,9 @@ static int write_word(flash_info_t *info, ulong dest, ulong data)
 
 	/* data polling for D7 */
 	reset_timer_masked();
-	while ((*((vu_short *)dest) & 0x8080) != (sdata & 0x8080)) {
+	while ((*((vu_short *)dest) & 0x0080) != (sdata & 0x0080)) {
 		if (get_timer_masked() > CFG_FLASH_WRITE_TOUT) {
+			saddr[0] = 0xF0;
 			return (ERR_TIMOUT);
 		}
 	}
@@ -460,8 +483,9 @@ static int write_word(flash_info_t *info, ulong dest, ulong data)
 
 	/* data polling for D7 */
 	reset_timer_masked();
-	while ((*((vu_short *)dest + 1) & 0x8080) != (sdata & 0x8080)) {
+	while ((*((vu_short *)dest + 1) & 0x0080) != (sdata & 0x0080)) {
 		if (get_timer_masked() > CFG_FLASH_WRITE_TOUT) {
+			saddr[0] = 0xF0;
 			return (ERR_TIMOUT);
 		}
 	}
