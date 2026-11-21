@@ -90,15 +90,15 @@ Jika ingin mengompilasi secara lokal di Linux (menggunakan Docker atau Podman):
 ./docker/compile.sh WAP610N
 ```
 
-Hasil biner firmware akan tersedia di folder `output/`:
-- `output/WAP610N_v1.0.08.bin` (~2.71 MB) - Binary firmware utama siap flash via Web UI pabrikan.
+Hasil biner firmware akan tersedia di folder `output/` (versi mengikuti `config/WAP610N_VERSION`, contoh `v1.0.05`):
+- `output/WAP610N_v1.0.05.bin` (~2.71 MB) - Binary firmware utama siap flash via Web UI pabrikan.
 - `output/bootpImage` (~2.71 MB) - File standar bootloader U-Boot TFTP.
 - `output/ramdisk_2.6.16.img.lzma` (~2.0 MB) - Root filesystem ramdisk.
 - `output/System.map` (384 KB) - Simbol fungsi kernel.
 
 ---
 
-## 🚀 Fitur Unggulan Firmware v1.0.08 Enhanced
+## 🚀 Fitur Unggulan Firmware Enhanced
 
 1. **🔐 Remote Terminal Diagnostics (SSH & Telnet)**:
    - **Dropbear SSH Server v0.52** otomatis aktif di port `22` lengkap dengan dukungan transfer file aman `scp`.
@@ -108,7 +108,7 @@ Hasil biner firmware akan tersedia di folder `output/`:
 3. **💾 One-Click Live MTD Flash Dumper di Web UI**:
    - Menu **Administration -> Firmware Upgrade** menyediakan dump `/dev/mtdblock0` untuk seluruh NOR, `/dev/mtdblock2` untuk kernel+ramdisk, dan `/dev/mtdblock4` untuk config.
 4. **⚡ Hardware & Memory Tuning untuk RAM 32MB**:
-   - Optimasi TCP/UDP socket buffer (`256 KB`), antrian paket (`netdev_max_backlog = 1000`), dan VFS cache pressure (`50`) untuk streaming stabil tanpa packet loss.
+   - Optimasi TCP/UDP socket buffer (`rmem_default=65536`, `rmem_max=262144`), antrian paket (`netdev_max_backlog = 1000`), `min_free_kbytes = 2048`, dan `vfs_cache_pressure = 150`.
    - Perbaikan manajemen GPIO LED untuk indikator hijau stabil.
 
 ---
@@ -118,11 +118,11 @@ Hasil biner firmware akan tersedia di folder `output/`:
 Jalankan sanity check kapan saja terhadap biner yang dihasilkan:
 
 ```bash
-./docker/verify-firmware.sh output/WAP610N_v1.0.08.bin
+./docker/verify-firmware.sh output/WAP610N_v1.0.05.bin
 ```
 
 Pemeriksaan meliputi:
-- ✅ Ukuran partisi flash $\le 3.62\text{ MB}$.
+- ✅ Ukuran partisi flash $\le 3.625\text{ MB}$ (`3,801,088` bytes / `0x3A0000`).
 - ✅ Validasi 32-Byte Header CRC dan Device ID (`0x0012`).
 - ✅ Pengecekan isi ramdisk loop-mount (`/dev/console`, `ld-uClibc`, `/sbin/init -> busybox`).
 
@@ -131,7 +131,7 @@ Pemeriksaan meliputi:
 ## ⚡ Metode Flashing & Unbricking
 
 ### Flashing via Web GUI (Paling Mudah)
-Masuk ke `http://192.168.1.1` (atau `http://192.168.1.226`) -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.08.bin`.
+Masuk ke `http://192.168.1.1` (default static AP IP) -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.05.bin`.
 
 ### Flashing via U-Boot TFTP (LAN)
 ```text
@@ -148,9 +148,10 @@ reset
 ### Flashing via UART Serial Kermit (`loadb`)
 ```text
 loadb 0x100000
-# Kirim WAP610N_v1.0.08.bin via Kermit Protocol
-erase 0x10040000 +0x2DFD00
-cp.b 0x100000 0x10040000 0x2DFD00
+# Kirim WAP610N_v1.0.05.bin (atau bootpImage) via Kermit Protocol
+cksum 0x100000
+erase 0x10040000 +$filesize
+cp.b 0x100000 0x10040000 $filesize
 cksum 0x10040000
 reset
 ```
@@ -186,5 +187,5 @@ reset
 ## 🗺️ Roadmap Modifikasi
 
 - [x] **Fase 1 (Selesai)**: Baseline WAP610N stabil, unbricked, kernel 2.6.16 + uClibc + Web GUI.
-- [ ] **Fase 2**: Integrasi Dropbear SSH Server, upgrade applet BusyBox (`curl`, `htop`, `tcpdump`), interactive serial shell.
+- [x] **Fase 2 (Selesai)**: Integrasi Dropbear SSH Server + `scp`, SSH key persistence (`/mnt/jffs2/dropbear`), CLI diagnostic applets (`sysmon`, `curl`, `json`, `nettest`, `flashdump`, `help`), dan stabilisasi 8-domain lengkap (GoAhead WebServer C, WebUI ASP/JS/Tcl, runtime init/WPS/ConfigFS, kernel/U-Boot/native C, build pipeline, dan `firmware-flasher`).
 - [ ] **Fase 3**: Tuning driver Metalink `mtlk.ko` (Unlocking DFS 5GHz channel & TX power override).
