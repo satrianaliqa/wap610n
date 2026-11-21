@@ -102,6 +102,23 @@ if {[file exists $wpa_supplicant_conf_file]} {
 
 # Save the settings to flash - needed on platforms without jffs2 fs
 if {$Set_security_only == 0} {
+	# Apply runtime ChannelBonding change immediately when saving WebUI Basic Wireless Settings
+	set cb_proc "/proc/sys/dev/mtlk/wlan${wlan_index}/ChannelBonding"
+	set cfg_cb [string trim [get_parameter "ChannelBonding"]]
+	if {($cfg_cb == "0" || $cfg_cb == "1") && [file exists $cb_proc]} {
+		set cur_cb ""
+		catch {set cur_cb [string trim [exec cat $cb_proc]]}
+		if {$cur_cb != "" && $cur_cb != $cfg_cb} {
+			catch {exec ifconfig "wlan${wlan_index}" down}
+			catch {
+				set cbfp [open $cb_proc w]
+				puts $cbfp $cfg_cb
+				close $cbfp
+			}
+			catch {exec ifconfig "wlan${wlan_index}" up}
+		}
+	}
+
 	if {[catch {set ret [exec which config_umount.sh]}] == 0 && $ret != "" } {
 		exec config_umount.sh
 		exec config_mount.sh

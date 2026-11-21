@@ -57,6 +57,7 @@ function basicDisplay(value) {
 	//objectDisplay("configTypeField", value);
 	//objectDisplay("configTypeSeparate", value);
 	objectDisplay("freqBand", value);
+	objectDisplay("channelWidthField", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -84,6 +85,7 @@ function mainDisplay(value) {
 	objectDisplay("configTypeField", value);
 	objectDisplay("configTypeSeparate", value);
 	objectDisplay("freqBand", value);
+	objectDisplay("channelWidthField", value);
 	objectDisplay("ESSIDFeild", value);
 	objectDisplay("securityModeField", value);
 	objectDisplay("RFSetSeparate", value);
@@ -525,6 +527,16 @@ function page_load() {
 				}
 			}
 		}
+		var cbEl = document.getElementById("channelBounding");
+		if (cbEl) {
+			var targetCb = (channelBonding == "1") ? "1" : "0";
+			for (var cbIdx = 0; cbIdx < cbEl.options.length; cbIdx++) {
+				if (cbEl.options[cbIdx].value == targetCb) {
+					cbEl.options[cbIdx].selected = true;
+					break;
+				}
+			}
+		}
 		document.getElementById("display_ESSID").value = transSSID(ESSID);
 	}
 	else
@@ -695,12 +707,22 @@ function page_load() {
 							<input type="hidden" id="wpaPskFormat" name="wpaPskFormat" value="">
 							<input type="hidden" id="country" name="country" value="<% getParam(1, "Country"); %>">
 							<input type="hidden" id="channel" name="channel" value="<% getParam(1, "Channel"); %>">
-							<input type="hidden" id="channelBounding" name="channelBounding" value="<% getParam(1, "ChannelBonding"); %>">
 							<input type="hidden" id="upperLower" name="upperLower" value="<% getParam(1, "UpperLowerChannelBonding"); %>">
 							<select id="frequencyBand" name="frequencyBand" onchange="selectRFBand();">
 								<option id="5GHz" value="0">5 GHz (802.11a/n)</option>
 								<option id="2.4GHz" value="1">2.4 GHz (802.11b/g/n)</option>
 							</select>						</td>
+					</tr>
+					<tr id="channelWidthField">
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">Channel Width:</td>
+						<td class="tdContent">
+							<select id="channelBounding" name="channelBounding">
+								<option value="0">20 MHz (Recommended)</option>
+								<option value="1">40 MHz (20/40 Auto)</option>
+							</select>
+						</td>
 					</tr>
 					<tr id="ESSIDFeild">
 						<td class="subMenuSubContent"></td>

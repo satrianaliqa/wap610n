@@ -364,6 +364,15 @@ void MT_WriteRedirectScript(webs_t wp, char_t* newUrl)
 
 }
 
+static void writeProcOrFlagFile(const char *filePath, const char *val)
+{
+	FILE *f = fopen(filePath, "w");
+	if (f != NULL) {
+		fputs(val, f);
+		fclose(f);
+	}
+}
+
 /*******************************************************************************
 *
 * upldForm - GoForm procedure to handle file uploads for upgrading device
@@ -991,16 +1000,16 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 			gMTBurnParams.precentComplete = 0;
 			wp->postData = NULL;
 
-			system("echo 2 > /dev/gpio2");
-			doSystem("killall upnpd");
-			doSystem("killall udhcpc");
-			doSystem("cd /root/mtlk/etc/; /root/mtlk/etc/mtlk_wps_cmd.tcl stop");
-			doSystem("killall wpa_supplicant");
-			doSystem("kill `ps |grep 'mtlk_pbc_reboot.sh'|grep -v 'grep'|awk '{print $1}'`");
-			doSystem("kill `ps |grep 'WPS_PBC.sh'|grep -v 'grep'|awk '{print $1}'`");
-			doSystem("echo 1 > /var/firmware_upgrading");
+			/* Write GPIO/flag directly and batch daemon shutdown into one shell call
+			 * to avoid repeated fork() spikes under -lpthread while holding ~3.8 MB. */
+			writeProcOrFlagFile("/dev/gpio2", "2\n");
+			writeProcOrFlagFile("/var/firmware_upgrading", "1\n");
+			doSystem("killall upnpd udhcpc wpa_supplicant >/dev/null 2>&1; "
+				"pkill -f '[m]tlk_upnpd_monitor\\.sh|[m]tlk_pbc_reboot\\.sh|[W]PS_PBC\\.sh' >/dev/null 2>&1; "
+				"cd /root/mtlk/etc && ./mtlk_wps_cmd.tcl stop >/dev/null 2>&1");
 
 			if (pthread_create(&gBurnThread, NULL, &MT_BurnAndVerifyImage, NULL) != 0) {
+				unlink("/var/firmware_upgrading");
 				gMTBurnParams.burnState = error_e;
 				gMTBurnParams.precentComplete = -1;
 				gsprintf(gMTBurnParams.errorMessage, T("Error : Failed to start burn thread<br>"));
@@ -1016,8 +1025,13 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
     
 #endif
 	printf("BurnImage: gMTBurnParams.precentComplete:%d\n", gMTBurnParams.precentComplete);
-	doSystem("echo \"BurnImage: gMTBurnParams.precentComplete:%d(pid=%d)\" > /dev/console", gMTBurnParams.precentComplete, getpid());
-	doSystem("ps | grep webs");
+	{
+		FILE *conFp = fopen("/dev/console", "w");
+		if (conFp != NULL) {
+			fprintf(conFp, "BurnImage: gMTBurnParams.precentComplete:%d(pid=%d)\n", gMTBurnParams.precentComplete, getpid());
+			fclose(conFp);
+		}
+	}
 	if (wp->postData != NULL)
 	{
 		if (wp->flags & WEBS_SYS_MALLOC_POST) {
