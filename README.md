@@ -133,6 +133,12 @@ Pemeriksaan meliputi:
 ### Flashing via Web GUI (Paling Mudah)
 Masuk ke `http://192.168.1.1` (default static AP IP) -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.05.bin`.
 
+### Default Akses & Setup Plug-and-Play
+- **Wi-Fi Default**: SSID `linksys` (2.4 GHz Open), DHCP server aktif (`192.168.1.10–192.168.1.20`), DNS `1.1.1.1` / `8.8.8.8`.
+- **WebUI**: `http://192.168.1.1` (`admin` / `admin`)
+- **SSH (Port 22) / Telnet (Port 23) / Serial UART**: `root` / `admin` (key persisten dapat ditaruh di `/mnt/jffs2/dropbear/authorized_keys` lalu jalankan `/bin/config_save.sh`).
+- **Koneksi ke Router Utama**: buka **Setup -> Network Setup** di WebUI lalu pilih **Automatic Configuration - DHCP** (jika router utama memakai DHCP server), atau isi **Default Gateway** sesuai IP router utama (jika terhubung ke port static tanpa DHCP server). Upgrade firmware pada `mtdblock2` menjaga konfigurasi `/mnt/jffs2` (`mtdblock4`) tetap utuh.
+
 ### Flashing via U-Boot TFTP (LAN)
 ```text
 setenv serverip 192.168.1.100

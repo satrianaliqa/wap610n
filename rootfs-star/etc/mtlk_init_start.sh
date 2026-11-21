@@ -34,6 +34,12 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 				fi
 				[ -f "/etc/dropbear/$keyname" ] && chmod 600 "/etc/dropbear/$keyname" 2>/dev/null || true
 			done
+			if [ -f /mnt/jffs2/dropbear/authorized_keys ]; then
+				mkdir -p /root/.ssh 2>/dev/null || true
+				chmod 700 /root /root/.ssh 2>/dev/null || true
+				cp -f /mnt/jffs2/dropbear/authorized_keys /root/.ssh/authorized_keys 2>/dev/null || true
+				chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
+			fi
 			if ! pidof dropbear >/dev/null 2>&1; then
 				$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 				/usr/sbin/dropbear -p 22 >/dev/null 2>&1 &

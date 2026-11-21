@@ -95,14 +95,18 @@ if [ "$IP_CONFIG_METHOD" = "1" ]; then
 		route add default gw "$DEFAULT_GW" dev br0 2>/dev/null || true
 	fi
 	: > /tmp/resolv.conf
-	if [ -n "$DNS1" ] && [ "$DNS1" != "0.0.0.0" ]; then
+	if [ -n "$DNS1" ] && [ "$DNS1" != "0.0.0.0" ] && [ "$DNS1" != "$IP_LAN" ]; then
 		echo "nameserver $DNS1" >> /tmp/resolv.conf
 	fi
-	if [ -n "$DNS2" ] && [ "$DNS2" != "0.0.0.0" ] && [ "$DNS2" != "$DNS1" ]; then
+	if [ -n "$DNS2" ] && [ "$DNS2" != "0.0.0.0" ] && [ "$DNS2" != "$IP_LAN" ] && [ "$DNS2" != "$DNS1" ]; then
 		echo "nameserver $DNS2" >> /tmp/resolv.conf
 	fi
-	if [ ! -s /tmp/resolv.conf ] && [ -n "$DEFAULT_GW" ] && [ "$DEFAULT_GW" != "0.0.0.0" ]; then
+	if [ ! -s /tmp/resolv.conf ] && [ -n "$DEFAULT_GW" ] && [ "$DEFAULT_GW" != "0.0.0.0" ] && [ "$DEFAULT_GW" != "$IP_LAN" ]; then
 		echo "nameserver $DEFAULT_GW" >> /tmp/resolv.conf
+	fi
+	if [ ! -s /tmp/resolv.conf ]; then
+		echo "nameserver 1.1.1.1" >> /tmp/resolv.conf
+		echo "nameserver 8.8.8.8" >> /tmp/resolv.conf
 	fi
 fi
 
