@@ -31,41 +31,49 @@ function check_prerequisites() {
     # Check Python pyserial
     if ! python3 -c "import serial" 2>/dev/null; then
         echo -e "${YELLOW}[!] Python 'pyserial' belum terpasang. Menginstall via pip...${NC}"
-        pip install pyserial 2>/dev/null || sudo pacman -S --noconfirm python-pyserial 2>/dev/null || sudo apt-get install -y python3-serial 2>/dev/null
-    fi
-
-    # Check /dev/ttyUSB permissions
-    if ls /dev/ttyUSB* 1>/dev/null 2>&1; then
-        sudo chmod 666 /dev/ttyUSB* 2>/dev/null
+        python3 -m pip install pyserial 2>/dev/null || sudo pacman -S --noconfirm python-pyserial 2>/dev/null || sudo apt-get install -y python3-serial 2>/dev/null
     fi
 }
 
 function menu() {
+    local FW_VER="1.0.05"
+    local VER_FILE="${BASE_DIR}/../config/WAP610N_VERSION"
+    if [ -f "${VER_FILE}" ]; then
+        FW_VER=$(grep "^FIRMWARE_VERSION=" "${VER_FILE}" | cut -d'"' -f2)
+        [ -z "${FW_VER}" ] && FW_VER="1.0.05"
+    fi
+
     while true; do
         show_banner
 
-        # Deteksi status USB UART
-        if ls /dev/ttyUSB* 1>/dev/null 2>&1; then
-            USB_PORT=$(ls /dev/ttyUSB* | head -n 1)
+        # Deteksi status USB UART (/dev/ttyUSB* atau /dev/ttyACM*)
+        USB_PORT=$(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | head -n 1)
+        if [ -n "${USB_PORT}" ]; then
             echo -e "🔌 Status USB UART : ${GREEN}${BOLD}TERDETEKSI (${USB_PORT})${NC}"
         else
+            USB_PORT="/dev/ttyUSB0"
             echo -e "🔌 Status USB UART : ${RED}${BOLD}TIDAK TERDETEKSI (Colok USB TTL CP2102/CH340)${NC}"
         fi
 
         # Deteksi status firmware binary
         FW_BOOTP="${OUTPUT_DIR}/bootpImage"
-        FW_BIN="${OUTPUT_DIR}/WAP610N_v1.0.05.bin"
+        FW_BIN="${OUTPUT_DIR}/WAP610N_v${FW_VER}.bin"
         if [ -f "${FW_BOOTP}" ]; then
             FW_FILE="${FW_BOOTP}"
-        else
+        elif [ -f "${FW_BIN}" ]; then
             FW_FILE="${FW_BIN}"
+        elif [ -f "${BASE_DIR}/../output/WAP610N_v${FW_VER}.bin" ]; then
+            FW_FILE="${BASE_DIR}/../output/WAP610N_v${FW_VER}.bin"
+        else
+            FW_FILE="${FW_BOOTP}"
         fi
 
         if [ -f "${FW_FILE}" ]; then
             FW_SIZE=$(stat -c "%s" "${FW_FILE}" 2>/dev/null || wc -c < "${FW_FILE}")
-            echo -e "📦 Firmware Binary  : ${GREEN}Siap Flash [$(basename ${FW_FILE})] (${FW_SIZE} bytes / ~$((${FW_SIZE}/1024/1024)) MB)${NC}"
+            FW_MB=$(awk -v s="${FW_SIZE}" 'BEGIN {printf "%.2f", s/1048576}')
+            echo -e "📦 Firmware Binary  : ${GREEN}Siap Flash [$(basename "${FW_FILE}")] (${FW_SIZE} bytes / ${FW_MB} MB)${NC}"
         else
-            echo -e "📦 Firmware Binary  : ${RED}File biner belum ada di firmware/${NC}"
+            echo -e "📦 Firmware Binary  : ${RED}File biner belum ada di firmware/ atau ../output/${NC}"
         fi
         echo "----------------------------------------------------------------------"
         echo -e "${BOLD}PILIHAN OPERASI FIRMWARE FLASHER:${NC}"
@@ -84,7 +92,7 @@ function menu() {
             1)
                 echo -e "\n${GREEN}[*] Menjalankan Auto-Flasher...${NC}"
                 check_prerequisites
-                python3 "${TOOLS_DIR}/flash_auto.py"
+                python3 "${TOOLS_DIR}/flash_auto.py" --port "${USB_PORT}" "${FW_FILE}"
                 read -p "Tekan [Enter] untuk kembali ke menu..."
                 ;;
             2)
@@ -95,13 +103,13 @@ function menu() {
             3)
                 echo -e "\n${GREEN}[*] Membuka terminal serial interaktif (38400 baud)...${NC}"
                 check_prerequisites
-                python3 "${TOOLS_DIR}/uboot_terminal.py"
+                python3 "${TOOLS_DIR}/uboot_terminal.py" --port "${USB_PORT}"
                 read -p "Tekan [Enter] untuk kembali ke menu..."
                 ;;
             4)
                 echo -e "\n${GREEN}[*] Menjalankan serial logger real-time...${NC}"
                 check_prerequisites
-                python3 "${TOOLS_DIR}/serial_logger.py"
+                python3 "${TOOLS_DIR}/serial_logger.py" --port "${USB_PORT}"
                 read -p "Tekan [Enter] untuk kembali ke menu..."
                 ;;
             5)
@@ -111,16 +119,24 @@ function menu() {
                 ;;
             6)
                 echo -e "\n${GREEN}[*] Memperbaiki izin port serial & setting IP LAN...${NC}"
-                sudo chmod 666 /dev/ttyUSB* 2>/dev/null && echo "[+] Izin /dev/ttyUSB* berhasil disetel ke 666 (Read/Write all)."
-                ETH_IF=$(ip -br link | grep -v "lo\|wl\|tailscale\|podman" | awk '{print $1}' | head -n 1)
-                if [ -n "${ETH_IF}" ]; then
-                    echo -e "[*] Mengonfigurasi interface ethernet '${ETH_IF}' ke IP 192.168.1.100/24..."
-                    sudo ip addr flush dev "${ETH_IF}" 2>/dev/null
-                    sudo ip addr add 192.168.1.100/24 dev "${ETH_IF}" 2>/dev/null
-                    sudo ip link set "${ETH_IF}" up 2>/dev/null
-                    echo -e "[+] Interface ${ETH_IF} disetel ke IP 192.168.1.100!"
+                if ls /dev/ttyUSB* /dev/ttyACM* 1>/dev/null 2>&1; then
+                    sudo chmod 666 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null && echo "[+] Izin port serial (/dev/ttyUSB*, /dev/ttyACM*) berhasil disetel ke 666."
                 else
-                    echo -e "${YELLOW}[!] Interface ethernet fisik tidak ditemukan.${NC}"
+                    echo -e "${YELLOW}[!] Tidak ada perangkat /dev/ttyUSB* atau /dev/ttyACM* yang terpasang.${NC}"
+                fi
+                echo "Interface Ethernet fisik yang terdeteksi:"
+                ip -br link | awk '!/^(lo|wl|tailscale|podman|docker|veth|br-|virbr)/ {print "  - " $1 " (" $2 ")"}'
+                read -p "Masukkan nama interface untuk set static 192.168.1.100/24 (kosongkan untuk batal): " ETH_IF
+                if [ -n "${ETH_IF}" ]; then
+                    read -p "Konfirmasi: flush IP lama pada '${ETH_IF}' dan set 192.168.1.100/24? [y/N]: " CONFIRM_IF
+                    if [ "${CONFIRM_IF}" = "y" ] || [ "${CONFIRM_IF}" = "Y" ]; then
+                        sudo ip addr flush dev "${ETH_IF}" 2>/dev/null
+                        sudo ip addr add 192.168.1.100/24 dev "${ETH_IF}" 2>/dev/null
+                        sudo ip link set "${ETH_IF}" up 2>/dev/null
+                        echo -e "[+] Interface ${ETH_IF} disetel ke IP 192.168.1.100!"
+                    else
+                        echo "[*] Perubahan IP pada ${ETH_IF} dibatalkan."
+                    fi
                 fi
                 read -p "Tekan [Enter] untuk kembali ke menu..."
                 ;;

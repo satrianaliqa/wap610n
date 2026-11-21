@@ -3,11 +3,20 @@ import serial
 import sys
 import time
 import os
+import argparse
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PORT = '/dev/ttyUSB0'
-BAUDRATE = 38400
-LOG_FILE = os.path.join(BASE_DIR, 'logs', 'router_serial_log.txt')
+DEFAULT_PORT = '/dev/ttyUSB0'
+DEFAULT_BAUD = 38400
+
+parser = argparse.ArgumentParser(description='WAP610N Real-Time Serial Logger')
+parser.add_argument('--port', '-p', default=DEFAULT_PORT, help='Serial port device path')
+parser.add_argument('--baud', '-b', type=int, default=DEFAULT_BAUD, help='Serial baud rate')
+args = parser.parse_args()
+
+PORT = args.port
+BAUDRATE = args.baud
+LOG_FILE = os.path.join(BASE_DIR, 'logs', f"router_serial_log_{time.strftime('%Y%m%d_%H%M%S')}.txt")
 
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
@@ -27,7 +36,7 @@ except Exception as e:
     sys.exit(1)
 
 print(f"\n=======================================================", flush=True)
-print(f"  [MONITOR] SERIAL LISTENER AKTIF (38400 baud, 8N1)   ", flush=True)
+print(f"  [MONITOR] SERIAL LISTENER AKTIF ({BAUDRATE} baud, 8N1)   ", flush=True)
 print(f"  [TIMING]  Atomic Timestamp & Stopwatch Aktif        ", flush=True)
 print(f"  >>> SILAKAN COLOKKAN ADAPTOR POWER ROUTER SEKARANG! <<<", flush=True)
 print(f"=======================================================\n", flush=True)
@@ -37,7 +46,7 @@ start_time = None
 at_line_start = True
 
 with open(LOG_FILE, 'w', encoding='utf-8', buffering=1) as f:
-    f.write(f"=== Serial Log Started at {time.strftime('%Y-%m-%d %H:%M:%S')} (Baud: {BAUDRATE}) ===\n")
+    f.write(f"=== Serial Log Started at {time.strftime('%Y-%m-%d %H:%M:%S')} (Port: {PORT}, Baud: {BAUDRATE}) ===\n")
     try:
         while True:
             if ser.in_waiting > 0:
@@ -64,5 +73,7 @@ with open(LOG_FILE, 'w', encoding='utf-8', buffering=1) as f:
                 time.sleep(0.005)
     except KeyboardInterrupt:
         print("\n[SERIAL] Monitoring dihentikan oleh user.", flush=True)
+    except (serial.SerialException, OSError) as e:
+        print(f"\n[SERIAL ERROR] Koneksi serial terputus: {e}", flush=True)
     finally:
         ser.close()

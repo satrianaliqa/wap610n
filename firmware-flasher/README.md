@@ -122,33 +122,36 @@ python3 tools/uboot_terminal.py
 
 ---
 
-## 🗺️ 4. Peta Memori Flash SPI (4MB) & Aturan Keamanan
+## 🗺️ 4. Peta Memori Parallel NOR Flash (4MB) & Aturan Keamanan
 
-Flash ROM WAP610N menggunakan chip EON EN29LV640B / ENLV320B (4MB / 71 Sektor):
+Flash ROM WAP610N menggunakan chip **4MB Parallel CFI NOR Flash (EON EN29LV320BB)** dengan 71 Sektor (`0x10000000 - 0x103FFFFF`):
 
-```
+```text
 +---------------------+---------------------+-----------------------------------------------+
 | Flash Memory Range  | MTD Device Name     | Keterangan & Proteksi                         |
 +---------------------+---------------------+-----------------------------------------------+
-| 0x10000000 -        | mtdblock1 (ARMBOOT) | U-Boot 1.1.4 Bootloader (256 KB)              |
-| 0x1003FFFF          |                     | [STATUS: READ-ONLY HARDWARE PROTECTED]        |
+| 0x10000000 -        | mtdblock1 (ARMBOOT) | U-Boot 1.1.4 Bootloader (128 KB)              |
+| 0x1001FFFF          |                     | [STATUS: READ-ONLY HARDWARE PROTECTED]        |
++---------------------+---------------------+-----------------------------------------------+
+| 0x10020000 -        | mtdblock3 (Disk1)   | U-Boot Env / NVRAM Parameter Table (64 KB)    |
+| 0x1002FFFF          |                     | [STATUS: RW CRC-CHECKED]                      |
++---------------------+---------------------+-----------------------------------------------+
+| 0x10030000 -        | Reserved Partition  | Board Parameters / Radio Calibration (64 KB)  |
+| 0x1003FFFF          |                     | [STATUS: READ-ONLY]                           |
 +---------------------+---------------------+-----------------------------------------------+
 | 0x10040000 -        | mtdblock2 (Kernel)  | bootpImage (Kernel + Ramdisk LZMA + Header)   |
-| 0x103DFFFF          |                     | [STATUS: RE-WRITABLE] Max size: ~3.625 MB     |
+| 0x103DFFFF          |                     | [STATUS: RE-WRITABLE] Max size: 3.625 MB      |
 +---------------------+---------------------+-----------------------------------------------+
-| 0x103E0000 -        | mtdblock3 (Disk1)   | NVRAM / Environment Parameter Table (64 KB)   |
-| 0x103EFFFF          |                     | [STATUS: RE-WRITABLE]                         |
-+---------------------+---------------------+-----------------------------------------------+
-| 0x103F0000 -        | mtdblock4 (Disk2)   | Configfs / Factory Calibration Data (64 KB)   |
-| 0x103FFFFF          |                     | `config_offset=0x103F0000`                    |
+| 0x103E0000 -        | mtdblock4 (Disk2)   | ConfigFS Runtime Loopback Ext2 (128 KB)       |
+| 0x103FFFFF          |                     | Storage untuk `config.img.gz`                 |
 +---------------------+---------------------+-----------------------------------------------+
 ```
 
 > [!CAUTION]
-> **Aturan Emas Flashing SPI Flash**:
-> 1. Alamat awal penulisan kernel/firmware **SELALU** di `0x10040000`.
+> **Aturan Emas Flashing Parallel NOR Flash**:
+> 1. Alamat awal penulisan kernel/firmware **SELALU** di `0x10040000` (ukuran maksimum `0x3A0000` / 3,801,088 bytes).
 > 2. **WAJIB ERASE SEBELUM COPY**: Sektor flash harus di-erase terlebih dahulu (`erase 0x10040000 +<size>`) sebelum menjalankan `cp.b 0x100000 0x10040000 <size>`. NOR flash hanya bisa mengubah bit `1` menjadi `0`, sehingga menulis tanpa erase akan merusak bit biner.
-> 3. Jangan pernah melakukan erase pada rentang `0x10000000 - 0x1003FFFF` (Sektor Bootloader U-Boot).
+> 3. Jangan pernah melakukan erase pada rentang `0x10000000 - 0x1003FFFF` (Sektor Bootloader U-Boot / NVRAM / Calibration).
 
 ---
 
@@ -161,8 +164,8 @@ Flash ROM WAP610N menggunakan chip EON EN29LV640B / ENLV320B (4MB / 71 Sektor):
 | **Karakter serial muncul kotak-kotak / aneh (garbled)** | Baud rate terminal tidak sesuai. | Ubah baud rate ke **`38400`** (8N1). WAP610N tidak menggunakan baud 115200. |
 | **Script flasher tidak bisa stop countdown U-Boot** | Kabel TX dan RX tertukar, atau script baru dinyalakan setelah router terlanjur boot. | Pastikan TX adapter terhubung ke RX router, dan RX adapter ke TX router. Jalankan script flasher terlebih dahulu, baru tancapkan adaptor power router. |
 | **Kabel LAN dicolok langsung ke PC status `No Carrier`** | Chip Ethernet PHY RTL8201CP tidak memiliki fitur Auto-MDIX di level U-Boot. | Colokkan kabel LAN dari router dan PC ke **Switch / Router Rumah (Modem Wi-Fi)**, atau gunakan flashing via **UART Kermit** yang tidak butuh LAN. |
-| **Kernel Panic `No init found`** | Ramdisk kekurangan file dynamic linker uClibc (`/lib/ld-uClibc.so.0`) atau `/dev/console`. | Hubungi Divisi Coder/Compiler untuk me-rebuild ramdisk dengan `rootfs` yang berisi library uClibc lengkap. |
-| **Log serial berhenti setelah `Loaded GPIO driver`** | Firmware Linksys secara default mengeksekusi `ln -fs /dev/null /dev/console` di `/etc/inittab` untuk mode produksi. | Ini normal pada firmware rilis resmi. Jika ingin mengaktifkan shell serial, minta Divisi Coder meng-comment baris tersebut di `inittab` dan mengaktifkan `ttyS0::respawn:/bin/sh`. |
+| **Kernel Panic `No init found`** | Ramdisk kekurangan file dynamic linker uClibc (`/lib/ld-uClibc-0.9.29.so`) atau `/dev/console`. | Rebuild ramdisk via `./docker/compile.sh WAP610N` agar `/sbin/init`, `ld-uClibc`, dan `/dev/console` lengkap. |
+| **Serial shell tidak merespons setelah boot** | Pin RX USB-TTL belum tersambung erat ke pin 3 board atau baud rate salah. | Firmware custom mengaktifkan `ttyS0::respawn:-/bin/sh` di `/etc/inittab` pada 38400 baud 8N1. |
 
 ---
 *Divisi Flasher berkomitmen menjaga integritas hardware dan kelancaran proses flashing di setiap siklus rilis firmware.* 🚀
