@@ -17,13 +17,17 @@ case "$MODE" in
         echo "[+] Starting nettest server on port $PORT..."
         echo "[+] Waiting for incoming stream (Press Ctrl+C to stop)..."
         while true; do
-            start_time=$(date +%s)
-            bytes=$(nc -l -p "$PORT" | wc -c)
-            end_time=$(date +%s)
-            dur=$((end_time - start_time))
-            [ "$dur" -le 0 ] && dur=1
-            mbps=$((bytes * 8 / dur / 1000000))
-            echo "[+] Received $bytes bytes in ${dur}s (~$mbps Mbps)"
+            nc -l -p "$PORT" | {
+                first=$(dd bs=1 count=1 2>/dev/null | wc -c)
+                start_time=$(date +%s)
+                rest=$(wc -c)
+                end_time=$(date +%s)
+                bytes=$((first + rest))
+                dur=$((end_time - start_time))
+                [ "$dur" -le 0 ] && dur=1
+                mbps=$((bytes * 8 / dur / 1000000))
+                echo "[+] Received $bytes bytes in ${dur}s (~$mbps Mbps)"
+            }
         done
         ;;
     client|send|tx)
@@ -33,7 +37,14 @@ case "$MODE" in
         fi
         echo "[+] Connecting to $TARGET:$PORT (transmitting ${MB} MB)..."
         start_time=$(date +%s)
-        dd if=/dev/zero bs=64k count=$((MB * 16)) 2>/dev/null | nc "$TARGET" "$PORT"
+        rcfile="/tmp/.nettest_rc.$$"
+        dd if=/dev/zero bs=64k count=$((MB * 16)) 2>/dev/null | { nc -w 2 "$TARGET" "$PORT"; echo $? > "$rcfile"; }
+        nc_rc=$(cat "$rcfile" 2>/dev/null || echo 1)
+        rm -f "$rcfile"
+        if [ "$nc_rc" -ne 0 ]; then
+            echo "[!] Connection/transfer to $TARGET:$PORT failed (exit $nc_rc)" >&2
+            exit 1
+        fi
         end_time=$(date +%s)
         dur=$((end_time - start_time))
         [ "$dur" -le 0 ] && dur=1

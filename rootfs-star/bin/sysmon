@@ -51,11 +51,16 @@ show_system_summary() {
 	PREV_U=$U; PREV_N=$N; PREV_S=$S; PREV_I=$I; PREV_W=$W; PREV_IRQ=$IRQ; PREV_SIRQ=$SIRQ; PREV_TOTAL=$TOTAL
 
 	# 3. RAM Statistics
-	MEM_TOT=$(awk '/MemTotal/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
-	MEM_FREE=$(awk '/MemFree/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
-	MEM_BUF=$(awk '/Buffers/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
-	MEM_CACH=$(awk '/^Cached/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
-	MEM_SLAB=$(awk '/Slab/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+	MEM_TOT=$(awk '/MemTotal/ {print $2}' /proc/meminfo 2>/dev/null)
+	MEM_FREE=$(awk '/MemFree/ {print $2}' /proc/meminfo 2>/dev/null)
+	MEM_BUF=$(awk '/Buffers/ {print $2}' /proc/meminfo 2>/dev/null)
+	MEM_CACH=$(awk '/^Cached/ {print $2}' /proc/meminfo 2>/dev/null)
+	MEM_SLAB=$(awk '/Slab/ {print $2}' /proc/meminfo 2>/dev/null)
+	MEM_TOT=${MEM_TOT:-0}
+	MEM_FREE=${MEM_FREE:-0}
+	MEM_BUF=${MEM_BUF:-0}
+	MEM_CACH=${MEM_CACH:-0}
+	MEM_SLAB=${MEM_SLAB:-0}
 	MEM_USED=$((MEM_TOT - MEM_FREE - MEM_BUF - MEM_CACH))
 	
 	if [ "$MEM_TOT" -gt 0 ]; then

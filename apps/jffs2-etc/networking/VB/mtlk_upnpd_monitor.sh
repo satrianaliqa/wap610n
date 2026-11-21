@@ -15,6 +15,9 @@ DEBUG_LOG=/dev/console
 ##DEBUG_LOG=/tmp/upnpd_monitor.txt
 
 
+# Wait briefly for bridge initialization before polling
+sleep 15
+
 # DEBUG: Log the start of monitoring
 echo Starting upnpd monitor > $DEBUG_LOG
 cat /proc/uptime | awk '{print $1}' >> $DEBUG_LOG
@@ -23,10 +26,14 @@ cat /proc/uptime | awk '{print $1}' >> $DEBUG_LOG
 while [ 1 ]
 do
 	if ! pidof upnpd >/dev/null 2>&1; then
-		nice -n 18 upnpd &
+		if [ -x /bin/upnpd ]; then
+			nice -n 18 /bin/upnpd br0 &
+		else
+			nice -n 18 upnpd br0 &
+		fi
 		sleep 2
 	fi
-	UPNPD_MEM_USAGE=`ps | grep " upnpd" | grep -v grep | awk 'NR==1 {print $3}'`
+	UPNPD_MEM_USAGE=`ps | awk '$5 ~ /(^|\/)upnpd$/ {print $3; exit}'`
 	case "$UPNPD_MEM_USAGE" in
 		''|*[!0-9]*)
 			sleep $SLEEP_TIME
@@ -52,7 +59,11 @@ do
 
 			# Restart upnpd server
 			if ! pidof upnpd >/dev/null 2>&1; then
-				nice -n 18 upnpd &
+				if [ -x /bin/upnpd ]; then
+					nice -n 18 /bin/upnpd br0 &
+				else
+					nice -n 18 upnpd br0 &
+				fi
 			fi
 	fi
 	sleep $SLEEP_TIME

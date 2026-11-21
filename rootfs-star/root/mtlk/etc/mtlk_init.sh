@@ -197,16 +197,15 @@ fi
 # Init finished  dhcp script can write to the flash
 echo 1 > /tmp/init_done
 
-# Apply kernel network buffer & VM performance tuning for 32MB RAM
+# Apply kernel network buffer & VM performance tuning for 32MB RAM (matching /etc/sysctl.conf)
 echo 262144 > /proc/sys/net/core/rmem_max 2>/dev/null || true
 echo 262144 > /proc/sys/net/core/wmem_max 2>/dev/null || true
-echo 262144 > /proc/sys/net/core/rmem_default 2>/dev/null || true
-echo 262144 > /proc/sys/net/core/wmem_default 2>/dev/null || true
+echo 65536 > /proc/sys/net/core/rmem_default 2>/dev/null || true
+echo 65536 > /proc/sys/net/core/wmem_default 2>/dev/null || true
 echo 1000 > /proc/sys/net/core/netdev_max_backlog 2>/dev/null || true
-echo "4096 87380 262144" > /proc/sys/net/ipv4/tcp_rmem 2>/dev/null || true
-echo "4096 65536 262144" > /proc/sys/net/ipv4/tcp_wmem 2>/dev/null || true
-echo 50 > /proc/sys/vm/vfs_cache_pressure 2>/dev/null || true
+echo 150 > /proc/sys/vm/vfs_cache_pressure 2>/dev/null || true
 echo 2048 > /proc/sys/vm/min_free_kbytes 2>/dev/null || true
+echo 10 > /proc/sys/vm/dirty_ratio 2>/dev/null || true
 
 # Stop power LED blinking and turn on solid green Power LED
 echo 0 > /dev/gpio2 2>/dev/null || true

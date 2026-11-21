@@ -103,8 +103,8 @@ if {$action =="start" } {
 		exit 1
 	}
 	debug_puts "$::WPS_MSG_LOOP_TCL:starting FIFO loops"
-	catch { [exec $::g_web_wpa_app_folder/$::WPS_MSG_LOOP_TCL start_msg &]}
-	catch { [exec $::g_web_wpa_app_folder/$::WPS_MSG_LOOP_TCL start_code &]}
+	catch {exec $::g_web_wpa_app_folder/$::WPS_MSG_LOOP_TCL start_msg &}
+	catch {exec $::g_web_wpa_app_folder/$::WPS_MSG_LOOP_TCL start_code &}
 	exit 0
 }
 
@@ -155,14 +155,14 @@ if {$action =="start_code" } {
 			puts $err
 			sleep 1
 		} else {
-			set results_raw [read $results_file ${::cmd_length}]
+			set results_raw [string trim [read $results_file ${::cmd_length}]]
 			close $results_file
-			if {$results_raw == ""} {
+			if {$results_raw == "" || ![regexp {^[0-9]+$} $results_raw]} {
 				sleep 1
 				continue
 			}
 			set results [expr $results_raw]
-				debug_puts "$::WPS_MSG_LOOP_TCL:code($eventCount)=$results"
+			debug_puts "$::WPS_MSG_LOOP_TCL:code($eventCount)=$results"
 			incr eventCount
 		}
 	}

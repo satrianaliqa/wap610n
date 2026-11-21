@@ -16,6 +16,9 @@ AUTH=""
 CUSTOM_HEADERS=""
 CONTENT_TYPE=""
 URL=""
+TIMEOUT=""
+NL='
+'
 
 usage() {
     echo "Usage: curl [options] <url>"
@@ -35,10 +38,19 @@ usage() {
     exit 1
 }
 
-# Base64 encoder in pure AWK
+# Base64 encoder in pure AWK (reads payload via stdin, safe for any bytes/backslashes)
 b64_encode() {
-    awk -v s="$1" 'BEGIN {
+    printf "%s" "$1" | awk '
+    BEGIN {
         b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        s = ""
+        first = 1
+    }
+    {
+        if (!first) s = s "\n" $0
+        else { s = $0; first = 0 }
+    }
+    END {
         len = length(s); res = ""
         for (i = 1; i <= len; i += 3) {
             c1 = ord(substr(s, i, 1))
@@ -94,10 +106,11 @@ while [ $# -gt 0 ]; do
             [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
             case "$2" in
                 [Cc][Oo][Nn][Tt][Ee][Nn][Tt]-[Tt][Yy][Pp][Ee]:*)
-                    CONTENT_TYPE="${2#*: }"
+                    ct="${2#*:}"
+                    CONTENT_TYPE=$(echo "$ct" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
                     ;;
                 *)
-                    CUSTOM_HEADERS="${CUSTOM_HEADERS}$2\r\n"
+                    CUSTOM_HEADERS="${CUSTOM_HEADERS}$2${NL}"
                     ;;
             esac
             shift 2
@@ -121,7 +134,10 @@ while [ $# -gt 0 ]; do
             ;;
         -m|--max-time|--connect-timeout)
             [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
-            # timeout parameter ignored on busybox nc wrapper
+            case "$2" in
+                ''|*[!0-9]*) echo "curl: invalid timeout '$2'" >&2; exit 2 ;;
+                *) TIMEOUT="$2" ;;
+            esac
             shift 2
             ;;
         -O|--remote-name)
@@ -181,9 +197,16 @@ if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HE
     exit $?
 fi
 
+# Reject HTTPS before falling back to raw HTTP socket wrapper
+case "$URL" in
+    https://*)
+        [ "$SILENT" -eq 0 ] && echo "curl: HTTPS is not supported on this firmware (HTTP only)" >&2
+        exit 1
+        ;;
+esac
+
 # For POST, HEAD, PUT, DELETE, or -i, use raw socket via nc
 url_no_proto="${URL#http://}"
-url_no_proto="${url_no_proto#https://}"
 hostport="${url_no_proto%%/*}"
 if [ "$hostport" = "$url_no_proto" ]; then
     path="/"
@@ -208,7 +231,7 @@ esac
 AUTH_HDR=""
 if [ -n "$AUTH" ]; then
     b64_str=$(b64_encode "$AUTH")
-    AUTH_HDR="Authorization: Basic $b64_str\r\n"
+    AUTH_HDR="Authorization: Basic $b64_str"
 fi
 
 # Default Content-Type for POST/PUT if data present
@@ -219,15 +242,18 @@ fi
 CLEN_HDR=""
 if [ -n "$DATA" ]; then
     clen=$(printf "%s" "$DATA" | wc -c | tr -d ' ')
-    CLEN_HDR="Content-Length: $clen\r\n"
+    CLEN_HDR="Content-Length: $clen"
 fi
 
 CTYPE_HDR=""
 if [ -n "$CONTENT_TYPE" ]; then
-    CTYPE_HDR="Content-Type: $CONTENT_TYPE\r\n"
+    CTYPE_HDR="Content-Type: $CONTENT_TYPE"
 fi
 
 # Execute HTTP request over netcat
+NC_OPTS=""
+[ -n "$TIMEOUT" ] && NC_OPTS="-w $TIMEOUT"
+
 do_request() {
     (
         printf "%s %s HTTP/1.0\r\n" "$METHOD" "$path"
@@ -235,21 +261,26 @@ do_request() {
         printf "User-Agent: %s\r\n" "$USER_AGENT"
         printf "Accept: */*\r\n"
         printf "Connection: close\r\n"
-        [ -n "$AUTH_HDR" ] && printf "%b" "$AUTH_HDR"
-        [ -n "$CLEN_HDR" ] && printf "%b" "$CLEN_HDR"
-        [ -n "$CTYPE_HDR" ] && printf "%b" "$CTYPE_HDR"
-        [ -n "$CUSTOM_HEADERS" ] && printf "%b" "$CUSTOM_HEADERS"
+        [ -n "$AUTH_HDR" ] && printf "%s\r\n" "$AUTH_HDR"
+        [ -n "$CLEN_HDR" ] && printf "%s\r\n" "$CLEN_HDR"
+        [ -n "$CTYPE_HDR" ] && printf "%s\r\n" "$CTYPE_HDR"
+        if [ -n "$CUSTOM_HEADERS" ]; then
+            printf "%s" "$CUSTOM_HEADERS" | while IFS= read -r hdr_line; do
+                [ -n "$hdr_line" ] && printf "%s\r\n" "$hdr_line"
+            done
+        fi
         printf "\r\n"
         [ -n "$DATA" ] && printf "%s" "$DATA"
-    ) | nc "$host" "$port"
+    ) | nc $NC_OPTS "$host" "$port"
 }
 
+CR=$(printf '\r')
 if [ "$HEAD_ONLY" -eq 1 ]; then
     # Print headers only
     if [ "$OUTFILE" = "-" ]; then
-        do_request | sed '/^\r*$/q'
+        do_request | sed "/^${CR}*$/q"
     else
-        do_request | sed '/^\r*$/q' > "$OUTFILE"
+        do_request | sed "/^${CR}*$/q" > "$OUTFILE"
     fi
 elif [ "$INCLUDE_HDR" -eq 1 ]; then
     # Print headers + body
@@ -261,8 +292,8 @@ elif [ "$INCLUDE_HDR" -eq 1 ]; then
 else
     # Body only
     if [ "$OUTFILE" = "-" ]; then
-        do_request | sed '1,/^\r*$/d'
+        do_request | sed "1,/^${CR}*$/d"
     else
-        do_request | sed '1,/^\r*$/d' > "$OUTFILE"
+        do_request | sed "1,/^${CR}*$/d" > "$OUTFILE"
     fi
 fi

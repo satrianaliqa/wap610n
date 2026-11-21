@@ -32,7 +32,8 @@ do_query() {
         nkeys = split(target, keys, ".")
         for (k = 1; k <= nkeys; k++) {
             cur_key = keys[k]
-            pat = "\"" cur_key "\"[[:space:]]*:[[:space:]]*(\"[^\"]*\"|\\{[^}]*\\}|\\[[^]]*\\]|[^,}\]]*)"
+            gsub(/[][().*+?{}^$\\|]/, "\\\\&", cur_key)
+            pat = "\"" cur_key "\"[[:space:]]*:[[:space:]]*(\"[^\"]*\"|\\{[^}]*\\}|\\[[^]]*\\]|[^],}]*)"
             if (match(str, pat)) {
                 val = substr(str, RSTART, RLENGTH)
                 sub(/^[^:]*:[[:space:]]*/, "", val)

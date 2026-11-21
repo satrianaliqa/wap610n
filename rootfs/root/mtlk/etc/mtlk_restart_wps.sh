@@ -1,11 +1,12 @@
 #!/bin/sh
+cd /root/mtlk/etc || exit 1
 
 #workaround to clean flag (mtlk_init_wls,sh)
-if [ -e /tmp/init_done ]; then rm /tmp/init_done; fi
+if [ -e /tmp/init_done ]; then rm -f /tmp/init_done; fi
 
-killall drvhlpr
-A=`ps | grep drvhlpr | grep -v grep | awk '{print $1}'`
-	for a in $A ; do kill -9 $a ; done
+killall drvhlpr 2>/dev/null || true
+A=`pidof drvhlpr 2>/dev/null`
+	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 
 killall WPS_PBC.sh 2>/dev/null || true
 A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
@@ -16,13 +17,13 @@ A=`ps | grep WPS_PBC.sh | grep -v grep | awk '{print $1}'`
 	rm -rf /tmp/WPS_PBC_monitor.lock 2>/dev/null || true
 
 #kill process waiting on gpio	
-B=`awk -F "=" '/^WPS_PB/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/HW.ini`
+B=`awk -F "=" '/^WPS_PB/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/HW.ini 2>/dev/null`
 case "$B" in
 	''|null) B=/dev/gpio13 ;;
 	*[!0-9]*) : ;;
 	*) B=/dev/gpio$B ;;
 esac
-if [ -n "$B" ]; then
+if [ -n "$B" ] && [ "$B" != "/dev/gpio3" ]; then
 	A=`ps | grep "cat ${B}" | grep -v grep | awk '{print $1}'`
 	for a in $A ; do kill -9 $a 2>/dev/null || true ; done
 fi

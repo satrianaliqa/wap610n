@@ -4,7 +4,10 @@
 # console, and syslog. All runtime diagnostics should use this helper.
 if [ "$#" -gt 0 ]; then
 	msg="$*"
-	printf '<4>wap610n: %s\n' "$msg" > /dev/kmsg 2>/dev/null || true
-	printf '[wap610n] %s\n' "$msg" > /dev/console 2>/dev/null || true
-	logger -t wap610n "$msg" 2>/dev/null || true
+	if [ -c /dev/kmsg ]; then
+		printf '<4>wap610n: %s\n' "$msg" > /dev/kmsg 2>/dev/null || true
+	fi
+	if [ -S /dev/log ]; then
+		logger -t wap610n "$msg" >/dev/null 2>&1 || true
+	fi
 fi

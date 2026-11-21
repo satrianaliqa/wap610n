@@ -41,7 +41,7 @@ ttyS0::respawn:-/bin/sh
 ::respawn:/root/mtlk/web/run_webs.sh
 
 # Circular buffer syslog and kernel logging
-::respawn:/sbin/syslogd -n -m 0 -C 64
+::respawn:/sbin/syslogd -n -m 0 -C64
 ::respawn:/sbin/klogd -n
 
 # Stuff to do for the 3-finger salute

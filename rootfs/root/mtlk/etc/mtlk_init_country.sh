@@ -14,31 +14,31 @@ WLAN_TMP=/tmp/wlan${WLAN_INDEX}.conf
 echo 025,0x03,EEPROM,HWCountry > /proc/sys/dev/mtlk/wlan0/ConfigCommand
 CONFIG_COMMAND_RESULT=`cat /proc/sys/dev/mtlk/wlan0/ConfigCommand`
 
-if [ $CONFIG_COMMAND_RESULT ]
+if [ -n "$CONFIG_COMMAND_RESULT" ]
 then
-	CONFIG_COMMAND_RET=`echo $CONFIG_COMMAND_RESULT | awk -F "," '{print $2 }'`
-	COUNTRY_CODE=`echo $CONFIG_COMMAND_RESULT | awk -F "," '{print $3 }'`
+	CONFIG_COMMAND_RET=`echo "$CONFIG_COMMAND_RESULT" | awk -F "," '{gsub(/ /, "", $2); print $2}'`
+	COUNTRY_CODE=`echo "$CONFIG_COMMAND_RESULT" | awk -F "," '{gsub(/ /, "", $3); print $3}'`
 
 #june.chen, 2011-08-05, workaround for FR domain, since we need to see channel 120-132, but the driver seems to have problem.
 #So when see FR domain, just change it to antoher country useing Europe domain, say IT(Italy).
-	if [ $COUNTRY_CODE = "FR"  ]; then
+	if [ "$COUNTRY_CODE" = "FR" ]; then
 		COUNTRY_CODE="IT"
 	fi
 #end june.chen
 	
-	if expr $CONFIG_COMMAND_RET == 200 && [ $COUNTRY_CODE ] && expr $COUNTRY_CODE : '[A-Z][A-Z]'
+	if [ "$CONFIG_COMMAND_RET" = "200" ] && [ -n "$COUNTRY_CODE" ] && expr "$COUNTRY_CODE" : '[A-Z][A-Z]' >/dev/null
 	then
-		echo $COUNTRY_CODE > /proc/sys/dev/mtlk/wlan0/Country
-		grep -v "Country" $WLAN_TMP | grep -v "EEPROMCountryValid" > /tmp/tmpwlan.conf
-		echo Country = $COUNTRY_CODE >> /tmp/tmpwlan.conf
-		echo EEPROMCountryValid = 1 >> /tmp/tmpwlan.conf
-		mv /tmp/tmpwlan.conf $WLAN_MAIN
-		cp $WLAN_MAIN $WLAN_TMP
+		echo "$COUNTRY_CODE" > /proc/sys/dev/mtlk/wlan0/Country
+		grep -v "Country" "$WLAN_TMP" | grep -v "EEPROMCountryValid" > /tmp/tmpwlan.conf
+		echo "Country = $COUNTRY_CODE" >> /tmp/tmpwlan.conf
+		echo "EEPROMCountryValid = 1" >> /tmp/tmpwlan.conf
+		mv /tmp/tmpwlan.conf "$WLAN_MAIN"
+		cp "$WLAN_MAIN" "$WLAN_TMP"
 	else
-		grep -v "EEPROMCountryValid" $WLAN_TMP > /tmp/tmpwlan.conf
-		echo EEPROMCountryValid = 0 >> /tmp/tmpwlan.conf
-		mv /tmp/tmpwlan.conf $WLAN_MAIN
-		cp $WLAN_MAIN $WLAN_TMP
+		grep -v "EEPROMCountryValid" "$WLAN_TMP" > /tmp/tmpwlan.conf
+		echo "EEPROMCountryValid = 0" >> /tmp/tmpwlan.conf
+		mv /tmp/tmpwlan.conf "$WLAN_MAIN"
+		cp "$WLAN_MAIN" "$WLAN_TMP"
 	fi
 	
 	# Files will be saved only once in init process, Flag will down by the mtlk_init.sh

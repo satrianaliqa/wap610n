@@ -1,4 +1,5 @@
 #!/bin/sh
+DIAG_LOG=/bin/diag_log.sh
 
 ###########################################################################
 # This is the init script run from the mtlk etc folder
@@ -29,7 +30,10 @@ echo "dump 0x70000008" >> /proc/str9100/reg_debug; cat /proc/str9100/reg_debug
 echo "dump 0x7000000c" >> /proc/str9100/reg_debug; cat /proc/str9100/reg_debug
 
 # Source platform-specific settings
-. ./mtlk_init_platform.sh
+if ! . ./mtlk_init_platform.sh; then
+	$DIAG_LOG "network init: platform configuration failed to load" 2>/dev/null || true
+	exit 1
+fi
 
 # try to run restore defaults script
 # . ./mtlk_init_rd.sh
@@ -40,9 +44,9 @@ if [ ! -e "$CONFIGS_PATH/sys.conf" ]
 then
 	echo "Restoring default sys.conf..."
 	if [ -f "$ETC_PATH/sys.conf" ]; then
-		cp "$ETC_PATH/sys.conf" "$CONFIGS_PATH/sys.conf"
+		cp "$ETC_PATH/sys.conf" "$CONFIGS_PATH/sys.conf" || $DIAG_LOG "network init: failed restoring sys.conf" 2>/dev/null || true
 	elif [ -f "$SAVED_CONFIG_PATH/sys.conf.default" ]; then
-		cp "$SAVED_CONFIG_PATH/sys.conf.default" "$CONFIGS_PATH/sys.conf"
+		cp "$SAVED_CONFIG_PATH/sys.conf.default" "$CONFIGS_PATH/sys.conf" || $DIAG_LOG "network init: failed restoring default sys.conf" 2>/dev/null || true
 	fi
 	dos2unix -u "$CONFIGS_PATH/sys.conf" 2>/dev/null || true
 fi
@@ -51,9 +55,9 @@ if [ ! -e "$CONFIGS_PATH/wlan0.conf" ]
 then
 	echo "Restoring default wlan0.conf..."
 	if [ -f "$SAVED_CONFIG_PATH/default_ap_WAP610N.conf" ]; then
-		cp "$SAVED_CONFIG_PATH/default_ap_WAP610N.conf" "$CONFIGS_PATH/wlan0.conf"
+		cp "$SAVED_CONFIG_PATH/default_ap_WAP610N.conf" "$CONFIGS_PATH/wlan0.conf" || $DIAG_LOG "network init: failed restoring AP wlan0.conf" 2>/dev/null || true
 	elif [ -f "$SAVED_CONFIG_PATH/default_ap.conf" ]; then
-		cp "$SAVED_CONFIG_PATH/default_ap.conf" "$CONFIGS_PATH/wlan0.conf"
+		cp "$SAVED_CONFIG_PATH/default_ap.conf" "$CONFIGS_PATH/wlan0.conf" || $DIAG_LOG "network init: failed restoring default wlan0.conf" 2>/dev/null || true
 	fi
 	dos2unix -u "$CONFIGS_PATH/wlan0.conf" 2>/dev/null || true
 fi
@@ -63,11 +67,19 @@ fi
 # Safety: Try to fix wlan.conf and sys.conf files edited on windows
 dos2unix -u $CONFIGS_PATH/wlan0.conf
 
-cp $CONFIGS_PATH/wlan0.conf /tmp/wlan0.conf
+if ! cp $CONFIGS_PATH/wlan0.conf /tmp/wlan0.conf; then
+	$DIAG_LOG "network init: failed copying wlan0.conf to /tmp" 2>/dev/null || true
+	echo "network init: failed copying wlan0.conf" > /tmp/init_failed
+	exit 1
+fi
 dos2unix -u /tmp/wlan0.conf
 
 dos2unix -u $CONFIGS_PATH/sys.conf
-cp $CONFIGS_PATH/sys.conf /tmp/sys.conf
+if ! cp $CONFIGS_PATH/sys.conf /tmp/sys.conf; then
+	$DIAG_LOG "network init: failed copying sys.conf to /tmp" 2>/dev/null || true
+	echo "network init: failed copying sys.conf" > /tmp/init_failed
+	exit 1
+fi
 dos2unix -u /tmp/sys.conf
 
 
@@ -115,7 +127,7 @@ if [ ! -e /tmp/init_failed ]; then (. ./mtlk_init_hostname.sh $HOST_NAME); fi
 # Run the remaining mtlk init scripts (LAN, wireless, routing)
 # Skip if any part of the init produces an error (written to /tmp/init_failed)
 
-if [ ! -e /tmp/init_failed ]; then (. ./mtlk_init_ip.sh); fi
+if [ ! -e /tmp/init_failed ]; then (. ./mtlk_init_ip.sh) || $DIAG_LOG "network init: LAN interface initialization failed" 2>/dev/null || true; fi
 
 # networking daemons
 (. ./mtlk_init_daemons.sh);
@@ -126,7 +138,7 @@ then
 	#if [ ! -e /tmp/disableDriver ]; 
 	#then
 		# Bring up the wireless interface
-		(. ./mtlk_init_wls.sh); 
+		(. ./mtlk_init_wls.sh) || $DIAG_LOG "network init: wireless initialization failed" 2>/dev/null || true
 	#fi
 fi
 
@@ -177,21 +189,23 @@ fi
 if [ ! -e /tmp/init_failed ]; then (. ./mtlk_init_route.sh 2); fi
 
 # Dump errors (seen if the user has a serial interface)
-if [ -e /tmp/init_failed ]; then echo -e "\n\nInit failed, due to error:"; cat /tmp/init_failed; fi
+if [ -e /tmp/init_failed ]; then
+	$DIAG_LOG "network init: initialization failed; inspect /tmp/init_failed" 2>/dev/null || true
+	echo -e "\n\nInit failed, due to error:"; cat /tmp/init_failed
+fi
 
 # Init finished  dhcp script can write to the flash
 echo 1 > /tmp/init_done
 
-# Apply kernel network buffer & VM performance tuning for 32MB RAM
+# Apply kernel network buffer & VM performance tuning for 32MB RAM (matching /etc/sysctl.conf)
 echo 262144 > /proc/sys/net/core/rmem_max 2>/dev/null || true
 echo 262144 > /proc/sys/net/core/wmem_max 2>/dev/null || true
-echo 262144 > /proc/sys/net/core/rmem_default 2>/dev/null || true
-echo 262144 > /proc/sys/net/core/wmem_default 2>/dev/null || true
+echo 65536 > /proc/sys/net/core/rmem_default 2>/dev/null || true
+echo 65536 > /proc/sys/net/core/wmem_default 2>/dev/null || true
 echo 1000 > /proc/sys/net/core/netdev_max_backlog 2>/dev/null || true
-echo "4096 87380 262144" > /proc/sys/net/ipv4/tcp_rmem 2>/dev/null || true
-echo "4096 65536 262144" > /proc/sys/net/ipv4/tcp_wmem 2>/dev/null || true
-echo 50 > /proc/sys/vm/vfs_cache_pressure 2>/dev/null || true
+echo 150 > /proc/sys/vm/vfs_cache_pressure 2>/dev/null || true
 echo 2048 > /proc/sys/vm/min_free_kbytes 2>/dev/null || true
+echo 10 > /proc/sys/vm/dirty_ratio 2>/dev/null || true
 
 # Stop power LED blinking and turn on solid green Power LED
 echo 0 > /dev/gpio2 2>/dev/null || true

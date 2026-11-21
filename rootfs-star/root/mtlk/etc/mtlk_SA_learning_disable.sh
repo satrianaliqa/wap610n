@@ -12,12 +12,13 @@ then
 
 	# Get current register value
 	echo "dump $MAC0_config_reg" >> $reg_debug
-	MAC0_config_val=`cat $reg_debug | awk '/content/ {print $5}'`
+	MAC0_config_val=`cat $reg_debug | awk '/content/ {print $5; exit}'`
+	[ -z "$MAC0_config_val" ] && return 1 2>/dev/null || [ -z "$MAC0_config_val" ] && exit 1
 
-	# Add SA_disable bit and convert number back to hex
+	# Add SA_disable bit and convert number back to hex with 0x prefix
 	SA_disable=$(( 1 << 19 ))
 	MAC0_config_val=$(( $MAC0_config_val | $SA_disable ))
-	MAC0_config_val=`printf "%0x" $MAC0_config_val`
+	MAC0_config_val=`printf "0x%x" $MAC0_config_val`
 
 	# Write new value to debug register
 	echo "write 0x70000008 $MAC0_config_val" >> $reg_debug

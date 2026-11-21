@@ -80,13 +80,13 @@ else
 fi
 
 
-if [ $NETWORK_TYPE = 2 ]
+if [ "$NETWORK_TYPE" = "2" ]
 then
 	ENCRYPTION_MODE=`awk -F "=" '/^NonProc_WPA_Personal_Mode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
-	if [ $ENCRYPTION_MODE = "1" ]
+	if [ "$ENCRYPTION_MODE" = "1" ]
 	then 
 		ENCRYPTION="0x0003"
-	elif [ $ENCRYPTION_MODE = "2" ]
+	elif [ "$ENCRYPTION_MODE" = "2" ]
 	then
 		ENCRYPTION="0x0021"
 	else
@@ -95,10 +95,10 @@ then
 	 
 	 
 	ENCAPSULATION_MODE=`awk -F "=" '/^NonProc_WPA_Personal_Encapsulation/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
-	if [ $ENCAPSULATION_MODE = "0" ]
+	if [ "$ENCAPSULATION_MODE" = "0" ]
 	then
 		ENCAPSULATION="0x0004"
-	elif [ $ENCAPSULATION_MODE = "1" ]
+	elif [ "$ENCAPSULATION_MODE" = "1" ]
 	then
 		ENCAPSULATION="0x0008"
 	else
@@ -107,10 +107,10 @@ then
 
 
 	SECURITY_MODE=`awk -F "=" '/^NonProcSecurityMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
-	if [ $SECURITY_MODE == $Security_Wpa ]
+	if [ "$SECURITY_MODE" = "$Security_Wpa" ]
 	then		
 		NW_KEY=`cat ${WLAN_CONF} | grep NonProc_WPA_Personal_PSK | sed 's#^[^=]*=[ ]*##'`				
-	elif [ $SECURITY_MODE == $Security_Wep ]
+	elif [ "$SECURITY_MODE" = "$Security_Wep" ]
 	then
 		WepTxKeyIdx=`awk -F "=" '/^WepTxKeyIdx/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 		if [ -n "$WepTxKeyIdx" ]; then
@@ -120,17 +120,17 @@ then
 		NW_KEY1=`awk -F "=" '/^WepKeys_DefaultKey1/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 		NW_KEY2=`awk -F "=" '/^WepKeys_DefaultKey2/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 		NW_KEY3=`awk -F "=" '/^WepKeys_DefaultKey3/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
-		if [ $NW_KEY0 ] && [ ${#NW_KEY0} = 12 ] || [ ${#NW_KEY0} = 28 ]
+		if [ -n "$NW_KEY0" ] && { [ ${#NW_KEY0} = 12 ] || [ ${#NW_KEY0} = 28 ]; }
 		then
-				NW_KEY0=`echo $NW_KEY0 | awk -F "0x" '{print $2}'`
+				NW_KEY0=`echo "$NW_KEY0" | awk -F "0x" '{print $2}'`
 		fi
-		if [ $NW_KEY1 ] && [ ${#NW_KEY1} = 12 ] || [ ${#NW_KEY1} = 28 ]
+		if [ -n "$NW_KEY1" ] && { [ ${#NW_KEY1} = 12 ] || [ ${#NW_KEY1} = 28 ]; }
 		then
-				NW_KEY1=`echo $NW_KEY1 | awk -F "0x" '{print $2}'`
+				NW_KEY1=`echo "$NW_KEY1" | awk -F "0x" '{print $2}'`
 		fi
-		if [ $NW_KEY2 ] && [ ${#NW_KEY2} = 12 ] || [ ${#NW_KEY2} = 28 ]
+		if [ -n "$NW_KEY2" ] && { [ ${#NW_KEY2} = 12 ] || [ ${#NW_KEY2} = 28 ]; }
 		then
-				NW_KEY2=`echo $NW_KEY2 | awk -F "0x" '{print $2}'`
+				NW_KEY2=`echo "$NW_KEY2" | awk -F "0x" '{print $2}'`
 		fi
 		if [ -n "$NW_KEY3" ] && { [ ${#NW_KEY3} = 12 ] || [ ${#NW_KEY3} = 28 ]; }
 		then
@@ -299,7 +299,7 @@ fi
 ##***** initialization *****/
 # STA
 
-if [ $NETWORK_TYPE == $Adhoc_station ] || [ $NETWORK_TYPE == $Infrastructure_station ]
+if [ "$NETWORK_TYPE" = "$Adhoc_station" ] || [ "$NETWORK_TYPE" = "$Infrastructure_station" ]
 then
 	USE_UPNP=0 
 	#default (enrollee)
@@ -310,7 +310,7 @@ then
 	    #DEVICE_NAME="Enrollee"
 		KEY_MGMT=IEEE8021X
 	#fi
-	if [ $STA_MODE == $Wirless_registrar ]
+	if [ "$STA_MODE" = "$Wirless_registrar" ]
 	then
 		#station wireless registrar
 		CONFIGURED_MODE=3
@@ -333,7 +333,7 @@ then
 	SUPPLICANT_PARAMS="-bbr0 "
 	
 	# if the bridge mode is mac_clon
-	if [ $BRIDGE_MODE == 3 ] && [ -e /tmp/mac_cloning.addr ]
+	if [ "$BRIDGE_MODE" = "3" ] && [ -e /tmp/mac_cloning.addr ]
 	then
 		macl=`cat /tmp/mac_cloning.addr`
 		SUPPLICANT_PARAMS="-bbr0 -p maclone=$macl "
@@ -343,7 +343,7 @@ fi
 
 
 # AP
-if [ $NETWORK_TYPE == $AP ]
+if [ "$NETWORK_TYPE" = "$AP" ]
 then
 	#default
 	#if expr $AP_MODE = $Unconfigured_AP
@@ -355,7 +355,7 @@ then
 		KEY_MGMT="WPA-EAP"
 		#DEVICE_NAME="UnConfigured AP"
 	#fi
-	if [ $AP_MODE == $Ap_Proxy_registrar ]
+	if [ "$AP_MODE" = "$Ap_Proxy_registrar" ]
 	then
 		CONFIGURED_MODE=5
 		AUTH_TYPE_FLAGS="$ENCRYPTION"
@@ -365,14 +365,14 @@ then
 		KEY_MGMT="WPA-PSK"
 		#DEVICE_NAME="AP_PROXY_REGISTRAR"
 		#open networks
-		if [ $SECURITY_MODE == $Security_Open ]
+		if [ "$SECURITY_MODE" = "$Security_Open" ]
 		then
 			KEY_MGMT="NONE"
 			ENCR_TYPE_FLAGS="0x0001"
 			AUTH_TYPE_FLAGS="0x0001"
 		fi
 		#wep security
-		if [ $SECURITY_MODE == $Security_Wep ]
+		if [ "$SECURITY_MODE" = "$Security_Wep" ]
 		then
 			KEY_MGMT="NONE"
 			ENCR_TYPE_FLAGS="0x0002"
@@ -391,7 +391,7 @@ fi
 SUPPLICANT_PARAMS_WC=`echo $SUPPLICANT_PARAMS | wc -c`
 write_wps_config_file 
 
-if [ $SECURITY_MODE == $Security_Wep ]
+if [ "$SECURITY_MODE" = "$Security_Wep" ]
 then
 	if [ -n "$WepTxKeyIdx" ] && [ "$WepTxKeyIdx" != "1" ]
 	then
@@ -399,5 +399,5 @@ then
 		echo "	WEP_TX_KEY_IDX=$WepTxKeyIdx" >> ${WSC_CONF_FILE}
 	fi
 fi 
-dos2unix $WSC_CONF_FILE
-chmod a+x $WSC_CONF_FILE 
+dos2unix "$WSC_CONF_FILE"
+chmod 600 "$WSC_CONF_FILE"

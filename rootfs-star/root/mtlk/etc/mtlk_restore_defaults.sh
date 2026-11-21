@@ -20,13 +20,11 @@ is_Reboot=$2
 ProjectName="WAP610N"
 
 if [ "$is_ap" != "0" ] && [ "$is_ap" != "1" ]; then
-	$DIAG_LOG "factory restore: invalid restore mode" 2>/dev/null || true
 	$DIAG_LOG "factory restore: invalid restore mode $is_ap" 2>/dev/null || true
 	exit 1
 fi
 
 if [ "$is_Reboot" != "0" ] && [ "$is_Reboot" != "1" ]; then
-	$DIAG_LOG "factory restore: invalid reboot mode" 2>/dev/null || true
 	$DIAG_LOG "factory restore: invalid reboot mode $is_Reboot" 2>/dev/null || true
 	exit 1
 fi
@@ -40,8 +38,7 @@ else
 fi
 
 if [ ! -x "$ETC_PATH/mtlk_set_config.tcl" ]; then
-	$DIAG_LOG "factory restore: configuration generator is missing" 2>/dev/null || true
-	$DIAG_LOG "factory restore: configuration restore utility is missing" 2>/dev/null || true
+	$DIAG_LOG "factory restore: configuration generator utility is missing" 2>/dev/null || true
 	exit 1
 fi
 
@@ -62,13 +59,11 @@ fi
 if [ "$is_ap" = "0" ]; then
 	[ -f "$STA_FILE" ] || {
 		$DIAG_LOG "factory restore: STA factory configuration is missing" 2>/dev/null || true
-		$DIAG_LOG "factory restore: STA factory configuration is missing" 2>/dev/null || true
 		exit 1
 	}
 	PRIMARY_CONF="$STA_FILE"
 else
 	[ -f "$AP_FILE" ] || {
-		$DIAG_LOG "factory restore: AP factory configuration is missing" 2>/dev/null || true
 		$DIAG_LOG "factory restore: AP factory configuration is missing" 2>/dev/null || true
 		exit 1
 	}
@@ -97,24 +92,22 @@ if [ -f "$CONFIGS_PATH/wlan0.conf" ]; then
 	cp -f "$CONFIGS_PATH/wlan0.conf" "$CONFIGS_PATH/wlan0.old.conf" || exit 1
 fi
 
-if [ -e /tmp/sys.conf ]; then rm -f /tmp/sys.conf || exit 1; fi
-if [ -e /tmp/wlan0.conf ]; then rm -f /tmp/wlan0.conf || exit 1; fi
-
 dos2unix -u "$TMP_CONF_FILE" || exit 1
 
 if ! "$ETC_PATH/mtlk_set_config.tcl" "$TMP_CONF_FILE"; then
 	$DIAG_LOG "factory restore: configuration generator failed; rollback attempted" 2>/dev/null || true
-	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf"
-	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf"
+	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf" && cp -f "$CONFIGS_PATH/sys.old.conf" /tmp/sys.conf
+	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf" && cp -f "$CONFIGS_PATH/wlan0.old.conf" /tmp/wlan0.conf
 	exit 1
 fi
 
 if [ ! -f "$CONFIGS_PATH/sys.conf" ] || [ ! -f "$CONFIGS_PATH/wlan0.conf" ]; then
 	$DIAG_LOG "factory restore: generated configuration files are incomplete" 2>/dev/null || true
-	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf"
-	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf"
+	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf" && cp -f "$CONFIGS_PATH/sys.old.conf" /tmp/sys.conf
+	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf" && cp -f "$CONFIGS_PATH/wlan0.old.conf" /tmp/wlan0.conf
 	exit 1
 fi
+rm -f /tmp/sys.conf /tmp/wlan0.conf
 cp "$CONFIGS_PATH/sys.conf" /tmp/sys.conf || exit 1
 cp "$CONFIGS_PATH/wlan0.conf" /tmp/wlan0.conf || exit 1
 

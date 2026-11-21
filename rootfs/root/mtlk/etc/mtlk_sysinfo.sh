@@ -14,34 +14,34 @@ echo ==================== >> $LOG_file
 ifconfig >> $LOG_file
 
 # iwconfig output (packets lost in driver)
-echo ==================== > $LOG_file
+echo ==================== >> $LOG_file
 echo iwconfig statistics: >> $LOG_file
 echo ==================== >> $LOG_file
 
-iwconfig wlan0 >> $LOG_file
+iwconfig wlan0 >> $LOG_file 2>/dev/null || true
 
 #tc outprut
 echo "===============================" >> $LOG_file
 echo tc output "\(packets lost in OS\)": >> $LOG_file
 echo "===============================" >> $LOG_file
 
-tc -s qdisc >> $LOG_file
+tc -s qdisc >> $LOG_file 2>/dev/null || true
 
 
 # Driver Statistics (DebugAPI)
 
-cat /proc/net/mtlk/wlan0/Debug/General >> $LOG_file
+[ -r /proc/net/mtlk/wlan0/Debug/General ] && cat /proc/net/mtlk/wlan0/Debug/General >> $LOG_file
 
-cat /proc/net/mtlk/wlan0/Debug/ReorderingStats >> $LOG_file
+[ -r /proc/net/mtlk/wlan0/Debug/ReorderingStats ] && cat /proc/net/mtlk/wlan0/Debug/ReorderingStats >> $LOG_file
 
 echo >> $LOG_file
 
 # MAC statistics (DebugAPI)
 
 echo =============================== >> $LOG_file
-cat /proc/net/mtlk/wlan0/Debug/MACStats >> $LOG_file
+[ -r /proc/net/mtlk/wlan0/Debug/MACStats ] && cat /proc/net/mtlk/wlan0/Debug/MACStats >> $LOG_file
 
-if expr "$1" == "-v" 
+if [ "$1" = "-v" ]
 then
- 		cat $LOG_file
+	cat $LOG_file
 fi

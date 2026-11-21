@@ -21,7 +21,7 @@ fi
 
 # Usage Func
 
-# Set driver DB handler  file	
+# Set driver DB handler  file
 #echo START PREPARE DRIVER HANDLER
 #tclsh driver_api.tcl setDriverApiHandler driver_api.ini
 #echo END PREPARE DRIVER HANDLER
@@ -29,15 +29,15 @@ fi
 #  1 )  config MAC clonning bridging mode
 config_MAC_clonning_bridging ()
 {
-	if [ ! $BRIDGE_MODE == 3 ] || [ -e /tmp/mac_cloning.addr ]
+	if [ "$BRIDGE_MODE" != "3" ] || [ -e /tmp/mac_cloning.addr ]
 	then
 		return
 	fi
-	
+
 	# only if we are in bridge mode and mac clonning
 	MacCloningAddr=`awk -F "=" '/^MacCloningAddr/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-	MAC_WLAN=`echo $MacCloningAddr | tr "[:lower:]" "[:upper:]"`
-	if [ $MAC_WLAN == 0 ] || [ $MAC_WLAN == "00:00:00:00:00:00" ]
+	MAC_WLAN=`echo "$MacCloningAddr" | tr "[:lower:]" "[:upper:]"`
+	if [ "$MAC_WLAN" = "0" ] || [ "$MAC_WLAN" = "00:00:00:00:00:00" ]
 	then
 		# There is no fixed address, so sniff the LAN ports to find the first MAC
 		# Get the Mac address of br0
@@ -46,17 +46,17 @@ config_MAC_clonning_bridging ()
 		if [ -e /bin/etherdump ]
 		then
 			# etherdump sniff for the first packet
-			MAC_WLAN=`etherdump -i br0 -h | awk -f /root/mtlk/etc/etherdump_awk -v var=$DST_MAC`
+			MAC_WLAN=`etherdump -i br0 -h | awk -f /root/mtlk/etc/etherdump_awk -v var="$DST_MAC"`
 		else
 			# tcpdump sniff for the first packet
-			MAC_WLAN=`tcpdump -i br0 -ec1 ether dst $DST_MAC or broadcast | awk '{print $2}'`
+			MAC_WLAN=`tcpdump -i br0 -ec1 ether dst "$DST_MAC" or broadcast | awk '{print $2}'`
 			# change the mac address to upper case
-			MAC_WLAN=`echo $MAC_WLAN | tr "[:lower:]" "[:upper:]"`
+			MAC_WLAN=`echo "$MAC_WLAN" | tr "[:lower:]" "[:upper:]"`
 		fi
 		# write the mac cloning address to a file for future use (such as WEB)
-		echo $MAC_WLAN > /tmp/mac_cloning.addr
+		echo "$MAC_WLAN" > /tmp/mac_cloning.addr
 		# Remove colons from the mac address and make sure that each byte consists of 2 chars (this isn't necessarily what tcpdump returns...)
-		MAC_WLAN=`echo $MAC_WLAN | awk -F ":" '{for (i=1; i<=6; i++) {str=$i; if (length(str) < 2) str = 0str; printf "%s" str}}'`
+		MAC_WLAN=`echo "$MAC_WLAN" | awk -F ":" '{for (i=1; i<=6; i++) {str=$i; if (length(str) < 2) str = 0 str; printf "%s", str}}'`
 	fi
 	echo END CONFIG BRIDGING
 }
@@ -64,17 +64,17 @@ config_MAC_clonning_bridging ()
 # 2) create links in tmp directory
 create_links_in_tmp ()
 {
-	ln -s $IMAGES_PATH/bootloader.bin  /tmp/bootloader.bin
-    ln -s $IMAGES_PATH/ap_upper.bin    /tmp/ap_upper.bin 
-    ln -s $IMAGES_PATH/sta_upper.bin   /tmp/sta_upper.bin
-    ln -s $IMAGES_PATH/contr_lm.bin    /tmp/contr_lm.bin 
-    ln -s $DRIVER_PATH/mtlk.ko   /tmp/mtlk.ko
-    ln -s $WEB_PATH/web_config.tcl   /tmp/web_config.tcl
-	ln -s $CONFIGS_PATH/wpa_supplicant0.conf   /tmp/config.conf
+	ln -sf $IMAGES_PATH/bootloader.bin  /tmp/bootloader.bin
+    ln -sf $IMAGES_PATH/ap_upper.bin    /tmp/ap_upper.bin
+    ln -sf $IMAGES_PATH/sta_upper.bin   /tmp/sta_upper.bin
+    ln -sf $IMAGES_PATH/contr_lm.bin    /tmp/contr_lm.bin
+    ln -sf $DRIVER_PATH/mtlk.ko   /tmp/mtlk.ko
+    ln -sf $WEB_PATH/web_config.tcl   /tmp/web_config.tcl
+	ln -sf $CONFIGS_PATH/wpa_supplicant0.conf   /tmp/config.conf
 	cd $IMAGES_PATH
 	for progmodel in `ls ProgModel*`;
 	do
-		ln -s  $IMAGES_PATH/$progmodel  /tmp/$progmodel;
+		ln -sf  $IMAGES_PATH/$progmodel  /tmp/$progmodel;
 	done
 	cd -
 	echo END CREATE LINKS IN TMP
@@ -84,7 +84,7 @@ create_links_in_tmp ()
 make_passphrase ()
 {
 	# Check that this is an AP
-	if [ $NETWORK_TYPE == 2 ]  
+	if [ "$NETWORK_TYPE" = "2" ]
 	then
 		(. ./mtlk_init_passphrase.sh)
 		echo END MAKE PASSPHRASE
@@ -111,7 +111,7 @@ insmod_driver ()
 	fi
 
 	# verify that insmod was successful
-	INSMOD_SUCCEEDED=`ifconfig -a | grep wlan | wc -l`		
+	INSMOD_SUCCEEDED=`ifconfig -a | grep wlan | wc -l`
 	if [ $INSMOD_SUCCEEDED = 0 ]
 	then
 		count=0
@@ -132,7 +132,7 @@ insmod_driver ()
 		done
 		echo count=$count
 	fi
-	
+
 	cd -
 	echo END INSMOD DRIVER
 }
@@ -141,14 +141,14 @@ insmod_driver ()
 qos ()
 {
 	# CONFIGURE_TC defined into the mtlk_init_platform.sh
-	if [ $CONFIGURE_TC != 1 ]
+	if [ "$CONFIGURE_TC" != "1" ]
 	then
 		echo TC unneeded for this platform
 		return
 	fi
-	
+
 	QMap=`awk -F "=" '/^Use11QMap/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf`
-	if [ $QMap == 1 ]
+	if [ "$QMap" = "1" ]
 	then
 		(. ./qos_q.sh)
 	else
@@ -159,15 +159,15 @@ qos ()
 
 # 7) writing driver params
 driver_params ()
-{	
-	#Read configuration file parameters	
+{
+	#Read configuration file parameters
 	if [ ! -e /tmp/wlan0.conf ]
 	then
 		echo Can not read file wlan0.conf
 		$DIAG_LOG "wireless init: /tmp/wlan0.conf is missing" 2>/dev/null || true
 		return
 	fi
-	#Update parameters according to DB. 
+	#Update parameters according to DB.
 	tclsh driver_api.tcl DriverSetAll wlan0 /tmp/wlan0.conf
 	if [ $? != 0 ]
 	then
@@ -175,7 +175,7 @@ driver_params ()
 		$DIAG_LOG "wireless init: driver parameter programming failed" 2>/dev/null || true
 		return
 	fi
-	
+
 	if [ -e /tmp/set_driver_params.sh ]
 	then
 		chmod +x /tmp/set_driver_params.sh
@@ -184,7 +184,7 @@ driver_params ()
 		echo ERROR: "set_driver_params.sh is absent" >> /tmp/init_failed
 		$DIAG_LOG "wireless init: generated set_driver_params.sh is absent" 2>/dev/null || true
 	fi
-	
+
 	echo END DRIVER PARAMS
 }
 
@@ -192,8 +192,8 @@ driver_params ()
 hw_limits ()
 {
 	grep -v "^count" rdlim.ini > /tmp/rdlim.ini
-	mv /tmp/rdlim.ini rdlim.ini 
-	
+	mv /tmp/rdlim.ini rdlim.ini
+
 	tclsh rdlim.tcl
 	echo END HW LINITS
 }
@@ -202,11 +202,11 @@ hw_limits ()
 # Before ifconfig, if we are using a cloned MAC write the new one now.
 # When the EEPROM is implemented, only overwrite MAC when using MAC cloning.
 write_mac_address ()
-{ 
-if  [ $BRIDGE_MODE == 3 ]
+{
+if [ "$BRIDGE_MODE" = "3" ]
 then
 	# Write to the driver
-	tclsh driver_api.tcl DriverParamSet wlan0 MAC $MAC_WLAN
+	tclsh driver_api.tcl DriverParamSet wlan0 MAC "$MAC_WLAN"
 	if [ $? != 0 ]
 	then
 		echo "ERROR: Config MAC in MAC Cloning mode is failed"  >> /tmp/init_failed
@@ -214,10 +214,10 @@ then
 	fi
 fi
 
-if [ $BRIDGE_MODE == 2 ]
+if [ "$BRIDGE_MODE" = "2" ]
 then
 	DST_MAC=`ifconfig br0 | awk 'NR<2 {print $5}'`
-	tclsh driver_api.tcl DriverParamSet wlan0 L2NAT_LocMAC $DST_MAC
+	tclsh driver_api.tcl DriverParamSet wlan0 L2NAT_LocMAC "$DST_MAC"
 	if [ $? != 0 ]
 	then
 		echo ERROR: Config L2NAT_LocMAC is failed  >> /tmp/init_failed
@@ -231,9 +231,9 @@ echo END WRITE MAC ADDRESS
 setCountry ()
 {
 	EEPROMCountryValid=`awk -F "=" '/^EEPROMCountryValid/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf`
-	if [ ! $EEPROMCountryValid ]
+	if [ -z "$EEPROMCountryValid" ]
 	then
-		(. ./mtlk_init_country.sh $CONFIGS_PATH 0)
+		(. ./mtlk_init_country.sh "$CONFIGS_PATH" 0)
 		echo END SET COUNTRY
 	fi
 }
@@ -272,14 +272,14 @@ make_device_pin
 insmod_driver
 
 if [ ! -e /tmp/init_failed ]; then	qos; fi
-	
+
 if [ ! -e /tmp/init_failed ]; then driver_params; fi
-	
+
 if [ ! -e /tmp/init_failed ]; then 	hw_limits; fi
-	
+
 if [ ! -e /tmp/init_failed ]; then 	write_mac_address; fi
-	
+
 if [ ! -e /tmp/init_failed ]; then 	setCountry; fi
-	
+
 if [ ! -e /tmp/init_failed ]; then 	ifconfig_up; fi
 #################################################################

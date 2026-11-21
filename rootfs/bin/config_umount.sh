@@ -22,11 +22,18 @@ then
 	exit 1
 fi
 
+REMOUNTED_RO=0
+
 cleanup_and_unlock() {
+	if [ "$REMOUNTED_RO" -eq 1 ]; then
+		mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
+		REMOUNTED_RO=0
+	fi
 	rm -f "$CONFIG_GZ" 2>/dev/null
 	config_unlock.sh $$ >/dev/null 2>&1 || true
 }
-trap 'cleanup_and_unlock' 0 1 2 15
+trap 'cleanup_and_unlock' 0
+trap 'exit 130' 1 2 15
 
 if [ ! -f "$CONFIG_FILE" ]
 then
@@ -40,25 +47,32 @@ fi
 sync
 if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
 then
-	mount -o remount,ro "$CONFIG_MNT" 2>/dev/null || true
+	if ! mount -o remount,ro "$CONFIG_MNT" 2>/dev/null; then
+		sleep 1
+		sync
+		if ! mount -o remount,ro "$CONFIG_MNT" 2>/dev/null; then
+			echo " ($$) Failed remounting $CONFIG_MNT read-only before flash save"
+			$DIAG_LOG "config_umount: remount ro failed; aborting flash write" 2>/dev/null || true
+			exit 1
+		fi
+	fi
+	REMOUNTED_RO=1
 	sync
 fi
 
 rm -f "$CONFIG_GZ" 2>/dev/null
 if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
 then
-	if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null; then
-		mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
-	fi
 	echo " ($$) Failed compressing configuration filesystem"
 	$DIAG_LOG "config_umount: failed compressing configuration filesystem" 2>/dev/null || true
 	logger -t $$ "Failed compressing configuration filesystem"
 	exit 1
 fi
 
-if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
+if [ "$REMOUNTED_RO" -eq 1 ]
 then
 	mount -o remount,rw "$CONFIG_MNT" 2>/dev/null || true
+	REMOUNTED_RO=0
 fi
 
 # Never start an erase/write cycle with an image larger than mtdblock4 (128 KB).

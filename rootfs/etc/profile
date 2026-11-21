@@ -49,12 +49,10 @@ if [ "$PS1" ]; then
     alias af='ps'
     alias cls='clear'
     alias df='df'
-    alias indent='indent -bad -bap -bbo -nbc -br -brs -c33 -cd33 -ncdb -ce -ci4 -cli0 -cp33 -cs -d0 -di1 -nfc1 -nfca -hnl -i4 -ip0 -l75 -lp -npcs -npsl -nsc -nsob -nss -ts4 '
-    #alias bc='bc -l'
-    alias minicom='minicom -c on'
-    alias calc='calc -Cd '
-    alias bc='calc -Cd '
 
-    # Welcome tip
-    echo "Type 'help' to view all available system tools, network commands, and diagnostics."
+    # Welcome tip (once per top-level interactive session)
+    if [ -z "$_WAP610N_PROFILE_DONE" ]; then
+        export _WAP610N_PROFILE_DONE=1
+        echo "Type 'help' to view all available system tools, network commands, and diagnostics."
+    fi
 fi;

@@ -101,7 +101,9 @@ proc message_all {message} {
 	}
 
 	foreach terminal $terminals {
-		exec echo $message >$terminal 
+		if {$terminal != ""} {
+			catch {exec echo $message >$terminal}
+		}
 	}
 }
 
@@ -215,7 +217,7 @@ proc stop_upnpd {} {
 ##################################################################
 proc start_upnpd {} {
 	log "Starting UPNPD\n"
-	catch {exec upnpd &}
+	catch {exec upnpd br0 &}
 }
 
 ##################################################################
@@ -273,34 +275,34 @@ proc call_generic_event_script {} {
 ##################################################################
 proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 	global current_hostname
-	set cmd_broadcast ""
-	set cmd_netmask ""
+	set ifcfg_cmd [list ifconfig $iface $ip_addr]
 
 	if {$brdcast != ""} {
-		set cmd_broadcast "broadcast $brdcast"
+		lappend ifcfg_cmd "broadcast" $brdcast
 	}
 
 	if {$mask != ""} {
-		set cmd_netmask "netmask $mask"
+		lappend ifcfg_cmd "netmask" $mask
 	}
 
 	log "config_nic ip:$ip_addr mask:$mask host:$host domain:$domain brdcast:$brdcast routing:$routing dns:$dns"
 	catch {exec echo dhcp.tcl: config_nic=>ip:$ip_addr mask:$mask host:$host domain:$domain brdcast:$brdcast routing:$routing dns:$dns > /dev/console}
 
 	stop_upnpd
-	catch {exec ifconfig $iface $ip_addr $cmd_broadcast $cmd_netmask}
+	catch {eval exec $ifcfg_cmd}
 	start_upnpd
 	#shown current ip address
-	exec echo "Current IP Address is - $ip_addr" > /dev/console
+	catch {exec echo "Current IP Address is - $ip_addr" > /dev/console}
 
 	# SET route
 	# split the routes by '\n'
 	if {$routing != ""} {
 		log "setting routing info"
 		set routing [split $routing " "]
-		set _defaults [split [exec route -n] "\n"]
+		set _defaults ""
+		catch {set _defaults [split [exec route -n] "\n"]}
 		foreach line $_defaults {
-			if {[regexp {^default.*$iface} $line] == 1 || [regexp {^0\.0\.0\.0.*$iface} $line] == 1} {
+			if {[regexp "^default.*$iface" $line] == 1 || [regexp "^0\\.0\\.0\\.0.*$iface" $line] == 1} {
 				#log "deleting default route"
 				catch {exec route del default gw 0.0.0.0 dev $iface}
 			}
@@ -311,8 +313,10 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 		#log "default route count : $routes_count"	
 		for {set i 0} {$i<$routes_count} {incr i} {
 			set line [lindex $routing $i]
-			log ">> route add default gw $line dev $iface"
-			catch {exec route add default gw $line dev $iface}
+			if {$line != ""} {
+				log ">> route add default gw $line dev $iface"
+				catch {exec route add default gw $line dev $iface}
+			}
 		}
 	}
 
@@ -323,7 +327,7 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 	set R ""
 	if {$domain != ""} {
 		log "setting domain $domain"
-		set R "domain $domain "	
+		set R "domain ${domain}\n"
 	}
 	#log "DNS:$dns"
 	set dns [split $dns " "]
@@ -333,7 +337,7 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 		set line [lindex $dns $i]
 		if {$line != " " && $line != ""} {
 			log "Adding dns $line"
-			set R "${R} nameserver $line"
+			set R "${R}nameserver ${line}\n"
 		}
 	}
 	
@@ -341,10 +345,10 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 
 	if {[file exists /sbin/resolvconf] == 1} {
 		log "using /sbin/resolvconf"
-		exec echo -n "$R" | resolvconf -a "${iface}.udhcpc" 
+		catch {exec echo -n "$R" | resolvconf -a "${iface}.udhcpc"}
 	} else {
 		log "writing $::RESOLV_CONF"
-		exec echo -n "$R" > "$::RESOLV_CONF"
+		catch {exec echo -n "$R" > "$::RESOLV_CONF"}
 	}
 	
 	update_web_ip $ip_addr
@@ -380,22 +384,25 @@ proc auto_ap_turn_off {} {
 
 	wait_for_init_done
 	
-	catch {[exec cat /mnt/jffs2/sys.conf | grep -v auto_network_type > /tmp/t_sys.conf]}
+	catch {exec cat /mnt/jffs2/sys.conf | grep -v auto_network_type > /tmp/t_sys.conf}
 	catch {exec echo "auto_network_type = 0" >> /tmp/t_sys.conf}
 	catch {exec mv /tmp/t_sys.conf /mnt/jffs2/sys.conf}
 	catch {exec cp /mnt/jffs2/sys.conf /tmp/sys.conf}
 	
-	exec echo "Turn OFF - AUTO AP MODE" > /dev/console
+	catch {exec echo "Turn OFF - AUTO AP MODE" > /dev/console}
 	
-	exec config_umount.sh
-	exec config_mount.sh
+	catch {exec config_umount.sh}
+	catch {exec config_mount.sh}
 }
 
 ##################################################################
 # Return the current IP address
 ##################################################################
 proc get_current_ip {} {
-	set ifconfig [exec ifconfig br0]
+	set ifconfig ""
+	if {[catch {set ifconfig [exec ifconfig br0]}]} {
+		return ""
+	}
 	set res [regexp {addr:([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)} $ifconfig dummy p1 p2 p3 p4]
 	if {$res==1} {
 		#log "get_current_ip=$p1.$p2.$p3.$p4"
@@ -526,8 +533,8 @@ if {[info exists ::argv]} {
 
 		if {$ip_config == 1} {
 			log "Static IP configuration active (ip_config_method=1)"
-			if {[get_parameter auto_network_mode] == 1} {
-				log "Disabling auto_network_mode"
+			if {[get_parameter auto_network_type] == 1} {
+				log "Disabling auto_network_type"
 				auto_ap_turn_off
 			}
 		} else {
@@ -660,10 +667,10 @@ if {[info exists ::argv]} {
 			
 			wait_for_init_done	
 			
-			exec ${g_web_wpa_app_folder}/mtlk_restore_defaults.sh $AP 
+			exec ${g_web_wpa_app_folder}/mtlk_restore_defaults.sh $AP 0
 			
 			#go to the reboot
-			exec killall -SIGINT upnpd
+			catch {exec killall -SIGINT upnpd}
 			exec reboot
 					
 			# Terminate event handling
@@ -707,9 +714,19 @@ if {[info exists ::argv]} {
 					config_nic $interface [get_parameter ip_lan] [get_parameter subnet_lan] "" "" "" "" $tmp_dns
 				} else {
 					close $checkCommit
-					catch { set originalIP [exec cat /var/currentIP] }
+					set originalIP ""
+					catch { set originalIP [string trim [exec cat /var/currentIP]] }
+					if {$originalIP == ""} {
+						set originalIP [get_parameter ip_lan]
+					}
+					set orig_mask [get_env_var "subnet"]
+					if {$orig_mask == ""} {
+						set orig_mask [get_parameter subnet_lan]
+					}
 					catch {exec echo "dhcp.tcl: fail, set to original ip $originalIP"  > /dev/console}
-					config_nic $interface $originalIP [get_env_var "subnet"]  "" "" "" "" ""
+					if {$originalIP != ""} {
+						config_nic $interface $originalIP $orig_mask "" "" "" "" ""
+					}
 				}
 				
 				set config_changed 1

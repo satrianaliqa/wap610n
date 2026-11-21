@@ -1,6 +1,7 @@
 #!/bin/sh
 #Jacky.Yang 24-Jul-2008
 WEBDIR=/root/mtlk/web
+DIAG_LOG=/bin/diag_log.sh
 . ${WEBDIR}/fw_version.txt
 ProjectName=${ProjectName}
 
@@ -19,12 +20,12 @@ is_Reboot=$2
 ProjectName="WAP610N"
 
 if [ "$is_ap" != "0" ] && [ "$is_ap" != "1" ]; then
-	echo "Invalid restore mode: $is_ap" > /dev/console
+	$DIAG_LOG "factory restore: invalid restore mode $is_ap" 2>/dev/null || true
 	exit 1
 fi
 
 if [ "$is_Reboot" != "0" ] && [ "$is_Reboot" != "1" ]; then
-	echo "Invalid reboot mode: $is_Reboot" > /dev/console
+	$DIAG_LOG "factory restore: invalid reboot mode $is_Reboot" 2>/dev/null || true
 	exit 1
 fi
 
@@ -37,7 +38,7 @@ else
 fi
 
 if [ ! -x "$ETC_PATH/mtlk_set_config.tcl" ]; then
-	echo "Missing configuration restore utility" > /dev/console
+	$DIAG_LOG "factory restore: configuration generator utility is missing" 2>/dev/null || true
 	exit 1
 fi
 
@@ -57,30 +58,30 @@ fi
 
 if [ "$is_ap" = "0" ]; then
 	[ -f "$STA_FILE" ] || {
-		echo "Missing STA factory configuration" > /dev/console
+		$DIAG_LOG "factory restore: STA factory configuration is missing" 2>/dev/null || true
 		exit 1
 	}
 	PRIMARY_CONF="$STA_FILE"
 else
 	[ -f "$AP_FILE" ] || {
-		echo "Missing AP factory configuration" > /dev/console
+		$DIAG_LOG "factory restore: AP factory configuration is missing" 2>/dev/null || true
 		exit 1
 	}
 	PRIMARY_CONF="$AP_FILE"
 fi
 
 [ -f "$SAVED_CONFIG_PATH/$ADMIN_CONF" ] || {
-	echo "Missing administrator factory configuration" > /dev/console
+	$DIAG_LOG "factory restore: administrator factory configuration is missing" 2>/dev/null || true
 	exit 1
 }
 [ -f "$SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF" ] || {
-	echo "Missing network factory configuration" > /dev/console
+	$DIAG_LOG "factory restore: network factory configuration is missing" 2>/dev/null || true
 	exit 1
 }
 
 if ! cat "$PRIMARY_CONF" "$SAVED_CONFIG_PATH/$ADMIN_CONF" \
 	"$SAVED_CONFIG_PATH/$AUTO_AP_OFF_CONF" > "$TMP_CONF_FILE"; then
-	echo "Failed creating factory configuration" > /dev/console
+	$DIAG_LOG "factory restore: failed creating factory configuration" 2>/dev/null || true
 	exit 1
 fi
 
@@ -91,28 +92,34 @@ if [ -f "$CONFIGS_PATH/wlan0.conf" ]; then
 	cp -f "$CONFIGS_PATH/wlan0.conf" "$CONFIGS_PATH/wlan0.old.conf" || exit 1
 fi
 
-if [ -e /tmp/sys.conf ]; then rm -f /tmp/sys.conf || exit 1; fi
-if [ -e /tmp/wlan0.conf ]; then rm -f /tmp/wlan0.conf || exit 1; fi
-
 dos2unix -u "$TMP_CONF_FILE" || exit 1
 
 if ! "$ETC_PATH/mtlk_set_config.tcl" "$TMP_CONF_FILE"; then
-	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf"
-	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf"
+	$DIAG_LOG "factory restore: configuration generator failed; rollback attempted" 2>/dev/null || true
+	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf" && cp -f "$CONFIGS_PATH/sys.old.conf" /tmp/sys.conf
+	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf" && cp -f "$CONFIGS_PATH/wlan0.old.conf" /tmp/wlan0.conf
 	exit 1
 fi
 
 if [ ! -f "$CONFIGS_PATH/sys.conf" ] || [ ! -f "$CONFIGS_PATH/wlan0.conf" ]; then
-	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf"
-	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf"
+	$DIAG_LOG "factory restore: generated configuration files are incomplete" 2>/dev/null || true
+	[ -f "$CONFIGS_PATH/sys.old.conf" ] && cp -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/sys.conf" && cp -f "$CONFIGS_PATH/sys.old.conf" /tmp/sys.conf
+	[ -f "$CONFIGS_PATH/wlan0.old.conf" ] && cp -f "$CONFIGS_PATH/wlan0.old.conf" "$CONFIGS_PATH/wlan0.conf" && cp -f "$CONFIGS_PATH/wlan0.old.conf" /tmp/wlan0.conf
 	exit 1
 fi
+rm -f /tmp/sys.conf /tmp/wlan0.conf
 cp "$CONFIGS_PATH/sys.conf" /tmp/sys.conf || exit 1
 cp "$CONFIGS_PATH/wlan0.conf" /tmp/wlan0.conf || exit 1
 
 # Persist restored configuration to physical flash partition (/dev/mtdblock4)
-[ -x /bin/config_save.sh ] || exit 1
-/bin/config_save.sh || exit 1
+if [ ! -x /bin/config_save.sh ]; then
+	$DIAG_LOG "factory restore: config_save.sh is missing" 2>/dev/null || true
+	exit 1
+fi
+if ! /bin/config_save.sh; then
+	$DIAG_LOG "factory restore: configuration flash save failed" 2>/dev/null || true
+	exit 1
+fi
 sync
 
 if [ "$is_Reboot" = "1" ] || [ "$is_Reboot" = 1 ]; then

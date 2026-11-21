@@ -13,19 +13,31 @@ if ! pidof telnetd >/dev/null 2>&1; then
 fi
 
 # 2. Start Dropbear SSH daemon (Port 22) in background so keygen never blocks boot
-if [ -x /usr/sbin/dropbear ]; then
+if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 	(
-		mkdir -p /etc/dropbear
-		chmod 700 /etc/dropbear 2>/dev/null || true
-		if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-			/usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
-		fi
-		if [ ! -f /etc/dropbear/dropbear_dss_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
-		fi
-		if ! pidof dropbear >/dev/null 2>&1; then
-			$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
-			/usr/sbin/dropbear -p 22 &
+		LOCKDIR=/tmp/dropbear_init.lock
+		if mkdir "$LOCKDIR" 2>/dev/null; then
+			trap 'rmdir "$LOCKDIR" 2>/dev/null || true' 0
+			mkdir -p /etc/dropbear /mnt/jffs2/dropbear 2>/dev/null || true
+			chmod 700 /etc/dropbear /mnt/jffs2/dropbear 2>/dev/null || true
+			for keyname in dropbear_rsa_host_key dropbear_dss_host_key; do
+				keytype=rsa
+				[ "$keyname" = "dropbear_dss_host_key" ] && keytype=dss
+				if [ -f "/mnt/jffs2/dropbear/$keyname" ]; then
+					cp -f "/mnt/jffs2/dropbear/$keyname" "/etc/dropbear/$keyname" 2>/dev/null || true
+				elif [ ! -f "/etc/dropbear/$keyname" ] && [ -x /usr/bin/dropbearkey ]; then
+					/usr/bin/dropbearkey -t "$keytype" -s 1024 -f "/etc/dropbear/$keyname" >/dev/null 2>&1 || true
+					if [ -f "/etc/dropbear/$keyname" ] && [ -d /mnt/jffs2/dropbear ]; then
+						cp -f "/etc/dropbear/$keyname" "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
+						chmod 600 "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
+					fi
+				fi
+				[ -f "/etc/dropbear/$keyname" ] && chmod 600 "/etc/dropbear/$keyname" 2>/dev/null || true
+			done
+			if ! pidof dropbear >/dev/null 2>&1; then
+				$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
+				/usr/sbin/dropbear -p 22 >/dev/null 2>&1 &
+			fi
 		fi
 	) &
 fi

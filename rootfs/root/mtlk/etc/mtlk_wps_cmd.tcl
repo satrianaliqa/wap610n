@@ -303,8 +303,12 @@ proc stopWPSPBC {} {
 	catch {set conf [exec grep WPS_PB /tmp/HW.ini]}
 	if {$conf != ""} {
 		set wpsPBCgpio ""
-		catch {set cmd_res [regexp {.*=(.*)} $conf dummy wpsPBCgpio]	}
-		if {$wpsPBCgpio != ""} {
+		catch {set cmd_res [regexp {.*=(.*)} $conf dummy wpsPBCgpio]}
+		set wpsPBCgpio [string trim $wpsPBCgpio]
+		if {[regexp {^[0-9]+$} $wpsPBCgpio]} {
+			set wpsPBCgpio "/dev/gpio${wpsPBCgpio}"
+		}
+		if {$wpsPBCgpio != "" && $wpsPBCgpio != "null" && $wpsPBCgpio != "/dev/gpio3"} {
 			debug_puts "mtlk_wps_cmd.tcl: Terminating gpio $wpsPBCgpio listeners"
 			set ps ""
 			catch { set ps [split [exec ps | grep "cat $wpsPBCgpio"] "\n"] }
@@ -316,6 +320,7 @@ proc stopWPSPBC {} {
 			debug_puts "mtlk_wps_cmd.tcl: Failed to get WPS_PB gpio from /tmp/HW.ini"
 		}
 	}
+	catch {exec rm -rf /tmp/WPS_PBC_monitor.lock}
 
 }
 
@@ -447,6 +452,7 @@ proc CheckWPSSessionInProgress {} {
 		debug_puts "mtlk_wps_cmd.tcl: WPS Session already in progress (Registering)."
 		# TODO: Only exit when in Registering state? What about other WPS in progress states?
 		# How should PBC behave when pressed twice?
+		release_wps_cmd_lock
 		exit 0
 	}
 }
@@ -463,11 +469,12 @@ proc CheckWPSManualSessionTimeout {} {
 
 proc SetGPIO {gpio value} {
 	set conf ""
-	set conf [exec grep $gpio /tmp/HW.ini]
+	catch {set conf [exec grep $gpio /tmp/HW.ini]}
 	if {$conf != ""} {
 		set ledGPIO ""
-		catch {set cmd_res [regexp {.*=(.*)} $conf dummy ledGPIO]	}
-		if {$ledGPIO != ""} {
+		catch {set cmd_res [regexp {.*=(.*)} $conf dummy ledGPIO]}
+		set ledGPIO [string trim $ledGPIO]
+		if {$ledGPIO != "" && $ledGPIO != "null"} {
 			debug_puts "mtlk_wps_cmd.tcl:LED GPIO $ledGPIO"
 			catch {exec echo $value > $ledGPIO}
 		} else {
@@ -561,6 +568,34 @@ proc wait_for_init_done {} {
 	}
 }
 
+set ::wps_cmd_lock_held 0
+
+proc release_wps_cmd_lock {} {
+	if {$::wps_cmd_lock_held == 1} {
+		set ::wps_cmd_lock_held 0
+		catch {exec rm -rf /tmp/wps_cmd.lock}
+	}
+}
+
+proc acquire_wps_cmd_lock {} {
+	if {[catch {exec mkdir /tmp/wps_cmd.lock}] == 0} {
+		catch {exec echo [pid] > /tmp/wps_cmd.lock/pid}
+		set ::wps_cmd_lock_held 1
+		return 1
+	}
+	set old_pid ""
+	catch {set old_pid [string trim [exec cat /tmp/wps_cmd.lock/pid]]}
+	if {$old_pid == "" || ![regexp {^[0-9]+$} $old_pid] || [catch {exec kill -0 $old_pid}] != 0} {
+		catch {exec rm -rf /tmp/wps_cmd.lock}
+		if {[catch {exec mkdir /tmp/wps_cmd.lock}] == 0} {
+			catch {exec echo [pid] > /tmp/wps_cmd.lock/pid}
+			set ::wps_cmd_lock_held 1
+			return 1
+		}
+	}
+	return 0
+}
+
 # Don't start any wps commands until the init process is done
 wait_for_init_done
 
@@ -571,11 +606,7 @@ set wpsSessionStat [getWPSSessionStat]
 init_wps_logging
 
 if {$action != "save_settings"} {
-	set ps ""
-	#set ps [exec ps | grep wps_cmd.tcl | grep -v grep]
-	set ps [exec sh -c "ps | grep wps_cmd.tcl | grep -v grep"]
-	set ps [split $ps "\n"]
-	if {[llength $ps] > 1} {
+	if {![acquire_wps_cmd_lock]} {
 	  debug_puts "mtlk_wps_cmd.tcl:Concurrent running prohibited"
 	  puts "Concurrent running prohibited"
 	  exit 1
@@ -641,7 +672,7 @@ if {$action =="conf_via_pin" } {
 		#exteranl registrar
 		if {$enrollee_type == $AP_enrollee} {
 			exec echo $CMD_REG_CONF_AP > ${::FIFO_CMD}
-			exec echo "${param_AP_SSID}" > ${::FIFO_SSID_AP}
+			exec echo "${AP_SSID}" > ${::FIFO_SSID_AP}
 		}
 		if {$enrollee_type == $STA_enrollee} {
 			WPS_Registration $CMD_REG_CONF_STA $NOT_PBC
@@ -1050,7 +1081,7 @@ if {$action == "save_settings"} {
 	# signal the web that the settings have changed.
 	catch { exec killall -HUP webs}
 	catch { exec ps | grep webs > /dev/console }
-	catch { exec $::g_web_combined_ver_folder/etc/mtlk_init_wls_apps.sh}
+	catch { exec sh -c "cd $::g_web_combined_ver_folder/etc && . ./mtlk_init_platform.sh && . ./mtlk_init_wls_apps.sh" }
 	
 	catch {exec echo mtlk_wps_cmd.tcl: save_settings, leave here. > /dev/console}
 }
@@ -1061,6 +1092,7 @@ if {$actionValid==0} {
 	showUsage
 } 
 
+release_wps_cmd_lock
 catch {exec echo mtlk_wps_cmd.tcl: Exit mtlk_wps_cmd.tcl > /dev/console}
 catch { exec ps | grep webs > /dev/console }
 

@@ -10,7 +10,10 @@ DHCP_SUBNET=`awk -F "=" '/^DHCPDSubnet/ {str = $2; gsub(/ /, "", str); sub(/\r/,
 DHCP_WINS=`awk -F "=" '/^DHCPDWINS/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
 DHCP_DOMAIN=`awk -F "=" '/^DHCPDDomain/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
 DHCP_LEASETIME=`awk -F "=" '/^DHCPDLeaseTime/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-DHCP_GATEWAY=`awk -F "=" '/^ip_lan/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+DHCP_GATEWAY=`awk -F "=" '/^default_gw/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+if [ -z "$DHCP_GATEWAY" ] || [ "$DHCP_GATEWAY" = "0.0.0.0" ]; then
+	DHCP_GATEWAY=`awk -F "=" '/^ip_lan/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+fi
 
 if [ $DHCP_START_ADDRESS ]
 then
@@ -58,7 +61,7 @@ then
 fi
 
 
-if [ $DHCP_GATEWAY ]
+if [ -n "$DHCP_GATEWAY" ]
 then
 	DHCPD_CONFIG_STRING="$DHCPD_CONFIG_STRING gw $DHCP_GATEWAY"
 fi

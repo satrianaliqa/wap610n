@@ -51,7 +51,12 @@ do
 	OLDPID=`get_lock_owner`
 	if [ -z "$OLDPID" ]
 	then
-		# Lock was just released between ln and readlink; retry immediately
+		# If a regular file/dir blocked lock creation (non-symlink), remove it or wait safely
+		if [ ! -L "$CONFIG_LOCKFILE" ] && [ -e "$CONFIG_LOCKFILE" ]; then
+			rm -f "$CONFIG_LOCKFILE" 2>/dev/null || true
+		fi
+		WAIT_COUNT=`expr $WAIT_COUNT + 1`
+		sleep 1
 		continue
 	fi
 

@@ -1,10 +1,10 @@
 #!/bin/sh
 DIAG_LOG=/bin/diag_log.sh
 
-if [ $WPS_PB == 1 ]
+if [ "$WPS_PB" = "1" ]
 then
 	# Start the GPIO driver for WPS PB and LEDs
-	if [ $GPIO_LEDS ] 
+	if [ -n "$GPIO_LEDS" ]
 	then
 		insmod ./gpio.$MOD_EXT outputLeds=$GPIO_LEDS pushButtons=$GPIO_PUSHBUTTONS
 	else
@@ -12,7 +12,7 @@ then
 	fi
 fi
 
-if [ $LEDMAN == 1 ]
+if [ "$LEDMAN" = "1" ]
 then
 	# Start the LEDs and LED manager
 	## TODO: Change the path of led.o if it is part of the rootfs
@@ -30,56 +30,36 @@ fi
 	if ! pidof upnpd >/dev/null 2>&1; then
 		if [ -x ./upnpd ]; then
 			nice -n 18 ./upnpd br0 &
+		elif [ -x /bin/upnpd ]; then
+			nice -n 18 /bin/upnpd br0 &
 		elif command -v upnpd >/dev/null 2>&1; then
 			nice -n 18 upnpd br0 &
-			else
-				$DIAG_LOG "daemon init: UPnP binary is unavailable" 2>/dev/null || true
-			fi
+		else
+			$DIAG_LOG "daemon init: UPnP binary is unavailable" 2>/dev/null || true
+		fi
 	fi
 ) &
 
-# Start Telnet and Dropbear SSH daemons in background for remote diagnostics
-if [ -x /usr/sbin/telnetd ] && ! pidof telnetd >/dev/null 2>&1; then
-	$DIAG_LOG "daemon init: starting Telnet daemon on port 23" 2>/dev/null || true
-	telnetd -l /bin/sh &
-	[ $? -ne 0 ] && $DIAG_LOG "daemon init: telnetd failed to start" 2>/dev/null || true
-fi
-
-if [ -x /usr/sbin/dropbear ] && ! pidof dropbear >/dev/null 2>&1; then
-	(
-		mkdir -p /etc/dropbear
-		chmod 700 /etc/dropbear 2>/dev/null || true
-		if [ ! -f /etc/dropbear/dropbear_rsa_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-			/usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
-		fi
-		if [ ! -f /etc/dropbear/dropbear_dss_host_key ] && [ -x /usr/bin/dropbearkey ]; then
-			/usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
-		fi
-		if ! pidof dropbear >/dev/null 2>&1; then
-			$DIAG_LOG "daemon init: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
-			/usr/sbin/dropbear -p 22 &
-			[ $? -ne 0 ] && $DIAG_LOG "daemon init: dropbear failed to start" 2>/dev/null || true
-		fi
-	) &
-fi
-
-# Start the DHCP Server / Client
+# Start the DHCP Client / Server (Telnet/Dropbear are owned by /etc/mtlk_init_start.sh)
 DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+if [ -z "$NETWORK_TYPE" ]; then
+	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
+	[ -z "$NETWORK_TYPE" ] && NETWORK_TYPE=2
+fi
 
-if [ "$DHCPD_ENABLED" = "1" ] || [ "$DHCPD_ENABLED" = 1 ]; then
+if [ "$IP_CONFIG_METHOD" = "0" ]; then
+	# DHCP Client Mode: Obtain dynamic IP from upstream router
+	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
+	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
+elif [ "$DHCPD_ENABLED" = "1" ] && [ "$NETWORK_TYPE" = "2" ]; then
 	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
 	$DIAG_LOG "daemon init: starting DHCP server for Access Point" 2>/dev/null || true
 	if ./mtlk_init_dhcpd.sh; then
 		nice -n 18 udhcpd /tmp/udhcpd.conf &
-		[ $? -ne 0 ] && $DIAG_LOG "daemon init: udhcpd failed to start" 2>/dev/null || true
 	else
 		$DIAG_LOG "daemon init: DHCP server configuration failed; udhcpd not started" 2>/dev/null || true
 	fi
-elif [ "$IP_CONFIG_METHOD" = "0" ] || [ "$IP_CONFIG_METHOD" = 0 ]; then
-	# DHCP Client Mode: Obtain dynamic IP from upstream router
-	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
-	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
 else
 	$DIAG_LOG "daemon init: static IP mode without DHCP server" 2>/dev/null || true
 fi
@@ -98,11 +78,11 @@ nice -n 18 ./mtlk_upnpd_monitor.sh &
 
 # Turn on loop-breaking features in the STA. 
 LOOP_BREAKING_ENABLED=`awk -F "=" '/^LoopBreakingEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-if [ ! $LOOP_BREAKING_ENABLED ] 
+if [ -z "$LOOP_BREAKING_ENABLED" ]
 then
 	LOOP_BREAKING_ENABLED=0
 fi
-if [ $LOOP_BREAKING_ENABLED -eq 1 -a $NETWORK_TYPE -eq 0 ]
+if [ "$LOOP_BREAKING_ENABLED" = "1" ] && [ "$NETWORK_TYPE" = "0" ]
 then
 	echo "Turn on the STP-like loop breaking feature"
 	# Turn on the STP-like loop breaking feature
@@ -110,7 +90,7 @@ then
 
 #june.chen, 2011-01-06, add carrier detect support for WES610N, done it within loop detection
 DEVICE_TYPE=`hostname`
-	if [ $DEVICE_TYPE == "WES610N"  ]
+	if [ "$DEVICE_TYPE" = "WES610N" ]
 	then
 		echo "Start loop detection daemon and detect carrier port down/up at the same time"
 		/usr/bin/DetectedBrLoop &

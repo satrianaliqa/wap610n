@@ -4,6 +4,13 @@
 # ============================================================================
 
 SECTION="$1"
+NO_COLOR=0
+if [ "$1" = "--no-color" ]; then
+    NO_COLOR=1
+    SECTION="$2"
+elif [ "$2" = "--no-color" ]; then
+    NO_COLOR=1
+fi
 
 # ANSI color codes
 BOLD="\033[1m"
@@ -16,7 +23,7 @@ BLUE="\033[1;34m"
 RESET="\033[0m"
 
 # Disable color if stdout is not a TTY or --no-color requested
-if [ ! -t 1 ] || [ "$2" = "--no-color" ]; then
+if [ ! -t 1 ] || [ "$NO_COLOR" -eq 1 ]; then
     BOLD=""
     GREEN=""
     CYAN=""
@@ -32,7 +39,7 @@ show_header() {
     echo -e "  ${BOLD}CISCO LINKSYS WAP610N / WET610N - SYSTEM DIRECTORY & COMMAND MANUAL${RESET}"
     echo -e "${CYAN}=============================================================================${RESET}"
     echo -e "  ${YELLOW}SoC:${RESET} Cavium CNS2132 (ARM922T @ 200 MHz)  ${YELLOW}RAM:${RESET} 32 MB  ${YELLOW}Flash:${RESET} 4 MB Parallel NOR"
-    echo -e "  ${YELLOW}OS:${RESET}  Linux 2.6.16-star (uClibc 0.9.28)    ${YELLOW}Radio:${RESET} Metalink 802.11a/b/g/n (MTLK)"
+    echo -e "  ${YELLOW}OS:${RESET}  Linux 2.6.16-star (uClibc 0.9.29)    ${YELLOW}Radio:${RESET} Metalink 802.11a/b/g/n (MTLK)"
     echo -e "${CYAN}-----------------------------------------------------------------------------${RESET}"
 }
 
@@ -54,7 +61,7 @@ show_net() {
     echo -e "    ${BOLD}ifconfig${RESET}              - Interface management (br0=bridge, eth0=FastEth, wlan0=Wi-Fi)"
     echo -e "    ${BOLD}brctl${RESET}                 - Ethernet bridge table (${BOLD}brctl show${RESET}, ${BOLD}brctl showmacs br0${RESET})"
     echo -e "    ${BOLD}route / ip${RESET}            - Kernel routing tables and policy-based IP route inspection"
-    echo -e "    ${BOLD}netstat -tlpn${RESET}         - Active TCP/UDP listening ports and connected foreign sockets"
+    echo -e "    ${BOLD}netstat -tlun${RESET}         - Active TCP/UDP listening ports and open sockets"
     echo -e "    ${BOLD}arp / arping${RESET}          - ARP cache table display and ARP-level IP reachability test"
     echo -e "    ${BOLD}ping / traceroute${RESET}     - ICMP echo diagnostics and gateway hop latency tracing"
     echo -e "    ${BOLD}curl${RESET}                  - HTTP client for REST APIs, JSON webhooks & POST/GET calls"
@@ -79,7 +86,7 @@ show_sys() {
     echo -e "    ${BOLD}sysmon [-l|-d|-n]${RESET}     - Continuous monitor (-l [sec], -d <sec>, -n <count>, -c)"
     echo -e "    ${BOLD}top / ps${RESET}              - Linux task monitor and process list (${BOLD}ps${RESET}, ${BOLD}ps -w${RESET})"
     echo -e "    ${BOLD}free${RESET}                  - SDRAM memory allocation (Total, Used, Free, Buffers, Cached)"
-    echo -e "    ${BOLD}uptime / vmstat${RESET}       - System running time, 1/5/15 min load averages & paging"
+    echo -e "    ${BOLD}uptime${RESET}                - System running time and 1/5/15 min load averages"
     echo -e "    ${BOLD}dmesg${RESET}                 - Kernel ring buffer diagnostic log (${BOLD}dmesg | tail -n 25${RESET})"
     echo -e "    ${BOLD}json${RESET}                  - Lightweight JSON parser/query tool (${BOLD}echo '{\"ip\":\"1.2.3.4\"}' | json ip${RESET})"
     echo -e "    ${BOLD}kill / killall${RESET}        - Deliver termination signals (SIGTERM/SIGKILL) to PID or process"
@@ -96,13 +103,13 @@ show_flash() {
     echo -e "       • ${BOLD}mtdblock1${RESET}: 0x10000000 (128 KB)  - U-Boot 1.1.4 Bootloader (Read-Only)"
     echo -e "       • ${BOLD}mtdblock3${RESET}: 0x10020000 ( 64 KB)  - U-Boot Env / NVRAM (Read-Write)"
     echo -e "       • ${BOLD}mtdblock2${RESET}: 0x10040000 (3.625MB) - Kernel + RootFS Ramdisk (Firmware Limit)"
-    echo -e "       • ${BOLD}mtdblock4${RESET}: 0x103E0000 (128 KB)  - ConfigFS Runtime JFFS2 (Persistent Storage)"
+    echo -e "       • ${BOLD}mtdblock4${RESET}: 0x103E0000 (128 KB)  - ConfigFS Storage (gzipped ext2 loopback)"
     echo ""
 }
 
 show_hardware() {
     echo -e "${BLUE}[+] 🎛️ HARDWARE PERIPHERALS & GPIO CONTROLS:${RESET}"
-    echo -e "    ${BOLD}/dev/led0${RESET}             - Front Power/Diag LED (${BOLD}echo green > /dev/led0${RESET}, ${BOLD}echo amber...${RESET})"
+    echo -e "    ${BOLD}/dev/led0${RESET}             - Front Power/Diag LED (${BOLD}echo on > /dev/led0${RESET}, ${BOLD}echo off...${RESET})"
     echo -e "    ${BOLD}/dev/gpio3${RESET}            - Hardware Reset PushButton (Active-Low, hold 3s for factory reset)"
     echo -e "    ${BOLD}/dev/gpio13${RESET}           - Hardware WPS PushButton (Active-Low, triggers WPS pairing)"
     echo ""

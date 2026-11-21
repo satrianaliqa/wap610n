@@ -90,7 +90,7 @@ proc do_config_import {in_file} {
 	
 	set last_path [pwd]	
 	cd ${g_web_web_app_folder}
-	catch {[exec ./init_security.tcl "Set_security_only"]}
+	catch {exec ./init_security.tcl "Set_security_only"}
 	cd $last_path
 	
 }
