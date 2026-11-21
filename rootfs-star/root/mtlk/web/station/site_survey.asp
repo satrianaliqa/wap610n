@@ -61,7 +61,10 @@ function escapeHTML(str) {
 
 function sanitizeSiteSurvey(str) {
 	if (!str) return "";
-	return str.replace(/(<span[^>]*id=["']?ESSID_\d+["']?[^>]*>)([\s\S]*?)(<\/span>)/gi, function(match, openTag, ssid, closeTag) {
+	str = str.replace(/(<td[^>]*\bid=["']?ESSID_\d+["']?[^>]*>\s*<div[^>]*\bid=["']?ssidField["']?[^>]*>)([\s\S]*?)(<\/div>\s*<\/td>)/gi, function(match, openTag, ssid, closeTag) {
+		return openTag + escapeHTML(ssid) + closeTag;
+	});
+	return str.replace(/(<span[^>]*\bid=["']?ESSID_\d+["']?[^>]*>)([\s\S]*?)(<\/span>)/gi, function(match, openTag, ssid, closeTag) {
 		return openTag + escapeHTML(ssid) + closeTag;
 	});
 }
@@ -145,110 +148,22 @@ function checkValue() {
 	var hexKey3 = false;
 
 	if (document.getElementById("securityMode").value == 2) {
-		//defaultWEPKeyValue = document.getElementById("defaultWEPKey").value * 1;
-		defaultWEPKeyValue = 0;
-		if (document.getElementById("WEPKeyLength").value == 64) {
-			for (loopCount=0; loopCount<4; loopCount++) {
-				applyValue = true;
-				docTemp = document.getElementById("WEPKey"+loopCount).value;
-				
-				if ((docTemp.length != 0) /*|| (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)*/) {
-					/*if (docTemp.length == 5)	//ASCII
-					{
-						applyValue = true;
-					}*/
-					//else if (docTemp.length == 10)	//HEX
-					if (docTemp.length == 10)	//HEX
-					{
-						for (keyLenCount=0; keyLenCount<10; keyLenCount++)
-						{
-							checkValue = docTemp.substr(keyLenCount, 1);
-							if (!(parseInt(checkValue, 16) >= 0) && !(parseInt(checkValue, 16) <= 15)) {
-								if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)
-									alert("<!--#tr id=\"w.wnss.alert.2\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
-								else
-									alert("<!--#tr id=\"w.wnss.alert.2\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount+1) + "!");
-								applyValue = false;
-								loopCount = 5;
-								keyLenCount = 10;
-							}
-						}
-						if (applyValue) {
-							switch(loopCount) {
-								case 0: hexKey0 = true;
-										break;
-								case 1: hexKey1 = true;
-										break;
-								case 2: hexKey2 = true;
-										break;
-								case 3: hexKey3 = true;
-										break;
-							}
-						}
-					}
-					else
-					{
-						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +　(loopCount+1) + "!");
-						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)
-							alert("<!--#tr id=\"w.wnss.alert.2\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
-						else
-							alert("<!--#tr id=\"w.wnss.alert.2\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount+1) + "!");
-						applyValue = false;
-						loopCount = 5;
-					}
-				}
-			}
-		}
-		else if (document.getElementById("WEPKeyLength").value == 128) {
-			for (loopCount=0; loopCount<4; loopCount++) {
-				applyValue = true;
-				docTemp = document.getElementById("WEPKey"+loopCount).value;
-				
-				if ((docTemp.length != 0) /*|| (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)*/) {
-					/*if (docTemp.length == 13)	//ASCII
-					{
-						applyValue = true;
-					}*/
-					//else if (docTemp.length == 26)	//HEX
-					if (docTemp.length == 26)	//HEX
-					{
-						for (keyLenCount=0; keyLenCount<26; keyLenCount++)
-						{
-							checkValue = docTemp.substr(keyLenCount, 1);
-							if (!(parseInt(checkValue, 16) >= 0) && !(parseInt(checkValue, 16) <= 15)) {
-								if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)
-									alert("<!--#tr id=\"w.wnss.alert.3\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
-								else
-									alert("<!--#tr id=\"w.wnss.alert.3\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount+1));
-								applyValue = false;
-								loopCount = 13;
-								keyLenCount = 26;
-							}
-						}
-						if (applyValue) {
-							switch(loopCount) {
-								case 0: hexKey0 = true;
-										break;
-								case 1: hexKey1 = true;
-										break;
-								case 2: hexKey2 = true;
-										break;
-								case 3: hexKey3 = true;
-										break;
-							}
-						}
-					}
-					else
-					{
-						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +　(loopCount+1) + "!");
-						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)
-							alert("<!--#tr id=\"w.wnss.alert.3\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
-						else
-							alert("<!--#tr id=\"w.wnss.alert.3\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount+1));
-						applyValue = false;
-						loopCount = 13;
-					}
-				}
+		var keyLenBits = document.getElementById("WEPKeyLength").value;
+		var hexRegex = (keyLenBits == 128) ? /^[0-9a-fA-F]{26}$/ : /^[0-9a-fA-F]{10}$/;
+		var rowEl, keyEl, keyVal;
+		for (loopCount = 0; loopCount < 4; loopCount++) {
+			rowEl = document.getElementById("WEPKey" + loopCount + "Field");
+			if (loopCount > 0 && (!rowEl || rowEl.style.display == "none"))
+				continue;
+			keyEl = document.getElementById("WEPKey" + loopCount);
+			keyVal = keyEl ? keyEl.value : "";
+			if ((loopCount == 0 && keyVal.length == 0) || (keyVal.length > 0 && !hexRegex.test(keyVal))) {
+				if (keyLenBits == 128)
+					alert("<!--#tr id=\"w.wnss.alert.3\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount + 1));
+				else
+					alert("<!--#tr id=\"w.wnss.alert.2\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount + 1) + "!");
+				applyValue = false;
+				break;
 			}
 		}
 	}
@@ -287,13 +202,17 @@ function displaySecurityField(value) {
 }
 
 function setSecurity() {
-	var applyValue = true;
-	
-	applyValue = false;
-	for (loopCount=0; loopCount<document.getElementById("arrayCount").value; loopCount++) {
-		if (document.getElementById("setRadio_"+loopCount).checked == true) {
+	var arrCountEl = document.getElementById("arrayCount");
+	var arrCount = arrCountEl ? parseInt(arrCountEl.value, 10) : 0;
+	if (isNaN(arrCount) || arrCount <= 0)
+		arrCount = 0;
+
+	var applyValue = false;
+	for (loopCount=0; loopCount<arrCount; loopCount++) {
+		var radioEl = document.getElementById("setRadio_"+loopCount);
+		if (radioEl && radioEl.checked == true) {
 			applyValue = true;
-			loopCount = document.getElementById("arrayCount").value;
+			break;
 		}
 	}
 	if (!applyValue)
@@ -303,17 +222,13 @@ function setSecurity() {
 		scanFieldDisplay("none");
 		displaySecurityField("block");
 		
-		for (loopCount=0; loopCount<document.getElementById("arrayCount").value; loopCount++) {
-			if (document.getElementById("setRadio_"+loopCount).checked == true) {
-				//var getESSID = document.getElementById("ESSID_"+loopCount).innerText;
+		for (loopCount=0; loopCount<arrCount; loopCount++) {
+			var selRadio = document.getElementById("setRadio_"+loopCount);
+			if (selRadio && selRadio.checked == true) {
 				var getESSID = getHTMLContent("ESSID_"+loopCount);
 				var getBSSID = document.getElementById("BSSID_"+loopCount).value;
 				var getChannel = document.getElementById("channel_"+loopCount).value;
 				var getEncryType = document.getElementById("encryType_"+loopCount).value;
-				//var getsingalLevel = document.getElementById("singalLevel_"+loopCount).innerHTML;
-				//var getFreqBand = document.getElementById("freqBand_"+loopCount).innerHTML;
-				//var getHTEnable = document.getElementById("htEnable_"+loopCount).innerHTML;
-				//var getHTMode = document.getElementById("htMode_"+loopCount).innerHTML;
 			
 				document.getElementById("BSSID").value = getBSSID;
 				if (getESSID != "") {
@@ -326,41 +241,38 @@ function setSecurity() {
 				}
 			
 				if (getEncryType == "Disabled") {
-					//document.getElementById("securityMode").options[0].selected = true;
 					document.getElementById("securityMode").value = 1;
+					document.getElementById("WPAPersonalMode").value = "";
 					document.getElementById("securityModeText").innerHTML = "Disabled";
 					selectSecurityMode(1);
 				}
 				else if (getEncryType == "WEP") {
-					//document.getElementById("securityMode").options[1].selected = true;
 					document.getElementById("securityMode").value = 2;
+					document.getElementById("WPAPersonalMode").value = "";
 					document.getElementById("securityModeText").innerHTML = "WEP";
 					selectSecurityMode(2);
 				}
 				else if (getEncryType == "WPA-Personal") {
-					//document.getElementById("securityMode").options[2].selected = true;
 					document.getElementById("securityMode").value = 3;
+					document.getElementById("WPAPersonalMode").value = "1";
 					document.getElementById("securityModeText").innerHTML = "WPA Personal";
 					selectSecurityMode(3);
-					//document.getElementById("WPAPersonalMode").options[0].selected = true;
 					selectWPAMode(1);
 					objectDisplay("WPAPersonalEncryptionField", "none");
 				}
 				else if (getEncryType == "WPA2-Personal") {
-					//document.getElementById("securityMode").options[2].selected = true;
 					document.getElementById("securityMode").value = 3;
+					document.getElementById("WPAPersonalMode").value = "2";
 					document.getElementById("securityModeText").innerHTML = "WPA2 Personal";
 					selectSecurityMode(3);
-					//document.getElementById("WPAPersonalMode").options[1].selected = true;
 					selectWPAMode(2);
 					document.getElementById("WPAPersonalEncryption").options[0].selected = true;
 				}
 				else if (getEncryType == "WPA2-Personal Mixed") {
-					//document.getElementById("securityMode").options[2].selected = true;
 					document.getElementById("securityMode").value = 3;
+					document.getElementById("WPAPersonalMode").value = "3";
 					document.getElementById("securityModeText").innerHTML = "WPA2 Personal";
 					selectSecurityMode(3);
-					//document.getElementById("WPAPersonalMode").options[2].selected = true;
 					selectWPAMode(2);
 					document.getElementById("WPAPersonalEncryption").options[1].selected = true;
 				}
@@ -382,7 +294,7 @@ function setSecurity() {
 					alert("<!--#tr id=\"w.wnss.alert.7\" -->We don't support WPA2-Enterprise security mode!<!--#endtr-->");
 					return;
 				}
-				loopCount = document.getElementById("arrayCount").value + 1;
+				break;
 			}
 		}
 	}
@@ -529,6 +441,7 @@ function page_load() {
 				<input type="hidden" id="nowMode" name="nowMode" value="">
 				<input type="hidden" id="activeMode" name="activeMode" value="">
 				<input type="hidden" id="securityMode" name="securityMode" value="">
+				<input type="hidden" id="WPAPersonalMode" name="WPAPersonalMode" value="">
 				<input type="hidden" id="rebootNeed" name="rebootNeed" value="0">
 				<input type="hidden" id="BSSID" name="BSSID" value="0">
 				<table class="mainTableContent" cellspacing="0">
@@ -558,7 +471,7 @@ function page_load() {
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent" align="right">
-							<input type="button" name"scanButton" value="<!--#tr id=\"w.wnss.1-1\" -->Refresh<!--#endtr-->" onclick="reScan();">&nbsp;&nbsp;&nbsp;
+							<input type="button" name="scanButton" value="<!--#tr id=\"w.wnss.1-1\" -->Refresh<!--#endtr-->" onclick="reScan();">&nbsp;&nbsp;&nbsp;
 							<input type="button" name="activateButton" value="<!--#tr id=\"w.wnss.1-2\" -->Connect<!--#endtr-->" onclick="setSecurity();">
 						</td>
 					</tr>
@@ -692,7 +605,7 @@ function page_load() {
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent" align="right">
-							<input type="button" name"scanButton" value="<!--#tr id=\"w.wnss.2-22\" -->Refresh<!--#endtr-->" onclick="reScan();">&nbsp;&nbsp;&nbsp;
+							<input type="button" name="scanButton" value="<!--#tr id=\"w.wnss.2-22\" -->Refresh<!--#endtr-->" onclick="reScan();">&nbsp;&nbsp;&nbsp;
 							<input type="button" name="connectButton" value="<!--#tr id=\"w.wnss.2-23\" -->Connect<!--#endtr-->" onclick="checkValue();">
 						</td>
 					</tr>

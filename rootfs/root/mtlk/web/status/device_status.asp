@@ -60,7 +60,10 @@ function page_load() {
 	var ethernetMAC = "<% getParam(1, "mac_lan"); %>";
 
 	if (mode == 0) //STA mode
+	{
 		document.getElementById("linkStatusTag").href = "/status/sta_link_status.asp";
+		document.getElementById("linkStatusTag").innerHTML = "<!--#tr id=\"status.submenu.2\" -->Wireless Network<!--#endtr-->";
+	}
 
 	docTemp = IPandMask;
 	index = docTemp.indexOf(','); //IP

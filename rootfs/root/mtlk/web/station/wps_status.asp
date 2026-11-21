@@ -127,35 +127,35 @@ function displayCloseButton(tag)
 }
 
 function makeCleanWPSTempRequest(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+			req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
+	if (!req) {
 		alert('Giving up :( Cannot create an XMLHTTP instance');
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertContentsCleanWPSTemp()};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {alertContentsCleanWPSTemp(req);};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
-function alertContentsCleanWPSTemp() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			if (http_request.responseText != "NULL")
-				temp = http_request.responseText;
+function alertContentsCleanWPSTemp(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
+			if (req.responseText != "NULL")
+				temp = req.responseText;
 		} else {
 			//alert('There was a problem with the request.');
 		}
@@ -189,34 +189,34 @@ function returnWPS()
 }
 
 function makeRequestWaitEthernetUP(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+			req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
+	if (!req) {
 		alert('Giving up :( Cannot create an XMLHTTP instance');
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertContentsWaitEthernetUP()};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {alertContentsWaitEthernetUP(req);};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
-function alertContentsWaitEthernetUP() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			if ((http_request.responseText == "1") || (ipConfigMethod*1 == 1))
+function alertContentsWaitEthernetUP(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
+			if ((req.responseText == "1") || (ipConfigMethod*1 == 1))
 			{
 				document.getElementById("waitPad").style.display="none";
 				successCheck = true;
@@ -237,13 +237,14 @@ function alertContentsWaitEthernetUP() {
 function waitEthernetUP()
 {
 	//alert("Into waitEthernetUP()");
-	if ((waitEthernetUPTag == true) || StopWaitEthernetUP >= 2)
+	if ((waitEthernetUPTag == true) || ethernetUPTagCount >= 2)
 	{
 		makeRequestWaitEthernetUP("/goform/guiWaitEthernetUP", "something");
 		waitEthernetUPTag = false;
+		ethernetUPTagCount = 0;
 	}
 	else
-		StopWaitEthernetUP++;
+		ethernetUPTagCount++;
 	
 	if (!StopWaitEthernetUP)
 		setTimeout("waitEthernetUP()", 500);
@@ -287,11 +288,6 @@ function showField(tagName)
 				document.getElementById("waitPad").style.display="none";
 				cleanWPSFailTemp();
 			}
-		}
-		else if (tagName != "progressField")
-		{
-			objectDisplay("progressField", "block");
-			changeToCloseField++;
 		}
 		else
 			objectDisplay(tagName, "block");
@@ -358,7 +354,7 @@ function parsingRespone(msg)
 	//alert("'" + currentESSID + "'");
 	//if (currentESSID != "NULL")
 	if (currentESSID != "")
-		displayESSID = escapeHTML(currentESSID); 
+		displayESSID = currentESSID;
 
 	switch(wps_info){
 		//case "SEARCHING":
@@ -451,35 +447,35 @@ function parsingRespone(msg)
 }
 
 function makeRequestWPSStatus(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/xml');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/xml');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+			req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
+	if (!req) {
 		alert('Giving up :( Cannot create an XMLHTTP instance');
 		return false;
 	}
-	http_request.onreadystatechange = function () {alertWaitDHCPInfoContents()};
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () {alertWaitDHCPInfoContents(req);};
+	req.open('POST', url, true);
+	req.send(content);
 }
 
-function alertWaitDHCPInfoContents() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
+function alertWaitDHCPInfoContents(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
 			if (applyParsing)
-				parsingRespone(http_request.responseText);
+				parsingRespone(req.responseText);
 				
 			//updateWPSStatusStopToWait = true;
 		} else {
@@ -630,14 +626,14 @@ function page_load() {
 
 	if (g_mode != "2") {
 		document.getElementById("waitPad").style.display="block";
+		updateWPSStatus();
+		blinkingWaitMSG();
 	} else {
 		document.getElementById("waitPad").style.display="none";
 		stopUpdateWPSStatus = true;
-	}
-	
-	if (g_mode != "2") {
-		updateWPSStatus();
-		blinkingWaitMSG();
+		objectDisplay("waitStatus", "block");
+		if (document.getElementById("waitStatusMsg"))
+			document.getElementById("waitStatusMsg").innerHTML = "Wi-Fi Protected Setup status monitor is active in Station Bridge mode. Please manage wireless settings under AP mode Wireless menus.";
 	}
 }
 </script>
@@ -731,30 +727,30 @@ function page_load() {
 			<td class="noSPACE">
 				<table class="mainTableContent" cellspacing="0">
 					<tr id="titleField">
-						<td class="subMenuMainContent" colspan="2"><!--#tr id="w.bws.1-3" -->Wi-Fi Protected Setup<!--#endtr--><sup style=\"font-size: 6pt;\">TM</sup></td>
+						<td class="subMenuMainContent" colspan="2"><!--#tr id="w.bws.1-3" -->Wi-Fi Protected Setup<!--#endtr--><sup style="font-size: 6pt;">TM</sup></td>
 						<td colspan="2" class="blankContent"></td>
 					</tr>
 					<tr id="waitStatus" style="display:none">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent">
-							<font color="#FF0000"><!--#tr id="w.bws.asp.2" -->Please wait<!--#endtr--> ....</font>
+							<span id="waitStatusMsg"><font color="#FF0000"><!--#tr id="w.bws.asp.2" -->Please wait<!--#endtr--> ....</font></span>
 						</td>
 					</tr>
 					<tr id="progressField" style="display:none">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent">
-							<div id="WPSPBC" name="WPSPBC" style="font-size:11pt;width:430px;text-align:left;word-wrap:break-word;"><p><!--#tr id="w.bws.asp.12" -->Searching for your router (or access point).<!--#endtr--></p></p><!--#tr id="w.bws.asp.13" -->Please wait...<!--#endtr--></p><p><!--#tr id="w.bws.asp.14" -->If you haven't clicked on the Wi-Fi Protected Setup button on your router (or access point), please do so now.<!--#endtr--></p></div>
-							<div id="WPSPIN" name="WPSPIN" style="font-size:11pt;width:430px;text-align:left;word-wrap:break-word;"><p><!--#tr id="w.bws.asp.15" -->Your bridge's PIN number is:<!--#endtr--><span id="NonProc_WPS_DevicePIN"></span></p><p><!--#tr id="w.bws.asp.16" -->Searching for your router (or access point).<!--#endtr--></p></p><!--#tr id="w.bws.asp.17" -->Please wait...<!--#endtr--></p></div><br />
-							<table bolder="0"><tr><td colspan="2"></td></tr><tr><td width="93%"><table align="left" bgcolor="#ffffff" cellpadding="0" cellspacing="0" bordercolor="#FFFFFF" style="border-style: solid; border-width: 1px; border-color:#000000"><tr><td id="progressTD" width=427 align="left"><table id="progress" bgcolor="#00FF00" height="25"><tr><td></td></tr></table></td></tr></table></td><td width="95%"><font color=black><span id="progressValue">&nbsp;</span></font></td></tr></table>
+							<div id="WPSPBC" name="WPSPBC" style="font-size:11pt;width:430px;text-align:left;word-wrap:break-word;"><p><!--#tr id="w.bws.asp.12" -->Searching for your router (or access point).<!--#endtr--></p><p><!--#tr id="w.bws.asp.13" -->Please wait...<!--#endtr--></p><p><!--#tr id="w.bws.asp.14" -->If you haven't clicked on the Wi-Fi Protected Setup button on your router (or access point), please do so now.<!--#endtr--></p></div>
+							<div id="WPSPIN" name="WPSPIN" style="font-size:11pt;width:430px;text-align:left;word-wrap:break-word;"><p><!--#tr id="w.bws.asp.15" -->Your bridge's PIN number is:<!--#endtr--><span id="NonProc_WPS_DevicePIN"></span></p><p><!--#tr id="w.bws.asp.16" -->Searching for your router (or access point).<!--#endtr--></p><p><!--#tr id="w.bws.asp.17" -->Please wait...<!--#endtr--></p></div><br />
+							<table border="0"><tr><td colspan="2"></td></tr><tr><td width="93%"><table align="left" bgcolor="#ffffff" cellpadding="0" cellspacing="0" bordercolor="#FFFFFF" style="border-style: solid; border-width: 1px; border-color:#000000"><tr><td id="progressTD" width=427 align="left"><table id="progress" bgcolor="#00FF00" height="25"><tr><td></td></tr></table></td></tr></table></td><td width="95%"><font color=black><span id="progressValue">&nbsp;</span></font></td></tr></table>
 						</td>
 					</tr>
 					<tr id="successField" style="display:none">
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent">
-							<table><tr><td><img src=/image/wps_ok.gif></src></td><td style=\"position:relative; top:10px\"><h2><!--#tr id="w.bws.asp.10" -->Congratulations!<!--#endtr--></h2></td></tr><tr><td></td><td style=\"position:relative; top:100px left:100px\"><div id="WPS_succeed_id" style="width:350px;text-align:left;word-wrap:break-word;"><!--#tr id="w.bws.asp.11" -->You had successful connect to SSID:<!--#endtr--><font color=blue><span id="NonProc_ESSID"></span></font>.</div></td></tr></table><br>
+							<table><tr><td><img src="/image/wps_ok.gif" /></td><td style="position:relative; top:10px"><h2><!--#tr id="w.bws.asp.10" -->Congratulations!<!--#endtr--></h2></td></tr><tr><td></td><td style="position:relative; top:100px; left:100px"><div id="WPS_succeed_id" style="width:350px;text-align:left;word-wrap:break-word;"><!--#tr id="w.bws.asp.11" -->You had successful connect to SSID:<!--#endtr--><font color=blue><span id="NonProc_ESSID"></span></font>.</div></td></tr></table><br>
 							<br><div id="wpsSuccessButton" align="center"><span id="writeSuccessButton"><font color="#FF0000"><!--#tr id="w.bws.asp.4" -->Please wait<!--#endtr-->.....</font></span></div>
 						</td>
 					</tr>
@@ -762,7 +758,7 @@ function page_load() {
 						<td class="subMenuSubContent"></td>
 						<td class="subMenuLeftSide"></td>
 						<td colspan="2" class="blankContent">
-							<table width="420px"><tr><td><img src=/image/wps_fail.gif></src></td><td style=\"position:relative; top:10px\"><h2><!--#tr id="w.bws.js.1" -->Connection Failure!<!--#endtr--></h2></td></tr><tr><td></td><td style=\"position:relative; top:100px left:100px\"><div id="WPS_fail_id" style="width:340px;text-align:left;word-wrap:break-word;"><!--#tr id="w.bws.js.2" -->This wireless bridge failed to connect to your router (or a access point).<!--#endtr--> <p><!--#tr id="w.bws.js.3" -->Refer back to your router and try again.<!--#endtr--></div></td></tr></table>
+							<table width="420px"><tr><td><img src="/image/wps_fail.gif" /></td><td style="position:relative; top:10px"><h2><!--#tr id="w.bws.js.1" -->Connection Failure!<!--#endtr--></h2></td></tr><tr><td></td><td style="position:relative; top:100px; left:100px"><div id="WPS_fail_id" style="width:340px;text-align:left;word-wrap:break-word;"><!--#tr id="w.bws.js.2" -->This wireless bridge failed to connect to your router (or a access point).<!--#endtr--> <p><!--#tr id="w.bws.js.3" -->Refer back to your router and try again.<!--#endtr--></p></div></td></tr></table>
 							<br><div align="center"><input type=button value="Close" onclick="returnWPS();"></div>
 						</td>
 					</tr>

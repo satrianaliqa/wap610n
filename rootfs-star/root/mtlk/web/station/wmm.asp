@@ -526,6 +526,29 @@ function checkValue() {
 		applyValue = false;
 		return;
 	}
+
+	if (document.getElementById("nowMode") && document.getElementById("nowMode").value == "apMode") {
+		docTemp = document.getElementById("AC_BK_AIFSN").value;
+		if (!isNumber(docTemp) || (docTemp*1 < 1) || (docTemp*1 > 15)) {
+			alert("AIFSN for STA must be between 1 and 15!");
+			return;
+		}
+		docTemp = document.getElementById("AC_BK_TXOP").value;
+		if (!isNumber(docTemp) || (docTemp*1 < 0) || (docTemp*1 > 8192)) {
+			alert("TXOP for STA must be between 0 and 8192!");
+			return;
+		}
+		docTemp = document.getElementById("AC_BK_AIFSN_AP").value;
+		if (!isNumber(docTemp) || (docTemp*1 < 1) || (docTemp*1 > 15)) {
+			alert("AIFSN for AP must be between 1 and 15!");
+			return;
+		}
+		docTemp = document.getElementById("AC_BK_TXOP_AP").value;
+		if (!isNumber(docTemp) || (docTemp*1 < 0) || (docTemp*1 > 8192)) {
+			alert("TXOP for AP must be between 0 and 8192!");
+			return;
+		}
+	}
 	
 	if (applyValue)
 	{
@@ -589,8 +612,11 @@ function page_load() {
 		document.getElementById("nowMode").value = "apMode";
 	}
 
-	document.getElementById("accessMode").options[CurrentWMM].selected = true;
-	selectAccessMode(CurrentWMM*1);
+	var wmmIdx = parseInt(CurrentWMM, 10);
+	if (isNaN(wmmIdx) || wmmIdx < 0 || wmmIdx > 3)
+		wmmIdx = 0;
+	document.getElementById("accessMode").options[wmmIdx].selected = true;
+	selectAccessMode(wmmIdx);
 }
 </script>
 <!-- InstanceEndEditable -->

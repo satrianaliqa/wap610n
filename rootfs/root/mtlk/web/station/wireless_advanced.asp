@@ -74,32 +74,40 @@ function checkValue() {
 	return false;
 }
 
+function setSelectOption(id, val) {
+	var el = document.getElementById(id);
+	if (!el || !el.options || el.options.length === 0)
+		return;
+	var i;
+	for (i = 0; i < el.options.length; i++) {
+		if (el.options[i].value == val) {
+			el.options[i].selected = true;
+			return;
+		}
+	}
+	var idx = parseInt(val, 10);
+	if (!isNaN(idx) && idx >= 0 && idx < el.options.length) {
+		el.options[idx].selected = true;
+	}
+}
+
 function stationMode() {
-	//document.getElementById("RadarDetect").options[RadarDetect].selected = true;
+	//setSelectOption("RadarDetect", RadarDetect);
 	objectDisplay("RadarDetectField", "none");
 	objectDisplay("AocsRestrictChField", "none");
-	document.getElementById("AdvancedCoding").options[AdvancedCoding].selected = true;
-	//document.getElementById("HiddenSSID").options[HiddenSSID].selected = true;
+	setSelectOption("AdvancedCoding", AdvancedCoding);
 	objectDisplay("HiddenSSIDField", "none");
-	document.getElementById("ERPProtectionType").options[ERPProtectionType].selected = true;
-	//document.getElementById("OverlappingBSSProtection").options[OverlappingBSSProtection].selected = true;
+	setSelectOption("ERPProtectionType", ERPProtectionType);
 	objectDisplay("OverlappingBSSProtectionField", "none");
-	document.getElementById("ProtectionType").options[ProtectionType].selected = true;
-	//document.getElementById("APforwarding").options[APforwarding].selected = true;
+	setSelectOption("ProtectionType", ProtectionType);
 	objectDisplay("APforwardingField", "none");
-	//document.getElementById("ReliableMulticast").options[ReliableMulticast].selected = true;
 	objectDisplay("ReliableMulticastField", "none");
-	//document.getElementById("STBC").options[STBC].selected = true;
 	objectDisplay("STBCField", "none");
-	docTemp = document.getElementById("PowerSelection");
-	for (loopCount=0; loopCount<docTemp.length; loopCount++)
-		if (docTemp.options[loopCount].value == PowerSelection)
-			docTemp.options[loopCount].selected = true;
-
-	document.getElementById("Use11QMap").options[Use11QMap].selected = true;
+	setSelectOption("PowerSelection", PowerSelection);
+	setSelectOption("Use11QMap", Use11QMap);
 	//u-media(rh001)-Jacky.Yang (Add), 15-Apr-2010, Add new feature for Linksys request.
 	objectDisplay("Re-EstablishEthernet", "block");
-	document.getElementById("EthDownUp").options[EthDownUp].selected = true;
+	setSelectOption("EthDownUp", EthDownUp);
 }
 
 function apMode() {
@@ -109,26 +117,20 @@ function apMode() {
 	objectDisplay("OverlappingBSSProtectionField", "block");
 	objectDisplay("APforwardingField", "block");
 	objectDisplay("ReliableMulticastField", "block");
-	//objectDisplay("STBCField", "block");
 	objectDisplay("STBCField", "none");
 	objectDisplay("Re-EstablishEthernet", "none");
 
-	document.getElementById("RadarDetect").options[RadarDetect].selected = true;
-	document.getElementById("AocsRestrictCh").value = AocsRestrictCh;
-	document.getElementById("AdvancedCoding").options[AdvancedCoding].selected = true;
-	document.getElementById("HiddenSSID").options[HiddenSSID].selected = true;
-	document.getElementById("ERPProtectionType").options[ERPProtectionType].selected = true;
-	document.getElementById("OverlappingBSSProtection").options[OverlappingBSSProtection].selected = true;
-	document.getElementById("ProtectionType").options[ProtectionType].selected = true;
-	document.getElementById("APforwarding").options[APforwarding].selected = true;
-	document.getElementById("ReliableMulticast").options[ReliableMulticast].selected = true;
-	//document.getElementById("STBC").options[STBC].selected = true;
-	docTemp = document.getElementById("PowerSelection");
-	for (loopCount=0; loopCount<docTemp.length; loopCount++)
-		if (docTemp.options[loopCount].value == PowerSelection)
-			docTemp.options[loopCount].selected = true;
-			
-	document.getElementById("Use11QMap").options[Use11QMap].selected = true;
+	setSelectOption("RadarDetect", RadarDetect);
+	document.getElementById("AocsRestrictCh").value = (AocsRestrictCh == "" || AocsRestrictCh == "NULL") ? "None" : AocsRestrictCh;
+	setSelectOption("AdvancedCoding", AdvancedCoding);
+	setSelectOption("HiddenSSID", HiddenSSID);
+	setSelectOption("ERPProtectionType", ERPProtectionType);
+	setSelectOption("OverlappingBSSProtection", OverlappingBSSProtection);
+	setSelectOption("ProtectionType", ProtectionType);
+	setSelectOption("APforwarding", APforwarding);
+	setSelectOption("ReliableMulticast", ReliableMulticast);
+	setSelectOption("PowerSelection", PowerSelection);
+	setSelectOption("Use11QMap", Use11QMap);
 }
 
 function page_load() {
@@ -439,7 +441,7 @@ function page_load() {
 						<td class="footContent" colspan="2">
 							<div id="saveField">
 							<a class="bottonClass" href="javascript:checkValue()"><!--#tr id="w.aws.save" -->Save Settings<!--#endtr--></a>
-							<a class="bottonClass" href="javascript:document.location.reload(true)"><!--#tr id="w.aws.save" -->Cancel Changes<!--#endtr--></a>
+							<a class="bottonClass" href="javascript:document.location.reload(true)"><!--#tr id="w.aws.cancel" -->Cancel Changes<!--#endtr--></a>
 							</div>
 						</td>
 						<td class="footContentRight"></td>

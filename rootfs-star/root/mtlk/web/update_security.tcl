@@ -36,8 +36,10 @@ proc save_security {{noMount ""}} {
 	#+++ Ricky Cao
 	set forceWlanDisconnect [get_parameter "forceWlanDisconnect"]
 	if {$forceWlanDisconnect == 1} {
-		exec echo forceWlanDisconnect=1, so clear configuration of wpa_supplicant0.conf > /dev/console
-		exec echo > /mnt/jffs2/wpa_supplicant0.conf
+		catch {exec echo forceWlanDisconnect=1, so clear configuration of wpa_supplicant > /dev/console}
+		global wpa_supplicant_conf_file
+		set fp [open $wpa_supplicant_conf_file w]
+		close $fp
 		return;
 	}
 	#--- Ricky Cao
@@ -94,24 +96,37 @@ proc save_security {{noMount ""}} {
 		Activate_WEP_RADIUS $device_type $ESSID $WEP_RADIUS_Length $WEP_RADIUS_Authentication $WEP_RADIUS_Used_Key  $WEP_RADIUS_Key1 $WEP_RADIUS_Key2 $WEP_RADIUS_Key3 $WEP_RADIUS_Key4 $WEP_RADIUS_Key $WEP_RADIUS_Port $WEP_RADIUS_IP
 	}
 	
-	# Save the settings to flash - needed on platforms without jffs2 fs
-	if {[catch {set ret [exec which config_umount.sh]}] == 0 && $ret != "" } {
+	# Save the settings to flash unless the caller ("noSave") will persist
+	# the full configuration transaction itself.
+	if {$noMount != "noSave" && [catch {set ret [exec which config_umount.sh]}] == 0 && $ret != "" } {
 
 		exec config_umount.sh
 
 		# if $noMount is not empty dont perform mount
 		if {$noMount == ""} {
 			exec config_mount.sh
-		}				
+		}
 	}
 
-	# Apply wireless SSID and security live for AP mode
-	if {$device_type == 2 && $ESSID != ""} {
-		catch {exec iwconfig wlan0 essid "$ESSID"}
+	# Apply wireless band, SSID, and security live for AP mode when $noMount == ""
+	if {$noMount == "" && $device_type == 2 && $ESSID != ""} {
+		global hostapd
+		global hostapd_conf_file
+		global wlan_index
+		regsub -all {[\r\n]} $ESSID "" clean_ssid
+		set freq_band [get_parameter FrequencyBand]
+		if {[regexp {^[0-2]$} $freq_band]} {
+			catch {set_proc_var $freq_band FrequencyBand}
+		}
+		if {$clean_ssid != ""} {
+			set ::env(MTLK_SSID) $clean_ssid
+			set ::env(MTLK_IDX) $wlan_index
+			catch {exec sh -c {iwconfig "wlan$MTLK_IDX" essid -- "$MTLK_SSID" >/dev/null 2>&1}}
+		}
 		catch {exec killall hostapd}
 		sleep 2
-		if {$security_mode > 1 && [file exists /mnt/jffs2/hostapd0.conf]} {
-			catch {exec /root/mtlk/etc/hostapd -d /mnt/jffs2/hostapd0.conf >/dev/null 2>&1 &}
+		if {$security_mode > 1 && [file exists $hostapd] && [file exists $hostapd_conf_file]} {
+			catch {exec $hostapd -d $hostapd_conf_file > /dev/null 2>/dev/null &}
 		}
 	}
 }
@@ -246,6 +261,8 @@ proc Activate_Enterprise_WPA {device_type SSID WPA_mode encapsulation_mode IP po
 proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_Key WEP_Key1 WEP_Key2 WEP_Key3 WEP_Key4 WPA_mode encapsulation_mode psk RADIUS_IP RADIUS_port RADIUS_key RADIUS_interval} {
 	global hostapd_conf_file
 	global wlan_index
+	regsub -all {[\r\n]} $SSID "" SSID
+	regsub -all {[\r\n]} $psk "" psk
 	debug "Update_Hostapd_Conf '$encryption_mode' '$SSID'  $WEP_length $authentication $Used_Key $WEP_Key1 $WEP_Key2 $WEP_Key3 $WEP_Key4 $WPA_mode $encapsulation_mode $psk $RADIUS_IP $RADIUS_port $RADIUS_key $RADIUS_interval"
 	
 	set fp [open $hostapd_conf_file w]
@@ -255,10 +272,11 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	puts $fp "ssid=$SSID"
 	puts $fp "macaddr_acl=0"
 
-	# find the wireless card count
+	# find the wireless card count without external lspci or catch-bracket bugs
 	set card_count 1
-	catch {[set card_count [exec lspci | grep Wireless | wc -l]]}
-	set card_count [string trim $card_count]
+	if {[catch {exec grep -c mtlk /proc/modules} card_count] != 0 || ![regexp {^[0-9]+$} $card_count] || $card_count < 1} {
+		set card_count 1
+	}
 	set bridging [get_parameter BridgeMode]
 	# in case of dual band, in bridge mode set br0 in both cards. 
 	if {$bridging > 0 } {
@@ -277,9 +295,16 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	}
 
 	if {$encryption_mode == "WEP"} {
+		if {$authentication == "" || ![regexp {^[1-3]$} $authentication]} {
+			set authentication 1
+		}
+		puts $fp "auth_algs=$authentication"
 		for {set j 1} {$j <= 4} {incr j} {
 			set WEP_Key WEP_Key$j
 			set value_WEP_Key [set $WEP_Key]
+			if {$value_WEP_Key == ""} {
+				continue
+			}
 			set hexa       [regexp "^0x" $value_WEP_Key]
 			set minusOne [expr $j - 1]
 			set Key_Conf wep_key$minusOne
@@ -297,6 +322,9 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 	}
 	
 	if {$encryption_mode == "WEP RADIUS"} {
+		if {![regexp {^[0-9]+$} $RADIUS_port]} {
+			set RADIUS_port 1812
+		}
 		set RADIUS_port2 [expr $RADIUS_port + 1]
 		puts $fp "auth_server_addr=$RADIUS_IP"
 		puts $fp "auth_server_port=$RADIUS_port"
@@ -311,6 +339,9 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 
 	if {$encryption_mode == "WPA_PERSONAL"} {
 		set groupRekey [get_parameter wpa_group_rekey]
+		if {![regexp {^[0-9]+$} $groupRekey]} {
+			set groupRekey 3600
+		}
 	
 		puts $fp "wpa=$WPA_mode"
 		puts $fp "wpa_key_mgmt=WPA-PSK"
@@ -339,6 +370,12 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 		puts $fp "# ------AP is in WPA/WPA2 PSK, $encapsulation mode------"
 	}
 	if {$encryption_mode == "WPA_ENTERPRISE"} {
+		if {![regexp {^[0-9]+$} $RADIUS_port]} {
+			set RADIUS_port 1812
+		}
+		if {![regexp {^[0-9]+$} $RADIUS_interval]} {
+			set RADIUS_interval 600
+		}
 		set RADIUS_port2 [expr $RADIUS_port + 1]
 		puts $fp "ieee8021x=1"
 		puts $fp "auth_server_addr=$RADIUS_IP"
@@ -377,155 +414,113 @@ proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WE
 	global wpa_passphrase
 	global certificate_file
 
+	regsub -all {[\r\n]} $SSID "" SSID
+	regsub -all {[\r\n]} $WPA_Password "" WPA_Password
+	regsub -all {[\r\n]} $username "" username
+	regsub -all {[\r\n]} $user_password "" user_password
+
 	debug "Update_Supplicant_Conf '$encryption_mode' '$SSID' $WEP_Auth $WEP_Key1 $WEP_Key2 $WEP_Key3 $WEP_Key4 $WEP_Used_Key $WPA_Password $username $user_password $certificate $WPA_mode $encapsulation_mode"
 
-    catch { exec echo "ctrl_interface=/var/run/wpa_supplicant" > $wpa_supplicant_conf_file }
-    catch { exec echo "ctrl_interface_group=0" >> $wpa_supplicant_conf_file }
-	
-	if {$encryption_mode == "OPEN"} {
-		set handler [open $wpa_supplicant_conf_file a]
-		puts $handler "network=\{"
-		puts $handler "\tssid=\"$SSID\""
-		puts $handler "\tkey_mgmt=NONE"
-		puts $handler "\tauth_alg=OPEN"
-		puts $handler "\tscan_ssid=1"
-		puts $handler "\}"
-		close $handler
-		return
-	}
+	set lines {}
+	lappend lines "ctrl_interface=/var/run/wpa_supplicant"
+	lappend lines "ctrl_interface_group=0"
+	lappend lines "network={"
+	lappend lines "\tssid=\"$SSID\""
 
-	if {$encryption_mode == "WEP"} {
-		set handler [open $wpa_supplicant_conf_file a]
-		puts $handler "network=\{"
-		puts $handler "\tssid=\"$SSID\""
-		puts $handler "\tkey_mgmt=NONE"
+	if {$encryption_mode == "OPEN"} {
+		lappend lines "\tkey_mgmt=NONE"
+		lappend lines "\tauth_alg=OPEN"
+		lappend lines "\tscan_ssid=1"
+		lappend lines "}"
+	} elseif {$encryption_mode == "WEP"} {
+		lappend lines "\tkey_mgmt=NONE"
 		for {set j 1} {$j <= 4} {incr j} {
 			set WEP_Key WEP_Key$j
 			set value_WEP_Key [set $WEP_Key]
-			set hexa       [regexp "^0x" $value_WEP_Key]
+			if {$value_WEP_Key == ""} {
+				continue
+			}
+			set hexa [regexp "^0x" $value_WEP_Key]
 			set minusOne [expr $j - 1]
 			set Key_Conf wep_key$minusOne
 			if {$hexa == 1} {
 				set hex_WEP_Key [string range $value_WEP_Key 2 end]
-				puts $handler "\t$Key_Conf=$hex_WEP_Key"
+				lappend lines "\t$Key_Conf=$hex_WEP_Key"
 			} else {
-				puts $handler "\t$Key_Conf=\"$value_WEP_Key\""
+				lappend lines "\t$Key_Conf=\"$value_WEP_Key\""
 			}
 		}
-		puts $handler "\twep_tx_keyidx=$WEP_Used_Key"
-		puts $handler "\tgroup=WEP40 WEP104"
-		if {$WEP_Auth==1} {
-			puts $handler "\tauth_alg=OPEN"
-		} elseif {$WEP_Auth==2} {
-			puts $handler "\tauth_alg=SHARED"
-		} elseif {$WEP_Auth==3} {
-			puts $handler "\tauth_alg=OPEN SHARED"
+		lappend lines "\twep_tx_keyidx=$WEP_Used_Key"
+		lappend lines "\tgroup=WEP40 WEP104"
+		if {$WEP_Auth == 1} {
+			lappend lines "\tauth_alg=OPEN"
+		} elseif {$WEP_Auth == 2} {
+			lappend lines "\tauth_alg=SHARED"
+		} elseif {$WEP_Auth == 3} {
+			lappend lines "\tauth_alg=OPEN SHARED"
 		}
-		puts $handler "\tscan_ssid=1"
-		puts $handler "\}"
-		close $handler
-		return
-	}
-
-	if {[string length $WPA_Password] == 64} {
-		catch { exec echo "network=\{" >> $wpa_supplicant_conf_file }
-		catch { exec echo "ssid=\"$SSID\"" >> $wpa_supplicant_conf_file }
-		catch { exec echo "#psk=\"$WPA_Password\"" >> $wpa_supplicant_conf_file }
-		catch { exec echo "psk=$WPA_Password" >> $wpa_supplicant_conf_file }
-		catch { exec echo "\}" >> $wpa_supplicant_conf_file }
+		lappend lines "\tscan_ssid=1"
+		lappend lines "}"
+	} elseif {$encryption_mode == "WPA_ENTERPRISE"} {
+		lappend lines "\tkey_mgmt=WPA-EAP"
+		lappend lines "\teap=TTLS PEAP TLS"
+		lappend lines "\tphase2=\"auth=MSCHAPV2 auth=GTC\""
+		if {$certificate == 1} {
+			lappend lines "\tclient_cert=\"$certificate_file\""
+		}
+		lappend lines "\tidentity=\"$username\""
+		lappend lines "\tpassword=\"$user_password\""
+		lappend lines "\tauth_alg=OPEN"
+		lappend lines "\tscan_ssid=1"
+		lappend lines "}"
 	} else {
-		#Fix can not correct generate wpa_supplicant configuration while ssid is <><>&&
-		#Since '>' is reserve character, so it will casused error while it appear in SSID
-		#Add double quotation marks to $SSID and call wpa_passphrase with shall script - Ricky CAO on Aug 17 2009
-		if {[catch {exec /root/mtlk/web/run_wpa_passphrase_for_update_security.sh >> $wpa_supplicant_conf_file} err]} {
-			puts "$err"
-			return;
-		}
-	}
-	
-	set handler [open $wpa_supplicant_conf_file r+]
-	while {[eof $handler] == 0} {
-		set line [gets $handler]
-		if {[string match "*psk*" $line] == 1} {
-			set line [gets $handler]
-			if {$encryption_mode == "OPEN"} {
-				puts $handler "\tkey_mgmt=NONE"
-				puts $handler "\tauth_alg=OPEN"				
-				puts $handler "\tscan_ssid=1"	
-				puts $handler "\}"
+		if {[string length $WPA_Password] == 64 && [regexp {^[0-9a-fA-F]+$} $WPA_Password]} {
+			lappend lines "\t#psk=\"$WPA_Password\""
+			lappend lines "\tpsk=$WPA_Password"
+		} else {
+			if {[catch {exec /root/mtlk/web/run_wpa_passphrase_for_update_security.sh} psk_out]} {
+				puts "$psk_out"
+				return
 			}
-			if {$encryption_mode == "WEP"} {
-				puts $handler "\tkey_mgmt=NONE"
-				# Writing all the 4 keys.
-				for {set j 1} {$j <= 4} {incr j} {
-					set WEP_Key WEP_Key$j
-					set value_WEP_Key [set $WEP_Key]
-					set hexa       [regexp "^0x" $value_WEP_Key]
-					set minusOne [expr $j - 1]
-					set Key_Conf wep_key$minusOne
-					if {$hexa == 1} {
-						set hex_WEP_Key [string range $value_WEP_Key 2 end]
-						puts $handler "\t$Key_Conf=$hex_WEP_Key"
-					} else {
-						puts $handler "\t$Key_Conf=\"$value_WEP_Key\""
-					}
-				}
-        		puts $handler "\twep_tx_keyidx=$WEP_Used_Key"
-				puts $handler "\tgroup=WEP40 WEP104"				
-				if {$WEP_Auth==1} {
-					puts $handler "\tauth_alg=OPEN"				
-				} elseif {$WEP_Auth==2} {
-					puts $handler "\tauth_alg=SHARED"				
-				} elseif {$WEP_Auth==3} {
-					puts $handler "\tauth_alg=OPEN SHARED"				
-				}
-				puts $handler "\tscan_ssid=1"
-				puts $handler "\}"
-			}
-			
-			if {$encryption_mode == "WPA_PERSONAL"} {
-				if {$WPA_mode == 3 && $encapsulation_mode == 2} {
-					puts $handler "\tscan_ssid=1"
-					puts $handler "\}"	
+			set parsed_psk ""
+			foreach psk_line [split $psk_out "\n"] {
+				if {[regexp {^[ \t]*psk=([0-9a-fA-F]+)[ \t]*$} $psk_line dummy parsed_psk]} {
 					break
 				}
+			}
+			if {$parsed_psk == ""} {
+				puts "Failed to derive WPA PMK from passphrase"
+				return
+			}
+			lappend lines "\tpsk=$parsed_psk"
+		}
+
+		if {$encryption_mode == "WPA_PERSONAL"} {
+			if {!($WPA_mode == 3 && $encapsulation_mode == 2)} {
 				if {$WPA_mode == 1} {
-					puts $handler "\tproto=WPA"
+					lappend lines "\tproto=WPA"
 				} elseif {$WPA_mode == 2} {
-					puts $handler "\tproto=RSN"
+					lappend lines "\tproto=RSN"
 				}
 				if {$encapsulation_mode == 0} {
-					puts $handler "\tpairwise=TKIP"
-					puts $handler "\tgroup=TKIP"
+					lappend lines "\tpairwise=TKIP"
+					lappend lines "\tgroup=TKIP"
 				} elseif {$encapsulation_mode == 1} {
-					puts $handler "\tpairwise=CCMP"
-					#Jacky.Yang 28-Aug-2008, Fix security, WAP2-AES, Muticast:AES, Unicast:AES+TKIP, 
-					# for support Linksys WPA2 Personal "AES" mode and "TKIP or AES" mode
-					#puts $handler "\tgroup=CCMP"
-					puts $handler "\tgroup=CCMP TKIP"
+					lappend lines "\tpairwise=CCMP"
+					lappend lines "\tgroup=CCMP TKIP"
 				} elseif {$encapsulation_mode == 2} {
-					puts $handler "\tpairwise=CCMP TKIP"
-					puts $handler "\tgroup=CCMP TKIP"
+					lappend lines "\tpairwise=CCMP TKIP"
+					lappend lines "\tgroup=CCMP TKIP"
 				}
-				puts $handler "\tscan_ssid=1"
-				puts $handler "\}"	
-			}
-				
-			if {$encryption_mode == "WPA_ENTERPRISE"} {
-				puts $handler "\tkey_mgmt=WPA-EAP"
-				puts $handler "\teap=TTLS PEAP TLS"
- 				#puts $handler "\tphase2=\"auth=MSCHAPV2 auth=GTC auth=MD5 auth=TLS auth=OTP auth=MSCHAP auth=PAP auth=CHAP\" \"autheap=MSCHAPV2  autheap=GTC  autheap=MD5  autheap=TLS  autheap=OTP\""
-				puts $handler "\tphase2=\"auth=MSCHAPV2 auth=GTC\""
-				if {$certificate == 1} {
-					puts $handler "\tclient_cert=\"$certificate_file\""
-				}
-				puts $handler "\tidentity=\"$username\""
-				puts $handler "\tpassword=\"$user_password\""
-				puts $handler "\tauth_alg=OPEN"
-				puts $handler "\tscan_ssid=1"
-				puts $handler "\}"
 			}
 		}
+		lappend lines "\tscan_ssid=1"
+		lappend lines "}"
+	}
+
+	set handler [open $wpa_supplicant_conf_file w]
+	foreach line $lines {
+		puts $handler $line
 	}
 	close $handler
 }
@@ -599,5 +594,4 @@ proc Reactivate_Hostapd_Supplicant {type} {
 		
 	}
 }
-
 

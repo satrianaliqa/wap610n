@@ -32,7 +32,7 @@ function template_load() {
 		else
 			document.getElementById("descriptionDisplay").innerHTML = "<!--#tr id=\"Templates.2\" -->Dual-Band Wireless-N Gaming and Video Adapter<!--#endtr-->";
 */		
-		document.getElementById("ap_wbridge").href = "../station/wireless_basic.asp";
+		document.getElementById("ap_wbridge").href = "/station/wireless_basic.asp";
 		/*if (wirelessConfigType == "manual")
 			document.getElementById("ap_wbridge").href = "../station/wireless_basic.asp";
 		else if (wirelessConfigType == "wps")
@@ -41,7 +41,7 @@ function template_load() {
 	else if (mode == 2) //AP mode
 	{
 		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
-		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
+		document.getElementById("ap_wbridge").href = "/wireless/security.asp";
 	}
 
 	page_load();
@@ -65,11 +65,11 @@ function checkValue() {
 function page_load() {
 	var HWType = "<% checkHW(); %>"
 	urlPath = "<% getUrlPath(); %>";
-	totalWaitTime = "<% totalWaitTime(); %>";
+	totalWaitTime = parseInt("<% totalWaitTime(); %>", 10);
+	if (isNaN(totalWaitTime) || totalWaitTime < 10)
+		totalWaitTime = 10;
 	redirectURL = "http://" + currentIP + urlPath;
 	document.getElementById("waitPad").style.display="block";
-	document.getElementById("modelNameDisplay").innerHTML="WAP610N";
-	document.getElementById("descriptionDisplay").innerHTML="Dual-Band Wireless-N Access Point";
 	//Jacky.Yang 11-Nov-2008, the totalWaitTime value get from url link http://xx/wait_page.asp?totalWaitTime=30
 	if (urlPath.indexOf("wireless_basic.asp") != -1) //wireless_basic.asp
 	{
@@ -128,8 +128,8 @@ function page_load() {
 					<tr>
 						<td width="172" class="mainMenuOption"><a href="/network/sta_network.asp"><!--#tr id="mainmenu.2" -->Setup<!--#endtr--></a></td>
 						<td width="172" class="mainMenuOption"><A id="ap_wbridge" href=""><!--#tr id="mainmenu.1" -->Wireless<!--#endtr--></A></td>
-						<td width="172" class="mainMenuOption"><a href="admin/management.asp"><!--#tr id="mainmenu.3" -->Administration<!--#endtr--></a></td>
-						<td width="172" class="mainMenuOption"><a href="status/device_status.asp"><!--#tr id="mainmenu.4" -->Status<!--#endtr--></a></td>
+						<td width="172" class="mainMenuOption"><a href="/admin/management.asp"><!--#tr id="mainmenu.3" -->Administration<!--#endtr--></a></td>
+						<td width="172" class="mainMenuOption"><a href="/status/device_status.asp"><!--#tr id="mainmenu.4" -->Status<!--#endtr--></a></td>
 					</tr>
 				</table>
 				<!-- InstanceEndEditable -->

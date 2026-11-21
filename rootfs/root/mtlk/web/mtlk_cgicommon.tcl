@@ -133,8 +133,8 @@ proc get_interface {} {
 ##################################################################
 # Set the value of the environment variable 'name'
 ##################################################################
-proc set_env_var {name value} {	
-	set $::env($name) $value	
+proc set_env_var {name value} {
+	set ::env($name) $value
 }
 
 ##################################################################
@@ -248,12 +248,14 @@ proc collect_cgi_vars {} {
 	if [info exists ::env(REQUEST_METHOD)] {
 		set request_method $::env(REQUEST_METHOD)
 		if {[string compare $request_method "POST"] == 0} {
-			if [info exists ::env(CONTENT_TYPE)] {
+			if {[info exists ::env(CONTENT_TYPE)]} {
 				set content_type $::env(CONTENT_TYPE)
 				if {[string compare $content_type "application/x-www-form-urlencoded"] == 0} {
-					if [info exists ::env(CONTENT_TYPE)] {
+					if {[info exists ::env(CONTENT_LENGTH)]} {
 						set content_length $::env(CONTENT_LENGTH)
-						set QUERY_STR [read stdin $content_length]
+						if {[regexp {^[0-9]+$} $content_length] && $content_length <= 65536} {
+							set QUERY_STR [read stdin $content_length]
+						}
 					}
 				}
 			}
@@ -283,9 +285,9 @@ proc urlDecode {url} {
         if {$i>0} {
             set urlPiece "%${urlPiece}"
         }
-        if {[regexp {%([0-9a-hA-H][0-9a-hA -H])} $urlPiece -> svar]>0} {
+        if {[regexp {%([0-9a-fA-F][0-9a-fA-F])} $urlPiece -> svar]>0} {
             set snew [format "%c" "0x$svar"]
-            regsub {%([0-9a-hA-H][0-9a-hA -H])} $urlPiece $snew urlPiece
+            regsub {%([0-9a-fA-F][0-9a-fA-F])} $urlPiece $snew urlPiece
         }
         set url "${url}${urlPiece}"
     }
@@ -299,8 +301,8 @@ proc get_cgi_var {var_name} {
 	global QUERY_STR
 	set QUERY_PARAMS [split $QUERY_STR "&"]
 	foreach param $QUERY_PARAMS {
-		set val [string range $param [expr [string length $var_name]+1] [string length $param]]
-		if {[string first $var_name $param] == 0} {
+		if {[string first "${var_name}=" $param] == 0} {
+			set val [string range $param [expr [string length $var_name]+1] [string length $param]]
 			return $val
 		}		
 	}
@@ -439,7 +441,9 @@ proc mt_fwrite {filename line {appnd 1}} {
 
 proc mt_get_card_count {} {
 	set card_count 1
-	catch {[set card_count [exec lspci | grep Wireless | wc -l]]}
+	if {[catch {exec grep -c mtlk /proc/modules} card_count] != 0 || $card_count < 1} {
+		set card_count 1
+	}
 	return $card_count
 }
 

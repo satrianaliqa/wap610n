@@ -2,7 +2,7 @@
 
 ip_config_method=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
 
-if [ "$1" == "start" ]
+if [ "$1" = "start" ]
 then
 	echo "gui_wps_init.sh: start." > /dev/console
 	rm -f /var/success_get_ip
@@ -41,7 +41,7 @@ elif [ "$1" == "stop" ]; then
 	/root/mtlk/etc/umedia_kill_process.sh wpsCleanTempClock.sh
 
 	# Check static mode. ip_config_method = 1 is static mode.
-	if [ $ip_config_method = 1 ]
+	if [ "$ip_config_method" = "1" ]
 	then
 		rm -f /var/webCommit
 	fi

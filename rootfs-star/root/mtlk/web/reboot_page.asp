@@ -32,7 +32,7 @@ function template_load() {
 		else
 			document.getElementById("descriptionDisplay").innerHTML = "<!--#tr id=\"Templates.2\" -->Dual-Band Wireless-N Gaming and Video Adapter<!--#endtr-->";
 */		
-		document.getElementById("ap_wbridge").href = "../station/wireless_basic.asp";
+		document.getElementById("ap_wbridge").href = "/station/wireless_basic.asp";
 		/*if (wirelessConfigType == "manual")
 			document.getElementById("ap_wbridge").href = "../station/wireless_basic.asp";
 		else if (wirelessConfigType == "wps")
@@ -41,7 +41,7 @@ function template_load() {
 	else if (mode == 2) //AP mode
 	{
 		document.getElementById("modelNameDisplay").innerHTML = "WAP610N"; document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
-		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
+		document.getElementById("ap_wbridge").href = "/wireless/security.asp";
 	}
 
 	page_load();
@@ -65,17 +65,22 @@ function checkValue() {
 
 function page_load() {
 	var HWType = "<% checkHW(); %>"
-	if (mode == 0) { //STA mode
+	var isRestore = (window.location.search.indexOf("restoreDefaults") != -1 ||
+	                 window.location.search.indexOf("factory") != -1 ||
+	                 document.referrer.indexOf("factory_defaults") != -1);
+	if (isRestore) {
+		currentIP = "192.168.1.1";
+		totalWaitTime = 45;
+		redirectURL = "http://192.168.1.1/";
+	} else if (mode == 0) { //STA mode
 		totalWaitTime = 45; //second
 		redirectURL = "http://" + currentIP + "/station/wireless_basic.asp";
 	} else { //AP mode
-		totalWaitTime = 30; //second
+		totalWaitTime = 45; //second
 		redirectURL = "http://" + currentIP + "/wireless/security.asp";
 	}
 		
 	document.getElementById("waitPad").style.display="block";
-	document.getElementById("modelNameDisplay").innerHTML="WAP610N";
-	document.getElementById("descriptionDisplay").innerHTML="Dual-Band Wireless-N Access Point";
 	reboot_page();
 	startToWait = "<% startToWait(); %>";
 }
@@ -122,10 +127,10 @@ function page_load() {
 						<td width="172" class="mainMenuOptionUpSide"></td>
 					</tr>
 					<tr>
-						<td width="172" class="mainMenuOption"><A href="../network/sta_network.asp"><!--#tr id="mainmenu.2" -->Setup<!--#endtr--></A></td>
+						<td width="172" class="mainMenuOption"><A href="/network/sta_network.asp"><!--#tr id="mainmenu.2" -->Setup<!--#endtr--></A></td>
 						<td width="172" class="mainMenuOption"><A id="ap_wbridge" href=""><!--#tr id="mainmenu.1" -->Wireless<!--#endtr--></A></td>
 						<td width="172" class="mainMenuSelected"><A href="/admin/management.asp"><!--#tr id="mainmenu.3" -->Administration<!--#endtr--></A></td>
-						<td width="172" class="mainMenuOption"><A href="../status/device_status.asp"><!--#tr id="mainmenu.4" -->Status<!--#endtr--></A></td>
+						<td width="172" class="mainMenuOption"><A href="/status/device_status.asp"><!--#tr id="mainmenu.4" -->Status<!--#endtr--></A></td>
 					</tr>
 				</table>
 				<!-- InstanceEndEditable -->
@@ -139,11 +144,11 @@ function page_load() {
 							<table>
 								<tr>
 									<!-- InstanceBeginEditable name="Sub Menu" -->
-									<td class="subMenuOption"><font class="small"><a href=""><!--#tr id="adm.submenu.1" -->Management<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/admin/management.asp"><!--#tr id="adm.submenu.1" -->Management<!--#endtr--></a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href=""><!--#tr id="adm.submenu.2" -->Factory Defaults<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/admin/factory_defaults.asp"><!--#tr id="adm.submenu.2" -->Factory Defaults<!--#endtr--></a></font></td>
 									<td class="subMenuDIV">|</td>
-									<td class="subMenuOption"><font class="small"><a href=""><!--#tr id="adm.submenu.3" -->Firmware Upgrade<!--#endtr--></a></font></td>
+									<td class="subMenuOption"><font class="small"><a href="/admin/upgrade.asp"><!--#tr id="adm.submenu.3" -->Firmware Upgrade<!--#endtr--></a></font></td>
 									<!-- InstanceEndEditable -->
 								</tr>
 							</table>

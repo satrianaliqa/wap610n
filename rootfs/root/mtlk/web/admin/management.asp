@@ -41,6 +41,7 @@ function template_load() {
 	else if (mode == 2) //AP mode
 	{
 		document.getElementById("modelNameDisplay").innerHTML = "WAP610N";
+		document.getElementById("descriptionDisplay").innerHTML = "Dual-Band Wireless-N Access Point";
 		document.getElementById("ap_wbridge").href = "../wireless/security.asp";
 	}
 
@@ -60,6 +61,7 @@ function checkConfFile() {
 		alert("Invalid file format. Please select a valid configuration file (.conf, .cfg, .tar.gz, .tgz, .bin).");
 		return;
 	}
+	redirectURL = "/admin/management.asp";
 	totalWaitTime = 30; //second
 	wait_page();
 	document.getElementById("waitPad").style.display="block";
@@ -134,6 +136,30 @@ function page_load() {
 		document.getElementById("wirelessMgmtEnabled").checked = true;
 	else if (wirelessMgmt == 0)
 		document.getElementById("wirelessMgmtDisabled").checked = true;
+
+	loadRemoteStatus();
+}
+
+function loadRemoteStatus() {
+	var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
+	if (!xhr) return;
+	xhr.open("GET", "/cgi-bin/remote_access.cgi?action=status&_t=" + (new Date().getTime()), true);
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4 && xhr.status == 200) {
+			var txt = xhr.responseText || "";
+			var sshMatch = txt.match(/"ssh"\s*:\s*([01])/);
+			var telMatch = txt.match(/"telnet"\s*:\s*([01])/);
+			if (sshMatch) {
+				document.getElementById("ssh_en").checked = (sshMatch[1] == "1");
+				document.getElementById("ssh_dis").checked = (sshMatch[1] == "0");
+			}
+			if (telMatch) {
+				document.getElementById("telnet_en").checked = (telMatch[1] == "1");
+				document.getElementById("telnet_dis").checked = (telMatch[1] == "0");
+			}
+		}
+	};
+	xhr.send(null);
 }
 
 function applyRemote() {
@@ -142,12 +168,14 @@ function applyRemote() {
 	var statusDiv = document.getElementById("remote_status");
 	statusDiv.innerHTML = "<span style='color: #0000ff;'>Applying settings...</span>";
 	
-	var xhr = new XMLHttpRequest();
+	var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 	xhr.open("POST", "/cgi-bin/remote_access.cgi", true);
 	xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState == 4) {
-			if (xhr.status == 200) {
+			var ok = (xhr.status == 200 && xhr.responseText &&
+			          xhr.responseText.indexOf('"status":"success"') != -1);
+			if (ok) {
 				statusDiv.innerHTML = "<span style='color: #008800; font-weight: bold;'>Settings applied successfully!</span>";
 			} else {
 				statusDiv.innerHTML = "<span style='color: #ff0000;'>Failed to apply settings.</span>";

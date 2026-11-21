@@ -1,42 +1,66 @@
 #!/bin/sh
 # Real-time Remote Access (SSH / Telnet) Manager for Cisco WAP610N Web GUI
 
-# Retrieve admin password from system configuration
+# Retrieve admin password from system configuration (/mnt/jffs2 first)
 ADMIN_PASS=""
-for conf in /tmp/sys.conf /etc/sys.conf /root/mtlk/etc/sys.conf; do
+for conf in /mnt/jffs2/sys.conf /tmp/sys.conf /etc/sys.conf /root/mtlk/etc/sys.conf; do
     if [ -f "$conf" ] && [ -z "$ADMIN_PASS" ]; then
-        ADMIN_PASS=$(awk -F "=" '/^(Admin)?Password/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' "$conf" 2>/dev/null | tail -n 1)
+        ADMIN_PASS=$(awk '/^\^?(Admin)?Password[ \t]*=/ {idx = index($0, "="); val = substr($0, idx + 1); sub(/^[ \t]+/, "", val); sub(/[ \t\r]+$/, "", val); print val}' "$conf" 2>/dev/null | tail -n 1)
     fi
 done
 
-# Authenticate request:
-# 1. If HTTP_AUTHORIZATION is present (e.g. direct CLI/curl invocation), validate credentials.
-# 2. If executed via GoAhead WebServer (cgi.c strips HTTP_AUTHORIZATION after websSecurityHandler
-#    authenticates the session), allow the request when SERVER_SOFTWARE or GATEWAY_INTERFACE is set.
-# 3. Otherwise, reject as unauthorized.
+# Authenticate request fail-closed:
+# 1. If HTTP_AUTHORIZATION is present, verify Base64 credentials using BusyBox uuencode.
+# 2. Otherwise require GoAhead CGI execution context (REMOTE_USER or SERVER_SOFTWARE + GATEWAY_INTERFACE).
 if [ -n "$HTTP_AUTHORIZATION" ]; then
-    AUTH_IN=$(echo "$HTTP_AUTHORIZATION" | sed 's/^[Bb]asic //')
-    EXPECTED_AUTH=$(printf "%s" "admin:$ADMIN_PASS" | base64 2>/dev/null || true)
-    if [ -z "$EXPECTED_AUTH" ] && command -v openssl >/dev/null 2>&1; then
-        EXPECTED_AUTH=$(printf "%s" "admin:$ADMIN_PASS" | openssl enc -base64 2>/dev/null)
-    fi
-    if [ -n "$ADMIN_PASS" ] && [ -n "$EXPECTED_AUTH" ] && [ "$AUTH_IN" != "$EXPECTED_AUTH" ]; then
+    AUTH_IN=$(printf '%s' "$HTTP_AUTHORIZATION" | sed 's/^[Bb]asic //')
+    EXPECTED_AUTH=$(printf '%s' "admin:$ADMIN_PASS" | uuencode -m - 2>/dev/null | sed '1d;$d' | tr -d '\r\n')
+    if [ -z "$ADMIN_PASS" ] || [ -z "$EXPECTED_AUTH" ] || [ "$AUTH_IN" != "$EXPECTED_AUTH" ]; then
         echo "Content-Type: application/json"
         echo ""
         echo '{"status":"error","message":"Unauthorized"}'
         exit 0
     fi
-elif [ -z "$SERVER_SOFTWARE" ] && [ -z "$GATEWAY_INTERFACE" ]; then
+elif [ -z "$REMOTE_USER" ] && { [ -z "$SERVER_SOFTWARE" ] || [ -z "$GATEWAY_INTERFACE" ]; }; then
     echo "Content-Type: application/json"
     echo ""
     echo '{"status":"error","message":"Unauthorized"}'
     exit 0
 fi
 
+# CSRF / Same-Origin check on state-changing POST requests
+if [ "$REQUEST_METHOD" = "POST" ] && [ -n "$HTTP_HOST" ]; then
+    SRC_ORIGIN="${HTTP_ORIGIN:-$HTTP_REFERER}"
+    if [ -n "$SRC_ORIGIN" ]; then
+        SRC_HOST=$(printf '%s' "$SRC_ORIGIN" | sed -e 's#^https\?://##' -e 's#/.*$##')
+        if [ -n "$SRC_HOST" ] && [ "$SRC_HOST" != "$HTTP_HOST" ]; then
+            echo "Status: 403 Forbidden"
+            echo "Content-Type: application/json"
+            echo ""
+            echo '{"status":"error","message":"Forbidden: Cross-origin request rejected"}'
+            exit 0
+        fi
+    fi
+fi
+
 QUERY="${QUERY_STRING}"
-if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ] && [ "$CONTENT_LENGTH" -gt 0 ] 2>/dev/null; then
-    POST_DATA=$(dd bs=1 count="$CONTENT_LENGTH" 2>/dev/null)
-    QUERY="$POST_DATA"
+if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ]; then
+    case "$CONTENT_LENGTH" in
+        *[!0-9]*)
+            CONTENT_LENGTH=0
+            ;;
+    esac
+    if [ "$CONTENT_LENGTH" -gt 256 ] 2>/dev/null; then
+        echo "Status: 413 Payload Too Large"
+        echo "Content-Type: application/json"
+        echo ""
+        echo '{"status":"error","message":"Payload too large"}'
+        exit 0
+    fi
+    if [ "$CONTENT_LENGTH" -gt 0 ] 2>/dev/null; then
+        POST_DATA=$(dd bs=1 count="$CONTENT_LENGTH" 2>/dev/null)
+        QUERY="$POST_DATA"
+    fi
 fi
 
 # CSRF Protection: GET is strictly read-only status query; state-changing actions require POST
@@ -82,9 +106,11 @@ case "$QUERY" in
         ;;
 esac
 
-# Default values
-SSH_VAL=1
-TELNET_VAL=1
+# Initialize from current live daemon state so toggling one service preserves the other
+SSH_VAL=0
+pidof dropbear >/dev/null 2>&1 && SSH_VAL=1
+TELNET_VAL=0
+pidof telnetd >/dev/null 2>&1 && TELNET_VAL=1
 
 case "$QUERY" in
     *ssh=0*)
@@ -104,7 +130,11 @@ case "$QUERY" in
         ;;
 esac
 
-# Persist to /mnt/jffs2/sys.conf
+# Persist to /mnt/jffs2/sys.conf under config lock
+LOCKED=0
+if [ -x /bin/config_lock.sh ] && /bin/config_lock.sh $$ >/dev/null 2>&1; then
+    LOCKED=1
+fi
 mkdir -p /mnt/jffs2 2>/dev/null || true
 if [ -d /mnt/jffs2 ]; then
     touch /mnt/jffs2/sys.conf 2>/dev/null || true
@@ -120,6 +150,9 @@ elif [ -f /tmp/sys.conf ]; then
     sed -i '/^Telnet_Enabled/d' /tmp/sys.conf 2>/dev/null || true
     echo "Telnet_Enabled = $TELNET_VAL" >> /tmp/sys.conf 2>/dev/null || true
 fi
+if [ "$LOCKED" = "1" ] && [ -x /bin/config_unlock.sh ]; then
+    /bin/config_unlock.sh $$ >/dev/null 2>&1 || true
+fi
 
 # Dynamic process management
 if [ "$SSH_VAL" = "0" ]; then
@@ -128,13 +161,14 @@ else
     mkdir -p /etc/dropbear 2>/dev/null || true
     chmod 700 /etc/dropbear 2>/dev/null || true
     if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
-        /usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key 2>/dev/null || true
+        /usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key >/dev/null 2>&1 || true
     fi
     if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
-        /usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key 2>/dev/null || true
+        /usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key >/dev/null 2>&1 || true
     fi
+    chmod 600 /etc/dropbear/*_host_key 2>/dev/null || true
     if ! pidof dropbear >/dev/null 2>&1; then
-        /usr/sbin/dropbear -p 22 2>/dev/null &
+        /usr/sbin/dropbear -p 22 </dev/null >/dev/null 2>&1 &
     fi
 fi
 
@@ -142,7 +176,7 @@ if [ "$TELNET_VAL" = "0" ]; then
     killall telnetd 2>/dev/null || true
 else
     if ! pidof telnetd >/dev/null 2>&1; then
-        telnetd -l /bin/sh 2>/dev/null &
+        telnetd -l /bin/sh </dev/null >/dev/null 2>&1 &
     fi
 fi
 

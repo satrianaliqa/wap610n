@@ -51,6 +51,26 @@ function template_load() {
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
 var waitCount=0;
+var dhcpDone = false;
+var linkStatusDone = false;
+
+function reWirteList(fieldID, disableFieldID, str)
+{
+	if (fieldID == "") {
+		dhcpDone = true;
+		return;
+	}
+	if (fieldID == "listLinkStatus") {
+		linkStatusDone = true;
+		stopToWait = true;
+	}
+	if (disableFieldID != "" && str != "")
+		objectDisplay(disableFieldID, "none");
+	if (fieldID != "" && document.getElementById(fieldID)) {
+		document.getElementById(fieldID).innerHTML = str;
+		updateSignalStrength();
+	}
+}
 
 
 function waitStatus()

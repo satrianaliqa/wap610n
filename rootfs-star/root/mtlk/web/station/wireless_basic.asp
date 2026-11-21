@@ -199,35 +199,8 @@ function selectSecurityMode(mode) {
 
 function selectRFBand() {
 	var chElem = document.getElementById("channel");
-	if (!chElem || !chElem.options) return;
-	var value = document.getElementById("frequencyBand") ? document.getElementById("frequencyBand").value : "1";
-	var origIndex = chElem.selectedIndex;
-	removeAllOption("channel");
-
-	var channelList = pvChannel24FCCnoCB;
-	var cbElem = document.getElementById("channelBounding") || document.getElementById("channelBonding");
-	var cb = cbElem ? cbElem.value : 0;
-	var ulElem = document.getElementById("upperLower") || document.getElementById("upperLowerChannelBonding");
-	var ul = ulElem ? ulElem.value : 0;
-
-	if (value == "0") {
-		if (cb == 0) channelList = pvChannel52FCCnoCB;
-		else if (cb == 1 && ul == 0) channelList = pvChannel52FCCCBU;
-		else if (cb == 1 && ul == 1) channelList = pvChannel52FCCCBL;
-	}
-	else if (value == "1") {
-		if (cb == 0) channelList = pvChannel24FCCnoCB;
-		else if (cb == 1 && ul == 0) channelList = pvChannel24FCCCBU;
-		else if (cb == 1 && ul == 1) channelList = pvChannel24FCCCBL;
-	}
-
-	if (channelList) {
-		for (var loopCount=0; loopCount<channelList.length; loopCount=loopCount+2) {
-			addNewOption("channel", channelList[loopCount], channelList[loopCount], channelList[loopCount], channelList[loopCount+1]);
-		}
-		if (origIndex != -1 && origIndex < chElem.options.length) {
-			chElem.options[origIndex].selected = true;
-		}
+	if (chElem) {
+		chElem.value = "0";
 	}
 }
 
@@ -248,18 +221,8 @@ function selectMode(mode){
 		var WEPKeyLength = "<% getParam(1, "NonProc_WepKeyLength"); %>";
 		var WEPAuth = "<% getParam(1, "NonProc_Authentication"); %>";
 		var WPAPersonalMode = "<% getParam(1, "NonProc_WPA_Personal_Mode"); %>";
-		if (WPAPersonalMode == "" || WPAPersonalMode == "NULL")
-			WPAPersonalMode = "<% getParam("wlan0", "NonProc_WPAPersonalMode"); %>";
+		var WPAPersonalEncryption = "<% getParam(1, "NonProc_WPA_Personal_Encapsulation"); %>";
 		var WPAPSK = "<% getParam(1, "NonProc_WPA_Personal_PSK"); %>";
-		
-		/*docTemp = document.getElementById("securityMode");
-		for (loopCount=0; loopCount<docTemp.length; loopCount++)
-		{
-			if (docTemp.options[loopCount].value == securityMode) {
-				docTemp.options[loopCount].selected = true;
-			}
-		}*/
-		//selectSecurityMode(securityMode*1);
 		
 		if (securityMode*1 != 3) {
 			docTemp = document.getElementById("securityMode");
@@ -272,37 +235,32 @@ function selectMode(mode){
 			selectSecurityMode(securityMode*1);
 		}
 		else {
+			var encSel = document.getElementById("WPAPersonalEncryption");
 			if (WPAPersonalMode == 1 || WPAPersonalMode == "1" || WPAPersonalMode == "WPA - Personal" || WPAPersonalMode == "WPA-Personal") //WPA
 			{
 				document.getElementById("securityMode").options[2].selected = true;
 				selectSecurityMode(securityMode*1);
-				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
+				if (encSel && encSel.options.length > 0)
+					encSel.options[0].selected = true;
 				if (document.getElementById("WPAPersonalMode"))
 					document.getElementById("WPAPersonalMode").value = "1";
-			}
-			else if (WPAPersonalMode == 2 || WPAPersonalMode == "2" || WPAPersonalMode == "WPA2 - Personal" || WPAPersonalMode == "WPA2-Personal") //WPA2
-			{
-				document.getElementById("securityMode").options[3].selected = true;
-				selectSecurityMode(securityMode*1);
-				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
-				if (document.getElementById("WPAPersonalMode"))
-					document.getElementById("WPAPersonalMode").value = "2";
-			}
-			else if (WPAPersonalMode == 3 || WPAPersonalMode == "3" || WPAPersonalMode == "WPA2 Mixed") //WPA2 Mixed
-			{
-				document.getElementById("securityMode").options[3].selected = true;
-				selectSecurityMode(securityMode*1);
-				document.getElementById("WPAPersonalEncryption").options[1].selected = true;
-				if (document.getElementById("WPAPersonalMode"))
-					document.getElementById("WPAPersonalMode").value = "3";
 			}
 			else
 			{
 				document.getElementById("securityMode").options[3].selected = true;
 				selectSecurityMode(securityMode*1);
-				document.getElementById("WPAPersonalEncryption").options[0].selected = true;
+				var useMixed = (WPAPersonalMode == 3 || WPAPersonalMode == "3" || WPAPersonalMode == "WPA2 Mixed" || WPAPersonalEncryption == "2");
+				if (encSel && encSel.options.length > 1) {
+					var targetEnc = useMixed ? "2" : "1";
+					for (loopCount = 0; loopCount < encSel.options.length; loopCount++) {
+						if (encSel.options[loopCount].value == targetEnc) {
+							encSel.options[loopCount].selected = true;
+							break;
+						}
+					}
+				}
 				if (document.getElementById("WPAPersonalMode"))
-					document.getElementById("WPAPersonalMode").value = "2";
+					document.getElementById("WPAPersonalMode").value = useMixed ? "3" : "2";
 			}
 		}
 		//alert(document.getElementById("securityMode").selectedIndex);
@@ -360,136 +318,36 @@ function selectBonding(HTEnable, changeRF) {
 
 function checkValue() {
 	var applyValue = true;
-	var checkValue, keyLenCount, defaultWEPKeyValue;
-	var hexKey0 = false;
-	var hexKey1 = false;
-	var hexKey2 = false;
-	var hexKey3 = false;
-		
-	if (!translateSubmitToHex("ESSID")){
+	var essidEl = document.getElementById("display_ESSID");
+	var essidVal = essidEl ? essidEl.value : "";
+	if (essidVal.length < 1 || essidVal.length > 32) {
+		alert("<!--#tr id=\"w.bws.alert.ssid\" -->Please enter a Network Name (SSID) between 1 and 32 characters.<!--#endtr-->");
+		applyValue = false;
+	} else if (/[\x00-\x1f\x7f"'`$;|\\]/.test(essidVal)) {
+		alert("<!--#tr id=\"w.bws.alert.ssidchar\" -->Network Name (SSID) contains invalid or unsupported characters.<!--#endtr-->");
+		applyValue = false;
+	}
+	if (applyValue && !translateSubmitToHex("ESSID")){
 		applyValue = false;
 	}
 	
 	if (applyValue && (document.getElementById("securityMode").value == 2)) {
-		//defaultWEPKeyValue = document.getElementById("defaultWEPKey").value * 1;
-		defaultWEPKeyValue = 0; //always use key 1
-		if (document.getElementById("WEPKeyLength").value == 64) {
-			for (loopCount=0; loopCount<4; loopCount++) {
-				applyValue = true;
-				docTemp = document.getElementById("WEPKey"+loopCount).value;
-
-				if ((docTemp.length != 0) /*|| (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)*/) {
-					/*if (docTemp.length == 5)	//ASCII
-					{
-						applyValue = false;
-					}*/
-					//else if (docTemp.length == 10)	//HEX
-					if (docTemp.length == 10)	//HEX
-					{
-
-						for (keyLenCount=0; keyLenCount<10; keyLenCount++)
-						{
-
-							checkValue = docTemp.substr(keyLenCount, 1);
-							if (!(parseInt(checkValue, 16) >= 0) && !(parseInt(checkValue, 16) <= 15)) {
-
-								if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
-									alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
-									//alert(_("w.bws.alert.1") + (defaultWEPKeyValue+1) + "!");
-								} else {
-									alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount+1) + "!");
-									//alert(_("w.bws.alert.1") + (loopCount+1) + "!");
-								}
-								applyValue = false;
-								loopCount = 5;
-								keyLenCount = 10;
-							}
-						}
-						if (applyValue) {
-							switch(loopCount) {
-								case 0: hexKey0 = true;
-										break;
-								case 1: hexKey1 = true;
-										break;
-								case 2: hexKey2 = true;
-										break;
-								case 3: hexKey3 = true;
-										break;
-							}
-						}
-					}
-					else
-					{
-						//alert("Please input 5 ascii characters or 10 hex digits for WEP Key " +?(loopCount+1) + "!");
-						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
-							alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1) + "!");
-							//alert(_("w.bws.alert.1") + (defaultWEPKeyValue+1) + "!");
-						} else {
-							alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount+1) + "!");
-							//alert(_("w.bws.alert.1") + (loopCount+1) + "!");
-						}
-						applyValue = false;
-						loopCount = 5;
-					}
-				}
-			}
-		}
-		else if (applyValue && (document.getElementById("WEPKeyLength").value == 128)) {
-			for (loopCount=0; loopCount<4; loopCount++) {
-				applyValue = true;
-				docTemp = document.getElementById("WEPKey"+loopCount).value;
-				
-				if ((docTemp.length != 0) /*|| (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0)*/) {
-					/*if (docTemp.length == 13)	//ASCII
-					{
-						applyValue = false;
-					}*/
-					//else if (docTemp.length == 26)	//HEX
-					if (docTemp.length == 26)	//HEX
-					{
-						for (keyLenCount=0; keyLenCount<26; keyLenCount++)
-						{
-							checkValue = docTemp.substr(keyLenCount, 1);
-							if (!(parseInt(checkValue, 16) >= 0) && !(parseInt(checkValue, 16) <= 15)) {
-								if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
-									alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
-									//alert(_("w.bws.alert.2") + (defaultWEPKeyValue+1));
-								} else {
-									alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount+1));
-									//alert(_("w.bws.alert.2") + (loopCount+1));
-								}
-								applyValue = false;
-								loopCount = 13;
-								keyLenCount = 26;
-							}
-						}
-						if (applyValue) {
-							switch(loopCount) {
-								case 0: hexKey0 = true;
-										break;
-								case 1: hexKey1 = true;
-										break;
-								case 2: hexKey2 = true;
-										break;
-								case 3: hexKey3 = true;
-										break;
-							}
-						}
-					}
-					else
-					{
-						//alert("Please input 13 ascii characters or 26 hex digits for WEP Key " +?(loopCount+1) + "!");
-						if (document.getElementById("WEPKey"+defaultWEPKeyValue).value == 0) {
-							alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (defaultWEPKeyValue+1));
-							//alert(_("w.bws.alert.2") + (defaultWEPKeyValue+1));
-						} else {
-							alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount+1));
-							//alert(_("w.bws.alert.2") + (loopCount+1));
-						}
-						applyValue = false;
-						loopCount = 13;
-					}
-				}
+		var keyLenBits = document.getElementById("WEPKeyLength").value;
+		var hexRegex = (keyLenBits == 128) ? /^[0-9a-fA-F]{26}$/ : /^[0-9a-fA-F]{10}$/;
+		var loopCount, keyEl, rowEl, keyVal;
+		for (loopCount = 0; loopCount < 4; loopCount++) {
+			rowEl = document.getElementById("WEPKey" + loopCount + "Field");
+			if (loopCount > 0 && (!rowEl || rowEl.style.display == "none"))
+				continue;
+			keyEl = document.getElementById("WEPKey" + loopCount);
+			keyVal = keyEl ? keyEl.value : "";
+			if ((loopCount == 0 && keyVal.length == 0) || (keyVal.length > 0 && !hexRegex.test(keyVal))) {
+				if (keyLenBits == 128)
+					alert("<!--#tr id=\"w.bws.alert.2\" -->Please input 26 Hex character of key <!--#endtr-->" + (loopCount + 1));
+				else
+					alert("<!--#tr id=\"w.bws.alert.1\" -->Please input 10 Hex character of key <!--#endtr-->" + (loopCount + 1) + "!");
+				applyValue = false;
+				break;
 			}
 		}
 	}
@@ -639,7 +497,7 @@ function page_load() {
 	WPAPersonalDisplay("none");
 	selectConfigType();
 	
-	if (wirelessConfigType == "manual")
+	if (mode*1 == 2 || wirelessConfigType != "wps")
 	{
 		document.getElementById("selectManual").checked = true;
 		document.getElementById("wirelessType").innerHTML = "<!--#tr id=\"w.bws.1\" -->Basic Wireless Settings<!--#endtr-->";
@@ -655,9 +513,17 @@ function page_load() {
 			removeAllOption("frequencyBand");
 			addNewOption("frequencyBand", "", "", "0", "5GHz");
 			addNewOption("frequencyBand", "", "", "1", "2.4GHz");
-			addNewOption("frequencyBand", "", "", "2", "Both");
-			if (FrequencyBand && document.getElementById("frequencyBand").options[FrequencyBand])
-				document.getElementById("frequencyBand").options[FrequencyBand].selected = true;
+			if (mode*1 == 0)
+				addNewOption("frequencyBand", "", "", "2", "Both");
+			var fbEl = document.getElementById("frequencyBand");
+			if (fbEl && FrequencyBand != "") {
+				for (var fbIdx = 0; fbIdx < fbEl.options.length; fbIdx++) {
+					if (fbEl.options[fbIdx].value == FrequencyBand) {
+						fbEl.options[fbIdx].selected = true;
+						break;
+					}
+				}
+			}
 		}
 		document.getElementById("display_ESSID").value = transSSID(ESSID);
 	}

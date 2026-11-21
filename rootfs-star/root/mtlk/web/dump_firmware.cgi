@@ -1,1 +1,0 @@
-cgi-bin/dump_firmware.cgi

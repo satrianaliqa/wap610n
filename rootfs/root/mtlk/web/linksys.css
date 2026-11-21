@@ -11,9 +11,9 @@ html,body {
 
 .waitPad {
        width: 100%;
-       height: 150%;
+       height: 100%;
        background-color: #DDDDDD;
-       position: absolute;
+       position: fixed;
        left: 0px;
        top: 0px;
 	   filter:alpha(opacity=20, FinishOpacity=20, Style=2);opacity:0.2;zoom:1;
@@ -74,7 +74,7 @@ HR
 {
 	border:0;
 	border-top: solid 1px #b5b5e6;
-	width:80%
+	width:80%;
 }
 .RADIO
 {
@@ -147,7 +147,7 @@ li
 {
 	color:#ffffff;
 	font-size:8pt;
-	margin-bottom:1em
+	margin-bottom:1em;
 }
 
 B
@@ -194,7 +194,7 @@ SELECT {
 	text-align:right;
 	vertical-align:bottom;
 	padding-right:10px;
-	color:#ffffff
+	color:#ffffff;
 }
 
 .logoTD{
@@ -226,7 +226,7 @@ SELECT {
 	width:481px;
 	height:33px;
 	background-color:#5D87C1;
-	color:#ffffff
+	color:#ffffff;
 }
 
 .modelNAME
@@ -237,7 +237,7 @@ SELECT {
 	font-size: 8pt;
 /*june mark	width:89px; */
 	width:153px;
-	color:#ffffff
+	color:#ffffff;
 }
 
 .nullLINE
@@ -463,7 +463,7 @@ SELECT {
 .FUNNAME3
 {
 	margin-left:10px;
-	margin-right:10px
+	margin-right:10px;
 }
 
 .footContent
@@ -473,7 +473,7 @@ SELECT {
 	height:35px;
 	width:495px;
 	padding-right:20px;
-	text-align:right
+	text-align:right;
 }
 
 .WPSTitle
@@ -612,11 +612,11 @@ SELECT {
 
 .blankRightSide
 {
-        dis_background-image:url(image/UI_05.gif);
+        /* dis_background-image:url(image/UI_05.gif); */
         background-repeat:repeat;
-        dis_width:13px;
+        /* dis_width:13px; */
         height:30px;
-        dis_background-color:#000000;
+        /* dis_background-color:#000000; */
 }
 
 
@@ -650,7 +650,7 @@ SELECT {
 	padding-right:3px;
         padding-bottom:5px;
 	font-size:8pt;
-	font-family:Arial
+	font-family:Arial;
 }
 
 .BORDERTABLE_LEFT TD
@@ -678,7 +678,7 @@ SELECT {
 	padding-right:3px;
         padding-bottom:5px;
 	font-size:8pt;
-	font-family:Arial
+	font-family:Arial;
 }
 
 .BORDERTABLE_LEFT1 TD

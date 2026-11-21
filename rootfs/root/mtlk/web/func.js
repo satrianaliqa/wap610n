@@ -46,27 +46,20 @@ function makeUpdateIPRequest(url, content) {
 		return false;
 	}
 	req.onreadystatechange = function () {
-		http_request = req;
-		alertUpdateIPContents();
+		alertUpdateIPContents(req);
 	};
 	req.open('POST', url, true);
 	req.send(content);
 }
 
-function alertUpdateIPContents() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			/*IPandMask = http_request.responseText;
-			docTemp = IPandMask;
-			index = docTemp.indexOf(','); //IP
-			currentIP = docTemp.substr(0, index);*/
-			if (http_request.responseText != "NULL")
-				currentIP = http_request.responseText;
+function alertUpdateIPContents(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
+			if (req.responseText != "NULL")
+				currentIP = req.responseText;
 			updateIPAddresStopToWait = true;
-			//alert("alertUpdateIPContents:" + currentIP);
-			//alert(currentIP);
 		} else {
-			//alert('There was a problem with the request.');
+			updateIPAddresStopToWait = true;
 		}
 	}
 }
@@ -99,26 +92,23 @@ function makeWaitDHCPInfoRequest(url, content) {
 		return false;
 	}
 	req.onreadystatechange = function () {
-		http_request = req;
-		alertWaitDHCPInfoContents();
+		alertWaitDHCPInfoContents(req);
 	};
 	req.open('POST', url, true);
 	req.send(content);
 }
 
-function alertWaitDHCPInfoContents() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			waitDHCPInfoValue = http_request.responseText;
+function alertWaitDHCPInfoContents(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
+			waitDHCPInfoValue = req.responseText;
 			docTemp = waitDHCPInfoValue;
 			index = docTemp.indexOf(','); //IP
 			currentIP = docTemp.substr(0, index);
 			
 			updateWaitDHCPInfoStopToWait = true;
-			//alert("alertUpdateIPContents:" + currentIP);
-			//alert(currentIP);
 		} else {
-			//alert('There was a problem with the request.');
+			updateWaitDHCPInfoStopToWait = true;
 		}
 	}
 }
@@ -166,27 +156,32 @@ function makeRequest(url, content, fieldID, disableFieldID) {
 	req.onreadystatechange = function () {
 		http_request = req;
 		if (typeof alertContents === "function") {
-			alertContents(fieldID, disableFieldID);
+			alertContents(fieldID, disableFieldID, req);
 		}
 	};
 	req.open('POST', url, true);
 	req.send(content);
 }
 
+function setRebootRedirectSrc(srcUrl) {
+	var frame = document.getElementById("rebootRedirect");
+	if (frame) {
+		frame.src = srcUrl;
+	}
+}
+
 function wait_page()
 {	
-	/*if (percent > 80) {
-			rebootRedirect.location.href="http://" + currentIP +"/rebootredirect.asp";
-	}*/
-	
-	if ((Math.round(percent) > 50) && (Math.round(percent)%5) == 0)
-		rebootRedirect.location.href=redirectURL;
+	var wt = parseInt(totalWaitTime, 10);
+	if (isNaN(wt) || wt < 10) wt = 10;
+	totalWaitTime = wt;
+
+	if ((Math.round(percent) > 50) && (Math.round(percent)%5) == 0 && redirectURL)
+		setRebootRedirectSrc(redirectURL);
 	
 	if (percent == 0)
 	{
 		renewClock=100 / ((totalWaitTime*1000)/renewTime);
-		//redirectURL = ".." + location.pathname;
-		//document.getElementById("mainform").style.visibility = "none";
 		objectDisplay("saveField", "none");
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
@@ -199,8 +194,7 @@ function wait_page()
 	percent+=renewClock;
 	if (percent >= 100) {
 		percent = 100;
-		location.href = redirectURL;
-		//return;
+		location.href = redirectURL || "/";
 	}
 	document.getElementById("progress").style.width = Math.round(percent) + "%";
 	document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";
@@ -210,23 +204,19 @@ function wait_page()
 
 function connecting_wait_page()
 {
-	//alert(currentIP + ", percent=" + percent);
-	//if ( ((Math.round(percent) > 10) && (Math.round(percent)%2) == 0) && ((Math.round(percent) < 30) && ((Math.round(percent)%2) == 0)) )
-	if ( (Math.round(percent) >= 20) && ((Math.round(percent)%5) == 0) && (oldPercent != (Math.round(percent)%5))) {
+	var wt = parseInt(totalWaitTime, 10);
+	if (isNaN(wt) || wt < 10) wt = 10;
+	totalWaitTime = wt;
+
+	if ( (Math.round(percent) >= 20) && ((Math.round(percent)%5) == 0) && (oldPercent != Math.round(percent))) {
 		updateIPAddress();
-		oldPercent = Math.round(percent)%5;
-		//alert("connecting_wait_page: " + currentIP);
-		rebootRedirect.location.href="http://" + currentIP +"/rebootredirect.asp";
+		oldPercent = Math.round(percent);
+		setRebootRedirectSrc("http://" + currentIP +"/rebootredirect.asp");
 	}
-		
-	/*if ((Math.round(percent) > 60) && ((Math.round(percent)%5) == 0))
-		rebootRedirect.location.href="http://" + currentIP +"/rebootredirect.asp";*/
 		
 	if (percent == 0)
 	{
 		renewClock=100 / ((totalWaitTime*1000)/renewTime);
-		//redirectURL = ".." + location.pathname;
-		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
 			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
@@ -238,9 +228,7 @@ function connecting_wait_page()
 	percent+=renewClock;
 	if (percent >= 100) {
 		percent = 100;
-		//location.href = redirectURL;
 		location.href="http://" + currentIP +"/rebootredirect.asp";
-		//return;
 	}
 	document.getElementById("progress").style.width = Math.round(percent) + "%";
 	document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";
@@ -252,16 +240,17 @@ function connecting_wait_page()
 
 function process_page()
 {	
-	//if ((percent > 30))
+	var wt = parseInt(totalWaitTime, 10);
+	if (isNaN(wt) || wt < 10) wt = 10;
+	totalWaitTime = wt;
+
 	updateIPAddress();
 	if ((Math.round(percent) > 70) && (Math.round(percent)%5) == 0)
-		rebootRedirect.location.href="http://" + currentIP +"/rebootredirect.asp";
+		setRebootRedirectSrc("http://" + currentIP +"/rebootredirect.asp");
 		
 	if (percent == 0)
 	{
 		renewClock=100 / ((totalWaitTime*1000)/renewTime);
-		//redirectURL = ".." + location.pathname;
-		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
 			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Processing, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
@@ -274,7 +263,6 @@ function process_page()
 	if (percent >= 100) {
 		percent = 100;
 		location.href = redirectURL;
-		//return;
 	}
 	document.getElementById("progress").style.width = Math.round(percent) + "%";
 	document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";
@@ -285,15 +273,16 @@ function process_page()
 
 function reboot_page()
 {	
-	//if ((percent > 30))
+	var wt = parseInt(totalWaitTime, 10);
+	if (isNaN(wt) || wt < 10) wt = 10;
+	totalWaitTime = wt;
+
 	if ((Math.round(percent) > 70) && (Math.round(percent)%5) == 0)
-		rebootRedirect.location.href="http://" + currentIP +"/rebootredirect.asp";
+		setRebootRedirectSrc(redirectURL || ("http://" + currentIP + "/rebootredirect.asp"));
 		
 	if (percent == 0)
 	{
 		renewClock=100 / ((totalWaitTime*1000)/renewTime);
-		//redirectURL = ".." + location.pathname;
-		//document.getElementById("mainform").style.visibility = "hidden";
 		objectDisplay("mainform", "none");
 		if(current_lang != "SA"){
 			document.getElementById("waitform").innerHTML = "<table bolder=\"0\"><tr><td colspan=\"2\"><font color=red>Rebooting, Please wait......</font></td></tr><tr><td width=\"95%\"><table align=\"left\" bgcolor=\"#ffffff\" cellpadding=\"0\" cellspacing=\"0\" bordercolor=\"#FFFFFF\" style=\"border-style: solid; border-width: 1px\"><tr><td width=400 align=\"left\"><table id=\"progress\" bgcolor=\"blue\" height=\"25\"><tr><td></td></tr></table></td></tr></table></td><td width=\"95%\"><font color=red><span id=\"progressValue\">&nbsp;</span></font></td></tr></table>";
@@ -306,7 +295,6 @@ function reboot_page()
 	if (percent >= 100) {
 		percent = 100;
 		location.href = redirectURL;
-		//return;
 	}
 	document.getElementById("progress").style.width = Math.round(percent) + "%";
 	document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";

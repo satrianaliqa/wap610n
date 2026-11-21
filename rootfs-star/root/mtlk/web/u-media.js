@@ -13,9 +13,11 @@ function d2b(value)
 	var num1;
 	var num2=null;
 	var currnum;
+	var p;
 	currnum = 128;
 
-	num1 = eval(value);
+	num1 = parseInt(value, 10);
+	if (isNaN(num1)) num1 = 0;
 	if(num1 >= currnum)
 	{
 		num2 = "1";
@@ -51,14 +53,18 @@ function checkIPwithSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, su
 	var ip_b=new Array(d2b(ip1), d2b(ip2), d2b(ip3), d2b(ip4));
 	var subnet_b=new Array(d2b(subnet1), d2b(subnet2), d2b(subnet3), d2b(subnet4));
 
+	var foundZero = false;
 	for(i=0;i<4;i++) {
 		for(j=0;j<8;j++) {
 			if(subnet_b[i].charAt(j) == "0") {
 				vi = i;
 				vj = j;
+				foundZero = true;
 				break;
 			}
 		}
+		if (foundZero)
+			break;
 	}
 
 	for(i=vi;i<4;i++) {
@@ -118,8 +124,8 @@ function checkGatewayIPwithSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subn
 function checkSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4){
 	var applyValue = true;
 
-	//subnet mask 1
-	if (applyValue && !((ip1 & subnet1) > 128))
+	//subnet mask 1 (must be a valid contiguous high-bit mask octet)
+	if (applyValue && !(subnet1 == 128 || subnet1 == 192 || subnet1 == 224 || subnet1 == 240 || subnet1 == 248 || subnet1 == 252 || subnet1 == 254 || subnet1 == 255))
 		applyValue = false;
 
 	//subnet mask 2
@@ -230,7 +236,7 @@ function maskRange(subnet, ip, gw)
 function checkGateway(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4, gw1, gw2, gw3, gw4) {
 	var applyValue = true;
 	
-	if (applyValue && (ip1 ^ subnet1 != subnet1 ^ gw1))
+	if (applyValue && ((ip1 & subnet1) != (gw1 & subnet1)))
 	{
 		applyValue = false;
 		//alert("adderss1 fail");
@@ -261,7 +267,13 @@ function checkGateway(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4, gw
 }
 
 function objectDisplay(IDName, value) {
-	document.getElementById(IDName).style.display = value;
+	var el = document.getElementById(IDName);
+	if (!el) return;
+	if (value == "block" && (el.tagName == "TR" || el.tagName == "TABLE" || el.tagName == "TBODY" || el.tagName == "THEAD")) {
+		el.style.display = "";
+	} else {
+		el.style.display = value;
+	}
 }
 
 function removeAllOption(selectID) {
@@ -290,24 +302,8 @@ function addNewOption(selectID, optionID, optionName, optionValue, optionText) {
 
 function stringToHex(tagName)
 {
-	var resultStr="";
-	var docTemp;
-	var loopCount;
-	docTemp = document.getElementById("display_"+tagName).value;
-	
-	for (loopCount=0; loopCount<docTemp.length; loopCount++){
-		if (docTemp.substr(loopCount, 1) == '\\'){
-			if (docTemp.substr(loopCount+1, 1) == '"'){
-				resultStr = resultStr + docTemp.substr(loopCount+1, 1);
-				loopCount++;
-			}
-			else
-				resultStr = resultStr + docTemp.substr(loopCount, 1);
-		}
-		else
-			resultStr = resultStr + docTemp.substr(loopCount, 1);
-	}
-	document.getElementById("submit_"+tagName).value = resultStr;
+	var docTemp = document.getElementById("display_"+tagName).value;
+	document.getElementById("submit_"+tagName).value = docTemp;
 }
 
 
@@ -329,29 +325,9 @@ function hexToString(string)
 
 function translateSubmitToHex(tagName)
 {
-	var resultStr="";
-	var docTemp;
-	var loopCount;
-	docTemp = document.getElementById("display_"+tagName).value;
+	var docTemp = document.getElementById("display_"+tagName).value;
+	document.getElementById("submit_"+tagName).value = docTemp;
 	
-	for (loopCount=0; loopCount<docTemp.length; loopCount++){
-		if (docTemp.substr(loopCount, 1) == '\\'){
-			if (docTemp.substr(loopCount+1, 1) == '"'){
-				resultStr = resultStr + docTemp.substr(loopCount+1, 1);
-				loopCount++;
-			}
-			else
-				resultStr = resultStr + docTemp.substr(loopCount, 1);
-		}
-		else
-			resultStr = resultStr + docTemp.substr(loopCount, 1);
-	}
-	document.getElementById("submit_"+tagName).value = resultStr;
-	
-	/*if (document.getElementById("submit_"+tagName).value.length < 1) {
-		alert("The SSID length can't less than 1 character!");
-		return false;
-	}*/
 	if ((tagName == "ESSID") && (document.getElementById("submit_"+tagName).value.length > 32)) {
 		alert("The SSID length can't big than 32 character!");
 		return false;
@@ -387,20 +363,12 @@ function getHTMLContent(IDName) {
 }
 
 function checkWPAPSK(value) {
-	var pskValue;
-	var loopCount;
 	if (value.length == 64) {
-		for (loopCount=0; loopCount<64; loopCount++)
-		{
-			pskValue = value.substr(loopCount, 1);
-			if (!(parseInt(pskValue, 16) >= 0) && !(parseInt(pskValue, 16) <= 15)) {
-				alert("Please input 64 Hex character of pre-shared key!");
-				return false;
-			}
+		if (!/^[0-9a-fA-F]{64}$/.test(value)) {
+			alert("Please input 64 Hex character of pre-shared key!");
+			return false;
 		}
-		return true;
-	}
-	else if (value.length < 8) {
+	} else if (value.length < 8 || value.length > 63) {
 		alert("The passphrase key must between 8 and 63 ASCII characters!");
 		return false;
 	}
@@ -454,6 +422,60 @@ function selectWPAMode(mode) {
 			docTemp = document.getElementById("WPAPersonalEncryption").options[1];
 		docTemp.selected = true;*/
 	}
+}
+
+function ToHex(num)
+{
+	var n = num & 0xff;
+	var h = n.toString(16);
+	return (h.length < 2) ? ("0" + h) : h;
+}
+
+function MD5(str)
+{
+	function rl(v, c) { return (v << c) | (v >>> (32 - c)); }
+	function au(x, y) {
+		var l = (x & 0xffff) + (y & 0xffff);
+		return (((x >> 16) + (y >> 16) + (l >> 16)) << 16) | (l & 0xffff);
+	}
+	function cm(q, a, b, x, s, t) { return au(rl(au(au(a, q), au(x, t)), s), b); }
+	function ff(a, b, c, d, x, s, t) { return cm((b & c) | ((~b) & d), a, b, x, s, t); }
+	function gg(a, b, c, d, x, s, t) { return cm((b & d) | (c & (~d)), a, b, x, s, t); }
+	function hh(a, b, c, d, x, s, t) { return cm(b ^ c ^ d, a, b, x, s, t); }
+	function ii(a, b, c, d, x, s, t) { return cm(c ^ (b | (~d)), a, b, x, s, t); }
+	var i, bl = ((str.length + 8) >> 6) + 1, x = new Array(bl * 16);
+	for (i = 0; i < bl * 16; i++) x[i] = 0;
+	for (i = 0; i < str.length; i++) x[i >> 2] |= (str.charCodeAt(i) & 0xff) << ((i % 4) * 8);
+	x[i >> 2] |= 0x80 << ((i % 4) * 8);
+	x[bl * 16 - 2] = str.length * 8;
+	var a = 1732584193, b = -271733879, c = -1732584194, d = 271733878;
+	var S = [7,12,17,22,5,9,14,20,4,11,16,23,6,10,15,21];
+	var K = [
+		-680876936,-389564586,606105819,-1044525330,-176418897,1200080426,-1473231341,-45705983,
+		1770035416,-1958414417,-42063,-1990404162,1804603682,-40341101,-1502002290,1236535329,
+		-165796510,-1069501632,643717713,-373897302,-701558691,38016083,-660478335,-405537848,
+		568446438,-1019803690,-187363961,1163531501,-1444681467,-51403784,1735328473,-1926607734,
+		-378558,-2022574463,1839030562,-35309556,-1530992060,1272893353,-155497632,-1094730640,
+		681279174,-358537222,-722521979,76029189,-640364487,-421815835,530742520,-995338651,
+		-198630844,1126891415,-1416354905,-57434055,1700485571,-1894986606,-1051523,-2054922799,
+		1873313359,-30611744,-1560198380,1309151649,-145523070,-1120210379,718787259,-343485551
+	];
+	for (i = 0; i < x.length; i += 16) {
+		var oa = a, ob = b, oc = c, od = d, j;
+		for (j = 0; j < 64; j++) {
+			if (j < 16) { var t = ff(a, b, c, d, x[i + j], S[j % 4], K[j]); a = d; d = c; c = b; b = t; }
+			else if (j < 32) { var t = gg(a, b, c, d, x[i + (1 + 5 * j) % 16], S[4 + j % 4], K[j]); a = d; d = c; c = b; b = t; }
+			else if (j < 48) { var t = hh(a, b, c, d, x[i + (5 + 3 * j) % 16], S[8 + j % 4], K[j]); a = d; d = c; c = b; b = t; }
+			else { var t = ii(a, b, c, d, x[i + (7 * j) % 16], S[12 + j % 4], K[j]); a = d; d = c; c = b; b = t; }
+		}
+		a = au(a, oa); b = au(b, ob); c = au(c, oc); d = au(d, od);
+	}
+	var out = "";
+	var w = [a, b, c, d];
+	for (i = 0; i < 4; i++) {
+		out += ToHex(w[i]) + ToHex(w[i] >> 8) + ToHex(w[i] >> 16) + ToHex(w[i] >> 24);
+	}
+	return out;
 }
 
 function Update_WEPKey(passphrase)
@@ -558,10 +580,8 @@ function checkIpAddr(field, ismask, msg)
 		return false;
 	}
 
-	if (isAllNum(field.value) == 0) {
-		alert("The " + msg + " should be a [0-9] number.");
-		//field.value = field.defaultValue;
-		//field.focus();
+	if (!/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/.test(field.value)) {
+		alert("The " + msg + " is illegal value!");
 		return false;
 	}
 
@@ -620,19 +640,20 @@ function makeRequest(url, content, fieldID, disableFieldID) {
 		return false;
 	}
 	req.onreadystatechange = function () {
-		http_request = req;
-		alertContents(fieldID, disableFieldID);
+		alertContents(fieldID, disableFieldID, req);
 	};
 	req.open('POST', url, true);
 	req.send(content);
 }
 
-function alertContents(fieldID, disableFieldID) {
-	if (http_request && http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			reWirteList(fieldID, disableFieldID, http_request.responseText);
+function alertContents(fieldID, disableFieldID, reqObj) {
+	var r = reqObj || http_request;
+	if (r && r.readyState == 4) {
+		if (r.status == 200) {
+			reWirteList(fieldID, disableFieldID, r.responseText);
 		} else {
-			//alert('There was a problem with the request.');
+			if (fieldID != "")
+				stopToWait = true;
 		}
 	}
 }

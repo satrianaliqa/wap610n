@@ -89,37 +89,32 @@ function selectLANMode(lanMode) {
 
 function checkValue() {
 	var applyValue=true;
-	docTemp = document.getElementById("hostName").value;
-	//alert(docTemp.value);
-	if ((docTemp.indexOf('\'') != -1) || (docTemp.indexOf('\"') != -1))
+	var docTemp = document.getElementById("hostName").value;
+	if (!/^[A-Za-z0-9-]{1,32}$/.test(docTemp))
 	{
-		alert("<!--#tr id=\"u-media.js.5-1\" -->The <!--#endtr-->" + "<!--#tr id=\"nets.bns.nct.1-3\" -->Host Name:<!--#endtr-->" + docTemp + " " + "<!--#tr id=\"u-media.js.5-2\" --> is illegal value!<!--#endtr-->");
+		alert("<!--#tr id=\"u-media.js.5-1\" -->The <!--#endtr-->" + "<!--#tr id=\"nets.bns.nct.1-3\" -->Host Name:<!--#endtr-->" + " must be 1-32 letters, digits, or hyphens.");
 		applyValue = false;
 	}
-	
-	if (document.getElementById("hostName").value.length > 32) {
-		alert("<!--#tr id=\"adm.w.alert.10\" -->Host Name length can't bigger than 32 characters!<!--#endtr-->");
-		applyValue = false;
+
+	if (document.getElementById("ipConfigMethod").value == "1") {
+		document.getElementById("lanIP").value = document.getElementById("lanIP_1").value + "." + document.getElementById("lanIP_2").value + "." + document.getElementById("lanIP_3").value + "." + document.getElementById("lanIP_4").value;
+		if(applyValue && !checkIpAddr(document.getElementById("lanIP"), false, "<!--#tr id=\"nets.bns.check.1\" -->Network IP Address<!--#endtr-->"))
+			applyValue = false;
+
+		document.getElementById("lanSubnet").value = document.getElementById("lanSubnet_1").value + "." + document.getElementById("lanSubnet_2").value + "." + document.getElementById("lanSubnet_3").value + "." + document.getElementById("lanSubnet_4").value;
+		if(applyValue && !checkIpAddr(document.getElementById("lanSubnet"), true, "<!--#tr id=\"nets.bns.check.2\" -->Subnet Mask<!--#endtr-->"))
+			applyValue = false;
+
+		document.getElementById("gateway").value = document.getElementById("gateway_1").value + "." + document.getElementById("gateway_2").value + "." + document.getElementById("gateway_3").value + "." + document.getElementById("gateway_4").value;
+		if(applyValue && !checkIpAddr(document.getElementById("gateway"), false, "<!--#tr id=\"nets.bns.check.3\" -->Default Gateway<!--#endtr-->"))
+			applyValue = false;
+
+		if (applyValue && !checkIPwithSubnetMask(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value))
+			applyValue = false;
+
+		if (applyValue && !checkGatewayIPwithSubnetMask(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value, document.getElementById("gateway_1").value, document.getElementById("gateway_2").value, document.getElementById("gateway_3").value, document.getElementById("gateway_4").value))
+			applyValue = false;
 	}
-	document.getElementById("lanIP").value = document.getElementById("lanIP_1").value + "." + document.getElementById("lanIP_2").value + "." + document.getElementById("lanIP_3").value + "." + document.getElementById("lanIP_4").value;
-	if(applyValue && !checkIpAddr(document.getElementById("lanIP"), false, "<!--#tr id=\"nets.bns.check.1\" -->Network IP Address<!--#endtr-->"))
-		applyValue = false;
-		
-	document.getElementById("lanSubnet").value = document.getElementById("lanSubnet_1").value + "." + document.getElementById("lanSubnet_2").value + "." + document.getElementById("lanSubnet_3").value + "." + document.getElementById("lanSubnet_4").value;
-	if(applyValue && !checkIpAddr(document.getElementById("lanSubnet"), true, "<!--#tr id=\"nets.bns.check.2\" -->Subnet Mask<!--#endtr-->"))
-		applyValue = false;
-	
-	document.getElementById("gateway").value = document.getElementById("gateway_1").value + "." + document.getElementById("gateway_2").value + "." + document.getElementById("gateway_3").value + "." + document.getElementById("gateway_4").value;
-	if(applyValue && !checkIpAddr(document.getElementById("gateway"), false, "<!--#tr id=\"nets.bns.check.3\" -->Default Gateway<!--#endtr-->"))
-		applyValue = false;
-        	
-	//if (applyValue && !checkSubnetMask(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value))
-	if (applyValue && !checkIPwithSubnetMask(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value))
-		applyValue = false;
-		
-	//if (applyValue && !checkGateway(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value, document.getElementById("gateway_1").value, document.getElementById("gateway_2").value, document.getElementById("gateway_3").value, document.getElementById("gateway_4").value))
-	if (applyValue && !checkGatewayIPwithSubnetMask(document.getElementById("lanIP_1").value, document.getElementById("lanIP_2").value, document.getElementById("lanIP_3").value, document.getElementById("lanIP_4").value, document.getElementById("lanSubnet_1").value, document.getElementById("lanSubnet_2").value, document.getElementById("lanSubnet_3").value, document.getElementById("lanSubnet_4").value, document.getElementById("gateway_1").value, document.getElementById("gateway_2").value, document.getElementById("gateway_3").value, document.getElementById("gateway_4").value))
-		applyValue = false;
 
 	if (applyValue) {
 		document.getElementById("waitPad").style.display="block";
@@ -149,47 +144,30 @@ function page_load() {
 	var subnet = "<% getParam(1, "subnet_lan"); %>";
 	var gateway = "<% getParam(1, "default_gw"); %>";
 	
-	//mainDisplay("block");
+	var cfgIdx = parseInt(ipConfigMethod, 10);
+	if (isNaN(cfgIdx) || cfgIdx < 0 || cfgIdx > 1)
+		cfgIdx = 1;
+	document.getElementById("ipConfigMethod").options[cfgIdx].selected = true;
+	selectLANMode(cfgIdx);
+	document.getElementById("hostName").value = String(hostName || "").replace(/[^A-Za-z0-9-]/g, "");
 
-	document.getElementById("ipConfigMethod").options[ipConfigMethod].selected = true;
-	if (mode == 0) //STA mode
-	{		
-		selectLANMode(ipConfigMethod*1);
-	}
-	document.getElementById("hostName").value = hostName;
+	var ipParts = (LanIP || "0.0.0.0").split(".");
+	document.getElementById("lanIP_1").value = ipParts[0] || "";
+	document.getElementById("lanIP_2").value = ipParts[1] || "";
+	document.getElementById("lanIP_3").value = ipParts[2] || "";
+	document.getElementById("lanIP_4").value = ipParts[3] || "";
 
-	docTemp = LanIP;
-	index = docTemp.indexOf(".");
-	document.getElementById("lanIP_1").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("lanIP_2").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("lanIP_3").value = docTemp.substr(0, index);
-	document.getElementById("lanIP_4").value = docTemp.substr(index+1);
-	
-	docTemp = subnet;
-	index = docTemp.indexOf(".");
-	document.getElementById("lanSubnet_1").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("lanSubnet_2").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("lanSubnet_3").value = docTemp.substr(0, index);
-	document.getElementById("lanSubnet_4").value = docTemp.substr(index+1);
-	
-	docTemp = gateway;
-	index = docTemp.indexOf(".");
-	document.getElementById("gateway_1").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("gateway_2").value = docTemp.substr(0, index);
-	docTemp = docTemp.substr(index+1);
-	index = docTemp.indexOf(".");
-	document.getElementById("gateway_3").value = docTemp.substr(0, index);
-	document.getElementById("gateway_4").value = docTemp.substr(index+1);
+	var subParts = (subnet || "0.0.0.0").split(".");
+	document.getElementById("lanSubnet_1").value = subParts[0] || "";
+	document.getElementById("lanSubnet_2").value = subParts[1] || "";
+	document.getElementById("lanSubnet_3").value = subParts[2] || "";
+	document.getElementById("lanSubnet_4").value = subParts[3] || "";
+
+	var gwParts = (gateway || "0.0.0.0").split(".");
+	document.getElementById("gateway_1").value = gwParts[0] || "";
+	document.getElementById("gateway_2").value = gwParts[1] || "";
+	document.getElementById("gateway_3").value = gwParts[2] || "";
+	document.getElementById("gateway_4").value = gwParts[3] || "";
 }
 </script>
 <!-- InstanceEndEditable -->

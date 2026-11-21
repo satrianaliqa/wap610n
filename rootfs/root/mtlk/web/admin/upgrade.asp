@@ -54,7 +54,6 @@ var burn_state, burn_progress;
 var firstTime=true;
 var stopProcess=false;
 var uploadStarted=false;
-var http_request = false;
 var langset = "<% getParam(1, "Language"); %>";
 
 function blinkingWarningMSG(displayMsg)
@@ -76,34 +75,34 @@ function blinkingWarningMSG(displayMsg)
 }
 
 function makeRequest(url, content) {
-	http_request = false;
+	var req = false;
 	if (window.XMLHttpRequest) { // Mozilla, Safari, Chrome,...
-		http_request = new XMLHttpRequest();
-		if (http_request.overrideMimeType) {
-			http_request.overrideMimeType('text/plain');
+		req = new XMLHttpRequest();
+		if (req.overrideMimeType) {
+			req.overrideMimeType('text/plain');
 		}
 	} else if (window.ActiveXObject) { // IE
 		try {
-			http_request = new ActiveXObject("Msxml2.XMLHTTP");
+			req = new ActiveXObject("Msxml2.XMLHTTP");
 		} catch (e) {
 			try {
-			http_request = new ActiveXObject("Microsoft.XMLHTTP");
+			req = new ActiveXObject("Microsoft.XMLHTTP");
 			} catch (e) {}
 		}
 	}
-	if (!http_request) {
+	if (!req) {
 		alert("<!--#tr id=\"adm.fu.alert.1\" -->Giving up :( Cannot create an XMLHTTP instance<!--#endtr-->");
 		return false;
 	}
-	http_request.onreadystatechange = alertContents;
-	http_request.open('POST', url, true);
-	http_request.send(content);
+	req.onreadystatechange = function () { alertContents(req); };
+	req.open('POST', url, true);
+	req.send(content);
 }
 
-function alertContents() {
-	if (http_request.readyState == 4) {
-		if (http_request.status == 200) {
-			reWirteList(http_request.responseText);
+function alertContents(req) {
+	if (req && req.readyState == 4) {
+		if (req.status == 200) {
+			reWirteList(req.responseText);
 		} else {
 			stopToWait = true;
 		}
@@ -171,9 +170,7 @@ function updateBurnProgress(){
 
 function reloadMe(){
 
-	if(history.back()){
-		location.href="admin/upgrade.asp";
-	}
+	location.href="/admin/upgrade.asp";
 }
 
 function displayAllField(value)
@@ -201,12 +198,6 @@ function checkFW()
 
 	document.upload_frm.submit();
 	setTimeout("updateBurnProgress()", 1500);
-}
-
-function submitReboot() {
-	//alert("jacky - check firefox");
-	document.getElementById("rebootTag").value = "true";
-	document.management.submit();
 }
 
 function page_load() {
