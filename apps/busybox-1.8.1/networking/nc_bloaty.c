@@ -601,6 +601,8 @@ Debug("got %d from the net, errno %d", rr, errno);
 			if (rr <= 0) {                        /* at end, or fukt, or ... */
 				FD_CLR(0, &ding1);                /* disable and close stdin */
 				close(0);
+				if (!o_udpmode)
+					shutdown(netfd, SHUT_WR);
 			} else {
 				rzleft = rr;
 				zp = bigbuf_in;

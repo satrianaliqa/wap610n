@@ -78,7 +78,7 @@ int hex_to_bytes(char* bytes, int bytes_length, char* hex_str) {
 
    hex[2] = 0;
 
-   for (i = 0; i<hlen; i++) {
+   for (i = 0; i < hlen && j < bytes_length; i++) {
 
       hex[0] = hex_str[i];
       i++;
@@ -116,8 +116,13 @@ int main(int argc, char** argv) {
    }
    else {
       cmd = argv[1];
-          
+
       if (strcasecmp(cmd, "set_name_type") == 0) {
+         if (argc != 3) {
+            fprintf(stderr, "ERROR: set_name_type requires 3 arguments.\n");
+            show_usage();
+            exit(1);
+         }
          if (strcasecmp(argv[2], "VLAN_PLUS_VID") == 0) {
             nm_type = VLAN_NAME_TYPE_PLUS_VID;
          }
@@ -131,10 +136,7 @@ int main(int argc, char** argv) {
             nm_type = VLAN_NAME_TYPE_RAW_PLUS_VID_NO_PAD;
          }
          else {
-            // MATHIEU
-            //cerr << "Invalid name type.\n";
             fprintf(stderr,"Invalid name type.\n");
-                                 
             show_usage();
             exit(1);
          }
@@ -143,24 +145,49 @@ int main(int argc, char** argv) {
       else {
          if_name = argv[2];
          if (strlen(if_name) > 15) {
-            // MATHIEU
-            //cerr << "ERROR:  if_name must be 15 characters or less." << endl;
             fprintf(stderr,"ERROR:  if_name must be 15 characters or less.\n");            
             exit(1);
          }
          strcpy(if_request.device1, if_name);
-      }
 
-      if (argc == 4) {
-         vid = atoi(argv[3]);
-         if_request.u.VID = vid;
-      }
-
-      if (argc == 5) {
-         skb_priority = atoi(argv[3]);
-         vlan_qos = atoi(argv[4]);
-         if_request.u.skb_priority = skb_priority;
-         if_request.vlan_qos = vlan_qos;
+         if (strcasecmp(cmd, "add") == 0) {
+            if (argc != 4) {
+               fprintf(stderr, "ERROR: add requires 4 arguments.\n");
+               show_usage();
+               exit(1);
+            }
+            vid = atoi(argv[3]);
+            if (vid > 4095) {
+               fprintf(stderr, "ERROR: VLAN ID must be 0-4095.\n");
+               exit(1);
+            }
+            if_request.u.VID = vid;
+         }
+         else if (strcasecmp(cmd, "rem") == 0) {
+            if (argc != 3) {
+               fprintf(stderr, "ERROR: rem requires 3 arguments.\n");
+               show_usage();
+               exit(1);
+            }
+         }
+         else if (strcasecmp(cmd, "set_egress_map") == 0 ||
+                  strcasecmp(cmd, "set_ingress_map") == 0 ||
+                  strcasecmp(cmd, "set_flag") == 0) {
+            if (argc != 5) {
+               fprintf(stderr, "ERROR: %s requires 5 arguments.\n", cmd);
+               show_usage();
+               exit(1);
+            }
+            skb_priority = atoi(argv[3]);
+            vlan_qos = atoi(argv[4]);
+            if_request.u.skb_priority = skb_priority;
+            if_request.vlan_qos = vlan_qos;
+         }
+         else {
+            fprintf(stderr, "ERROR: Unknown command: %s\n", cmd);
+            show_usage();
+            exit(1);
+         }
       }
    }
    

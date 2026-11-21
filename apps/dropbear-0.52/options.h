@@ -51,7 +51,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 #define DROPBEAR_SMALL_CODE
 
 /* Enable X11 Forwarding - server only */
-#define ENABLE_X11FWD
+/* #undef ENABLE_X11FWD */
 
 /* Enable TCP Fowarding */
 /* 'Local' is "-L" style (client listening port forwarded via server)
@@ -64,7 +64,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 #define ENABLE_SVR_REMOTETCPFWD
 
 /* Enable Authentication Agent Forwarding - server only for now */
-#define ENABLE_AGENTFWD
+/* #undef ENABLE_AGENTFWD */
 
 
 /* Note: Both ENABLE_CLI_PROXYCMD and ENABLE_CLI_NETCAT must be set to
@@ -85,9 +85,9 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 #define DROPBEAR_AES128
 #define DROPBEAR_3DES
 #define DROPBEAR_AES256
-#define DROPBEAR_BLOWFISH
-#define DROPBEAR_TWOFISH256
-#define DROPBEAR_TWOFISH128
+/* #undef DROPBEAR_BLOWFISH */
+/* #undef DROPBEAR_TWOFISH256 */
+/* #undef DROPBEAR_TWOFISH128 */
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal
  * CBC mode against certain attacks. This adds around 1kB to binary 
@@ -108,7 +108,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
  * which are not the standard form. */
 #define DROPBEAR_SHA1_HMAC
 #define DROPBEAR_SHA1_96_HMAC
-#define DROPBEAR_MD5_HMAC
+/* #undef DROPBEAR_MD5_HMAC */
 
 /* Hostkey/public key algorithms - at least one required, these are used
  * for hostkey as well as for verifying signatures with pubkey auth.
@@ -129,7 +129,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 /* #define DSS_PROTOK */
 
 /* Whether to do reverse DNS lookups. */
-#define DO_HOST_LOOKUP
+/* #undef DO_HOST_LOOKUP */
 
 /* Whether to print the message of the day (MOTD). This doesn't add much code
  * size */
@@ -197,13 +197,13 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
  * not yet authenticated. After this limit, connections are rejected */
 /* The first setting is per-IP, to avoid denial of service */
 #ifndef MAX_UNAUTH_PER_IP
-#define MAX_UNAUTH_PER_IP 5
+#define MAX_UNAUTH_PER_IP 2
 #endif
 
 /* And then a global limit to avoid chewing memory if connections 
  * come from many IPs */
 #ifndef MAX_UNAUTH_CLIENTS
-#define MAX_UNAUTH_CLIENTS 30
+#define MAX_UNAUTH_CLIENTS 6
 #endif
 
 /* Maximum number of failed authentication tries (server option) */

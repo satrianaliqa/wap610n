@@ -95,13 +95,24 @@ Tcl_SleepCmd (clientData, interp, argc, argv)
     int         argc;
     char      **argv;
 {
+    int secs;
+
     if (argc != 2) {
         Tcl_AppendResult (interp, "bad # args: ", argv [0], 
                           " seconds", (char *) NULL);
         return TCL_ERROR;
     }
 
-    sleep(atoi(argv[1]));
+    if (Tcl_GetInt(interp, argv[1], &secs) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (secs < 0) {
+        Tcl_AppendResult (interp, argv[0],
+                          ": seconds must be non-negative", (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    sleep((unsigned int)secs);
 
     return TCL_OK;
 }
@@ -380,6 +391,7 @@ Tcl_KillCmd(dummy, interp, argc, argv)
     char      **argv;
 {
     int sig;
+    int pid;
 
     if (argc != 3) {
         Tcl_AppendResult (interp, "bad # args: ", argv [0], 
@@ -394,7 +406,16 @@ Tcl_KillCmd(dummy, interp, argc, argv)
         return TCL_ERROR;
     }
 
-    if (kill(atoi(argv[2]), sig) == 0) {
+    if (Tcl_GetInt(interp, argv[2], &pid) != TCL_OK) {
+        return TCL_ERROR;
+    }
+    if (pid <= 0) {
+        Tcl_AppendResult (interp, argv[0],
+                          ": pid must be positive integer", (char *) NULL);
+        return TCL_ERROR;
+    }
+
+    if (kill((pid_t)pid, sig) == 0) {
         return TCL_OK;
     }
 

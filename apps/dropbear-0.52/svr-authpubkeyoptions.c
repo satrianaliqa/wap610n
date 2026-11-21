@@ -90,13 +90,16 @@ int svr_pubkey_allows_pty() {
 
 /* Set chansession command to the one forced by 'command' public key option */
 void svr_pubkey_set_forced_command(struct ChanSess *chansess) {
-	if (ses.authstate.pubkey_options)
-		chansess->cmd = ses.authstate.pubkey_options->forced_command;
+	if (ses.authstate.pubkey_options && ses.authstate.pubkey_options->forced_command)
+		chansess->cmd = m_strdup(ses.authstate.pubkey_options->forced_command);
 }
 
 /* Free potential public key options */
 void svr_pubkey_options_cleanup() {
 	if (ses.authstate.pubkey_options) {
+		if (ses.authstate.pubkey_options->forced_command) {
+			m_free(ses.authstate.pubkey_options->forced_command);
+		}
 		m_free(ses.authstate.pubkey_options);
 		ses.authstate.pubkey_options = NULL;
 	}
@@ -190,8 +193,7 @@ next_option:
 
 bad_option:
 	ret = DROPBEAR_FAILURE;
-	m_free(ses.authstate.pubkey_options);
-	ses.authstate.pubkey_options = NULL;
+	svr_pubkey_options_cleanup();
 	dropbear_log(LOG_WARNING, "Bad public key options at %s:%d", filename, line_num);
 
 end:

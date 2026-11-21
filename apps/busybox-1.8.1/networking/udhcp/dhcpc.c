@@ -313,7 +313,6 @@ int udhcpc_main(int argc, char **argv)
 	goto jump_in;
 
 	for (;;) {
-		printf("@@@state=%d\n", state);
 		tv.tv_sec = timeout - monotonic_sec();
  jump_in:
 		tv.tv_usec = 0;
@@ -347,18 +346,17 @@ int udhcpc_main(int argc, char **argv)
 					if (packet_num == 0)
 						xid = random_xid();
 
-					/*Because WPS is running, so we don't want WET610N to get IP from DHCP server - Ricky Cao on Dec. 05 2008 */
+					/* Hold off DHCP discover while WPS session is active */
 					result = stat("/var/wpsRunning", &statBuf);
-					if(result==-1 && errno==2){
+					if (result == -1 && errno == ENOENT) {
 						/* send discover packet */
 						send_discover(xid, requested_ip); /* broadcast */
-					}else{
-						system("echo \"INFO: WPS is running, so doesn't get IP from DHCP server...\" > /dev/console");
+						timeout = now + client_config.timeout;
+						packet_num++;
+					} else {
+						bb_info_msg("WPS is running, deferring DHCP discover");
+						timeout = now + client_config.timeout;
 					}
-					/*Revised by Ricky Cao on Dec. 05 2008 */
-
-					timeout = now + client_config.timeout;
-					packet_num++;
 				} else {
 					udhcp_run_script(NULL, "leasefail");
 					if (client_config.background_if_no_lease) {

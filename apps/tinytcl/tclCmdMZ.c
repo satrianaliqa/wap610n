@@ -138,6 +138,10 @@ Tcl_RegexpCmd(dummy, interp, argc, argv)
 	    if (Tcl_GetInt(interp, argPtr[0], &offset) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    if (offset < 0) {
+		Tcl_AppendResult(interp, "start offset must be >= 0", (char *) NULL);
+		return TCL_ERROR;
+	    }
 	    argPtr++;
 	    argc--;
 	} else if (strcmp(argPtr[0], "-cache") == 0) {
@@ -149,6 +153,10 @@ Tcl_RegexpCmd(dummy, interp, argc, argv)
 		goto wrongNumArgs;
 	    }
 	    if (Tcl_GetInt(interp, argPtr[0], &newsize) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (newsize < 1 || newsize > 64) {
+		Tcl_AppendResult(interp, "regexp cache size out of range (1..64)", (char *) NULL);
 		return TCL_ERROR;
 	    }
 	    /* OK, increase the size of the regexp cache to 'newsize' */
@@ -646,6 +654,10 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 	    widthSpecified = 1;
 	    fmt++;
 	}
+	if (*fmt == '\0') {
+	    interp->result = "incomplete scan conversion specifier";
+	    return TCL_ERROR;
+	}
 	if (suppress) {
 	    continue;
 	}
@@ -698,6 +710,10 @@ Tcl_ScanCmd(dummy, interp, argc, argv)
 		curField->size = arg1Length;
 		do {
 		    fmt++;
+		    if (*fmt == '\0') {
+			interp->result = "unmatched [ in scan format";
+			return TCL_ERROR;
+		    }
 		} while (*fmt != ']');
 		break;
 

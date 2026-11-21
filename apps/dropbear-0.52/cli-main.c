@@ -91,23 +91,26 @@ int main(int argc, char ** argv) {
 
 static void cli_dropbear_exit(int exitcode, const char* format, va_list param) {
 
-	char fmtbuf[300];
+	char exitmsg[300];
+	char finalmsg[300];
+
+	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
 
 	if (!sessinitdone) {
-		snprintf(fmtbuf, sizeof(fmtbuf), "exited: %s",
-				format);
+		snprintf(finalmsg, sizeof(finalmsg), "exited: %s",
+				exitmsg);
 	} else {
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"connection to %s@%s:%s exited: %s", 
-				cli_opts.username, cli_opts.remotehost, 
-				cli_opts.remoteport, format);
+		snprintf(finalmsg, sizeof(finalmsg),
+				"connection to %s@%s:%s exited: %s",
+				cli_opts.username, cli_opts.remotehost,
+				cli_opts.remoteport, exitmsg);
 	}
 
 	/* Do the cleanup first, since then the terminal will be reset */
 	cli_session_cleanup();
 	common_session_cleanup();
 
-	_dropbear_log(LOG_INFO, fmtbuf, param);
+	dropbear_log(LOG_INFO, "%s", finalmsg);
 
 	exit(exitcode);
 }

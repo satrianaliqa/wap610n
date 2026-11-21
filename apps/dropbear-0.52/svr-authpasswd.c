@@ -63,8 +63,8 @@ void svr_auth_password() {
 	/* check for empty password - need to do this again here
 	 * since the shadow password may differ to that tested
 	 * in auth.c */
-	if (passwdcrypt[0] == '\0') {
-		dropbear_log(LOG_WARNING, "user '%s' has blank password, rejected",
+	if (passwdcrypt[0] == '\0' || passwdcrypt[0] == '*' || passwdcrypt[0] == '!') {
+		dropbear_log(LOG_WARNING, "user '%s' has disabled/blank password, rejected",
 				ses.authstate.pw_name);
 		send_msg_userauth_failure(0, 1);
 		return;
@@ -85,7 +85,7 @@ void svr_auth_password() {
 	m_burn(password, passwordlen);
 	m_free(password);
 
-	if (strcmp(testcrypt, passwdcrypt) == 0) {
+	if (testcrypt != NULL && strcmp(testcrypt, passwdcrypt) == 0) {
 		/* successful authentication */
 		dropbear_log(LOG_NOTICE, 
 				"password auth succeeded for '%s' from %s",

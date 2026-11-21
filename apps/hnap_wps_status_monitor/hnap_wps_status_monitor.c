@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		retry++;
 		if(retry>60){
 			printf("ERROR: Can not found WPS progress be started..\n");
-			return 0;
+			goto End;
 		}
 		if(gotSignal){
 			goto End;
@@ -155,7 +155,6 @@ int main(int argc, char *argv[])
 		}
 		result = stat("/tmp/wps_current_status", &statBuf);
 		if(result != -1){
-			retry=0;
 			fptr = fopen("/tmp/wps_current_status", "r");
 			if(fptr==NULL){
 				sleep(1);
@@ -169,35 +168,29 @@ int main(int argc, char *argv[])
 					continue;
 				}
 			}
+			retry=0;
 			memset(buf, 0, 128);
-			if(fgets(buf, 128, fptr)!=NULL){
-				//printf("The value of wps_current_status is \"%s\"\n", buf);
+			if(fgets(buf, 128, fptr)==NULL){
+				buf[0] = '\0';
+			}
+			fclose(fptr);
+			fptr = NULL;
+			if(buf[0] != '\0'){
 				bufptr = strchr(buf, '=');
 				if(bufptr != NULL){
 					bufptr = bufptr+1;
 					wps_status = atoi(bufptr);
 					expose_wps_status(wps_status);
-					printf("Status Code = %d\n", wps_status); //Ricky Trace				
+					printf("Status Code = %d\n", wps_status);
 					if(wps_status==3){
-						//expose_wps_status(wps_status);
 						unlink("/var/wpsRunning");
-						fclose(fptr);
-						fptr = NULL;
 						break;
 					}else if(wps_status==10 || wps_status==11 || wps_status==12 || wps_status==13){
-						//When status is ERROR, I stop to monitor status
 						unlink("/var/wpsRunning");
-						//recover_wildcardssid();
 						printf("Got WPS ERROR event %d .. \n", wps_status);
-						fclose(fptr);
-						fptr = NULL;
 						break;
 					}
 				}
-			}
-			if(fptr!=NULL){
-				fclose(fptr);
-				fptr = NULL;
 			}
 
 			/*result = stat("/tmp/wps_last_code", &statBuf);
@@ -258,23 +251,21 @@ int main(int argc, char *argv[])
 			sleep(1);
 
 		}
-		delay_exit=60; //Waitting 60 seconds for indicate fail connect to AP after WPS successful
-		printf("Fail connect to AP within 60 seconds after WPS successful\n");
 		if (wps_status != 99) {
+			delay_exit=60;
+			printf("Fail connect to AP within 60 seconds after WPS successful\n");
 			wps_status = 14;
 			expose_wps_status(wps_status);
-		}
-		while(1){
-			if(gotSignal){
-				goto End;
+			while(1){
+				if(gotSignal){
+					goto End;
+				}
+				printf("%d\n", delay_exit);
+				delay_exit--;
+				if(!delay_exit)
+					break;
+				sleep(1);
 			}
-
-			printf("%d\n", delay_exit);
-			delay_exit--;
-			if(!delay_exit)
-				break;
-			sleep(1);
-
 		}
 	}else if(wps_status==1 || wps_status==2){
 		printf("EXIT in SEARCHING or REGISTERING..\n");

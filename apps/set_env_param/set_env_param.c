@@ -13,6 +13,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/file.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <stdint.h>
 
@@ -39,6 +41,8 @@ int main(int argc, char *argv[])
 	unsigned char *raw_buf;
 	unsigned char *new_env_data;
 	unsigned char *verify_buf;
+	uint32_t stored_crc;
+	uint32_t calc_crc;
 	uint32_t new_crc;
 	size_t out_offset;
 	size_t name_len_arg;
@@ -61,6 +65,8 @@ int main(int argc, char *argv[])
 	raw_buf = NULL;
 	new_env_data = NULL;
 	verify_buf = NULL;
+	stored_crc = 0;
+	calc_crc = 0;
 	new_crc = 0;
 	out_offset = 0;
 	name_len_arg = 0;
@@ -91,14 +97,26 @@ int main(int argc, char *argv[])
 		if (!raw_buf)
 		{
 			printf("\nCannot malloc 0x10000\n");
-			flock(fileno(f), LOCK_UN);
 			fclose(f);
 			return 1;
 		}
 		memset(raw_buf, 0, CFG_ENV_SIZE);
 		bytes_read = fread(raw_buf, 1, CFG_ENV_SIZE, f);
-		(void)bytes_read;
+		if (bytes_read != CFG_ENV_SIZE) {
+			printf("\nShort read from %s\n", MTD_ENV_BLOCK_NAME);
+			free(raw_buf);
+			fclose(f);
+			return 1;
+		}
 		raw_buf[CFG_ENV_SIZE - 1] = '\0';
+		memcpy(&stored_crc, raw_buf, ENV_HEADER_SIZE);
+		calc_crc = crc32(0, (const char *)(raw_buf + ENV_HEADER_SIZE), ENV_SIZE);
+		if (stored_crc != calc_crc) {
+			fprintf(stderr, "Error: CRC32 mismatch on %s\n", MTD_ENV_BLOCK_NAME);
+			free(raw_buf);
+			fclose(f);
+			return 1;
+		}
 
 		p = (const char *)(raw_buf + ENV_HEADER_SIZE);
 		data_end = (const char *)(raw_buf + CFG_ENV_SIZE);
@@ -112,7 +130,6 @@ int main(int argc, char *argv[])
 			p = end_str + 1;
 		}
 
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(raw_buf);
 		return 0;
@@ -133,8 +150,6 @@ int main(int argc, char *argv[])
 	/* Open for read and write while keeping flock across the entire operation */
 	f = fopen(MTD_ENV_BLOCK_NAME, "r+b");
 	if (!f)
-		f = fopen(MTD_ENV_BLOCK_NAME, "w+b");
-	if (!f)
 	{
 		printf("\nCannot open %s\n", MTD_ENV_BLOCK_NAME);
 		return 1;
@@ -145,7 +160,6 @@ int main(int argc, char *argv[])
 	if (!raw_buf)
 	{
 		printf("\nCannot malloc 0x10000\n");
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		return 1;
 	}
@@ -155,16 +169,32 @@ int main(int argc, char *argv[])
 	if (!new_env_data)
 	{
 		printf("\nCannot calloc %d\n", (int)ENV_SIZE);
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(raw_buf);
 		return 1;
 	}
 
-	/* Read existing environment sector */
+	/* Read and verify existing environment sector before modifying */
 	bytes_read = fread(raw_buf, 1, CFG_ENV_SIZE, f);
-	(void)bytes_read;
+	if (bytes_read != CFG_ENV_SIZE)
+	{
+		printf("\nCannot read full environment from %s\n", MTD_ENV_BLOCK_NAME);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
 	raw_buf[CFG_ENV_SIZE - 1] = '\0';
+	memcpy(&stored_crc, raw_buf, ENV_HEADER_SIZE);
+	calc_crc = crc32(0, (const char *)(raw_buf + ENV_HEADER_SIZE), ENV_SIZE);
+	if (stored_crc != calc_crc)
+	{
+		printf("\nRefusing to modify corrupt environment in %s (CRC mismatch)\n", MTD_ENV_BLOCK_NAME);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
 
 	p = (const char *)(raw_buf + ENV_HEADER_SIZE);
 	data_end = (const char *)(raw_buf + CFG_ENV_SIZE);
@@ -177,7 +207,13 @@ int main(int argc, char *argv[])
 
 		cur_len = (size_t)(end_str - p);
 		if (entry_count++ >= MAX_ENV_PARAMS)
-			break;
+		{
+			printf("\nEnvironment exceeds MAX_ENV_PARAMS (%d)\n", MAX_ENV_PARAMS);
+			fclose(f);
+			free(new_env_data);
+			free(raw_buf);
+			return 1;
+		}
 
 		is_match = 0;
 		eq = (const char *)memchr(p, '=', cur_len);
@@ -201,8 +237,7 @@ int main(int argc, char *argv[])
 					entry_len = name_len_arg + 1 + val_len + 1;
 					if (out_offset + entry_len > ENV_SIZE - 1)
 					{
-						flock(fileno(f), LOCK_UN);
-						fclose(f);
+								fclose(f);
 						free(new_env_data);
 						free(raw_buf);
 						return 1;
@@ -219,7 +254,6 @@ int main(int argc, char *argv[])
 			/* Preserve existing non-matching parameter */
 			if (out_offset + cur_len + 1 > ENV_SIZE - 1)
 			{
-				flock(fileno(f), LOCK_UN);
 				fclose(f);
 				free(new_env_data);
 				free(raw_buf);
@@ -239,7 +273,6 @@ int main(int argc, char *argv[])
 		entry_len = name_len_arg + 1 + val_len + 1;
 		if (out_offset + entry_len > ENV_SIZE - 1)
 		{
-			flock(fileno(f), LOCK_UN);
 			fclose(f);
 			free(new_env_data);
 			free(raw_buf);
@@ -258,7 +291,6 @@ int main(int argc, char *argv[])
 	if (fseek(f, 0, SEEK_SET) != 0)
 	{
 		printf("\nCannot seek in %s\n", MTD_ENV_BLOCK_NAME);
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(new_env_data);
 		free(raw_buf);
@@ -268,7 +300,6 @@ int main(int argc, char *argv[])
 	if (fwrite(raw_buf, CFG_ENV_SIZE, 1, f) != 1)
 	{
 		printf("\nCannot write to %s\n", MTD_ENV_BLOCK_NAME);
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(new_env_data);
 		free(raw_buf);
@@ -278,35 +309,36 @@ int main(int argc, char *argv[])
 	if (fflush(f) != 0 || fsync(fileno(f)) != 0)
 	{
 		printf("\nCannot sync %s\n", MTD_ENV_BLOCK_NAME);
-		flock(fileno(f), LOCK_UN);
 		fclose(f);
 		free(new_env_data);
 		free(raw_buf);
 		return 1;
 	}
+	ioctl(fileno(f), BLKFLSBUF, 0);
 
-	/* Verify write by reading back and comparing */
+	/* Verify write directly from flash by reading back and comparing */
 	verify_buf = (unsigned char *)malloc(CFG_ENV_SIZE);
-	if (verify_buf)
+	if (!verify_buf)
 	{
-		if (fseek(f, 0, SEEK_SET) == 0)
-		{
-			if (fread(verify_buf, CFG_ENV_SIZE, 1, f) != 1 ||
-			    memcmp(verify_buf, raw_buf, CFG_ENV_SIZE) != 0)
-			{
-				printf("\nVerification failed for %s\n", MTD_ENV_BLOCK_NAME);
-				free(verify_buf);
-				flock(fileno(f), LOCK_UN);
-				fclose(f);
-				free(new_env_data);
-				free(raw_buf);
-				return 1;
-			}
-		}
-		free(verify_buf);
+		printf("\nCannot malloc verify buffer\n");
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
 	}
+	if (fseek(f, 0, SEEK_SET) != 0 ||
+	    fread(verify_buf, CFG_ENV_SIZE, 1, f) != 1 ||
+	    memcmp(verify_buf, raw_buf, CFG_ENV_SIZE) != 0)
+	{
+		printf("\nVerification failed for %s\n", MTD_ENV_BLOCK_NAME);
+		free(verify_buf);
+		fclose(f);
+		free(new_env_data);
+		free(raw_buf);
+		return 1;
+	}
+	free(verify_buf);
 
-	flock(fileno(f), LOCK_UN);
 	fclose(f);
 	free(new_env_data);
 	free(raw_buf);

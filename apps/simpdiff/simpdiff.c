@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define CHUNK_SIZE 4096
 
@@ -31,6 +32,9 @@ static ssize_t read_chunk(int fd, unsigned char *buf, size_t count)
 	while (total < count) {
 		n = read(fd, (char *)buf + total, count - total);
 		if (n < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
 			return -1;
 		}
 		if (n == 0) {
@@ -103,8 +107,8 @@ int main(int argc, char *argv[])
 		min_read = (size_t)((numRead1 < numRead2) ? numRead1 : numRead2);
 		for (i = 0; i < min_read; i++) {
 			if (buf1[i] != buf2[i]) {
-				printf("Files are different. (%d vs. %d at offset %d)\n",
-				       (int)buf1[i], (int)buf2[i], (int)(offset + i));
+				printf("Files are different. (%d vs. %d at offset %u)\n",
+				       (int)buf1[i], (int)buf2[i], offset + (unsigned int)i);
 				close(file1);
 				close(file2);
 				return 1;

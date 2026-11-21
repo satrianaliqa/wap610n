@@ -11,95 +11,80 @@
 #include <errno.h>
 
 #define FIREWALL_RELOAD_KEY	9999
+#define MSG_SIZE		1024
 
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	int firewallReloadID;
-	int msgSize=1024;
-	
+	int send_rc = 0;
+
 	struct msgbuffer {
 		long mtype;
-		char mtext[msgSize];
-	}msgInfo;
-	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0666);
-	//firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_PRIVATE | 0666);
-	
-	if(firewallReloadID == -1){
+		char mtext[MSG_SIZE];
+	} msgInfo;
+
+	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0600);
+	if (firewallReloadID == -1) {
 		printf("send_event: Create firewall reload message queue fail!\n");
 		perror("msgget");
 		return 1;
 	}
-	
+
 	if (argc == 2) {
-		//printf("jacky - argc=%d\n", argc);
-		if (!strcmp(argv[1], "firewall_reload"))
-		{
+		if (!strcmp(argv[1], "firewall_reload")) {
 			printf("send_event: Sent firewall reload message to goahead!\n");
 			msgInfo.mtype = 1;
-			memset(msgInfo.mtext, '\0', msgSize);
-			strcpy(msgInfo.mtext, "firewall_reload");
-			msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
-		}
-		else if (!strcmp(argv[1], "openDebug"))
-		{
+			memset(msgInfo.mtext, '\0', MSG_SIZE);
+			snprintf(msgInfo.mtext, MSG_SIZE, "firewall_reload");
+			send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
+		} else if (!strcmp(argv[1], "openDebug")) {
 			printf("send_event: Sent open debug message to goahead!\n");
 			msgInfo.mtype = 1;
-			memset(msgInfo.mtext, '\0', msgSize);
-			strcpy(msgInfo.mtext, "openDebug");
-			msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
-		}
-		else if (!strcmp(argv[1], "closeDebug"))
-		{
+			memset(msgInfo.mtext, '\0', MSG_SIZE);
+			snprintf(msgInfo.mtext, MSG_SIZE, "openDebug");
+			send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
+		} else if (!strcmp(argv[1], "closeDebug")) {
 			printf("send_event: Sent close debug message to goahead!\n");
 			msgInfo.mtype = 1;
-			memset(msgInfo.mtext, '\0', msgSize);
-			strcpy(msgInfo.mtext, "closeDebug");
-			msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
-		}
-		else if (!strcmp(argv[1], "stopWPS"))
-		{
+			memset(msgInfo.mtext, '\0', MSG_SIZE);
+			snprintf(msgInfo.mtext, MSG_SIZE, "closeDebug");
+			send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
+		} else if (!strcmp(argv[1], "stopWPS")) {
 			printf("send_event: Sent Stop WPS process message to goahead!\n");
 			msgInfo.mtype = 1;
-			memset(msgInfo.mtext, '\0', msgSize);
-			strcpy(msgInfo.mtext, "stopWPS");
-			msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
+			memset(msgInfo.mtext, '\0', MSG_SIZE);
+			snprintf(msgInfo.mtext, MSG_SIZE, "stopWPS");
+			send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
 		}
-	}
-	else if (argc == 3) {
-		if (!strcmp(argv[1], "WNLAC"))
-		{
-			if (!strcmp(argv[2], "5G"))
-			{
+	} else if (argc == 3) {
+		if (!strcmp(argv[1], "WNLAC")) {
+			if (!strcmp(argv[2], "5G")) {
 				printf("send_event: Sent WNLAC switch to 5G message to goahead!\n");
 				msgInfo.mtype = 1;
-				memset(msgInfo.mtext, '\0', msgSize);
-				strcpy(msgInfo.mtext, "WNLAC_5G");
-				msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
-			}
-			else if (!strcmp(argv[2], "2.4G"))
-			{
+				memset(msgInfo.mtext, '\0', MSG_SIZE);
+				snprintf(msgInfo.mtext, MSG_SIZE, "WNLAC_5G");
+				send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
+			} else if (!strcmp(argv[2], "2.4G")) {
 				printf("send_event: Sent WNLAC switch to 2.4G message to goahead!\n");
 				msgInfo.mtype = 1;
-				memset(msgInfo.mtext, '\0', msgSize);
-				strcpy(msgInfo.mtext, "WNLAC_2.4G");
-				msgsnd(firewallReloadID, &msgInfo, msgSize, IPC_NOWAIT);
+				memset(msgInfo.mtext, '\0', MSG_SIZE);
+				snprintf(msgInfo.mtext, MSG_SIZE, "WNLAC_2.4G");
+				send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
 			}
 		}
-	}
-	else if (argc == 5){
-		/* Jacky.Yang 28-Mar-2008, 
- 		 * IPC command: send_event <start/stop> <nvram tag name> <rule name> <firewall tag>
-		 * IPC command: send_event start SinglePortForwardRules jacky222 SinglePort_
-		 * IPC command: send_event stop SinglePortForwardRules jacky222 SinglePort_
-		 */
-		//printf("jacky - argc=%d\n", argc);
+	} else if (argc == 5) {
 		if (!strcmp(argv[1], "start") || !strcmp(argv[1], "stop")) {
 			printf("send_event: Sent schedule message to goahead!\n");
 			msgInfo.mtype = 1;
-			memset(msgInfo.mtext, '\0', msgSize);
-			snprintf(msgInfo.mtext, msgSize, "%s,%s,%s,%s", argv[1], argv[2], argv[3], argv[4]);
-			msgsnd(firewallReloadID, &msgInfo, msgSize, 0);
+			memset(msgInfo.mtext, '\0', MSG_SIZE);
+			snprintf(msgInfo.mtext, MSG_SIZE, "%s,%s,%s,%s", argv[1], argv[2], argv[3], argv[4]);
+			send_rc = msgsnd(firewallReloadID, &msgInfo, MSG_SIZE, IPC_NOWAIT);
 		}
+	}
+
+	if (send_rc == -1) {
+		perror("msgsnd");
+		return 1;
 	}
 	return 0;
 }

@@ -383,7 +383,11 @@ static buffer* buf_decompress(buffer* buf, unsigned int len) {
 		}
 
 		if (zstream->avail_out == 0) {
-			buf_resize(ret, ret->size + ZLIB_DECOMPRESS_INCR);
+			if (ret->size >= RECV_MAX_PAYLOAD_LEN) {
+				buf_free(ret);
+				dropbear_exit("bad packet size");
+			}
+			buf_resize(ret, MIN(ret->size + ZLIB_DECOMPRESS_INCR, RECV_MAX_PAYLOAD_LEN));
 		}
 	}
 }

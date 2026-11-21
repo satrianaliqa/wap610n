@@ -54,16 +54,8 @@ void svr_authinitialise() {
  * user decides to try with a different username etc, and is also invoked
  * on initialisation */
 static void authclear() {
-	
-	memset(&ses.authstate, 0, sizeof(ses.authstate));
-#ifdef ENABLE_SVR_PUBKEY_AUTH
-	ses.authstate.authtypes |= AUTH_TYPE_PUBKEY;
-#endif
-#if defined(ENABLE_SVR_PASSWORD_AUTH) || defined(ENABLE_SVR_PAM_AUTH)
-	if (!svr_opts.noauthpass) {
-		ses.authstate.authtypes |= AUTH_TYPE_PASSWORD;
-	}
-#endif
+	unsigned int failcount = ses.authstate.failcount;
+
 	if (ses.authstate.pw_name) {
 		m_free(ses.authstate.pw_name);
 	}
@@ -76,7 +68,17 @@ static void authclear() {
 	if (ses.authstate.pw_passwd) {
 		m_free(ses.authstate.pw_passwd);
 	}
-	
+	svr_pubkey_options_cleanup();
+	memset(&ses.authstate, 0, sizeof(ses.authstate));
+	ses.authstate.failcount = failcount;
+#ifdef ENABLE_SVR_PUBKEY_AUTH
+	ses.authstate.authtypes |= AUTH_TYPE_PUBKEY;
+#endif
+#if defined(ENABLE_SVR_PASSWORD_AUTH) || defined(ENABLE_SVR_PAM_AUTH)
+	if (!svr_opts.noauthpass) {
+		ses.authstate.authtypes |= AUTH_TYPE_PASSWORD;
+	}
+#endif
 }
 
 /* Send a banner message if specified to the client. The client might
@@ -130,7 +132,7 @@ void recv_msg_userauth_request() {
 
 	/* only handle 'ssh-connection' currently */
 	if (servicelen != SSH_SERVICE_CONNECTION_LEN
-			&& (strncmp(servicename, SSH_SERVICE_CONNECTION,
+			|| (strncmp(servicename, SSH_SERVICE_CONNECTION,
 					SSH_SERVICE_CONNECTION_LEN) != 0)) {
 		
 		/* TODO - disconnect here */

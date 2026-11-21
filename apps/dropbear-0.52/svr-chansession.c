@@ -577,7 +577,7 @@ static int sessionpty(struct ChanSess * chansess) {
 static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 		int iscmd, int issubsys) {
 
-	unsigned int cmdlen;
+	unsigned int cmdlen = 0;
 	int ret;
 
 	TRACE(("enter sessioncommand"))
@@ -593,24 +593,32 @@ static int sessioncommand(struct Channel *channel, struct ChanSess *chansess,
 	svr_pubkey_set_forced_command(chansess);
 
 	if (iscmd) {
-		/* "exec" */
-		if (chansess->cmd == NULL) {
+		/* "exec" or "subsystem" */
+		if (issubsys) {
+			unsigned int subsyslen = 0;
+			unsigned char *subsys;
+			if (chansess->cmd != NULL) {
+				return DROPBEAR_FAILURE;
+			}
+			subsys = buf_getstring(ses.payload, &subsyslen);
+			if (subsyslen > MAX_CMD_LEN) {
+				m_free(subsys);
+				return DROPBEAR_FAILURE;
+			}
+#ifdef SFTPSERVER_PATH
+			if ((subsyslen == 4) && strncmp(subsys, "sftp", 4) == 0) {
+				m_free(subsys);
+				chansess->cmd = m_strdup(SFTPSERVER_PATH);
+			} else
+#endif
+			{
+				m_free(subsys);
+				return DROPBEAR_FAILURE;
+			}
+		} else if (chansess->cmd == NULL) {
 			chansess->cmd = buf_getstring(ses.payload, &cmdlen);
 
 			if (cmdlen > MAX_CMD_LEN) {
-				m_free(chansess->cmd);
-				/* TODO - send error - too long ? */
-				return DROPBEAR_FAILURE;
-			}
-		}
-		if (issubsys) {
-#ifdef SFTPSERVER_PATH
-			if ((cmdlen == 4) && strncmp(chansess->cmd, "sftp", 4) == 0) {
-				m_free(chansess->cmd);
-				chansess->cmd = m_strdup(SFTPSERVER_PATH);
-			} else 
-#endif
-			{
 				m_free(chansess->cmd);
 				return DROPBEAR_FAILURE;
 			}

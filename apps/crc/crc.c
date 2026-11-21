@@ -147,7 +147,6 @@ int crc(int fd, unsigned long *cval, unsigned long *clen)
   where lsr might be:	find . -type f -print
   Eric Grosse  17 Dec 92  ehg@research.bell-labs.com
 */
-#define _POSIX_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -161,7 +160,8 @@ int argc;
 char **argv;
 {
     char * line;
-    int fd,i;
+    int fd, i;
+    int had_error = 0;
     unsigned long cval = 0, clen = 0;
     int flags = O_RDONLY;
 #if defined(_WIN32)
@@ -178,15 +178,21 @@ char **argv;
     {
         line = argv[i];
         if((fd = open(line, flags))<0)
-        {   
+        {
             perror(line);
+            had_error = 1;
         }
         else
         {
-            crc(fd,&cval,&clen);
+            if (crc(fd,&cval,&clen) != 0) {
+                perror(line);
+                had_error = 1;
+            }
             close(fd);
         }
     }
+    if (had_error)
+        exit(1);
     printf("%lx\n",cval);
     exit(0);
 }

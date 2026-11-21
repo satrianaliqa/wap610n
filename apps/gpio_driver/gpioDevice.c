@@ -1,47 +1,33 @@
 /**
  * This is the driver for the gpios on the Metalink Dongle.
- * 
+ *
  * Portions of this driver were modified from the scull sample char driver,
  * from the book: Linux Device Drivers, 2nd Edition,
  * which is distributed with the following copyrights:
  * Copyright (C) 2001 Alessandro Rubini and Jonathan Corbet
  * Copyright (C) 2001 O'Reilly & Associates
- * 
+ *
  * This driver is:
- * Copyright (C) 2006 Metalink Ltd. 
+ * Copyright (C) 2006 Metalink Ltd.
  * and must be distributed under the GPL:
  *
  * This program is free software; you can redistribute it
- * and/or modify it under the terms of the GNU General 
+ * and/or modify it under the terms of the GNU General
  * Public License as published by the Free Software
  * Foundation; either version 2 of the License, or (at
  * your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public
  * License along with this program; if not, write to the Free
  * Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
  * MA 02111-1307, USA.
  *
  * */
-/** ********************************************************************
-*   Push button -     1. After the PBC button is pushed an interrupt is triggered
-					  2. If the button is pushed for more than 1 sec. the pbc_flag
-						 is set and the blocking read is released from it's
-						 wait  state.
-					  3. Meanwhile from the user space a blocking read ('cat') is
-						 called and waiting for a EOF.
-					  4. 'EOF' will be written only when pbc_flag is set after PBC
-						 is triggered.
-					  5. The flag will be set back to is default value ('No button is
-						 pushed'= 0)after 20 seconds, if the user space didn't
-						 take care of the push button ( 'gpio_read' was not 
-						 called).
-*/
 #include <linux/config.h>
 #include <linux/module.h>
 #include <linux/kernel.h>   /* printk() */
@@ -50,397 +36,377 @@
 #include <linux/types.h>    /* size_t */
 #include <linux/init.h>
 #include <linux/sched.h>
-#include <asm/uaccess.h> 
+#include <linux/spinlock.h>
+#include <asm/uaccess.h>
 
 #include "gpioDevice.h"
-#include <linux/netdevice.h> 
+#include <linux/netdevice.h>
 
 #include <linux/timer.h>
 #include <linux/str9100/str9100_gpio.h>
 
+#define MAX_HW_GPIOS 21
+#define SYSTEM_LED_GPIO 2
 
 MODULE_DESCRIPTION("Metalink GPIO (LED/pushbutton) driver");
 MODULE_AUTHOR("Copyright(c) 2008-2009 Metalink Ltd.");
 MODULE_LICENSE("GPL");
 
-/**
-	Module parameters: 
-		outputLeds - list of GPIOs to init for output, e.g. outputLeds=0,3,4
-		pushButtons - list of GPIOs to init for input, e.g. pushButtons=1,13
-*/
-
-/* An array defining what GPIO pins to initialize as output. This is passed when insmoding the module */
+/* An array defining what GPIO pins to initialize as output. */
 static int outputLeds[MAX_GPIOS];
 static int numOutputLeds;
 module_param_array(outputLeds, int, &numOutputLeds, 0);
 
-/* An array defining what GPIO pins to initialize as input. This is passed when insmoding the module */
+/* An array defining what GPIO pins to initialize as input. */
 static int pushButtons[MAX_GPIOS];
 static int numPushButtons;
 module_param_array(pushButtons, int, &numPushButtons, 0);
 
-
 static int pbc_flag[MAX_GPIOS];
 static int major;
-int pulse_pattern;
+static spinlock_t gpio_lock = SPIN_LOCK_UNLOCKED;
+static int gpio_unloading = 0;
 
-/* ledPatterns - An array defining all possible LED patterns in the system. 
- * To pulse a gpio with a specific pattern, write the value (index + 2) to the appropriate LED device,
- * e.g. echo 2 > /dev/led1   
- *   will toggle the first pattern on led1 
- *
- *  Currently, all patterns are defined to repeat forever (repetition_count=-1), and must be stopped by the user.
- *   */
 static led_pattern_t ledPatterns[] = {
-	// 2. 1 second on, 1 second off
+	/* 2. 1 second on, 1 second off */
 	{
 		-1,
-		{_MS(1000),_MS(1000),-1}
+		{_MS(1000), _MS(1000), -1}
 	},
-	// 3. Blink_1: Repeat 120 seconds: for 1 second: 0.1 on, 0.1 off, then 0.5 off
-	{
-		-1,		// 80 for 120 seconds
-		{_MS(100),_MS(100),_MS(100),_MS(100),_MS(100),_MS(100),_MS(100),_MS(100),_MS(100),_MS(600),-1}
-	},
-	// 4. Blink_2: Repeat 120 seconds: 0.1 on, 0.1 off
-	{
-		-1,		// 600 for 120 seconds
-		{_MS(100),_MS(100),-1}
-	},
-	// 5. Traffic: 0.3 on, 0.3 off
+	/* 3. Blink_1: for 1 second: 0.1 on, 0.1 off, then 0.6 off */
 	{
 		-1,
-		{_MS(300),_MS(300),-1}
+		{_MS(100), _MS(100), _MS(100), _MS(100), _MS(100), _MS(100), _MS(100), _MS(100), _MS(100), _MS(600), -1}
 	},
-	// 6. WPS in progress: 0.2 on, 0.1 off
+	/* 4. Blink_2: 0.1 on, 0.1 off */
 	{
 		-1,
-		{_MS(200),_MS(100),-1}
+		{_MS(100), _MS(100), -1}
+	},
+	/* 5. Traffic: 0.3 on, 0.3 off */
+	{
+		-1,
+		{_MS(300), _MS(300), -1}
+	},
+	/* 6. WPS in progress: 0.2 on, 0.1 off */
+	{
+		-1,
+		{_MS(200), _MS(100), -1}
 	},
 };
 
 static const int NUM_PATTERNS = sizeof(ledPatterns) / sizeof(led_pattern_t);
 
-
-/* An array of led patterns , to connect the led with the pattern currently being used for it. */
+/* Per-LED active pattern state */
 static led_pattern_in_use_t ledPatternsUsed[MAX_GPIOS];
 
-
-// TODO: Do you need one wq per pushbutton? Or is it ok to reuse the same queue, because we 
-// always wait with an exit condition
 static DECLARE_WAIT_QUEUE_HEAD(wq);
 
-/* timers for the leds and pushbuttons - There are is a timer for each led - needed for looping the pulse function 
- * and a timer for each pushbutton, to make sure it was pushed long enough. */ 
-// TODO: To reduce data size, the two timer lists can be united to one - each gpio can be only a led or a PB
-// Currently, I left both lists for clarity
 static struct timer_list pulse_timers[MAX_GPIOS];
 static struct timer_list pbc_timer[MAX_GPIOS];
 static struct file_operations gpioFops = {
-	owner: 	 THIS_MODULE,
-	open: 	 gpio_open,
+	owner:   THIS_MODULE,
+	open:    gpio_open,
 	release: gpio_close,
-	write: 	 gpio_write,
-	read: 	 gpio_read,
+	write:   gpio_write,
+	read:    gpio_read,
 };
 
 inline void gpio_set_off(unsigned long gpio)
 {
-	str9100_gpio_out_bit(GPIO_OFF, gpio);	
+	str9100_gpio_out_bit(GPIO_OFF, gpio);
 }
+
 inline void gpio_set_on(unsigned long gpio)
 {
-	str9100_gpio_out_bit(GPIO_ON, gpio);	
+	str9100_gpio_out_bit(GPIO_ON, gpio);
 }
-/* Turn on/off gpio - state= 0 (gpio off), 1 (gpio on) */ 
+
+/* Turn on/off gpio - state= 0 (gpio off), 1 (gpio on) */
 void gpio_set(int gpio, int state)
 {
-    if (state == GPIO_ON)
+	if (gpio < 0 || gpio >= MAX_HW_GPIOS)
+		return;
+	if (state == GPIO_ON)
 		gpio_set_on(gpio);
-	else 
-		gpio_set_off(gpio);	
+	else
+		gpio_set_off(gpio);
 }
 
-/*
-pbc_validate_push() - The interrupt handler for push button.
-Make sure that the pushbutton was pressed long enough
-
-The GPIO number of the PB is passed in the upper 16 bits of the data.
-The wait flag is in the lower 16 bits.
-
-1. When the pbc button is pressed (GPIO_ON) -> set the start time.
-2. If the button is released - Check the the pbc was held for more than one 
-	second and than set the pbc_flag to '1' and release the wait state of the
-    gpio_read() .
-   This is done by triggering a timer and calling this func again twice.
-
-PBC state machine:
-    ----> start ----> wait ----> wait ----> wait ----> end
-  intr(fall)    call       timer      timer      call     
-*/
-void pbc_validate_push(unsigned long pbc_wait_flag) 
+void pbc_validate_push(unsigned long pbc_wait_flag)
 {
-	u32 temp;
+	u32 temp = GPIO_OFF;
 	unsigned int timer_expires;
 	unsigned int gpio = pbc_wait_flag >> 16;
-	unsigned long pb_waiting_time;  //Tim Wang, push button waiting time
+	unsigned long pb_waiting_time;
+	unsigned long flags;
+
+	if (gpio >= MAX_HW_GPIOS)
+		return;
+
 	pbc_wait_flag &= 0xFFFF;
-	timer_expires = MSECS_TO_JIFFIES(75)+jiffies; // 150 msec total.
+	timer_expires = MSECS_TO_JIFFIES(75) + jiffies;
 	pbc_wait_flag++;
 	str9100_gpio_in_bit(&temp, gpio);
-	if (temp == GPIO_OFF)
-	{
-		str9100_gpio_set_edgeintr(&gpio_pbc_start, PIN_TRIG_SINGLE, PIN_TRIG_FAILING, gpio);
+	if (temp == GPIO_OFF) {
+		spin_lock_irqsave(&gpio_lock, flags);
+		if (!gpio_unloading) {
+			str9100_gpio_set_edgeintr(&gpio_pbc_start, PIN_TRIG_SINGLE, PIN_TRIG_FAILING, gpio);
+		}
+		spin_unlock_irqrestore(&gpio_lock, flags);
 		return;
 	}
 
-    if (timer_pending(pbc_timer + gpio))
-    {
-		/* Stop any pending timer - it might be a previous wait-for-cancel timer */ 
-    	del_timer(pbc_timer + gpio); 
-    }
-	//Tim Wang, for reset to facotry default, the waiting time will be longer than PBC.
 	if (gpio == RESET_DFT_GPIO) {
 		pb_waiting_time = 12 * RESET_DFT_WAIT_SEC;
 	} else {
 		pb_waiting_time = 2;
 	}
-	//printk("pbc_wait_flag=%d\n",pbc_wait_flag);
-	if (pbc_wait_flag <= pb_waiting_time)
-	{
-		init_timer(pbc_timer + gpio);
-		pbc_timer[gpio].expires = timer_expires;
-		pbc_timer[gpio].data = (gpio << 16) | pbc_wait_flag;
-		pbc_timer[gpio].function = pbc_validate_push;
-   		add_timer(pbc_timer + gpio);
-	} else 
-	{
-		// Do you want to leave the edge trigger interrupt, or start handling the PB as soon 
-		// as it was pressed one second? 
-		//   --> For SW-triggered restore defaults, handling immediately is necessary
-		///OLD: str9100_gpio_set_edgeintr(&gpio_pbc_end, PIN_TRIG_SINGLE, PIN_TRIG_RISING, gpio);
 
-		//Tim Wang, for reset to factory default
+	if (pbc_wait_flag <= pb_waiting_time) {
+		spin_lock_irqsave(&gpio_lock, flags);
+		if (!gpio_unloading) {
+			if (timer_pending(pbc_timer + gpio))
+				del_timer(pbc_timer + gpio);
+			init_timer(pbc_timer + gpio);
+			pbc_timer[gpio].expires = timer_expires;
+			pbc_timer[gpio].data = (gpio << 16) | pbc_wait_flag;
+			pbc_timer[gpio].function = pbc_validate_push;
+			add_timer(pbc_timer + gpio);
+		}
+		spin_unlock_irqrestore(&gpio_lock, flags);
+	} else {
 		if (gpio == RESET_DFT_GPIO) {
 			printk("trigger RESET_DFT_GPIO\n");
 		}
-
-		gpio_pbc_end(gpio);
+		gpio_pbc_end((int)gpio);
 	}
 }
 
-/********************************************
-* pbc_cancel - If the PBC is pushed and the user appl. do not get an indication
-* 				for that in 20 second the pbc_flag is reset and the PBC is *					canceled.
-********************************************/
 void pbc_cancel(unsigned long gpio)
 {
-		pbc_flag[gpio]=0;
+	unsigned long flags;
+
+	if (gpio >= MAX_HW_GPIOS)
+		return;
+	spin_lock_irqsave(&gpio_lock, flags);
+	pbc_flag[gpio] = 0;
+	spin_unlock_irqrestore(&gpio_lock, flags);
 }
 
 void gpio_pbc_start(int gpio)
 {
-		str9100_gpio_clear_intr(gpio);
+	unsigned long flags;
 
-		// First time to call 'pbc_validate_push'
-		// Pass gpio in upper 16 bits, pass 0 in lower
-		pbc_validate_push(gpio << 16); 
+	if (gpio < 0 || gpio >= MAX_HW_GPIOS)
+		return;
+	str9100_gpio_clear_intr(gpio);
+
+	spin_lock_irqsave(&gpio_lock, flags);
+	if (gpio_unloading) {
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		return;
+	}
+	spin_unlock_irqrestore(&gpio_lock, flags);
+
+	pbc_validate_push((unsigned long)gpio << 16);
 }
 
-/* gpio_pbc_end:
- * Set flag to notify that PB was pushed. 
- * Wake up any readers waiting for data. 
- * Restart interrupt to be ready next press of PB.
- * Start interrupt to cancel the reading of this PB, if it isn't handled within 20 seconds */
 void gpio_pbc_end(int gpio)
 {
-	pbc_flag[gpio]=2; 
-	wake_up_interruptible(&wq);
+	unsigned long flags;
+
+	if (gpio < 0 || gpio >= MAX_HW_GPIOS)
+		return;
+
+	spin_lock_irqsave(&gpio_lock, flags);
+	if (gpio_unloading) {
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		return;
+	}
+	pbc_flag[gpio] = 2;
 	str9100_gpio_clear_intr(gpio);
 	str9100_gpio_set_edgeintr(&gpio_pbc_start, PIN_TRIG_SINGLE, PIN_TRIG_FAILING, gpio);
 
-    if (timer_pending(pbc_timer + gpio))
-    {
-    	del_timer(pbc_timer + gpio); 
-    }
-	/* Wait 20 seconds before the current pbc is canceled */
-	init_timer(pbc_timer + gpio); 
-   	pbc_timer[gpio].expires = SECS_TO_JIFFIES(20) + jiffies; 
+	if (timer_pending(pbc_timer + gpio)) {
+		del_timer(pbc_timer + gpio);
+	}
+	init_timer(pbc_timer + gpio);
+	pbc_timer[gpio].expires = SECS_TO_JIFFIES(20) + jiffies;
 	pbc_timer[gpio].data = gpio;
 	pbc_timer[gpio].function = pbc_cancel;
 	add_timer(pbc_timer + gpio);
+	spin_unlock_irqrestore(&gpio_lock, flags);
+
+	wake_up_interruptible(&wq);
 }
 
-/*
-gpio_init() - 
-	1. Set the gpio direction bits
-	2. Set the interrupt handler for Push Button
-	3. If The Restore Defualt button is pushed (gpio value is 'GPIO_ON') for more
-	    than 2 seconds after the gpio init, the interrupt handler for 
-		Restore Default is set. 
-*/
 int gpio_init(void)
 {
 	int i, gpio;
-	
+
+	for (i = 0; i < MAX_GPIOS; i++) {
+		init_timer(pulse_timers + i);
+		init_timer(pbc_timer + i);
+		ledPatternsUsed[i].pattern = NULL;
+		ledPatternsUsed[i].curr_index = 0;
+		ledPatternsUsed[i].curr_repetition = 0;
+		pbc_flag[i] = 0;
+	}
+
 	for (i = 0; i < numOutputLeds && i < MAX_GPIOS; i++) {
 		gpio = outputLeds[i];
-		str9100_gpio_write_direction_bit( PIN_OUTPUT, gpio);
+		if (gpio < 0 || gpio >= MAX_HW_GPIOS)
+			continue;
+		str9100_gpio_write_direction_bit(PIN_OUTPUT, gpio);
 		gpio_set(gpio, GPIO_OFF);
-
-		pulse_timers[gpio].expires = 0;
-		ledPatternsUsed[gpio].pattern = NULL;
-		ledPatternsUsed[gpio].curr_index = 0;
-		ledPatternsUsed[gpio].curr_repetition = 0;
-
-		//printk("Initialized LED %d\n", gpio);
 	}
 
 	for (i = 0; i < numPushButtons && i < MAX_GPIOS; i++) {
 		gpio = pushButtons[i];
-
-		str9100_gpio_write_direction_bit( PIN_INPUT, gpio);
+		if (gpio < 0 || gpio >= MAX_HW_GPIOS)
+			continue;
+		str9100_gpio_write_direction_bit(PIN_INPUT, gpio);
 		str9100_gpio_set_edgeintr(&gpio_pbc_start, PIN_TRIG_SINGLE, PIN_TRIG_FAILING, gpio);
 	}
-	
+
 	return 0;
 }
 
-
-
-/********************************************
- * GPIO Read:  
- *	PBC: The read is blocked (wait_event_interruptible) until the PBC button
-		  is pushed. If the read is 'released' it returns with 
-		  'EOF' ('return 0') only.
- * Restore Defualt:  Check rdflt_flag and returns 'on' or 'off' accordinally.
- *
- * Both buttons write one byte and return, and then return 0 for EOF.
- * 
- ********************************************/
-static ssize_t gpio_read(struct file *file,  char *buf, size_t count, loff_t *offset)
+static ssize_t gpio_read(struct file *file, char *buf, size_t count, loff_t *offset)
 {
 	int gpio = MINOR(file->f_dentry->d_inode->i_rdev);
-	if (gpio >= MAX_GPIOS || gpio < 0)
+	unsigned long flags;
+	int val;
+
+	if (gpio >= MAX_HW_GPIOS || gpio < 0)
 		return (-ENODEV);
-	/* If pbc button is pushed PBC_ON is copied to /dev/pbc0. BLOCK until it is pressed. */
-	// TODO: Expand wq to an array??
-	if (wait_event_interruptible(wq, pbc_flag[gpio] != 0))
+	if (count == 0)
+		return 0;
+
+	if (wait_event_interruptible(wq, pbc_flag[gpio] != 0 || gpio_unloading))
 		return (-ERESTARTSYS);
 
-	if (pbc_flag[gpio] > 0)
-	{
-		if (pbc_flag[gpio] > 1)
-		{
-			if (copy_to_user(buf, PBC_ON, 1))
-			{  
-				return (-ENOMEM);
+	spin_lock_irqsave(&gpio_lock, flags);
+	if (gpio_unloading) {
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		return (-ENODEV);
+	}
+	val = pbc_flag[gpio];
+	spin_unlock_irqrestore(&gpio_lock, flags);
+
+	if (val > 0) {
+		if (val > 1) {
+			if (copy_to_user(buf, PBC_ON, 1)) {
+				return (-EFAULT);
 			}
-			pbc_flag[gpio]--;
+			spin_lock_irqsave(&gpio_lock, flags);
+			if (pbc_flag[gpio] > 1)
+				pbc_flag[gpio]--;
+			spin_unlock_irqrestore(&gpio_lock, flags);
 			return 1;
 		} else {
+			spin_lock_irqsave(&gpio_lock, flags);
 			pbc_flag[gpio] = 0;
+			spin_unlock_irqrestore(&gpio_lock, flags);
 			return 0;
-		}	
-	} else 
-	{
-		return (-EAGAIN);			
+		}
+	} else {
+		return (-EAGAIN);
 	}
 }
 
-/********************************************
- * led_pulse() - Toggle the Led ON /OFF according to a pattern
- * The pattern is defined by an array of timer values - each value triggers the LED on or off for 0.1*timer_val seconds
- * In addition, each pattern must be repeated a predefined amount of times
- *
- *
- * Use the pattern to set the duration, and use the index for the toggle on/off
- * if -1, then start pattern from beginning, incr. repetition count, start again if needed
- *
- * ledPatterns is an array of all the possible patterns
- * ledPatternsUsed is an array of what pattern is used for a specific GPIO, and what stage of displaying the pattern it is in
-********************************************/
-void led_pulse(unsigned long lednum) 
+void led_pulse(unsigned long lednum)
 {
 	int *currIndex;
 	int *currRepetition;
 	int pulse_len;
 	int ledStatus;
-	led_pattern_t* currPattern;
+	led_pattern_t *currPattern;
+	unsigned long flags;
 
-	if (pulse_pattern < 0 || pulse_pattern >= NUM_PATTERNS)
+	if (lednum >= MAX_HW_GPIOS)
 		return;
 
-	// If this is the first call to led_pulse, initialize the used pattern structure
-	if (ledPatternsUsed[lednum].pattern == NULL) {
-		///printk("Initializing pattern\n");
-		ledPatternsUsed[lednum].pattern = &(ledPatterns[pulse_pattern]);
-		ledPatternsUsed[lednum].curr_index = 0;
-		ledPatternsUsed[lednum].curr_repetition = 0;
+	spin_lock_irqsave(&gpio_lock, flags);
+	if (gpio_unloading) {
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		return;
 	}
-	
-	// Define some local variables to avoid having to work with long levels of redirection
+
 	currPattern = ledPatternsUsed[lednum].pattern;
+	if (currPattern == NULL) {
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		return;
+	}
+
 	currIndex = &(ledPatternsUsed[lednum].curr_index);
 	currRepetition = &(ledPatternsUsed[lednum].curr_repetition);
 
-	
-	
-	/* If this is the last value in the pattern array (timer_val is -1), start the next repetition */
+	/* If this is the last value in the pattern array (-1), start next repetition */
 	if (currPattern->timer_vals[*currIndex] == -1) {
-		///printk("End of pattern\n");
 		*currIndex = 0;
 		(*currRepetition)++;
-
 	}
-	/* If the last repetition was completed, turn off led and don't renew timer. 
-	 * Repeat forever if repetition count is -1  */
-	if (currPattern->repetition_count != -1 && ledPatternsUsed[lednum].curr_repetition == currPattern->repetition_count) 
-	{
-		///printk("End of repetitions\n");
-		gpio_set(lednum, GPIO_OFF);
-		// On last pulse: clear pattern, (zeroing indices is done when setting a new pattern)
+
+	/* Repeat forever if repetition_count is -1 */
+	if (currPattern->repetition_count != -1 &&
+	    ledPatternsUsed[lednum].curr_repetition == currPattern->repetition_count) {
+		gpio_set((int)lednum, GPIO_OFF);
 		ledPatternsUsed[lednum].pattern = NULL;
+		spin_unlock_irqrestore(&gpio_lock, flags);
 		return;
 	}
-	
-	// Calculate the duration of the current led pulse
-	///printk("LED Duration: %d\n",  currPattern->timer_vals[*currIndex]);
-	// (To save realtime processing time, the MACRO MSECS_TO_JIFFIES was
-	// moved to the definition of the patterns array.)
+
 	pulse_len = currPattern->timer_vals[*currIndex];
 
-    // Add a timer to call the function again, after pulse_len time
-    init_timer(pulse_timers + lednum);
-    pulse_timers[lednum].expires = pulse_len + jiffies;
-    pulse_timers[lednum].data = lednum;
-    pulse_timers[lednum].function = led_pulse;
-    add_timer(pulse_timers + lednum);
-	
-    /* Toggle LED - use index: on even index LED is on, on odd index it is off */
-    ledStatus = (*currIndex & 0x1) ? GPIO_OFF : GPIO_ON;
-	gpio_set(lednum, ledStatus);
+	init_timer(pulse_timers + lednum);
+	pulse_timers[lednum].expires = pulse_len + jiffies;
+	pulse_timers[lednum].data = lednum;
+	pulse_timers[lednum].function = led_pulse;
+	add_timer(pulse_timers + lednum);
+
+	/* Toggle LED - even index ON, odd index OFF */
+	ledStatus = (*currIndex & 0x1) ? GPIO_OFF : GPIO_ON;
+	gpio_set((int)lednum, ledStatus);
 	(*currIndex)++;
+	spin_unlock_irqrestore(&gpio_lock, flags);
 }
 
-
-static int string_to_int(const char *buf)
+/*
+ * Parse string LED/control commands safely without silent fallback to 0 (off):
+ *   "green" / "on" -> 1 (LED ON)
+ *   "off"          -> 0 (LED OFF)
+ *   digits         -> parsed integer
+ * Returns 0 on success, -EINVAL on empty/non-numeric garbage.
+ */
+static int string_to_int(const char *buf, int *out_val)
 {
 	const char *p;
 	long val;
 	int neg;
+	int has_digit;
 
 	p = buf;
 	val = 0;
 	neg = 0;
+	has_digit = 0;
 
 	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
 		p++;
 
-	if (strnicmp(p, "green", 5) == 0 || strnicmp(p, "on", 2) == 0)
-		return GPIO_ON;
-	if (strnicmp(p, "off", 3) == 0)
-		return GPIO_OFF;
+	if (strnicmp(p, "green", 5) == 0 && (p[5] == '\0' || p[5] == ' ' || p[5] == '\t' || p[5] == '\r' || p[5] == '\n')) {
+		*out_val = 1;
+		return 0;
+	}
+	if (strnicmp(p, "on", 2) == 0 && (p[2] == '\0' || p[2] == ' ' || p[2] == '\t' || p[2] == '\r' || p[2] == '\n')) {
+		*out_val = 1;
+		return 0;
+	}
+	if (strnicmp(p, "off", 3) == 0 && (p[3] == '\0' || p[3] == ' ' || p[3] == '\t' || p[3] == '\r' || p[3] == '\n')) {
+		*out_val = 0;
+		return 0;
+	}
 
 	if (*p == '-') {
 		neg = 1;
@@ -450,6 +416,7 @@ static int string_to_int(const char *buf)
 	}
 
 	while (*p >= '0' && *p <= '9') {
+		has_digit = 1;
 		if (val > (LONG_MAX - (*p - '0')) / 10) {
 			val = LONG_MAX;
 			break;
@@ -457,24 +424,26 @@ static int string_to_int(const char *buf)
 		val = val * 10 + (*p - '0');
 		p++;
 	}
+	while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+		p++;
 
-	return neg ? (int)(-val) : (int)val;
+	if (!has_digit || *p != '\0')
+		return (-EINVAL);
+
+	*out_val = neg ? (int)(-val) : (int)val;
+	return 0;
 }
 
-/********************************************
- * GPIO Write: turn a GPIO on/off or flash it
- * The GPIO number is passed as the device number,
- * and the value to write is passed in the buf.
- * 
- ********************************************/
 static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff_t *offset)
 {
 	char kbuf[16];
-	int gpioval, gpio;
-	// Get the led number from the device MINOR number
+	int gpioval, pat_idx, gpio;
+	size_t orig_count = count;
+	unsigned long flags;
+
 	gpio = MINOR(file->f_dentry->d_inode->i_rdev);
 
-	if (gpio >= MAX_GPIOS || gpio < 0)
+	if (gpio >= MAX_HW_GPIOS || gpio < 0)
 		return (-ENODEV);
 
 	if (count >= sizeof(kbuf))
@@ -485,82 +454,97 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 
 	kbuf[count] = '\0';
 
-	// Parse passed argument
-	gpioval = string_to_int(kbuf);
-	// First disable any pending timer, to stop traffic simulation
-	if (timer_pending(pulse_timers+gpio))
-	{
-		del_timer(pulse_timers+gpio);
-		ledPatternsUsed[gpio].pattern = NULL;
+	if (string_to_int(kbuf, &gpioval) < 0)
+		return (-EINVAL);
+
+	if (gpioval != 0 && gpioval != 1) {
+		pat_idx = gpioval - 2;
+		if (pat_idx < 0 || pat_idx >= NUM_PATTERNS)
+			return (-EINVAL);
+	} else {
+		pat_idx = -1;
 	}
 
-	// Write the value to GPIO, using the device minor number
+	/* Disable any pending timer under lock before updating state */
+	spin_lock_irqsave(&gpio_lock, flags);
+	if (timer_pending(pulse_timers + gpio)) {
+		del_timer(pulse_timers + gpio);
+	}
+	ledPatternsUsed[gpio].pattern = NULL;
+	ledPatternsUsed[gpio].curr_index = 0;
+	ledPatternsUsed[gpio].curr_repetition = 0;
+
 	if (gpioval == 0) {
 		gpio_set_off(gpio);
-
-		//Tim Wang, stop the system LED blinking
-#define SYSTEM_LED_GPIO  2
+		spin_unlock_irqrestore(&gpio_lock, flags);
 		if (gpio == SYSTEM_LED_GPIO) {
 			stop_blinking_SYS_LED(1);
 		}
-		
 	} else if (gpioval == 1) {
 		gpio_set_on(gpio);
-	} else  {
-		/* pulse_pattern is the index to the LED pattern (after subtracting 2) */
-		pulse_pattern = gpioval - 2;
-		if (pulse_pattern < 0 || pulse_pattern >= NUM_PATTERNS) {
-			return (-EINVAL);
-		}
-		led_pulse(gpio); 
-	} 
-	return count;
+		spin_unlock_irqrestore(&gpio_lock, flags);
+	} else {
+		ledPatternsUsed[gpio].pattern = &(ledPatterns[pat_idx]);
+		spin_unlock_irqrestore(&gpio_lock, flags);
+		led_pulse((unsigned long)gpio);
+	}
+
+	return (ssize_t)orig_count;
 }
 
-/********************************************
- * Open the GPIO file: mark it as in use
- ********************************************/
 static int gpio_open(struct inode *node, struct file *file)
 {
-    //int gpionum = MINOR(inode->i_rdev);
-	// MOD_INC_USE_COUNT;	
 	return 0;
 }
+
 void gpio_cleanup(void)
 {
 	int i, gpio;
-	for (i = 0; i < numOutputLeds && i < MAX_GPIOS; i++) {
-		del_timer_sync(pulse_timers + outputLeds[i]);
+	unsigned long flags;
 
-		/* turn all leds off */
-		gpio_set(outputLeds[i], GPIO_OFF);
-	}
-	// Loop on valid PBs:
-	/* Release the blocked reads, timers and interrupts */
+	spin_lock_irqsave(&gpio_lock, flags);
+	gpio_unloading = 1;
+	/* Disable/clear all pushbutton interrupts before deleting timers */
 	for (i = 0; i < numPushButtons && i < MAX_GPIOS; i++) {
 		gpio = pushButtons[i];
-		pbc_flag[gpio] = 0; 
-		del_timer_sync(pbc_timer + gpio);
-		str9100_gpio_clear_intr(gpio);
+		if (gpio >= 0 && gpio < MAX_HW_GPIOS) {
+			str9100_gpio_clear_intr(gpio);
+			pbc_flag[gpio] = 0;
+		}
+	}
+	spin_unlock_irqrestore(&gpio_lock, flags);
+
+	/* Sync-delete ALL timers across 0..MAX_GPIOS-1 */
+	for (i = 0; i < MAX_GPIOS; i++) {
+		del_timer_sync(pulse_timers + i);
+		del_timer_sync(pbc_timer + i);
+	}
+
+	/* Turn all initialized LEDs off and clear any late interrupts again */
+	for (i = 0; i < numOutputLeds && i < MAX_GPIOS; i++) {
+		gpio = outputLeds[i];
+		if (gpio >= 0 && gpio < MAX_HW_GPIOS) {
+			gpio_set(gpio, GPIO_OFF);
+		}
+	}
+	for (i = 0; i < numPushButtons && i < MAX_GPIOS; i++) {
+		gpio = pushButtons[i];
+		if (gpio >= 0 && gpio < MAX_HW_GPIOS) {
+			str9100_gpio_clear_intr(gpio);
+		}
 	}
 	wake_up_interruptible(&wq);
 }
 
-/********************************************
- * Close the GPIO file: decrement the use count
- ********************************************/
 static int gpio_close(struct inode *node, struct file *file)
 {
-	// MOD_DEC_USE_COUNT;
-  	return 0;
+	return 0;
 }
-/********************************************
- * Module init function
- ********************************************/
+
 static int __init gpio_init_module(void)
 {
 	printk("<1>Loaded GPIO driver \n");
-	
+
 	SET_MODULE_OWNER(&gpioFops);
 
 	major = register_chrdev(DEVICE_NUM, MODULE_NAME, &gpioFops);
@@ -571,24 +555,16 @@ static int __init gpio_init_module(void)
 		printk("registered %d\n", major);
 	}
 	printk("Num LEDs to init %d\n", numOutputLeds);
-	// Init GPIOs (and turn on power GPIO)
 	gpio_init();
 	return 0;
-
-  
 }
 
-/********************************************
- * Module cleanup function
- ********************************************/
 static void __exit gpio_cleanup_module(void)
 {
-	/* Unregister the device first to prevent new requests */
 	if (unregister_chrdev(major > 0 ? major : DEVICE_NUM, MODULE_NAME) < 0) {
 		printk(KERN_ERR "Can't unregister %s\n", MODULE_NAME);
 	}
 
-	/* Do GPIOs cleanup and sync delete all timers */
 	gpio_cleanup();
 
 	printk("<1>Successfully removed gpio driver\n");
@@ -596,5 +572,3 @@ static void __exit gpio_cleanup_module(void)
 
 module_init(gpio_init_module);
 module_exit(gpio_cleanup_module);
-
-

@@ -629,6 +629,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
     char newFormat[40];		/* A new format specifier is generated here. */
     int width;			/* Field width from field specifier, or 0 if
 				 * no width given. */
+    int absWidth;		/* Non-negative magnitude of width. */
     int precision;		/* Field precision from field specifier, or 0
 				 * if no precision given. */
     int size;			/* Number of bytes needed for result of
@@ -676,7 +677,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
     for (format = argv[1]; *format != 0; ) {
 	register char *newPtr = newFormat;
 
-	width = precision = useTwoWords = noPercent = useShort = 0;
+	width = absWidth = precision = useTwoWords = noPercent = useShort = 0;
 
 	/*
 	 * Get rid of any characters before the next field specifier.
@@ -725,6 +726,10 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 	format++;
 	while ((*format == '-') || (*format == '#') || (*format == '0')
 		|| (*format == ' ') || (*format == '+')) {
+	    if (newPtr >= newFormat + sizeof(newFormat) - 4) {
+		interp->result = "format string too long";
+		goto fmtError;
+	    }
 	    *newPtr = *format;
 	    newPtr++;
 	    format++;
@@ -745,38 +750,66 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 	    curArg++;
 	    format++;
 	}
+	if (width < 0) {
+	    if (width < -100000) {
+		width = -100000;
+	    }
+	    absWidth = -width;
+	} else {
+	    if (width > 100000) {
+		width = 100000;
+	    }
+	    absWidth = width;
+	}
 	if (width != 0) {
+	    if (newPtr >= newFormat + sizeof(newFormat) - 16) {
+		interp->result = "format string too long";
+		goto fmtError;
+	    }
 	    sprintf(newPtr, "%d", width);
 	    while (*newPtr != 0) {
 		newPtr++;
 	    }
 	}
 	if (*format == '.') {
+	    if (newPtr >= newFormat + sizeof(newFormat) - 14) {
+		interp->result = "format string too long";
+		goto fmtError;
+	    }
 	    *newPtr = '.';
 	    newPtr++;
 	    format++;
-	}
-	if (isdigit(*format)) {
-	    precision = atoi(format);
-	    do {
+	    if (isdigit(*format)) {
+		precision = atoi(format);
+		do {
+		    format++;
+		} while (isdigit(*format));
+	    } else if (*format == '*') {
+		if (argc <= 0) {
+		    goto notEnoughArgs;
+		}
+		if (Tcl_GetInt(interp, *curArg, &precision) != TCL_OK) {
+		    goto fmtError;
+		}
+		argc--;
+		curArg++;
 		format++;
-	    } while (isdigit(*format));
-	} else if (*format == '*') {
-	    if (argc <= 0) {
-		goto notEnoughArgs;
 	    }
-	    if (Tcl_GetInt(interp, *curArg, &precision) != TCL_OK) {
-		goto fmtError;
+	    if (precision < 0) {
+		precision = 0;
+	    } else if (precision > 100000) {
+		precision = 100000;
 	    }
-	    argc--;
-	    curArg++;
-	    format++;
+	    if (precision != 0) {
+		sprintf(newPtr, "%d", precision);
+		while (*newPtr != 0) {
+		    newPtr++;
+		}
+	    }
 	}
-	if (precision != 0) {
-	    sprintf(newPtr, "%d", precision);
-	    while (*newPtr != 0) {
-		newPtr++;
-	    }
+	if (newPtr >= newFormat + sizeof(newFormat) - 4) {
+	    interp->result = "format string too long";
+	    goto fmtError;
 	}
 	if (*format == 'l') {
 	    format++;
@@ -813,7 +846,7 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 			!= TCL_OK) {
 		    goto fmtError;
 		}
-		size = 40;
+		size = 40 + precision;
 		break;
 	    case 's':
 		oneWordValue = *curArg;
@@ -860,8 +893,8 @@ Tcl_FormatCmd(dummy, interp, argc, argv)
 	 */
 
 	doField:
-	if (width > size) {
-	    size = width;
+	if (absWidth > size) {
+	    size = absWidth;
 	}
 	if ((dstSize + size) > dstSpace) {
 	    char *newDst;

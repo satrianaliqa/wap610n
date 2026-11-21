@@ -120,29 +120,32 @@ void svr_session(int sock, int childpipe,
 /* failure exit - format must be <= 100 chars */
 void svr_dropbear_exit(int exitcode, const char* format, va_list param) {
 
-	char fmtbuf[300];
+	char exitmsg[300];
+	char finalmsg[300];
+
+	vsnprintf(exitmsg, sizeof(exitmsg), format, param);
 
 	if (!sessinitdone) {
 		/* before session init */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"premature exit: %s", format);
+		snprintf(finalmsg, sizeof(finalmsg),
+				"premature exit: %s", exitmsg);
 	} else if (ses.authstate.authdone) {
 		/* user has authenticated */
-		snprintf(fmtbuf, sizeof(fmtbuf),
-				"exit after auth (%s): %s", 
-				ses.authstate.pw_name, format);
+		snprintf(finalmsg, sizeof(finalmsg),
+				"exit after auth (%s): %s",
+				ses.authstate.pw_name, exitmsg);
 	} else if (ses.authstate.pw_name) {
 		/* we have a potential user */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
+		snprintf(finalmsg, sizeof(finalmsg),
 				"exit before auth (user '%s', %d fails): %s",
-				ses.authstate.pw_name, ses.authstate.failcount, format);
+				ses.authstate.pw_name, ses.authstate.failcount, exitmsg);
 	} else {
 		/* before userauth */
-		snprintf(fmtbuf, sizeof(fmtbuf), 
-				"exit before auth: %s", format);
+		snprintf(finalmsg, sizeof(finalmsg),
+				"exit before auth: %s", exitmsg);
 	}
 
-	_dropbear_log(LOG_INFO, fmtbuf, param);
+	dropbear_log(LOG_INFO, "%s", finalmsg);
 
 	/* free potential public key options */
 	svr_pubkey_options_cleanup();

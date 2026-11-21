@@ -104,7 +104,10 @@ main(int argc, char *argv[])
 	if (result != TCL_OK) {
 	    /* And make sure we print an informative error if something goes wrong */
 	    Tcl_AddErrorInfo(interp, "");
-	    printf("%s\n", Tcl_GetVar(interp, "errorInfo", TCL_LEAVE_ERR_MSG));
+	    {
+		char *errInfo = Tcl_GetVar(interp, "errorInfo", TCL_LEAVE_ERR_MSG);
+		printf("%s\n", errInfo ? errInfo : interp->result);
+	    }
 	    exit(1);
 	}
 	exit(0);

@@ -107,7 +107,10 @@ int get_config(char *config_value, char *config_name, char *config_file)
 		pclose(fptr);
 		return -1;
 	}
-	
+	{
+		char *nl = strpbrk(config_value, "\r\n");
+		if (nl) *nl = '\0';
+	}
 	pclose(fptr);
 	return 0;
 }
@@ -195,33 +198,31 @@ int detect_layer3_link_with_ping(char *gateway)
 	snprintf(command, sizeof(command), "/sbin/arp -d %s 2>/dev/null", gateway);
 	system(command);
 	memset(command, 0, sizeof(command));
-	//Send an echo request for update arp table (-c 1 prevents hanging forever)
-	snprintf(command, sizeof(command), "/bin/ping -c 1 %s", gateway);
+	/* Send bounded echo request to populate ARP table */
+	snprintf(command, sizeof(command), "/bin/ping -c 1 -W 2 %s", gateway);
 	fptr = popen(command, "r");
 	if(fptr!=NULL){
-		if(fgets(pingResult, sizeof(pingResult), fptr)!=NULL){
+		int got_reply = 0;
+		int rc;
+		while(fgets(pingResult, sizeof(pingResult), fptr)!=NULL){
 			charPtr=strchr(pingResult, '\n');
-			if(charPtr){
-				*charPtr='\0';
+			if(charPtr) *charPtr='\0';
+			if(strstr(pingResult, "bytes from") != NULL || strstr(pingResult, "is alive!") != NULL){
+				got_reply = 1;
 			}
-			snprintf(checkResult, sizeof(checkResult), "%s is alive!", gateway);
-			printf("The result of ping is %s\nThe string for check result is %s\n", pingResult, checkResult);
-			if(!strcmp(pingResult, checkResult)){
-				printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
-				pclose(fptr);
-				return 1;
-			}else{
-				printf("The Gateway %s is unreachable, wireless link is DOWN\n", gateway);
-				pclose(fptr);
-				return 0;
-			}
-		}else{
-			printf("ERROR: Get ping result fail !!\n");
 		}
-		pclose(fptr);
+		rc = pclose(fptr);
+		if(rc == 0 || got_reply){
+			printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
+			return 1;
+		}else{
+			printf("The Gateway %s is unreachable, wireless link is DOWN\n", gateway);
+			return 0;
+		}
 	}else{
 		printf("ERROR: ping fail !!\n");
 	}
+	(void)checkResult;
 	return -1;
 }
 
@@ -360,19 +361,18 @@ int get_station_layer3_link_status(void)
 	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon/*, we*/;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;	
-	FILE *fptr = popen("cat /proc/net/wireless", "r");
+	FILE *fptr = fopen("/proc/net/wireless", "r");
 	if(fptr == NULL)
 		return 0;
 
-	while(fgets(tmpBuf, 512, fptr) != NULL){
-		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
+	while(fgets((char *)tmpBuf, sizeof(tmpBuf), fptr) != NULL){
+		if(strstr((char *)tmpBuf, "Inter-") || strstr((char *)tmpBuf, "face")){
 			continue;
 		}
-		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		paramCount = sscanf((char *)tmpBuf, "%15s %d %15s %15s %15s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 	}
-	
-	pclose(fptr);
+	(void)paramCount;
+	fclose(fptr);
 
 	//If security is configured to WPA-PSK, WEP-OPEN or WEP-AUTO, 
 	//then we need to detect wireless links status by myself.
@@ -398,15 +398,20 @@ int get_station_layer3_link_status(void)
 		//If detect wireless link my myself fail, then I will use driver report for link status.
 	}else if(link_status==3 && (securityMode==3 || securityMode==4)){
 		printf("Detect station link status for WPA-PSK/WPA2-PSK\n");
-		system("/root/mtlk/etc/wpa_cli status |grep wpa_state > /tmp/wpa_state");
-		fptr = popen("awk -F \"=\" '/^wpa_state/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' /tmp/wpa_state", "r");
+		fptr = popen("/root/mtlk/etc/wpa_cli status", "r");
 		if(fptr!=NULL){
-			memset(tmpBuf, 0, 512);
-			fgets(tmpBuf, 512, fptr);
+			int is_completed = 0;
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			while(fgets((char *)tmpBuf, sizeof(tmpBuf), fptr) != NULL){
+				if(strncmp((char *)tmpBuf, "wpa_state=", 10) == 0){
+					if(strstr((char *)tmpBuf + 10, "COMPLETED") != NULL){
+						is_completed = 1;
+					}
+					break;
+				}
+			}
 			pclose(fptr);
-			system("rm /tmp/wpa_state");
-			printf("INFO: The state of wpa_supplicant is %s", tmpBuf);
-			if(strstr(tmpBuf, "COMPLETED")){
+			if(is_completed){
 			//june.chen, 20110316, add this check for ensuring ethernet not down/up when DUT does not get IP from DHCP server
 #if 1
 				int detectedLinkStatus = 0;
@@ -446,12 +451,11 @@ int main(int argc, char** argv)
 	char configValue[CONFIG_VALUE_MAXLEN]={0};
 	char buf[128]={0};
 	int tempCount=0;
+	struct sigaction sa;
 
 	printf("daemon start for force PC at ethernet port of device to renew ..\n");
 	snprintf(buf, sizeof(buf), "echo %d > /var/run/force_ethpc_renew_ip", getpid());
 	system(buf);
-
-	struct sigaction sa;   
 	memset(&sa, 0, sizeof(sa));   
     	sa.sa_handler = &signal_handler;   
     	sigaction(SIGUSR1, &sa, NULL);   

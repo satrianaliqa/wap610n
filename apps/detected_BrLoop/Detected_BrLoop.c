@@ -60,21 +60,20 @@ void port_status(TPState *tp)
 	FILE * pp;
 	int i = 0;
 
-	pp = popen("cat /proc/str9100/switch_get_port_link_status", "r");
+	pp = fopen("/proc/str9100/switch_get_port_link_status", "r");
 
 	if(pp == NULL){
-		printf("[%s %d] popen fail!\n",__func__, __LINE__);
 		return;
 	}
 
 	while(i < 4){
-		tp->portLink[i++] = fgetc(pp);
+		int c = fgetc(pp);
+		if (c == EOF) break;
+		tp->portLink[i++] = (char)c;
 		fgetc(pp);
 	}
 
-//	printf("port link status = %s\n", tp->portLink);
-
-	pclose(pp);
+	fclose(pp);
 }
 
 
@@ -83,9 +82,8 @@ void reEnableDisPort()
 	FILE *pp;
 	int i = 0;
 	char portStatus[4] = {0};
-	pp = popen("cat /proc/str9100/switch_port_enable", "r");
+	pp = fopen("/proc/str9100/switch_port_enable", "r");
 	if(pp == NULL){
-		printf("[%s %d] popen fail!\n",__func__, __LINE__);
 		return;
 	}
 
@@ -104,7 +102,7 @@ void reEnableDisPort()
 		i++;
 	}
 	
-	pclose(pp);
+	fclose(pp);
 }
 
 void reset_Portmap(TPState *tp)
@@ -235,16 +233,18 @@ int main(int argc, char* argv[])
 		if(check_somefile_is_exist("/var/wpsLoopDetect") == 0)	{
 			//printf("*********Bridge loop detect *************\n");
 			for(i = 0; i < 4; i++){
-				pp = popen(cmd_loop, "r"); 	
+				pp = fopen(SYSFS_BRIDGE_LOOP, "r");
 
 				if(pp == NULL) {
-					printf("[%s %d]popen fail!\n", __func__, __LINE__);
-					return -1;
+					break;
 				}
 
-				fscanf(pp, "%d", &tp.br_loop);
+				tp.br_loop = 0;
+				if (fscanf(pp, "%d", &tp.br_loop) != 1) {
+					tp.br_loop = 0;
+				}
 
-				if(tp.br_loop /*&& tp.disTrue == UMEDIA_FALSE*/){
+				if(tp.br_loop){
 					tp.disablePort = cur_dis_port % 4;
 					//tp.portmap[tp.disablePort] = '1';
 
@@ -269,11 +269,11 @@ int main(int argc, char* argv[])
 					system("arping -c 1 localhost");
 				}
 				else{
-					pclose(pp); 
+					fclose(pp);
 					break;
 				}
 	
-				pclose(pp);	
+				fclose(pp);
 				//usleep(1000);
 			}
 		

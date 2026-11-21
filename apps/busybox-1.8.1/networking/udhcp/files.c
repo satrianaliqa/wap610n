@@ -417,7 +417,7 @@ void write_leases(void)
 	}
 	close(fp);
 
-	if (server_config.notify_file) {
+	if (server_config.notify_file && server_config.notify_file[0]) {
 		char *cmd = xasprintf("%s %s", server_config.notify_file, server_config.lease_file);
 		system(cmd);
 		free(cmd);

@@ -56,27 +56,67 @@ int check_somefile_is_exist(char *file_path)
 	return 1;
 }
 
+static int is_valid_ip(const char *ip)
+{
+	int dots = 0, num = 0, has_digit = 0;
+	const char *p = ip;
+	if (!ip || !*ip) return 0;
+	while (*p) {
+		if (*p >= '0' && *p <= '9') {
+			num = num * 10 + (*p - '0');
+			if (num > 255) return 0;
+			has_digit = 1;
+		} else if (*p == '.') {
+			if (!has_digit) return 0;
+			dots++;
+			num = 0;
+			has_digit = 0;
+		} else {
+			return 0;
+		}
+		p++;
+	}
+	return (dots == 3 && has_digit);
+}
+
 int get_config(char *config_value, char *config_name, char *config_file)
 {
 	FILE *fptr;
-	char command[256]={0};
+	char line[512];
+	size_t klen;
 
-	sprintf(command, "awk -F \"=\" '/^%s/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' %s", config_name, config_file);
-
-	fptr = popen(command, "r");
-	if(fptr==NULL){
-		printf("ERROR: popen fail for get_config..\n");
+	if (!config_value || !config_name || !config_file)
 		return -1;
-	}
-
 	memset(config_value, 0, CONFIG_VALUE_MAXLEN);
-	if(fgets(config_value, CONFIG_VALUE_MAXLEN, fptr)==NULL){
-		pclose(fptr);
+	fptr = fopen(config_file, "r");
+	if (fptr == NULL) {
 		return -1;
 	}
-	
-	pclose(fptr);
-	return 0;
+	klen = strlen(config_name);
+	while (fgets(line, sizeof(line), fptr) != NULL) {
+		char *p = line;
+		char *eq, *nl;
+		if (strncmp(p, config_name, klen) == 0 &&
+		    (p[klen] == '=' || p[klen] == ' ' || p[klen] == '\t')) {
+			eq = strchr(p + klen, '=');
+			if (eq) {
+				char *val = eq + 1;
+				int out_i = 0;
+				nl = strpbrk(val, "\r\n");
+				if (nl) *nl = '\0';
+				while (*val && out_i < CONFIG_VALUE_MAXLEN - 1) {
+					if (*val != ' ' && *val != '\t')
+						config_value[out_i++] = *val;
+					val++;
+				}
+				config_value[out_i] = '\0';
+				fclose(fptr);
+				return 0;
+			}
+		}
+	}
+	fclose(fptr);
+	return -1;
 }
 
 int getClientGateway(char *gateway, int isDHCP)
@@ -100,9 +140,12 @@ int getClientGateway(char *gateway, int isDHCP)
 		while (fgets(buff, sizeof(buff), fp) != NULL) {
 			if (nl) {
 				int ifl = 0;
-				while (buff[ifl]!=' ' && buff[ifl]!='\t' && buff[ifl]!='\0')
+				while (buff[ifl]!=' ' && buff[ifl]!='\t' && buff[ifl]!='\n' && buff[ifl]!='\0' && ifl < (int)sizeof(buff) - 1)
 					ifl++;
-				buff[ifl]=0; 
+				if (buff[ifl] == '\0') {
+					continue;
+				}
+				buff[ifl]=0;
 				
 				if (sscanf(buff+ifl+1, "%lx%lx%X%d%d%d%lx%d%d%d",
 							&d, &g, &flgs, &ref, &use, &metric, &m, &mtu, &window, &irtt)!=10) {
@@ -144,41 +187,28 @@ int getClientGateway(char *gateway, int isDHCP)
 int detect_layer3_link_with_ping(char *gateway)
 {
 	FILE *fptr;
-	char command[128]={0}, pingResult[128]={0}, checkResult[128]={0};
+	char command[128]={0}, pingResult[128]={0};
 	char *charPtr;
 
-	//printf("Current LAN Gateway = %s\n", gateway);		
-	memset(command, 0, 128);
-	//Clear gateway entry in arp table
-	sprintf(command, "/sbin/arp -d %s", gateway);
+	if (!is_valid_ip(gateway)) {
+		return -1;
+	}
+	snprintf(command, sizeof(command), "/sbin/arp -d %s 2>/dev/null", gateway);
 	system(command);
-	memset(command, 0, 128);
-	//Send a echo request for update arp table
-	sprintf(command, "/bin/ping %s", gateway);
+	memset(command, 0, sizeof(command));
+	snprintf(command, sizeof(command), "/bin/ping -c 1 -W 2 %s", gateway);
 	fptr = popen(command, "r");
 	if(fptr!=NULL){
-		if(fgets(pingResult, 128, fptr)!=NULL){
+		int got_reply = 0, rc;
+		while(fgets(pingResult, sizeof(pingResult), fptr)!=NULL){
 			charPtr=strchr(pingResult, '\n');
-			if(charPtr){
-				*charPtr='\0';
+			if(charPtr) *charPtr='\0';
+			if(strstr(pingResult, "bytes from") != NULL || strstr(pingResult, "is alive!") != NULL){
+				got_reply = 1;
 			}
-			sprintf(checkResult, "%s is alive!", gateway);
-			//printf("The result of ping is %s\nThe string for check result is %s\n", pingResult, checkResult);
-			if(!strcmp(pingResult, checkResult)){
-				//printf("The Gateway %s is reachable, wireless link is UP\n", gateway);
-				pclose(fptr);
-				return 1;
-			}else{
-				//printf("The Gateway %s is unreachable, wireless link is DOWN\n", gateway);
-				pclose(fptr);
-				return 0;
-			}
-		}else{
-			//printf("ERROR: Get ping result fail !!\n");
 		}
-		pclose(fptr);
-	}else{
-		//printf("ERROR: ping fail !!\n");
+		rc = pclose(fptr);
+		return (rc == 0 || got_reply) ? 1 : 0;
 	}
 	return -1;
 }
@@ -187,27 +217,25 @@ int check_gateway_in_arptable(char *gateway)
 {
 	FILE *arp_table;
 	char buf[512]={0};
-	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[8]={0};
-	arp_table=popen("cat /proc/net/arp", "r");
+	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[16]={0};
+	arp_table=fopen("/proc/net/arp", "r");
 	if(arp_table == NULL)
 		return 0;
-	fgets(buf, 512, arp_table);
-	memset(buf, 0, 512);
-	while(fgets(buf, 512, arp_table)!=NULL){
-		if(sscanf(buf, "%s %s %s %s %s %s", ip, hw_type, flags, hw_addr, mask, device)==6){
-			//printf("gateway=%s, arp record: %s %s %s %s %s %s\n", gateway, ip, hw_type, flags, hw_addr, mask, device);
+	fgets(buf, sizeof(buf), arp_table);
+	memset(buf, 0, sizeof(buf));
+	while(fgets(buf, sizeof(buf), arp_table)!=NULL){
+		if(sscanf(buf, "%15s %15s %15s %23s %15s %15s", ip, hw_type, flags, hw_addr, mask, device)==6){
 			if(!strcmp(gateway, ip) && strcmp(hw_addr, "00:00:00:00:00:00") && strcmp(flags, "0x0")){
-				//printf("Found gateway in ARP table\n");
-				pclose(arp_table);
+				fclose(arp_table);
 				return 1;
 			}
 		}
-		memset(buf, 0, 512);
-		memset(ip, 0, 16);
-		memset(flags, 0, 16);
-		memset(hw_addr, 0, 24);
+		memset(buf, 0, sizeof(buf));
+		memset(ip, 0, sizeof(ip));
+		memset(flags, 0, sizeof(flags));
+		memset(hw_addr, 0, sizeof(hw_addr));
 	}
-	pclose(arp_table);
+	fclose(arp_table);
 	//printf("Doesn't found gateway in ARP table\n");
 	return 0;
 }
@@ -318,17 +346,19 @@ int get_station_layer3_link_status(void)
 	int link_status=0, nwid, crypt, frag, retry, misc, missed_beacon/*, we*/;
 	uint8_t link[16]={0}, level[16]={0}, noise[16]={0};
 	int paramCount = 0;	
-	FILE *fptr = popen("cat /proc/net/wireless", "r");
+	FILE *fptr = fopen("/proc/net/wireless", "r");
+	if (fptr == NULL) {
+		return 0;
+	}
 
-	while(fgets(tmpBuf, 512, fptr) != NULL){
-		if(strstr(tmpBuf, "Inter-") || strstr(tmpBuf, "face")){
+	while(fgets((char *)tmpBuf, sizeof(tmpBuf), fptr) != NULL){
+		if(strstr((char *)tmpBuf, "Inter-") || strstr((char *)tmpBuf, "face")){
 			continue;
 		}
-		
-		paramCount = sscanf(tmpBuf, "%s %d %s %s %s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
+		paramCount = sscanf((char *)tmpBuf, "%15s %d %15s %15s %15s %d %d %d %d %d %d", ifName, &link_status, link, level, noise, &nwid, &crypt, &frag, &retry, &misc, &missed_beacon);
 	}
-	
-	pclose(fptr);
+	(void)paramCount;
+	fclose(fptr);
 
 	//If security is configured to WPA-PSK, WEP-OPEN or WEP-AUTO, 
 	//then we need to detect wireless links status by myself.
@@ -354,15 +384,20 @@ int get_station_layer3_link_status(void)
 		//If detect wireless link my myself fail, then I will use driver report for link status.
 	}else if(link_status==3 && (securityMode==3 || securityMode==4)){
 		//printf("Detect station link status for WPA-PSK/WPA2-PSK\n");
-		system("/root/mtlk/etc/wpa_cli status |grep wpa_state > /tmp/wpa_state");
-		fptr = popen("awk -F \"=\" '/^wpa_state/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' /tmp/wpa_state", "r");
+		fptr = popen("/root/mtlk/etc/wpa_cli status", "r");
 		if(fptr!=NULL){
-			memset(tmpBuf, 0, 512);
-			fgets(tmpBuf, 512, fptr);
+			int is_completed = 0;
+			memset(tmpBuf, 0, sizeof(tmpBuf));
+			while(fgets((char *)tmpBuf, sizeof(tmpBuf), fptr) != NULL){
+				if(strncmp((char *)tmpBuf, "wpa_state=", 10) == 0){
+					if(strstr((char *)tmpBuf + 10, "COMPLETED") != NULL){
+						is_completed = 1;
+					}
+					break;
+				}
+			}
 			pclose(fptr);
-			system("rm /tmp/wpa_state");
-			//printf("INFO: The state of wpa_supplicant is %s", tmpBuf);
-			if(strstr(tmpBuf, "COMPLETED")){
+			if(is_completed){
 				return 1;
 			}else{
 				return 0;
