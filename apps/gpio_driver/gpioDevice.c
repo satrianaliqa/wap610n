@@ -434,6 +434,18 @@ static int string_to_int(const char *buf, int *out_val)
 	return 0;
 }
 
+static int is_pushbutton_gpio(int gpio)
+{
+	int i;
+
+	for (i = 0; i < numPushButtons && i < MAX_GPIOS; i++) {
+		if (pushButtons[i] == gpio) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff_t *offset)
 {
 	char kbuf[16];
@@ -445,6 +457,11 @@ static ssize_t gpio_write(struct file *file, const char *buf, size_t count, loff
 
 	if (gpio >= MAX_HW_GPIOS || gpio < 0)
 		return (-ENODEV);
+
+	/* Protect hardware input pushbutton pins (e.g. Reset GPIO 3, WPS GPIO 13)
+	 * from accidental output writes via /dev/gpioN or aliased /dev/ledN nodes. */
+	if (is_pushbutton_gpio(gpio))
+		return (-EPERM);
 
 	if (count >= sizeof(kbuf))
 		count = sizeof(kbuf) - 1;

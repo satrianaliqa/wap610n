@@ -79,14 +79,21 @@ if [ -n "$WPS_PBC_GPIO" ] && [ -e "$WPS_PBC_GPIO" ]; then
 		# Wait for physical WPS button press (blocking read)
 		if cat "$WPS_PBC_GPIO" > /dev/null 2>&1; then
 			$DIAG_LOG "WPS button pressed; triggering pairing" 2>/dev/null || true
-			if [ -z "$NETWORK_TYPE" ] && [ -n "$2" ]; then
-				NETWORK_TYPE="$2"
+			# Always prefer live network_type in /tmp/wlan0.conf because WebServer's
+			# startWPS_PBC() restarts WPS_PBC.sh with hardcoded "$2=0" even in AP mode.
+			CUR_NET_TYPE=""
+			if [ -f /tmp/wlan0.conf ]; then
+				CUR_NET_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
 			fi
-			if [ -z "$NETWORK_TYPE" ] && [ -f /tmp/wlan0.conf ]; then
-				NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
+			if [ -z "$CUR_NET_TYPE" ]; then
+				if [ -n "$NETWORK_TYPE" ]; then
+					CUR_NET_TYPE="$NETWORK_TYPE"
+				elif [ -n "$2" ]; then
+					CUR_NET_TYPE="$2"
+				fi
 			fi
 			action_type='conf_via_pbc'
-			[ "$NETWORK_TYPE" = "0" ] && action_type='get_conf_via_pbc'
+			[ "$CUR_NET_TYPE" = "0" ] && action_type='get_conf_via_pbc'
 			/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID '' 2>/dev/null || true
 			kill -9 `ps | grep 'wpsCleanTempClock.sh' | grep -v 'grep' | awk '{print $1}'` 2>/dev/null || true
 			if [ -x /root/mtlk/web/gui_wps_init.sh ]; then

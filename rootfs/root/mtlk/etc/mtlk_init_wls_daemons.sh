@@ -1,21 +1,21 @@
 #!/bin/sh
 
-# Start the BCL Server
-# For debugging redirect to: /tmp/bcl.log, instead of /dev/null
-echo "Starting BCL Server..."
-if [ -e /bin/nice ]
-then nice -n 18 $BCL_PATH/BclSockServer > /dev/null &
-else
-$BCL_PATH/BclSockServer > /dev/null &
+# Start the BCL Server only if an executable binary is installed
+if [ -x "$BCL_PATH/BclSockServer" ]; then
+	echo "Starting BCL Server..."
+	if [ -e /bin/nice ]; then
+		nice -n 18 "$BCL_PATH/BclSockServer" > /dev/null 2>&1 &
+	else
+		"$BCL_PATH/BclSockServer" > /dev/null 2>&1 &
+	fi
 fi
 
-if [ $WLAN_NUM_BANDS ] && [ $WLAN_NUM_BANDS == 2 ]
-then
+if [ -n "$WLAN_NUM_BANDS" ] && [ "$WLAN_NUM_BANDS" = "2" ] && [ -x "$BCL_PATH/bcl2" ]; then
 	# Start the second BCL server
-	if [ -e /bin/nice ]
-	then nice -n 18 $BCL_PATH/bcl2 > /dev/null &
+	if [ -e /bin/nice ]; then
+		nice -n 18 "$BCL_PATH/bcl2" > /dev/null 2>&1 &
 	else
-	$BCL_PATH/bcl2 > /dev/null &
+		"$BCL_PATH/bcl2" > /dev/null 2>&1 &
 	fi
 fi
 

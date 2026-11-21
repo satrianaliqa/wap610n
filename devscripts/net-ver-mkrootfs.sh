@@ -245,11 +245,12 @@ create_device_nodes() {
 		[ -e "$target_dev/mtdblock$i" ] || mknod "$target_dev/mtdblock$i" b 31 $i 2>/dev/null || true
 	done
 
-	# Star Semiconductor GPIOs and LEDs (Major 42)
+	# Star Semiconductor GPIOs (0..31) and physical LEDs (0..2 on WAP610N; pin 3 is RESET_PB)
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
 		[ -e "$target_dev/gpio$i" ] || mknod "$target_dev/gpio$i" c 42 $i 2>/dev/null || true
 	done
-	for i in 0 1 2 3; do
+	rm -f "$target_dev/led3" 2>/dev/null || true
+	for i in 0 1 2; do
 		[ -e "$target_dev/led$i" ] || mknod "$target_dev/led$i" c 42 $i 2>/dev/null || true
 	done
 	# rdflt0 is Reset to Default Button (GPIO 3, minor 3)

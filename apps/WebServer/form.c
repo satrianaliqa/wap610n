@@ -19,7 +19,9 @@
 
 /*********************************** Includes *********************************/
 
+#include	<unistd.h>
 #include	"wsIntrn.h"
+#include	"management.h"
 
 /************************************ Locals **********************************/
 
@@ -74,6 +76,14 @@ int websFormHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
  *			For good practice, forms must call websDone()
  */
 			(*fn)((void*) wp, formName, query);
+
+			/* A precompiled handler (e.g. wireless.o using vfork->fork under
+			 * libpthread) can return from an error/redirect path inside the
+			 * child process. Terminate the child immediately so it never
+			 * returns into GoAhead's main loop as a duplicate HTTP listener. */
+			if (websMainPid > 0 && (int)getpid() != websMainPid) {
+				childFinishAndExit();
+			}
 
 			/* If the form handler returned without calling websDone,
 			 * complete the transaction cleanly to prevent CLOSE_WAIT leaks */

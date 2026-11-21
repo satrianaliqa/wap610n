@@ -153,7 +153,7 @@ then
 	if [ $DRVHLPR_COUNT = 0 ]
 	then
 		echo call drvhlpr
-		(. ./mtlk_drvhlpr.sh &);
+		/bin/sh ./mtlk_drvhlpr.sh &
 	fi
 fi
 if [ ! -e /tmp/init_failed ]; then (. ./mtlk_init_route.sh 2); fi

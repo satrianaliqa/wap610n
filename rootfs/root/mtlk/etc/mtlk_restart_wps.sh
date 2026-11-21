@@ -59,7 +59,7 @@ cd $apps_path
 (. ./mtlk_init_wls_apps.sh);
 
 #restart drvhlpr
-(. ./mtlk_drvhlpr.sh &);
+/bin/sh ./mtlk_drvhlpr.sh &
 
 cd -
 

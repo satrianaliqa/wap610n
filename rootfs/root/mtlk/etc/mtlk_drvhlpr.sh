@@ -18,7 +18,11 @@ else
 fi
 	
 
-if [ ! -e /tmp/init_failed ]; then (./drvhlpr -a eth0 -a eth1 -r 1 -i wlan0); fi
+DRVHLPR_IFACES="-a eth0"
+if [ -d /sys/class/net/eth1 ] || ifconfig eth1 >/dev/null 2>&1; then
+	DRVHLPR_IFACES="-a eth0 -a eth1"
+fi
+if [ ! -e /tmp/init_failed ]; then ./drvhlpr $DRVHLPR_IFACES -r 1 -i wlan0; fi
 rc=$?
 
 if [ $rc -eq 1 ]

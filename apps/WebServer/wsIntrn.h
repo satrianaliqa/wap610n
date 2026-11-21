@@ -245,6 +245,7 @@ extern char MT_WebRootDir[];
 
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
 extern int waitOtherProcess;
+extern int websMainPid;
 
 /******************************** Prototypes **********************************/
 

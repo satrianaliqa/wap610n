@@ -132,6 +132,7 @@ void CatchSIG(int s)
 
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
 int waitOtherProcess = 0;
+int websMainPid = 0;
 
 /*********************************** Code *************************************/
 
@@ -153,6 +154,7 @@ int main(int argc, char** argv)
 	//Jacky.Yang 15-May-209, set open debug message value;
 	//openDebug=1;
 	
+	websMainPid = (int)getpid();
 	websDiag("startup");
 
 	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0666);
@@ -228,6 +230,10 @@ int main(int argc, char** argv)
 		printf("goahead.c: multi-lang init fail.\n");
 	
 	while (!finished) {
+		if (websMainPid > 0 && (int)getpid() != websMainPid) {
+			/* Guard against leaked forked child ever entering main event loop */
+			_exit(0);
+		}
 		if (socketReady(-1) || socketSelect(-1, 1000)) {
 			socketProcess(-1);
 		}

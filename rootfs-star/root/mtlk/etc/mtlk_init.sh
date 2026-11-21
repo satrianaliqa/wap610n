@@ -179,7 +179,7 @@ then
 	if [ $DRVHLPR_COUNT = 0 ]
 	then
 		echo call drvhlpr
-		(. ./mtlk_drvhlpr.sh &);
+		/bin/sh ./mtlk_drvhlpr.sh &
 	fi
 fi
 
