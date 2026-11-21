@@ -65,22 +65,7 @@ jobs:
                   cp -a rootfs-star rootfs
               fi
 
-              # Ensure device nodes and init symlinks
-              mkdir -p rootfs/dev
-              [ -e rootfs/dev/console ] || mknod rootfs/dev/console c 5 1
-              [ -e rootfs/dev/null ] || mknod rootfs/dev/null c 1 3
-              [ -e rootfs/dev/ttyS0 ] || mknod rootfs/dev/ttyS0 c 4 64
-              chmod 600 rootfs/dev/console
-              chmod 666 rootfs/dev/null
-              chown -R 0:0 rootfs/dev
-
-              # Ensure init symlinks
-              ln -sf bin/busybox rootfs/init 2>/dev/null || true
-              ln -sf ../bin/busybox rootfs/sbin/init 2>/dev/null || true
-              ln -sf bin/busybox rootfs/linuxrc 2>/dev/null || true
-              ln -sf busybox rootfs/bin/sh 2>/dev/null || true
-
-              # Ensure host mkcsum tool is compiled
+              # Build host mkcsum tool if missing
               gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
               chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
               
@@ -103,8 +88,8 @@ jobs:
               fi
 
               # Fix permissions for runner user
-              chmod -R 777 output/ 2>/dev/null || true
-              chmod -R 777 images/ 2>/dev/null || true
+              chmod -R u+rwX,go+rX output/ 2>/dev/null || true
+              chmod -R u+rwX,go+rX images/ 2>/dev/null || true
 
               echo "--> Listing outputs:"
               ls -lh output/

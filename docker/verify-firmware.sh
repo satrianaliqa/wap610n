@@ -29,7 +29,8 @@ if command -v docker >/dev/null 2>&1; then
 elif command -v podman >/dev/null 2>&1; then
     CONTAINER_CMD="podman"
 else
-    CONTAINER_CMD="podman"
+    echo "❌ ERROR: Neither docker nor podman found in PATH"
+    exit 1
 fi
 
 echo ""
@@ -59,18 +60,19 @@ echo "Performing binary format validation..."
 FILE_FORMAT=$(file "$BIN_PATH" 2>/dev/null || echo "unknown")
 echo "  File Type: $FILE_FORMAT"
 
-# Check for ELF or ARM binary markers
-if head -c 256 "$BIN_PATH" 2>/dev/null | hexdump -C 2>/dev/null | head -1 | grep -q "0000 000.*4142 4300"; then
-    echo "  Binary Header: ✅ Valid bootpImage header detected (ABC marker)"
+# Check for ARM bootpImage reset branch instruction (0xEA000006 -> LE: 06 00 00 ea)
+if head -c 256 "$BIN_PATH" 2>/dev/null | hexdump -C 2>/dev/null | grep -qE "^00000000  06 00 00 ea"; then
+    echo "  Binary Header: ✅ Valid bootpImage ARM branch header (0xEA000006)"
 else
-    echo "  Binary Header: ⚠️  Custom header format (checking continued...)"
+    echo "  Binary Header: ❌ Invalid bootpImage header (missing 0xEA000006 branch magic)"
+    exit 1
 fi
 
 echo ""
 
 # 1. Check file size
 FILE_SIZE=$(stat -c %s "$BIN_PATH")
-SIZE_MB=$(echo "scale=2; $FILE_SIZE / 1048576" | bc)
+SIZE_MB=$(awk -v s="$FILE_SIZE" 'BEGIN {printf "%.2f", s / 1048576}')
 MAX_FLASH_SIZE=3801088 # 0x3A0000 bytes (3.625 MB)
 
 echo -n "1. Pengecekan Ukuran Flash Partition Limit: "
@@ -107,23 +109,41 @@ echo "4. Pengecekan Integritas Isi RootFS (Ramdisk): "
 sudo $CONTAINER_CMD run --rm --privileged \
     -v "$(dirname "$RAMDISK_LZMA"):/output:z" \
     wap610n-builder /bin/bash -c "
+        set -e
         mkdir -p /tmp/chk_rd /tmp/mnt_chk
         lzma -d -c /output/ramdisk_2.6.16.img.lzma > /tmp/chk_rd/rd.img
         mount -o loop /tmp/chk_rd/rd.img /tmp/mnt_chk
         
-        # Check dev/console
-        if [ -c /tmp/mnt_chk/dev/console ]; then
-            echo '   - /dev/console (c 5 1)          : ✅ ADA'
+        # Check dev/console and critical GPIO/MTD/kmsg device nodes
+        for devchk in console kmsg gpio3 gpio13 led0 rdflt0; do
+            if [ ! -c \"/tmp/mnt_chk/dev/\$devchk\" ]; then
+                echo \"   - /dev/\$devchk                   : ❌ HILANG!\"
+                exit 1
+            fi
+        done
+        if ls -l /tmp/mnt_chk/dev/rdflt0 | grep -qE ' 42,[[:space:]]*3 | 240,[[:space:]]*3 '; then
+            echo '   - /dev/{console,kmsg,gpio*,rdflt0}: ✅ ADA (rdflt0 minor 3)'
         else
-            echo '   - /dev/console                  : ❌ HILANG!'
+            echo '   - /dev/rdflt0 minor 3            : ❌ SALAH!'
             exit 1
         fi
 
-        # Check libc and ld-uClibc
-        if [ -f /tmp/mnt_chk/lib/ld-uClibc-0.9.29.so ] && [ -f /tmp/mnt_chk/lib/libc.so.0 ]; then
-            echo '   - Runtime Linker & C Library    : ✅ ADA'
+        # Check shadow permissions (0600)
+        if [ \"\$(stat -c %a /tmp/mnt_chk/etc/shadow 2>/dev/null)\" = '600' ]; then
+            echo '   - /etc/shadow (0600)            : ✅ SECURE'
         else
-            echo '   - Runtime Linker & C Library    : ❌ HILANG!'
+            echo '   - /etc/shadow permissions       : ❌ TIDAK 0600!'
+            exit 1
+        fi
+
+        # Check libc, ld-uClibc, expat, and openssl symlinks
+        if [ -f /tmp/mnt_chk/lib/ld-uClibc-0.9.29.so ] && [ -f /tmp/mnt_chk/lib/libc.so.0 ] && \
+           { [ -f /tmp/mnt_chk/lib/libexpat.so ] || [ -L /tmp/mnt_chk/lib/libexpat.so ]; } && \
+           [ -f /tmp/mnt_chk/lib/libssl.so.0.9.8 ] && \
+           [ -L /tmp/mnt_chk/lib/libcrypto.so ] && [ -L /tmp/mnt_chk/lib/libssl.so ]; then
+            echo '   - Shared Libs (uClibc/SSL/Expat): ✅ ADA & TERSYMLINK'
+        else
+            echo '   - Shared Libraries              : ❌ HILANG / BROKEN SYMLINK!'
             exit 1
         fi
 
@@ -143,12 +163,13 @@ sudo $CONTAINER_CMD run --rm --privileged \
             exit 1
         fi
 
-        # Backdoor eradication: shell.cgi must NOT exist in the ramdisk
-        if [ -e /tmp/mnt_chk/root/mtlk/web/cgi-bin/shell.cgi ] || [ -e /tmp/mnt_chk/root/mtlk/web/shell.cgi ]; then
-            echo '   - Backdoor shell.cgi check      : ❌ TERDETEKSI (Security vulnerability)!'
+        # Backdoor eradication: shell.cgi and leaking root CGI symlinks must NOT exist
+        if [ -e /tmp/mnt_chk/root/mtlk/web/cgi-bin/shell.cgi ] || [ -e /tmp/mnt_chk/root/mtlk/web/shell.cgi ] || \
+           [ -e /tmp/mnt_chk/root/mtlk/web/remote_access.cgi ] || [ -e /tmp/mnt_chk/root/mtlk/web/dump_firmware.cgi ]; then
+            echo '   - Security CGI check            : ❌ TERDETEKSI (shell.cgi/root symlink)!'
             exit 1
         else
-            echo '   - Backdoor shell.cgi check      : ✅ BERSIH (Eradicated)'
+            echo '   - Security CGI check            : ✅ BERSIH (No shell.cgi or root symlinks)'
         fi
 
         # Packaging regression: WAP610N customizations must survive wlan.tar.gz / VB overwrite
@@ -170,7 +191,13 @@ sudo $CONTAINER_CMD run --rm --privileged \
         for s in /tmp/mnt_chk/bin/*.sh /tmp/mnt_chk/etc/*.sh /tmp/mnt_chk/root/mtlk/etc/*.sh /tmp/mnt_chk/root/mtlk/web/*.sh; do
             [ -f \"\$s\" ] || continue
             case \"\$(head -n 1 \"\$s\" 2>/dev/null)\" in
-                *bin/sh*|*bin/bash*)
+                *bin/sh*)
+                    if ! sh -n \"\$s\" 2>/dev/null; then
+                        echo \"   ❌ Syntax error: \${s#/tmp/mnt_chk}\"
+                        RD_SH_OK=0
+                    fi
+                    ;;
+                *bin/bash*)
                     if ! bash -n \"\$s\" 2>/dev/null; then
                         echo \"   ❌ Syntax error: \${s#/tmp/mnt_chk}\"
                         RD_SH_OK=0
@@ -195,7 +222,13 @@ for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/
     if [ -f "$s" ]; then
         FIRST_LINE=$(head -n 1 "$s" 2>/dev/null)
         case "$FIRST_LINE" in
-            *bin/sh*|*bin/bash*)
+            *bin/sh*)
+                if ! sh -n "$s" 2>/dev/null; then
+                    echo "❌ ERROR: Syntax error in $s"
+                    SCRIPTS_OK=0
+                fi
+                ;;
+            *bin/bash*)
                 if ! bash -n "$s" 2>/dev/null; then
                     echo "❌ ERROR: Syntax error in $s"
                     SCRIPTS_OK=0

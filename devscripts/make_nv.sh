@@ -40,10 +40,10 @@ function display_usage()
  echo "              Reselect current platform to work on. If the name of the platform" 
  echo "              is not specified, the user is requested to choose from the list"  
  echo "              It is assumed that current folder contains valid sources" 
- echo "       clean" 
- echo "              Make clean for all, including applications and rootfs image"  
- echo "       build [<wlan.tar.gz>]" 
- echo "              Build Net_Ver files; if the wlan.tar.gz is specified, build the bootp image as well" 
+ echo "       clean [<wlan.tar.gz>]"
+ echo "              Make clean for all, including applications and rootfs image"
+ echo "       build <wlan.tar.gz> <WAP610N|WET610N>"
+ echo "              Build Net_Ver files, rootfs, kernel, and packed bootp firmware image"
  echo "       debugfs <clean/build/install/all> [<NFS server>]" 
  echo "              Build, clean or install debug application files; in case of installation,"
  echo "              note the IP address of your NFS server or type 'default' to update a compilation linux server." 
@@ -53,7 +53,7 @@ function display_usage()
  echo "              install default - use default IP 172.16.20.39 for NFS server"
  echo "              install 10.1.2.3 - use IP 10.1.2.3 as NFS server"
  echo "              install local /tmp/path/to/local_directory - given path and install there debugfs"
- exit 1 1
+ exit 1
 }
 
 function check_params()
@@ -87,8 +87,7 @@ function check_params()
 
 elif [ "${1}" = "clean" ]
  then
-  #if [ ${NUM_OF_PARAMS} -ne 1 ]
-  if [ ${NUM_OF_PARAMS} -ne 2 ]
+  if [ ${NUM_OF_PARAMS} -lt 1 ] || [ ${NUM_OF_PARAMS} -gt 2 ]
   then
    display_usage ""
   fi
@@ -247,7 +246,6 @@ fi
 if [ $MAKE_CLEAN -eq 1 ]
 then
  # Make clean and configure for applications
- rm -f ${PWD}/apps/l
  pushd apps/scripts > /dev/null
  PWD=`pwd`
  # Jacky.Yang 23-Dec-2008, We don't need re-config it, becasue this is make clean procedure.
@@ -258,11 +256,10 @@ then
  # Make clean in kernel tree
  cd kernel/linux-2.6.16-star
  export PATH=`pwd`/../../tools/arm-uclibc-3.4.6/bin/:$PATH
- make clean 2>&1  | tee -a $LOGFILE
+ make clean 2>&1 | tee -a $LOGFILE
  cd - > /dev/null
  rm -rf images/*
  rm -rf output/*
- rm -f ${PWD}/apps/l/*
  rm -f ${PWD}/kernel/linux-2.6.16-star/.config.old
  rm -f ${PWD}/kernel/linux-2.6.16-star/.version
  if [ -f "${PWD}/boards/star-6.7.2-mtlk-U-Media-vela/kernel/.config" ]; then
@@ -458,7 +455,7 @@ then
  # net-ver-mkrootfs.sh, so a missing ramdisk is how we detect a failed packaging step.
  rm -f ${ROOTDIR}/images/ramdisk_2.6.16.img.lzma
  devscripts/net-ver-mkrootfs.sh $WLAN_ROOTFS_FILE 2>&1 | tee -a $LOGFILE
- if [ ! -f ${ROOTDIR}/images/ramdisk_2.6.16.img.lzma ]
+ if [ 0 != $? ] || [ ! -f ${ROOTDIR}/images/ramdisk_2.6.16.img.lzma ]
  then
    echo "Failed to create rootfs ramdisk (see net-ver-mkrootfs.sh errors above)" | tee -a $LOGFILE
    exit 1
@@ -496,7 +493,10 @@ cd - > /dev/null
 
  #Jacky.Yang 21-Jul-2008, re-name firmware file name.
  cd ${ROOTDIR}
- devscripts/fw_rename.sh ${MODENAME}
+ devscripts/fw_rename.sh ${MODENAME} 2>&1 | tee -a $LOGFILE || {
+   echo "Failed to rename final firmware image" | tee -a $LOGFILE
+   exit 1
+ }
  cd - > /dev/null
 
 fi

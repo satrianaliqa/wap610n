@@ -23,9 +23,9 @@ CLEAN:
 	$(MAKE) -f Makefile clean
 
 INSTALL: FORCE
-	install -m 755 lib/uuid/libuuid.a $(E_DEST)/lib/libuuid.a
+	@echo "Skipping static libuuid.a install to target rootfs"
 STRIP: FORCE
-	$(E_STRIP) --strip-debug $(E_DEST)/lib/libuuid.a || true
+	@echo "No strip needed"
 
 FORCE:
 	

@@ -32,7 +32,7 @@ check_file() {
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND at $file"
         ERRORS=$((ERRORS + 1))
-        return 1
+        return 0
     fi
 }
 
@@ -46,7 +46,7 @@ check_dir() {
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND at $dir"
         ERRORS=$((ERRORS + 1))
-        return 1
+        return 0
     fi
 }
 
@@ -61,7 +61,7 @@ check_executable() {
     else
         echo -e "${RED}✗${NC} $description: NOT FOUND in PATH"
         ERRORS=$((ERRORS + 1))
-        return 1
+        return 0
     fi
 }
 

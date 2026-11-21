@@ -1,10 +1,11 @@
 #!/bin/bash
+set -e
 
 # This is a script to select the star directory to work with.
 
-if [ ! ${1} ]
+if [ -z "${1}" ]
 then
-	cd boards
+	cd boards || exit 1
 	echo -e "\nSelect STAR platform\n"
 	i=1
 	for dir in `ls`
@@ -17,23 +18,25 @@ then
 	if [[ $i == 1 ]] 
 	then 
 		echo "Warning: No star source trees were found" 
-		exit
+		exit 1
 	fi
 	
 	read -p "Enter selection:   " selected
 	
-	if expr `echo ${dirs[$selected]} | wc -c` = 1 > /dev/null
+	if [ -z "${selected}" ] || [ -z "${dirs[$selected]}" ]
 	then
 		echo Unknown directory. Quitting!
-		exit
+		exit 1
 	fi
 	SELECTED_PLATFORM=${dirs[$selected]}
 	echo -e "Working with ${dirs[$selected]}.\n"
-	cd -  > /dev/null
+	cd - > /dev/null
 else
-	SELECTED_PLATFORM=${1}
+	SELECTED_PLATFORM=${1%/}
 	echo -e "Working with ${SELECTED_PLATFORM}.\n"
 fi
+
+[ -d "boards/${SELECTED_PLATFORM}" ] || { echo "ERROR: board directory boards/${SELECTED_PLATFORM} not found"; exit 1; }
 
 # If there is RUNME script in the selected folder, run it
 if [ -e boards/${SELECTED_PLATFORM}/RUNME ]
@@ -48,9 +51,9 @@ else
  ln -fs ../../boards/${SELECTED_PLATFORM}/kernel/.config
  export PATH=../../tools/arm-uclibc-3.4.6/bin/:$PATH
  make clean
- make oldconfig
+ yes "" | make oldconfig
  cp -f ../../boards/${SELECTED_PLATFORM}/kernel/device_id.h arch/arm/boot/bootp/
- popd  > /dev/null
+ popd > /dev/null
  # Update applications configuration
  pushd apps > /dev/null
  rm -f .config
@@ -60,11 +63,11 @@ else
  else
   echo "BOARD_NAME=legacy" > .config
  fi
- pushd busybox-1.8.1
+ pushd busybox-1.8.1 > /dev/null
  rm -f .config
  ln -fs ../../boards/${SELECTED_PLATFORM}/busybox/.config .config
- popd  > /dev/null
- popd  > /dev/null
+ popd > /dev/null
+ popd > /dev/null
 fi
-exit
+exit 0
 

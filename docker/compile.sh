@@ -66,9 +66,6 @@ sudo $CONTAINER_CMD run --rm \
         [ -f /workspace/rootfs-star.tgz ] || { echo "ERROR: rootfs-star.tgz not found"; exit 1; }
         if [ ! -d rootfs-star ]; then
             tar -zxvf rootfs-star.tgz
-        elif [ ! -e rootfs-star/dev/console ]; then
-            echo "--> Extracting device nodes from rootfs-star.tgz..."
-            tar -zxvf rootfs-star.tgz rootfs-star/dev 2>/dev/null || true
         fi
         if [ -L rootfs ]; then
             echo "--> Replacing rootfs symlink with a real staging copy of rootfs-star..."
@@ -92,10 +89,12 @@ sudo $CONTAINER_CMD run --rm \
         echo "--> Step 3: Compiling Kernel, Applications, and building Firmware..."
         ./make_nv.sh build wlan.tar.gz $TARGET_NAME
 
-        # Dynamically copy bootpImage with version from config
-        if [ -e output/bootpImage ] && [ -f config/WAP610N_VERSION ]; then
-            VERSION=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d"\"" -f2)
-            BINNAME="WAP610N_v${VERSION}.bin"
+        # Dynamically copy bootpImage with version from config/${TARGET_NAME}_VERSION
+        VER_FILE="config/${TARGET_NAME}_VERSION"
+        [ -f "$VER_FILE" ] || VER_FILE="config/WAP610N_VERSION"
+        if [ -e output/bootpImage ] && [ -f "$VER_FILE" ]; then
+            VERSION=$(grep "FIRMWARE_VERSION" "$VER_FILE" | cut -d"\"" -f2)
+            BINNAME="${TARGET_NAME}_v${VERSION}.bin"
             echo "--> Copying bootpImage to output/$BINNAME"
             cp -vf output/bootpImage "output/$BINNAME"
         fi

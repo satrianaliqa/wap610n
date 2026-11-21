@@ -27,7 +27,7 @@ INSTALL: FORCE
 	install -m 755 -D gpio.ko $(E_DEST)/root/mtlk/etc/gpio.ko
 
 STRIP:
-	
+	$(E_STRIP) --strip-unneeded $(E_DEST)/root/mtlk/etc/gpio.ko
 
 FORCE:
 

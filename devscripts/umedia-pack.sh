@@ -17,16 +17,16 @@ DELETE_FILES="rootfs-star/sbin/iptables rootfs-star/etc/init.d rootfs-star/etc/n
 
 
 
-if [ ! $2 ]
+if [ -z "$2" ]
 then
 	echo "USAGE: $0 <nv folder>  <path to wlan.tar.gz>"
-	echo -e "e.g.\n  ./umedia-pack.sh  nv-1.2.12 /mnt/G/CombinedVersions/0-WLS_Versions/Integration/VB01/VB01.08/wlan.tar.gz"
-	exit
+	echo "e.g. ./umedia-pack.sh nv-1.2.12 ./wlan.tar.gz"
+	exit 1
 fi
 
-cd $1
-cp $2 .
-./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
+cd "$1" || exit 1
+cp "$2" . || exit 1
+./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela || exit 1
 
 # Remove uneeded boards
 cd boards/
@@ -58,7 +58,7 @@ done
 cd ..
 
 # Remove any trailing slashes if a path name was given
-NV_NAME=`echo $1 | sed "s/\///g"`
+NV_NAME="${1%/}"
 
 echo "Creating ${NV_NAME}-UMEDIA.tgz"
 tar --exclude=*.svn* -czf  ${NV_NAME}-UMEDIA.tgz $1

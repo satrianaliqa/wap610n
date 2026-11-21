@@ -36,11 +36,14 @@ CLEAN:
 	$(MAKE) -f Makefile clean
 
 INSTALL: FORCE
-	install -m 755 -d  $(E_DEST)/lib/
-	install -m 755 libcrypto.so* $(E_DEST)/lib/
-	install -m 755 libssl.so* $(E_DEST)/lib/
+	install -m 755 -d $(E_DEST)/lib/
+	install -m 755 libcrypto.so.0.9.8 $(E_DEST)/lib/libcrypto.so.0.9.8
+	install -m 755 libssl.so.0.9.8 $(E_DEST)/lib/libssl.so.0.9.8
+	$(E_STRIP) $(E_DEST)/lib/libcrypto.so.0.9.8 $(E_DEST)/lib/libssl.so.0.9.8
+	ln -sf libcrypto.so.0.9.8 $(E_DEST)/lib/libcrypto.so
+	ln -sf libssl.so.0.9.8 $(E_DEST)/lib/libssl.so
 
 STRIP:
-	$(E_STRIP) $(E_DEST)/lib/libcrypto.so.0.*  $(E_DEST)/lib/libssl.so.0.*
+	$(E_STRIP) $(E_DEST)/lib/libcrypto.so.0.* $(E_DEST)/lib/libssl.so.0.*
 
 FORCE:

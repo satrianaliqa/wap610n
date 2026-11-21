@@ -2,7 +2,9 @@
 
 # This is a script to select the star directory to work with.
  
-cd /opt
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${ROOT_DIR}/boards" 2>/dev/null || cd "${ROOT_DIR}" || exit 1
 
 echo -e "\nSelect which STAR source tree to use\n"
 i=1
@@ -16,15 +18,15 @@ done
 if [[ $i == 1 ]] 
 then 
 	echo "Warning: No star source trees were found" 
-	exit
+	exit 1
 fi
 
 read -p "Enter selection:   " selected
 
-if expr `echo ${dirs[$selected]} | wc -c` = 1 > /dev/null
+if [ -z "${selected}" ] || [ -z "${dirs[$selected]}" ]
 then
 	echo Unknown directory. Quitting!
-	exit
+	exit 1
 fi
 
 echo -e "Working with ${dirs[$selected]}.\n"
@@ -34,8 +36,8 @@ then
 fi
 ln -s ${dirs[$selected]} star
 
-cd -
+cd - > /dev/null
 
-exit
+exit 0
 
 

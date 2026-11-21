@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # Create an LZMA compressed ext2 ramdisk rootfs file system, containing all files in rootfs.
 ROOTFS_DIR=rootfs
 # rootfs-star is the tracked source of truth for all WAP610N customizations.
@@ -19,7 +20,7 @@ mkdir -p ${ROOTFS_DIR}/root/mtlk
 mkdir -p ${ROOTFS_DIR}/etc
 
 # Create version file
-echo -n "SVN Revision $(svnversion .. 2>/dev/null || echo 1)  " > ${ROOTFS_DIR}/etc/version
+echo -n "Git Revision $(git rev-parse --short HEAD 2>/dev/null || echo 1)  " > ${ROOTFS_DIR}/etc/version
 date >> ${ROOTFS_DIR}/etc/version
 
 # Extract WLAN files directly into rootfs/root/mtlk/
@@ -40,7 +41,9 @@ if [ -n "$1" ]; then
 		echo "Installing Metalink VB startup scripts to ${ROOTFS_DIR}/root/mtlk/etc/..."
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/etc" "${ROOTFS_DIR}/root/mtlk/saved_configs"
 		cp -af apps/jffs2-etc/networking/VB/*.sh "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
-		cp -af apps/jffs2-etc/networking/VB/*.tcl "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
+		for vb_tcl in mtlk_set_config.tcl mtlk_wps_cmd.tcl mtlk_wps_msgloop.tcl combined_ver_path.tcl; do
+			[ -f "apps/jffs2-etc/networking/VB/$vb_tcl" ] && cp -af "apps/jffs2-etc/networking/VB/$vb_tcl" "${ROOTFS_DIR}/root/mtlk/etc/"
+		done
 		cp -af apps/jffs2-etc/networking/VB/etherdump_awk "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
 		cp -af apps/jffs2-etc/networking/VB/*.conf "${ROOTFS_DIR}/root/mtlk/saved_configs/" 2>/dev/null || true
 		[ -f "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" ] && \
@@ -48,20 +51,52 @@ if [ -n "$1" ]; then
 	fi
 
 	# Overlay the WAP610N source of truth (rootfs-star/root/mtlk) on top of the
-	# stock WET610N files from wlan.tar.gz and the SDK VB scripts. Without this,
-	# wlan.tar.gz reverts WebUI pages to Bridge mode and the VB copy of
-	# mtlk_init.sh drops the 32MB sysctl tuning and the solid power LED init.
-	# Build-generated artifacts (gpio.ko, mtlk_init_platform.sh, etherdump_awk,
-	# hnap_wps_status_monitor, force_ethpc_renew_ip) are not present in
-	# rootfs-star and therefore are left untouched.
+	# stock WET610N files from wlan.tar.gz and the SDK VB scripts, excluding
+	# build-generated artifacts when freshly compiled copies already exist in rootfs/.
 	if [ -d "${STAR_DIR}/root/mtlk" ]; then
 		echo "Overlaying ${STAR_DIR}/root/mtlk onto ${ROOTFS_DIR}/root/mtlk (WAP610N customizations)..."
-		cp -a --remove-destination "${STAR_DIR}/root/mtlk/." "${ROOTFS_DIR}/root/mtlk/" || {
+		TAR_EXCLUDES=""
+		for built_art in etc/gpio.ko etc/hnap_wps_status_monitor etc/force_ethpc_renew_ip etc/mtlk_init_platform.sh web/webs; do
+			if [ -e "${ROOTFS_DIR}/root/mtlk/${built_art}" ]; then
+				TAR_EXCLUDES="${TAR_EXCLUDES} --exclude=${built_art}"
+			fi
+		done
+		tar -C "${STAR_DIR}/root/mtlk" ${TAR_EXCLUDES} -cf - . | tar -C "${ROOTFS_DIR}/root/mtlk" -xf - || {
 			echo "ERROR: Failed to overlay ${STAR_DIR}/root/mtlk"
 			exit 1
 		}
 	fi
-	chmod 755 -R "${ROOTFS_DIR}/root/mtlk/"
+	find "${ROOTFS_DIR}/root/mtlk" -type d -exec chmod 755 {} + 2>/dev/null || true
+	find "${ROOTFS_DIR}/root/mtlk" -type f -exec chmod 644 {} + 2>/dev/null || true
+	find "${ROOTFS_DIR}/root/mtlk" -type f \( -name '*.sh' -o -name '*.tcl' -o -name '*.cgi' \) -exec chmod 755 {} + 2>/dev/null || true
+	for exec_bin in \
+		"${ROOTFS_DIR}/root/mtlk/web/webs" \
+		"${ROOTFS_DIR}/root/mtlk/etc/mtpriv" \
+		"${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" \
+		"${ROOTFS_DIR}/root/mtlk/etc/hostapd" \
+		"${ROOTFS_DIR}/root/mtlk/etc/hostapd_cli" \
+		"${ROOTFS_DIR}/root/mtlk/etc/wpa_supplicant" \
+		"${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" \
+		"${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase" \
+		"${ROOTFS_DIR}/root/mtlk/etc/wsccmd" \
+		"${ROOTFS_DIR}/root/mtlk/etc/upnpd" \
+		"${ROOTFS_DIR}/root/mtlk/etc/hnap_wps_status_monitor" \
+		"${ROOTFS_DIR}/root/mtlk/etc/force_ethpc_renew_ip" \
+		"${ROOTFS_DIR}/root/mtlk/etc/wlan_logger"; do
+		[ -f "$exec_bin" ] && chmod 755 "$exec_bin"
+	done
+	rm -f "${ROOTFS_DIR}/root/mtlk/web/crc"
+	rm -f "${ROOTFS_DIR}"/etc/udhcpd/LICENSE "${ROOTFS_DIR}"/etc/udhcpd/README \
+	      "${ROOTFS_DIR}"/etc/udhcpc/LICENSE "${ROOTFS_DIR}"/etc/udhcpc/README \
+	      "${ROOTFS_DIR}"/etc/hotplug/LICENSE "${ROOTFS_DIR}"/etc/hotplug/README \
+	      "${ROOTFS_DIR}"/etc/hotplug.d/LICENSE "${ROOTFS_DIR}"/etc/hotplug.d/README 2>/dev/null || true
+	if [ -x "tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip" ]; then
+		STRIP_BIN="tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip"
+		for ubin in "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
+			[ -x "$ubin" ] && "$STRIP_BIN" "$ubin" 2>/dev/null || true
+		done
+		find "${ROOTFS_DIR}" -name '*.ko' -exec "$STRIP_BIN" --strip-unneeded {} + 2>/dev/null || true
+	fi
 
 	# Fail hard if any WAP610N customization was lost during packaging.
 	OVERLAY_OK=1
@@ -105,13 +140,15 @@ EOF
 		touch "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_EN.txt"
 		ln -sf STRINGS_EN.txt "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_.txt" 2>/dev/null || true
 		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
+		rm -f "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
 		[ -f "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
 			cp -af "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
-		ln -sf cgi-bin/remote_access.cgi "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" 2>/dev/null || true
-		ln -sf cgi-bin/dump_firmware.cgi "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi" 2>/dev/null || true
-		for web_file in webs run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh mt_current_stat.tcl; do
+		[ -x "${ROOTFS_DIR}/root/mtlk/web/webs" ] || {
+			[ -f "rootfs-star/root/mtlk/web/webs" ] && cp -af "rootfs-star/root/mtlk/web/webs" "${ROOTFS_DIR}/root/mtlk/web/"
+		}
+		for web_file in run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh mt_current_stat.tcl; do
 			[ -f "rootfs-star/root/mtlk/web/$web_file" ] && \
 				cp -af "rootfs-star/root/mtlk/web/$web_file" "${ROOTFS_DIR}/root/mtlk/web/"
 		done
@@ -127,7 +164,7 @@ EOF
 			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
 		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
 			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
-		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh sysmon curl help json nettest flashdump; do
+		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh diag_log.sh sysmon curl help json nettest flashdump; do
 			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
 		done
 		if [ ! -e $ROOTFS_DIR/bin/simpdiff ] && [ -e $ROOTFS_STAR/bin/simpdiff ]; then
@@ -155,6 +192,7 @@ ensure_rootfs_dirs() {
 	chmod 755 "$base/proc" "$base/sys" "$base/mnt" "$base/var" 2>/dev/null || true
 	chmod 700 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
 	chown -R 0:0 "$base/root" "$base/etc/dropbear" 2>/dev/null || true
+	chmod 600 "$base/etc/dropbear/"*_host_key 2>/dev/null || true
 	chmod 600 "$base/etc/shadow" 2>/dev/null || true
 	chmod 644 "$base/etc/passwd" "$base/etc/group" "$base/etc/inittab" "$base/etc/fstab" "$base/etc/profile" 2>/dev/null || true
 }
@@ -166,15 +204,6 @@ create_device_nodes() {
 	local target_dev="$1"
 	mkdir -p "$target_dev" "$target_dev/pts" "$target_dev/shm" "$target_dev/net" "$target_dev/input"
 
-	# First, try to extract devices directly from rootfs-star.tgz if not already present
-	if [ ! -e "$target_dev/console" ] && [ -f "rootfs-star.tgz" ]; then
-		tar -zxvf rootfs-star.tgz rootfs-star/dev -C /tmp/ 2>/dev/null || true
-		if [ -d "/tmp/rootfs-star/dev" ]; then
-			cp -a /tmp/rootfs-star/dev/* "$target_dev/" 2>/dev/null || true
-			rm -rf /tmp/rootfs-star
-		fi
-	fi
-
 	# Core essential device nodes
 	[ -e "$target_dev/console" ] || mknod "$target_dev/console" c 5 1 2>/dev/null || true
 	[ -e "$target_dev/null" ] || mknod "$target_dev/null" c 1 3 2>/dev/null || true
@@ -183,6 +212,7 @@ create_device_nodes() {
 	[ -e "$target_dev/urandom" ] || mknod "$target_dev/urandom" c 1 9 2>/dev/null || true
 	[ -e "$target_dev/mem" ] || mknod "$target_dev/mem" c 1 1 2>/dev/null || true
 	[ -e "$target_dev/kmem" ] || mknod "$target_dev/kmem" c 1 2 2>/dev/null || true
+	[ -e "$target_dev/kmsg" ] || mknod -m 644 "$target_dev/kmsg" c 1 11 2>/dev/null || true
 	[ -e "$target_dev/ptmx" ] || mknod -m 666 "$target_dev/ptmx" c 5 2 2>/dev/null || true
 	[ -e "$target_dev/tty" ] || mknod "$target_dev/tty" c 5 0 2>/dev/null || true
 
@@ -230,7 +260,7 @@ create_device_nodes() {
 	[ -e "$target_dev/net/tun" ] || mknod "$target_dev/net/tun" c 10 200 2>/dev/null || true
 
 	# Symlinks & Permissions
-	[ -e "$target_dev/log" ] || ln -sf ../tmp/log "$target_dev/log" 2>/dev/null || true
+	ln -sf /tmp/log "$target_dev/log" 2>/dev/null || true
 	chmod 600 "$target_dev/console" "$target_dev/ttyS0" 2>/dev/null || true
 	chmod 666 "$target_dev/null" "$target_dev/zero" "$target_dev/random" "$target_dev/urandom" "$target_dev/tty" "$target_dev/ptmx" 2>/dev/null || true
 	chmod 644 "$target_dev"/gpio* "$target_dev"/rdflt* 2>/dev/null || true
@@ -276,7 +306,10 @@ if mount -o loop ${RD} ${MNT_DIR} 2>/dev/null || sudo mount -o loop ${RD} ${MNT_
     rmdir ${MNT_DIR} 2>/dev/null || true
 elif command -v genext2fs >/dev/null 2>&1; then
     rm -f ${RD}
-    genext2fs -b 12288 -d ${ROOTFS_DIR} -D devscripts/device_table.txt ${RD} 2>/dev/null || genext2fs -b 12288 -d ${ROOTFS_DIR} ${RD}
+    genext2fs -U -b 12288 -d "${ROOTFS_DIR}" "${RD}" || {
+        echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
+        exit 1
+    }
 elif mke2fs -d ${ROOTFS_DIR} -F -b 1024 -m 0 ${RD} 12288 >/dev/null 2>&1; then
     :
 else

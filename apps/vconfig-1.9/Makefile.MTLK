@@ -32,5 +32,7 @@ INSTALL: FORCE
 CONF:
 
 STRIP:
+	$(E_STRIP) $(E_DEST)/bin/$(TARGET)
+	$(E_STRIP) --strip-unneeded $(E_DEST)/lib/modules/2.6.16-star/net/8021q.ko
 
 FORCE:

@@ -10,19 +10,41 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE_NAME="wap610n-builder"
 SETUP_CONTAINER="wap610n-setup-$(date +%s)"
 
+if command -v docker >/dev/null 2>&1; then
+    CONTAINER_CMD="docker"
+elif command -v podman >/dev/null 2>&1; then
+    CONTAINER_CMD="podman"
+else
+    echo "❌ Error: Neither docker nor podman found."
+    exit 1
+fi
+
+cleanup_setup_container() {
+    sudo "$CONTAINER_CMD" rm -f "$SETUP_CONTAINER" 2>/dev/null || "$CONTAINER_CMD" rm -f "$SETUP_CONTAINER" 2>/dev/null || true
+}
+trap cleanup_setup_container EXIT
+
 echo "=========================================================="
 echo " 🔨 Preparing $IMAGE_NAME container environment..."
 echo "=========================================================="
 
 # Cleanup any stale setup container
-docker rm -f "$SETUP_CONTAINER" 2>/dev/null || true
+cleanup_setup_container
 
 # Run setup in a privileged 32-bit container
-docker run --name "$SETUP_CONTAINER" --privileged \
+sudo "$CONTAINER_CMD" run --platform=linux/386 --name "$SETUP_CONTAINER" --privileged \
     -v "$DIR/make-3.81.tar.bz2:/tmp/make-3.81.tar.bz2:ro" \
     i386/debian:8 /bin/bash -c '
         set -e
         export DEBIAN_FRONTEND=noninteractive
+
+        # Configure DNS/archive fallback inside legacy i386 container
+        if ! getent ahostsv4 archive.debian.org >/dev/null 2>&1; then
+            printf "nameserver 8.8.8.8\nnameserver 1.1.1.1\n" > /etc/resolv.conf
+        fi
+        if ! getent ahostsv4 archive.debian.org >/dev/null 2>&1; then
+            echo "151.101.194.132 archive.debian.org" >> /etc/hosts
+        fi
 
         # Configure archive repositories
         echo "deb [check-valid-until=no] http://archive.debian.org/debian jessie main contrib non-free" > /etc/apt/sources.list
@@ -59,7 +81,7 @@ docker run --name "$SETUP_CONTAINER" --privileged \
     '
 
 echo "💾 Committing container to $IMAGE_NAME image..."
-docker commit \
+sudo "$CONTAINER_CMD" commit \
     --change 'ENV DEBIAN_FRONTEND=noninteractive' \
     --change 'ENV LANG=en_US.UTF-8' \
     --change 'ENV LC_ALL=en_US.UTF-8' \
@@ -68,6 +90,6 @@ docker commit \
     --change 'CMD ["/bin/bash"]' \
     "$SETUP_CONTAINER" "$IMAGE_NAME"
 
-docker rm -f "$SETUP_CONTAINER" 2>/dev/null || true
+cleanup_setup_container
 
 echo "✅ $IMAGE_NAME ready!"
