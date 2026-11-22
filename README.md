@@ -1,197 +1,63 @@
-# 📡 Cisco Linksys WAP610N Firmware & BSP Restoration
+# 📡 Cisco Linksys WAP610N Unified Firmware & BSP Platform
 
 [![Build Firmware](https://github.com/satrianaliqa/wap610n/actions/workflows/compile.yml/badge.svg)](https://github.com/satrianaliqa/wap610n/actions/workflows/compile.yml)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
-[![Target: Cavium STR8132](https://img.shields.io/badge/SoC-Cavium_STR8132_(ARM922T)-orange.svg)](#hardware-specifications)
-[![Compiler: GCC 3.4.6](https://img.shields.io/badge/Toolchain-GCC_3.4.6_uClibc-green.svg)](#compiler-engine)
+[![Target: Cavium STR8132](https://img.shields.io/badge/SoC-Cavium_STR8132_(ARM922T)-orange.svg)](boards/star-6.7.2-mtlk-U-Media-vela/README.md)
+[![Compiler: GCC 3.4.6](https://img.shields.io/badge/Toolchain-GCC_3.4.6_uClibc-green.svg)](docker/README.md)
 
-Master repository untuk restorasi source code resmi, rekonstruksi bitstream BSP, perbaikan driver kernel Linux 2.6.16, serta engine kompilasi berbasis Docker / GitHub Actions untuk **Cisco Linksys WAP610N (Access Point)**. Source historis berasal dari codebase BSP gabungan, tetapi target hardware dan validasi proyek ini adalah WAP610N.
-
----
-
-## 📑 Daftar Isi
-- [Latar Belakang & Kronologi Restorasi](#-latar-belakang--kronologi-restorasi)
-- [Spesifikasi Hardware](#-spesifikasi-hardware)
-- [Flash Memory Map](#-flash-memory-map)
-- [Kompilasi Otomatis (CI/CD GitHub Actions)](#-kompilasi-otomatis-cicd-github-actions)
-- [Kompilasi Lokal via Docker](#-kompilasi-lokal-via-docker)
-- [Audit & Quality Assurance](#-audit--quality-assurance)
-- [Metode Flashing & Unbricking](#-metode-flashing--unbricking)
-- [Struktur Direktori](#-struktur-direktori)
-- [Roadmap Modifikasi](#-roadmap-modifikasi)
+Repositori terpadu (**1 Board `STR8132`, 1 Product `WAP610N`, 1 Source Tree**) untuk restorasi kernel Linux `2.6.16-star`, userspace uClibc, GoAhead WebServer C89, serta pipeline kompilasi & audit Docker / GitHub Actions bagi **Cisco Linksys WAP610N (Dual-Band Access Point)**.
 
 ---
 
-## 🔍 Latar Belakang & Kronologi Restorasi
+## ✨ Fitur Utama
 
-Arsip GPL resmi Linksys (`WAP610N_v1.0.04_build_7_update2.tar.gz`) mengalami kerusakan bitstream kompresi gzip dari rilis vendor asli:
-- **Lokasi Kerusakan**: Byte biner offset `0x014F8000` s.d. `0x0303C000`.
-- **Anatomi Kerusakan**: Terdapat **28.590.080 bytes (~27.27 MB)** blok zero-fill (`0x00`) yang memutus dekompresi tar pada entry `kernel/linux-2.6.16-star/drivers/usb/serial/ti_fw_3410.h`.
-- **Rekonstruksi Presisi**: Pabrikan OEM (U-Media Taiwan) merancang produk jaringan ini pada arsitektur board terpadu (*unified codebase*). Celah 27MB pada kernel Star Semiconductor BSP 6.7.2 direkonstruksi menggunakan source historis yang tersedia.
-
----
-
-## ⚡ Spesifikasi Hardware
-
-| Komponen | Spesifikasi Teknis | Keterangan Register / File |
-| :--- | :--- | :--- |
-| **SoC / CPU** | Cavium / Star Semi STR8132 (CNS2132) | ARM922T Core (ARMv4T), 200 MHz |
-| **RAM** | 32 MB SDRAM | Memory map: `0x00000000 - 0x02000000` |
-| **Flash ROM** | CFeon EN29LV320BB-70TIP, 32 Mbit = 4 MiB NOR | Memory map: `0x10000000 - 0x10400000`; ukuran dikonfirmasi dari PCB |
-| **Ethernet PHY** | Realtek RTL8201CP (Single 10/100 Fast Ethernet) | `rtl8201cp_init(0)` di `umedia_vela.h` |
-| **Wireless** | Metalink (MTLK) 802.11a/b/g/n PCIe/Host | Driver: `mtlk.ko` (Dual-band 2.4GHz / 5GHz) |
-| **Device ID** | `0x0012` (WAP610N) | Header Identifier U-Boot |
-| **UART Serial** | 38400 baud, 8N1 (3.3V TTL - VCC Jangan Dicolok) | Port `/dev/ttyS0` |
-| **Reset GPIO** | GPIO 3 (Active Low, tahan 3 detik) | `apps/gpio_driver/` |
+- **Arsitektur Bersih Tanpa Arsip Tertutup**: [`rootfs-star/`](rootfs-star/README.md) sebagai satu-satunya sumber kebenaran RootFS, [`vendor/mtlk/`](vendor/mtlk/README.md) sebagai direktori blob radio terbuka, dan [`config/mtdblock4-defaults/`](config/README.md) untuk auto-generate `config.img.gz` dari plain text.
+- **Akses Remote & CLI Diagnostik**: **Dropbear SSH v0.52** (`22` + `scp` + persistent keys di `/mnt/jffs2/dropbear`), **Telnet** (`23`), serta applet `sysmon`, `curl`, `json`, `nettest`, `flashdump`, dan `help`.
+- **WebServer C89 Hardened & JSON API**: Perbaikan keamanan & stabilitas penuh pada [`apps/WebServer/`](apps/WebServer/README.md), zero-fork JSON telemetry (`GET /api/status.json`, `GET /api/wifi.json`), selector bandwidth `20 MHz / 40 MHz`, One-Click MTD Flash Dumper, serta pre-flash guard `0x0012` anti-brick.
+- **Optimasi RAM 32 MB & Flash 4 MB**: Tuning sysctl (`min_free_kbytes=2048`, `vfs_cache_pressure=150`, socket buffer), watchdog ConfigFS anti-korupsi, dan gerbang batas keras `bootpImage <= 3,801,088 bytes`.
 
 ---
 
-## 🗺️ Flash Memory Map (NOR FLASH)
-
-```
-+---------------------+---------------------+-----------------------------------------------+
-| Flash Memory Range  | MTD Device Name     | Keterangan & Proteksi                         |
-+---------------------+---------------------+-----------------------------------------------+
-| 0x10000000 -        | mtdblock1 (ARMBOOT) | U-Boot 1.1.4 Bootloader (128 KiB)             |
-| 0x1001FFFF          |                     | Jangan ditulis dari firmware upgrade           |
-+---------------------+---------------------+-----------------------------------------------+
-| 0x10040000 -        | mtdblock2 (Kernel)  | bootpImage (Kernel + Ramdisk LZMA + Header)   |
-| 0x103DFFFF          |                     | [STATUS: RE-WRITABLE] Max size: ~3.625 MB     |
-+---------------------+---------------------+-----------------------------------------------+
-| 0x10020000 -        | mtdblock3 (Disk1)   | U-Boot environment / parameter table (64 KiB) |
-| 0x1002FFFF          |                     | Writable melalui `set_env_param` + CRC         |
-+---------------------+---------------------+-----------------------------------------------+
-| 0x103E0000 -        | mtdblock4 (Disk2)   | Config image; ukuran mengikuti MTD aktual      |
-| device end           |                     | `config_offset=0x3E0000`, bukan filesystem raw |
-+---------------------+---------------------+-----------------------------------------------+
-```
-
-> **Proteksi Anti-Brick**: Firmware upgrade hanya menargetkan `mtdblock2`, mulai offset `0x10040000`. Validasi ukuran image wajib memastikan ukuran tidak melebihi `0x3A0000` (3,801,088 bytes). Gunakan `cat /proc/mtd` untuk memverifikasi layout perangkat nyata.
-
----
-
-## 🚀 Kompilasi Otomatis (CI/CD GitHub Actions)
-
-Setiap push commit atau tag ke repositori ini akan memicu alur build otomatis di GitHub Actions:
-1. **GitHub Runner** menyiapkan container 32-bit (`docker.io/i386/debian:8`).
-2. Mengompilasi GNU Make 3.81 & memasang toolchain ARM uClibc 3.4.6.
-3. Mengonfigurasi BSP `star-6.7.2-mtlk-U-Media-vela` dan mengompilasi kernel + rootfs.
-4. Menjalankan audit QA otomatis pada firmware biner yang dihasilkan.
-5. Mengunggah firmware siap-flash ke tab **Actions Artifacts**.
-
----
-
-## 🛠️ Kompilasi Lokal via Docker
-
-Jika ingin mengompilasi secara lokal di Linux (menggunakan Docker atau Podman):
+## 🚀 Quick Start (Build & Audit)
 
 ```bash
-# Jalankan skrip kompilasi (otomatis build image dan compile)
+# 1. Validasi seluruh prasyarat build
+./devscripts/validate-build-prerequisites.sh
+
+# 2. Full compile dalam container 32-bit Debian 8 + audit QA otomatis
 ./docker/compile.sh WAP610N
-```
 
-Hasil biner firmware akan tersedia di folder `output/` (versi mengikuti `config/WAP610N_VERSION`, contoh `v1.0.05`):
-- `output/WAP610N_v1.0.05.bin` (~2.71 MB) - Binary firmware utama siap flash via Web UI pabrikan.
-- `output/bootpImage` (~2.71 MB) - File standar bootloader U-Boot TFTP.
-- `output/ramdisk_2.6.16.img.lzma` (~2.0 MB) - Root filesystem ramdisk.
-- `output/System.map` (384 KB) - Simbol fungsi kernel.
-
----
-
-## 🚀 Fitur Unggulan Firmware Enhanced
-
-1. **🔐 Remote Terminal Diagnostics (SSH & Telnet)**:
-   - **Dropbear SSH Server v0.52** otomatis aktif di port `22` lengkap dengan dukungan transfer file aman `scp`.
-   - **Telnet Daemon** aktif di port `23` untuk akses diagnostik cepat.
-2. **🧰 BusyBox 1.8.1 Power Applets**:
-   - Dilengkapi tools diagnostik bawaan: `dd`, `df`, `du`, `hexdump`, dan text editor `vi`.
-3. **💾 One-Click Live MTD Flash Dumper di Web UI**:
-   - Menu **Administration -> Firmware Upgrade** menyediakan dump `/dev/mtdblock0` untuk seluruh NOR, `/dev/mtdblock2` untuk kernel+ramdisk, dan `/dev/mtdblock4` untuk config.
-4. **⚡ Hardware & Memory Tuning untuk RAM 32MB**:
-   - Optimasi TCP/UDP socket buffer (`rmem_default=65536`, `rmem_max=262144`), antrian paket (`netdev_max_backlog = 1000`), `min_free_kbytes = 2048`, dan `vfs_cache_pressure = 150`.
-   - Perbaikan manajemen GPIO LED untuk indikator hijau stabil.
-
----
-
-## 🔍 Audit & Quality Assurance
-
-Jalankan sanity check kapan saja terhadap biner yang dihasilkan:
-
-```bash
+# 3. Verifikasi manual biner hasil build
 ./docker/verify-firmware.sh output/WAP610N_v1.0.05.bin
 ```
 
-Pemeriksaan meliputi:
-- ✅ Ukuran partisi flash $\le 3.625\text{ MB}$ (`3,801,088` bytes / `0x3A0000`).
-- ✅ Validasi 32-Byte Header CRC dan Device ID (`0x0012`).
-- ✅ Pengecekan isi ramdisk loop-mount (`/dev/console`, `ld-uClibc`, `/sbin/init -> busybox`).
+Target developer granular di [`Makefile`](Makefile): `make image`, `make configure`, `make kernel`, `make apps`, `make webs`, `make pack`, `make verify`, `make docker-image`, `make docker-shell`, `make mtlk-driver`, `make clean`.
 
 ---
 
-## ⚡ Metode Flashing & Unbricking
+## ⚡ Default Akses & Flashing
 
-### Flashing via Web GUI (Paling Mudah)
-Masuk ke `http://192.168.1.1` (default static AP IP) -> **Administration** -> **Firmware Upgrade** -> Upload `WAP610N_v1.0.05.bin`.
-
-### Default Akses & Setup Plug-and-Play
 - **Wi-Fi Default**: SSID `linksys` (2.4 GHz Open), DHCP server aktif (`192.168.1.10–192.168.1.20`), DNS `1.1.1.1` / `8.8.8.8`.
-- **WebUI**: `http://192.168.1.1` (`admin` / `admin`)
-- **SSH (Port 22) / Telnet (Port 23) / Serial UART**: `root` / `admin` (key persisten dapat ditaruh di `/mnt/jffs2/dropbear/authorized_keys` lalu jalankan `/bin/config_save.sh`).
-- **Koneksi ke Router Utama**: buka **Setup -> Network Setup** di WebUI lalu pilih **Automatic Configuration - DHCP** (jika router utama memakai DHCP server), atau isi **Default Gateway** sesuai IP router utama (jika terhubung ke port static tanpa DHCP server). Upgrade firmware pada `mtdblock2` menjaga konfigurasi `/mnt/jffs2` (`mtdblock4`) tetap utuh.
-
-### Flashing via U-Boot TFTP (LAN)
-```text
-setenv serverip 192.168.1.100
-setenv ipaddr 192.168.1.1
-tftp 0x100000 bootpImage
-cksum 0x100000
-erase 0x10040000 +$filesize
-cp.b 0x100000 0x10040000 $filesize
-cksum 0x10040000
-reset
-```
-
-### Flashing via UART Serial Kermit (`loadb`)
-```text
-loadb 0x100000
-# Kirim WAP610N_v1.0.05.bin (atau bootpImage) via Kermit Protocol
-cksum 0x100000
-erase 0x10040000 +$filesize
-cp.b 0x100000 0x10040000 $filesize
-cksum 0x10040000
-reset
-```
+- **WebUI**: `http://192.168.1.1` (`admin` / `admin`) -> **Administration -> Firmware Upgrade** -> upload `output/WAP610N_v1.0.05.bin`.
+- **SSH (`22`) / Telnet (`23`) / UART (`38400 8N1`)**: `root` / `admin`.
+- **Unbricking & Serial/TFTP Recovery**: Lihat panduan lengkap di [`firmware-flasher/README.md`](firmware-flasher/README.md).
 
 ---
 
-## 📁 Struktur Direktori
+## 📚 Indeks Dokumentasi Modular
 
-```text
-├── .github/
-│   └── workflows/
-│       └── compile.yml            # CI/CD otomatisasi build di GitHub Actions
-├── docker/
-│   ├── Dockerfile                 # Mesin build 32-bit Debian Jessie i386
-│   ├── make-3.81.tar.bz2          # GNU Make 3.81 source
-│   ├── compile.sh                 # Skrip build lokal 1-klik
-│   └── verify-firmware.sh         # Tool audit integritas biner & ramdisk
-├── apps/                          # Userspace applications & web GUI
-├── boards/                        # Konfigurasi platform board U-Media / Star Semi
-├── config/                        # Kernel & board config profile
-├── devscripts/                    # Helper scripts pembuatan rootfs & packing
-├── firmware-flasher/               # Toolkit flashing, serial recovery, TFTP, dan audit biner
-├── kernel/                        # Linux Kernel 2.6.16-star source
-├── rootfs-star/                   # Template base root filesystem
-├── tools/                         # Cross-compiler GCC 3.4.6 ARM uClibc
-├── u-boot-1.1.4/                  # U-Boot Bootloader source
-├── make_nv.sh                     # Master Makefile entrypoint
-└── README.md                      # Dokumentasi master repositori
-```
+Setiap subsistem memiliki dokumentasi teknis lengkap di foldernya masing-masing:
 
----
-
-## 🗺️ Roadmap Modifikasi
-
-- [x] **Fase 1 (Selesai)**: Baseline WAP610N stabil, unbricked, kernel 2.6.16 + uClibc + Web GUI.
-- [x] **Fase 2 (Selesai)**: Integrasi Dropbear SSH Server + `scp`, SSH key persistence (`/mnt/jffs2/dropbear`), CLI diagnostic applets (`sysmon`, `curl`, `json`, `nettest`, `flashdump`, `help`), dan stabilisasi 8-domain lengkap (GoAhead WebServer C, WebUI ASP/JS/Tcl, runtime init/WPS/ConfigFS, kernel/U-Boot/native C, build pipeline, dan `firmware-flasher`).
-- [ ] **Fase 3**: Tuning driver Metalink `mtlk.ko` (Unlocking DFS 5GHz channel & TX power override).
+| Direktori | Cakupan Dokumentasi |
+|---|---|
+| [`boards/star-6.7.2-mtlk-U-Media-vela/README.md`](boards/star-6.7.2-mtlk-U-Media-vela/README.md) | Spesifikasi SoC STR8132, pinout GPIO (`0/2/3/13`), & Flash MTD Map (`4 MiB`) |
+| [`docker/README.md`](docker/README.md) | Container build 32-bit, GitHub Actions CI cache, & audit QA 6-tahap |
+| [`devscripts/README.md`](devscripts/README.md) | Target `Makefile`/`make_nv.sh` & alur packaging rootless `genext2fs` |
+| [`rootfs-star/README.md`](rootfs-star/README.md) | Sequence diagram boot, CLI applets, ConfigFS, & prosedur diagnosa live |
+| [`apps/WebServer/README.md`](apps/WebServer/README.md) | GoAhead C89, switch 7 `.o` blob, `/api/*.json`, & log audit `X1–X6`/`S1–S18` |
+| [`vendor/mtlk/README.md`](vendor/mtlk/README.md) | Inventori blob Metalink terbuka & panduan substitusi dari source |
+| [`config/README.md`](config/README.md) | Versi firmware, plain-text `mtdblock4-defaults/`, & device table rootless |
+| [`packages/README.md`](packages/README.md) | Template plugin C89/uClibc modular (`Makefile.pkg`) |
+| [`kernel/patches-wap610n/README.md`](kernel/patches-wap610n/README.md) | Aturan ABI kernel `2.6.16-star` & hook `make mtlk-driver` |
+| [`firmware-flasher/README.md`](firmware-flasher/README.md) | SOP serial UART, TFTP U-Boot, Kermit, & toolkit `flasher.sh` |
+| [`AGENTS.md`](AGENTS.md) | Aturan operasional wajib, invarian toolchain/flash, & checklist QA |
