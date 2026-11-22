@@ -16,8 +16,8 @@
 # Output and Firmware Images
 /rootfs/
 /build/
-output/
-images/
+/output/
+/images/
 _wlan.tar.gz
 
 # Intermediate build binaries & libraries
