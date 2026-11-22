@@ -8,8 +8,5 @@ VER_FILE=${ROOTDIR}/config/${MODENAME}_VERSION
 [ -f "${ENV_CONF}" ] && . "${ENV_CONF}"
 [ -f "${VER_FILE}" ] && [ -z "${FIRMWARE_VERSION:-}" ] && . "${VER_FILE}"
 
-BIN_TAG="${ProjectName:-$MODENAME}_v${FIRMWARE_VERSION:-1.0.05}.bin"
-if [ -n "${FIRMWARE_FILENAME:-}" ]; then
-	cp -p -v "${ROOTDIR}/output/bootpImage" "${ROOTDIR}/output/${FIRMWARE_FILENAME}"
-fi
+BIN_TAG="${FIRMWARE_FILENAME:-${ProjectName:-$MODENAME}_v${FIRMWARE_VERSION:-2.0.00}_${BUILD_GIT_SHA:-local}.bin}"
 cp -p -v "${ROOTDIR}/output/bootpImage" "${ROOTDIR}/output/${BIN_TAG}"

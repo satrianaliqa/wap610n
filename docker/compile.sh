@@ -47,7 +47,10 @@ echo " Workspace: $ROOT_DIR"
 echo " Prerequisites: ✅ Validated"
 echo "=========================================================="
 
-EXTRA_ENV_ARGS=()
+BUILD_GIT_SHA="${BUILD_GIT_SHA:-$(git -C "$ROOT_DIR" rev-parse --short=7 HEAD 2>/dev/null || echo local)}"
+BUILD_GIT_BRANCH="${BUILD_GIT_BRANCH:-$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo local)}"
+
+EXTRA_ENV_ARGS=(-e "BUILD_GIT_SHA=${BUILD_GIT_SHA}" -e "BUILD_GIT_BRANCH=${BUILD_GIT_BRANCH}")
 for ev in FIRMWARE_VERSION MAJOR MINOR PATCH BUILD; do
     if [ -n "${!ev:-}" ]; then
         EXTRA_ENV_ARGS+=(-e "${ev}=${!ev}")
@@ -93,19 +96,6 @@ sudo $CONTAINER_CMD run --rm \
 
         echo "--> Step 3: Compiling Kernel, Applications, and building Firmware..."
         ./make_nv.sh build vendor/mtlk "$TARGET_NAME"
-
-        VER_FILE="config/${TARGET_NAME}_VERSION"
-        [ -f "$VER_FILE" ] || VER_FILE="config/WAP610N_VERSION"
-        if [ -e output/bootpImage ]; then
-            VERSION="${FIRMWARE_VERSION:-}"
-            if [ -z "$VERSION" ] && [ -f "$VER_FILE" ]; then
-                VERSION=$(grep "^FIRMWARE_VERSION=" "$VER_FILE" | head -n 1 | cut -d"\"" -f2 | tr -d "\r\n")
-            fi
-            VERSION="${VERSION:-1.0.05}"
-            BINNAME="${TARGET_NAME}_v${VERSION}.bin"
-            echo "--> Copying bootpImage to output/$BINNAME"
-            cp -vf output/bootpImage "output/$BINNAME"
-        fi
 
         echo "--> Fixing permissions for workspace output..."
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/output 2>/dev/null || true

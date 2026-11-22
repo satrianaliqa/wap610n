@@ -44,10 +44,6 @@ else
 fi
 mkdir -p "${ROOTFS_DIR}/root/mtlk" "${ROOTFS_DIR}/etc"
 
-# Create version file
-echo -n "Git Revision $(git rev-parse --short HEAD 2>/dev/null || echo 1)  " > "${ROOTFS_DIR}/etc/version"
-date >> "${ROOTFS_DIR}/etc/version"
-
 # 1. Install proprietary Metalink blobs from open directory vendor/mtlk/
 if [ -d "${VENDOR_DIR}" ]; then
 	echo "Installing proprietary Metalink blobs from ${VENDOR_DIR} to ${ROOTFS_DIR}/root/mtlk/..."
@@ -113,9 +109,29 @@ load_custom_build_vars() {
 		done < "config/WAP610N_VERSION"
 	fi
 	if [ -z "${FIRMWARE_VERSION:-}" ]; then
-		FIRMWARE_VERSION="${MAJOR:-1}.${MINOR:-0}.${PATCH:-05}"
+		FIRMWARE_VERSION="${MAJOR:-2}.${MINOR:-0}.${PATCH:-00}"
 	fi
 	BUILD="${BUILD:-0}"
+
+	# Resolve Git commit SHA & branch (env -> output/.config_WAP610N -> git -> local)
+	if [ -z "${BUILD_GIT_SHA:-}" ] && [ -f "output/.config_WAP610N" ]; then
+		BUILD_GIT_SHA=$(grep '^BUILD_GIT_SHA=' "output/.config_WAP610N" 2>/dev/null | head -n 1 | cut -d'"' -f2)
+	fi
+	if [ -z "${BUILD_GIT_SHA:-}" ] && command -v git >/dev/null 2>&1; then
+		BUILD_GIT_SHA=$(git -c safe.directory='*' rev-parse --short=7 HEAD 2>/dev/null || true)
+	fi
+	BUILD_GIT_SHA=$(printf '%s' "${BUILD_GIT_SHA:-local}" | tr -cd 'A-Za-z0-9._-' | cut -c1-7)
+	[ -n "${BUILD_GIT_SHA}" ] || BUILD_GIT_SHA="local"
+
+	if [ -z "${BUILD_GIT_BRANCH:-}" ] && [ -f "output/.config_WAP610N" ]; then
+		BUILD_GIT_BRANCH=$(grep '^BUILD_GIT_BRANCH=' "output/.config_WAP610N" 2>/dev/null | head -n 1 | cut -d'"' -f2)
+	fi
+	if [ -z "${BUILD_GIT_BRANCH:-}" ] && command -v git >/dev/null 2>&1; then
+		BUILD_GIT_BRANCH=$(git -c safe.directory='*' rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+	fi
+	BUILD_GIT_BRANCH=$(printf '%s' "${BUILD_GIT_BRANCH:-local}" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')
+	[ -n "${BUILD_GIT_BRANCH}" ] || BUILD_GIT_BRANCH="local"
+	export BUILD_GIT_SHA BUILD_GIT_BRANCH
 }
 
 set_conf_kv() {
@@ -152,6 +168,9 @@ set_conf_kv() {
 
 load_custom_build_vars
 
+# Create /etc/version with full OpenWrt-style build identity
+echo "WAP610N v${FIRMWARE_VERSION} (${BUILD_GIT_BRANCH} / git-${BUILD_GIT_SHA}) - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > "${ROOTFS_DIR}/etc/version"
+
 # 5. Auto-generate mtdblock4 factory default config.img.gz from plain-text config/mtdblock4-defaults/
 if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-defaults/wlan0.conf" ]; then
 	echo "Generating factory default config.img.gz from config/mtdblock4-defaults/..."
@@ -161,7 +180,7 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	install -m 600 "config/mtdblock4-defaults/wlan0.conf" "${TMP_CFG_DIR}/wlan0.conf"
 
 	# Apply custom build variables & firmware version to staged default configs
-	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "FirmwareVersion" "v${FIRMWARE_VERSION}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA})"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "HostName" "${CUSTOM_HOSTNAME:-}"
@@ -205,7 +224,7 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	cp -af "${TMP_CFG_DIR}/wlan0.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"
 
 	if [ -f "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" ]; then
-		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "FirmwareVersion" "v${FIRMWARE_VERSION}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA})"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "DeviceName" "${CUSTOM_HOSTNAME:-}"
@@ -283,12 +302,14 @@ fi
 # 8. Force ProjectName to WAP610N and ensure WebUI symlinks/files
 if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
 	echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
-	CURR_VER="${FIRMWARE_VERSION:-1.0.05}"
+	CURR_VER="${FIRMWARE_VERSION:-2.0.00}"
 	CURR_BUILD="${BUILD:-0}"
+	CURR_SHA="${BUILD_GIT_SHA:-local}"
+	CURR_BRANCH="${BUILD_GIT_BRANCH:-local}"
 	cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
-FIRMWARE_VERSION="${CURR_VER}"
-ProjectFirmwareVersionDate="${CURR_VER} build ${CURR_BUILD}, $(date '+%b %d, %Y')"
+FIRMWARE_VERSION="${CURR_VER} (git-${CURR_SHA})"
+ProjectFirmwareVersionDate="${CURR_VER} (${CURR_BRANCH} / git-${CURR_SHA} build ${CURR_BUILD}), $(date '+%b %d, %Y')"
 EOF
 	cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
 	mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"

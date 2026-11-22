@@ -48,7 +48,9 @@ jobs:
       - name: Compile Firmware in 32-bit Container
         run: |
           TARGET="${{ github.event.inputs.target || 'WAP610N' }}"
-          echo "Building target: $TARGET"
+          BUILD_GIT_SHA="${GITHUB_SHA:0:7}"
+          BUILD_GIT_BRANCH="${GITHUB_REF_NAME:-main}"
+          echo "Building target: $TARGET (version from config/WAP610N_VERSION, git=${BUILD_GIT_BRANCH}@${BUILD_GIT_SHA})"
           mkdir -p output/
 
           docker run --rm \
@@ -56,6 +58,8 @@ jobs:
             -v ${{ github.workspace }}:/workspace \
             -w /workspace \
             -e TARGET="$TARGET" \
+            -e BUILD_GIT_SHA="$BUILD_GIT_SHA" \
+            -e BUILD_GIT_BRANCH="$BUILD_GIT_BRANCH" \
             wap610n-builder /bin/bash -c '
               set -e
               export PATH="/workspace/tools/arm-uclibc-3.4.6/bin:$PATH"
@@ -82,13 +86,6 @@ jobs:
               echo "--> Step 3: Compiling Kernel, Apps, and RootFS ($TARGET)..."
               ./make_nv.sh build vendor/mtlk "$TARGET" || { echo "❌ ERROR: make_nv.sh build failed"; exit 1; }
 
-              if [ -e output/bootpImage ] && [ -f config/WAP610N_VERSION ]; then
-                  VERSION=$(grep "^FIRMWARE_VERSION=" config/WAP610N_VERSION | head -n 1 | cut -d"\"" -f2 | tr -d "\r\n")
-                  BINNAME="WAP610N_v${VERSION}.bin"
-                  echo "--> Copying bootpImage → output/$BINNAME (version $VERSION)..."
-                  cp -vf output/bootpImage "output/$BINNAME"
-              fi
-
               chmod -R u+rwX,go+rX output/ 2>/dev/null || true
               chmod -R u+rwX,go+rX images/ 2>/dev/null || true
               ls -lh output/
@@ -105,7 +102,10 @@ jobs:
           if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f output/bootpImage ]; then
             SZ=$(stat -c %s output/bootpImage)
             HEADROOM=$((3801088 - SZ))
+            FW_BIN=$(find output -maxdepth 1 -type f -name "WAP610N_v*.bin" | head -n 1)
             echo "### WAP610N Firmware Build Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Version**: \`${GITHUB_REF_NAME:-main} / git-${GITHUB_SHA:0:7}\`" >> "$GITHUB_STEP_SUMMARY"
+            [ -n "$FW_BIN" ] && echo "- **Artifact**: \`$(basename "$FW_BIN")\`" >> "$GITHUB_STEP_SUMMARY"
             echo "- **bootpImage**: \`${SZ} bytes\` (\`$(awk -v s="$SZ" 'BEGIN{printf "%.2f MB", s/1048576}')\`)" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Flash Headroom**: \`${HEADROOM} bytes\` (\`$((HEADROOM / 1024)) KB\` free under 3,801,088 B)" >> "$GITHUB_STEP_SUMMARY"
           fi

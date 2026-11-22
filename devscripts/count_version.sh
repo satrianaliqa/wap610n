@@ -49,8 +49,23 @@ FIRMWARE_MINOR="${MINOR:-0}"
 FIRMWARE_PATCH="${PATCH:-00}"
 BUILD="${BUILD:-0}"
 
-VER_STR="${FIRMWARE_VERSION} build ${BUILD}"
-VER_FILENAME="${ProjectName}_v${FIRMWARE_VERSION}_build_${BUILD}"
+# Resolve Git commit SHA (7-char short) and branch for OpenWrt-style build identity
+GIT_SHA="${BUILD_GIT_SHA:-}"
+if [ -z "${GIT_SHA}" ] && command -v git >/dev/null 2>&1; then
+	GIT_SHA=$(git -c safe.directory='*' -C "${ROOTDIR}" rev-parse --short=7 HEAD 2>/dev/null || true)
+fi
+GIT_SHA=$(printf '%s' "${GIT_SHA:-local}" | tr -cd 'A-Za-z0-9._-' | cut -c1-7)
+[ -n "${GIT_SHA}" ] || GIT_SHA="local"
+
+GIT_BRANCH="${BUILD_GIT_BRANCH:-}"
+if [ -z "${GIT_BRANCH}" ] && command -v git >/dev/null 2>&1; then
+	GIT_BRANCH=$(git -c safe.directory='*' -C "${ROOTDIR}" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+fi
+GIT_BRANCH=$(printf '%s' "${GIT_BRANCH:-local}" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')
+[ -n "${GIT_BRANCH}" ] || GIT_BRANCH="local"
+
+VER_STR="${FIRMWARE_VERSION} (${GIT_BRANCH} / git-${GIT_SHA} build ${BUILD})"
+VER_FILENAME="${ProjectName}_v${FIRMWARE_VERSION}_${GIT_SHA}.bin"
 echo "Current version: ${VER_STR}"
 
 # Write generated build state into output/.config_${MODENAME} (never into config/)
@@ -61,6 +76,8 @@ FIRMWARE_MINOR=${FIRMWARE_MINOR}
 FIRMWARE_PATCH=${FIRMWARE_PATCH}
 ProjectName=${ProjectName}
 FIRMWARE_BUILD=${BUILD}
+BUILD_GIT_SHA="${GIT_SHA}"
+BUILD_GIT_BRANCH="${GIT_BRANCH}"
 FIRMWARE_VERSION="${FIRMWARE_VERSION}"
 FIRMWARE_FILENAME="${VER_FILENAME}"
 ProjectFirmwareVersionDate="${VER_STR}, $(date +'%b %e, %Y')"
