@@ -1,7 +1,7 @@
 #!/bin/sh
 ROOTDIR=${ROOTDIR:-$(pwd)}
 MODENAME=${1:-WAP610N}
-ENV_CONF=${ROOTDIR}/config/.config_${MODENAME}
+ENV_CONF=${ROOTDIR}/output/.config_${MODENAME}
 VER_FILE=${ROOTDIR}/config/${MODENAME}_VERSION
 
 [ -f "${VER_FILE}" ] || VER_FILE=${ROOTDIR}/config/WAP610N_VERSION

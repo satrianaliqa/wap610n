@@ -63,7 +63,6 @@ function check_params()
 			if [ "${MODENAME}" != "WAP610N" ]; then
 				display_usage "ERROR: Only WAP610N is supported in this unified repository."
 			fi
-			ENV_CONF="${ROOTDIR}/config/.config_${MODENAME}"
 			echo "WAP610N mode (vendor source: ${VENDOR_DIR})"
 			;;
 		kernel)
@@ -79,7 +78,6 @@ function check_params()
 			MAKE_PACK=1
 			VENDOR_DIR="${2:-vendor/mtlk}"
 			MODENAME="WAP610N"
-			ENV_CONF="${ROOTDIR}/config/.config_${MODENAME}"
 			;;
 		*)
 			display_usage "Unknown command $1"
@@ -140,10 +138,6 @@ function build_webs()
 function pack_firmware()
 {
 	cd "${ROOTDIR}"
-	if [ ! -f "${ENV_CONF}" ] || ! grep -q "^ProjectName=${MODENAME}$" "${ENV_CONF}" 2>/dev/null; then
-		sed -i '/ProjectName/d' "${ENV_CONF}" 2>/dev/null || true
-		echo "ProjectName=${MODENAME}" >> "${ENV_CONF}"
-	fi
 	devscripts/count_version.sh "${MODENAME}"
 
 	mkdir -p "${ROOTDIR}/output" "${ROOTDIR}/images"

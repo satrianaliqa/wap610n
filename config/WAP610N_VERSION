@@ -4,12 +4,10 @@
 # or pass environment overrides on the CLI when running ./docker/compile.sh.
 # ==============================================================================
 
-# --- Firmware Semantic Versioning ---
-MAJOR=1
-MINOR=0
-PATCH=05
-BUILD=0
-FIRMWARE_VERSION="1.0.05"
+# --- Firmware Version (Single Source of Truth) ---
+# Edit FIRMWARE_VERSION (and optional BUILD) here; MAJOR/MINOR/PATCH are derived automatically.
+FIRMWARE_VERSION="2.0.00"
+BUILD="0"
 
 # --- Device Identity ---
 CUSTOM_VENDOR_NAME="Cisco-Linksys, LLC"

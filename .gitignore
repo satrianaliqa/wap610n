@@ -18,6 +18,7 @@
 /build/
 /output/
 /images/
+/config/.config_*
 
 # Intermediate build binaries & libraries
 *.a
