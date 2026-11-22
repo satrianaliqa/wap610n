@@ -83,7 +83,7 @@ jobs:
               ./make_nv.sh build vendor/mtlk "$TARGET" || { echo "❌ ERROR: make_nv.sh build failed"; exit 1; }
 
               if [ -e output/bootpImage ] && [ -f config/WAP610N_VERSION ]; then
-                  VERSION=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d"\"" -f2)
+                  VERSION=$(grep "^FIRMWARE_VERSION=" config/WAP610N_VERSION | head -n 1 | cut -d"\"" -f2 | tr -d "\r\n")
                   BINNAME="WAP610N_v${VERSION}.bin"
                   echo "--> Copying bootpImage → output/$BINNAME (version $VERSION)..."
                   cp -vf output/bootpImage "output/$BINNAME"

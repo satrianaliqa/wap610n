@@ -1,8 +1,7 @@
 # ==============================================================================
 # WAP610N Unified Versioning & Custom Build Variables
-# Edit these values to customize firmware version and factory default settings,
-# or override any variable on the command line, e.g.:
-#   FIRMWARE_VERSION="1.0.06" CUSTOM_WIFI_SSID="MyAP" ./docker/compile.sh WAP610N
+# Edit the values below to customize firmware version and factory defaults,
+# or pass environment overrides on the CLI when running ./docker/compile.sh.
 # ==============================================================================
 
 # --- Firmware Semantic Versioning ---

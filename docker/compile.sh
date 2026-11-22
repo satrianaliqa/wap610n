@@ -99,7 +99,7 @@ sudo $CONTAINER_CMD run --rm \
         if [ -e output/bootpImage ]; then
             VERSION="${FIRMWARE_VERSION:-}"
             if [ -z "$VERSION" ] && [ -f "$VER_FILE" ]; then
-                VERSION=$(grep "FIRMWARE_VERSION" "$VER_FILE" | cut -d"\"" -f2)
+                VERSION=$(grep "^FIRMWARE_VERSION=" "$VER_FILE" | head -n 1 | cut -d"\"" -f2 | tr -d "\r\n")
             fi
             VERSION="${VERSION:-1.0.05}"
             BINNAME="${TARGET_NAME}_v${VERSION}.bin"
