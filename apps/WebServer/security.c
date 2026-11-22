@@ -287,6 +287,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 		time(&now);
 		if (lastAuth != 0 && now > lastAuth + AuthTimeout)
 		{
+			lastAuth = 0;
 			userid = "";
 			password = "";
 		}
@@ -366,6 +367,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 				websError(wp, 401, T("Access Denied\nInvalid Digest Auth"));
 				nRet = 1;
 			} else if (AuthTimeout > 0 && lastAuth != 0 && now > lastAuth + AuthTimeout) {
+				lastAuth = 0;
 				websStats.access++;
 				websError(wp, 401, T("Access Denied\nSession Timeout"));
 				nRet = 1;

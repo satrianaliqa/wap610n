@@ -24,7 +24,7 @@ then
 	echo `cat /proc/uptime | awk -F \".\" '{print $1}'` > /var/wps_start_time
 	echo `cat /proc/uptime | awk -F \".\" '{print $1}'` > /var/wps_current_time
 	/root/mtlk/web/wpsCleanTempClock.sh 180 &
-elif [ "$1" == "stop" ]; then
+elif [ "$1" = "stop" ]; then
 	echo "gui_wps_init.sh: stop.###########################################################" > /dev/console
 	sleep 5
 	#rm -f /tmp/wps_current_status

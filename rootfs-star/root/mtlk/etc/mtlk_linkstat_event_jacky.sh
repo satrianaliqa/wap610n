@@ -2,12 +2,12 @@
 
 
 
-LAST_STATUS=`awk -F "=" '/^WLSLinksStatus/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wls_link_stat`
-NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf`
-DEFAULT_IP=`awk -F "=" '/^ip_lan/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-STATIC_IP=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+LAST_STATUS=`awk -F "=" '/^WLSLinksStatus/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wls_link_stat 2>/dev/null`
+NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
+DEFAULT_IP=`awk -F "=" '/^ip_lan/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+STATIC_IP=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
 
-if [ $1 = 'w1' ]
+if [ "$1" = 'w1' ]
 then
 	echo mtlk_linkstat_event.sh:Wireless Link is UP >/dev/console
 	echo "WLSLinksStatus = 1" > /tmp/wls_link_stat
@@ -15,9 +15,9 @@ then
 	#then
 	#	echo mtlk_linkstat_event.sh:Already up >/dev/console
 	#else
-		if [ $NETWORK_TYPE = 0 ]
+		if [ "$NETWORK_TYPE" = "0" ]
 		then
-			if [ $STATIC_IP = 0 ]
+			if [ "$STATIC_IP" = "0" ]
 			then		
 		
 				#If this DOWN/UP is caused by site survey, then we need not require to renew IP - Ricky Cao on Nov. 28 2008
@@ -71,11 +71,11 @@ then
 	exit
 fi
 
-if [ $1 = 'w0' ]
+if [ "$1" = 'w0' ]
 then
 	echo mtlk_linkstat_event.sh:Wireless Link is DOWN >/dev/console
 	echo "WLSLinksStatus = 0" > /tmp/wls_link_stat
-	if [ $LAST_STATUS = '0' ] 
+	if [ "$LAST_STATUS" = '0' ]
 	then
 		echo mtlk_linkstat_event.sh:Already down >/dev/console
 	fi

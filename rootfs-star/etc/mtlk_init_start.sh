@@ -6,13 +6,40 @@ if [ -f /etc/sysctl.conf ] && [ -x /sbin/sysctl ]; then
 	/sbin/sysctl -p /etc/sysctl.conf >/dev/null 2>&1 || true
 fi
 
-# 1. Start Telnet daemon with root shell FIRST (Port 23)
-if ! pidof telnetd >/dev/null 2>&1; then
+# Helper to read persisted sys.conf boolean flags (defaults to 1 if unset)
+get_sys_conf_val() {
+	key="$1"
+	def="$2"
+	val=""
+	for cf in /mnt/jffs2/sys.conf /root/mtlk/etc/sys.conf; do
+		if [ -f "$cf" ]; then
+			val=$(awk -F= -v k="$key" '{
+				lhs=$1; gsub(/^[ \t]+|[ \t]+$/, "", lhs);
+				if (lhs == k) {
+					rhs=$2; gsub(/^[ \t]+|[ \t\r]+$/, "", rhs);
+					print rhs;
+				}
+			}' "$cf" 2>/dev/null | tail -n 1)
+			[ -n "$val" ] && break
+		fi
+	done
+	if [ -n "$val" ]; then
+		echo "$val"
+	else
+		echo "$def"
+	fi
+}
+
+TELNET_EN=$(get_sys_conf_val Telnet_Enabled 1)
+SSH_EN=$(get_sys_conf_val SSH_Enabled 1)
+
+# 1. Start Telnet daemon with root shell FIRST (Port 23) if enabled
+if [ "$TELNET_EN" != "0" ] && ! pidof telnetd >/dev/null 2>&1; then
 	$DIAG_LOG "early boot: starting Telnet daemon on port 23" 2>/dev/null || true
 	telnetd -l /bin/sh &
 fi
 
-# 2. Start Dropbear SSH daemon (Port 22) in background so keygen never blocks boot
+# 2. Prepare Dropbear SSH keys and start daemon (Port 22) if enabled
 if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 	(
 		LOCKDIR=/tmp/dropbear_init.lock
@@ -40,7 +67,7 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 				cp -f /mnt/jffs2/dropbear/authorized_keys /root/.ssh/authorized_keys 2>/dev/null || true
 				chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
 			fi
-			if ! pidof dropbear >/dev/null 2>&1; then
+			if [ "$SSH_EN" != "0" ] && ! pidof dropbear >/dev/null 2>&1; then
 				$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 				/usr/sbin/dropbear -p 22 >/dev/null 2>&1 &
 			fi

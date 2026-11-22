@@ -1,88 +1,79 @@
 #!/bin/sh
 ROOTDIR=${ROOTDIR:-$(pwd)}
-#if [ -z "$ROOTDIR" ]
-#then
-#	echo "ROOTDIR is not set" >&2
-#	exit 1
-#fi
-
-MODENAME=$1
+MODENAME=${1:-WAP610N}
 VER_PATH=${ROOTDIR}/config
-ENV_CONF=${ROOTDIR}/config/.config_$MODENAME
-UI_CONF=${ROOTDIR}/config/autoconf.h
+ENV_CONF=${ROOTDIR}/config/.config_${MODENAME}
+VER_FILE=${VER_PATH}/${MODENAME}_VERSION
 
-. ${ENV_CONF}
+# Preserve any caller environment overrides before sourcing VER_FILE
+ENV_MAJOR="${MAJOR:-}"
+ENV_MINOR="${MINOR:-}"
+ENV_PATCH="${PATCH:-}"
+ENV_BUILD="${BUILD:-}"
+ENV_FW_VER="${FIRMWARE_VERSION:-}"
 
-VER_FILE=${VER_PATH}/${ProjectName}_VERSION
-
-#if [ `expr match ${ProjectName} '\"'` -ge 1 ]; then
-#	LEN=`expr length ${ProjectName}`
-#	LEN=`expr ${LEN} - 2`
-#	ProjectName=`expr substr ${ProjectName} 2 ${LEN}`
-#	VER_FILE=${VER_PATH}/${ProjectName}_VERSION
-#else
-#	VER_FILE=${VER_PATH}/${ProjectName}_VERSION
-#fi
-
-if [ ! -e ${VER_FILE} ]; then
-	echo "The file not exist, create ${VER_FILE}"
-	echo > ${VER_FILE}
-fi
-#. ${ENV_CONF}
-echo FIRMWARE_MAJOR=${FIRMWARE_MAJOR} FIRMWARE_MINOR=${FIRMWARE_MINOR} FIRMWARE_PATCH=${FIRMWARE_PATCH}
-##############################################################################
-# Include ${VER_FILE} file first, and check value.
-. ${VER_FILE}
-CHECK_FLAG=0
-if [ "${MAJOR:-0}" -ne "${FIRMWARE_MAJOR:-0}" ]; then
-	CHECK_FLAG=1
-fi
-if [ "${MINOR:-0}" -ne "${FIRMWARE_MINOR:-0}" ]; then
-	CHECK_FLAG=1
-fi
-if [ "${PATCH:-0}" -ne "${FIRMWARE_PATCH:-0}" ]; then
-	CHECK_FLAG=1
+if [ -f "${ENV_CONF}" ]; then
+	. "${ENV_CONF}"
 fi
 
-if [ ${CHECK_FLAG} -eq 1 ]; then
-	BUILD=0
-#else
-#	BUILD=`expr ${BUILD} + 1`
+ProjectName="${ProjectName:-$MODENAME}"
+
+if [ ! -f "${VER_FILE}" ]; then
+	VER_FILE="${VER_PATH}/WAP610N_VERSION"
 fi
 
-############################################################################
+if [ -f "${VER_FILE}" ]; then
+	. "${VER_FILE}"
+fi
 
-#VER_STR="${FIRMWARE_MAJOR}.${FIRMWARE_MINOR}.${FIRMWARE_PATCH}.${BUILD}"
-FIRMWARE_VERSION="${FIRMWARE_MAJOR}.${FIRMWARE_MINOR}.${FIRMWARE_PATCH}"
-VER_STR="${FIRMWARE_MAJOR}.${FIRMWARE_MINOR}.${FIRMWARE_PATCH} build ${BUILD}"
-VER_FILENAME="${ProjectName}_v${FIRMWARE_MAJOR}.${FIRMWARE_MINOR}.${FIRMWARE_PATCH}_build_${BUILD}"
+# Re-apply explicit environment overrides
+[ -n "${ENV_MAJOR}" ] && MAJOR="${ENV_MAJOR}"
+[ -n "${ENV_MINOR}" ] && MINOR="${ENV_MINOR}"
+[ -n "${ENV_PATCH}" ] && PATCH="${ENV_PATCH}"
+[ -n "${ENV_BUILD}" ] && BUILD="${ENV_BUILD}"
+[ -n "${ENV_FW_VER}" ] && FIRMWARE_VERSION="${ENV_FW_VER}"
+
+# Synchronize MAJOR/MINOR/PATCH <-> FIRMWARE_VERSION cleanly
+if [ -n "${ENV_FW_VER}" ] && [ -z "${ENV_MAJOR}" ] && [ -z "${ENV_MINOR}" ] && [ -z "${ENV_PATCH}" ]; then
+	case "${FIRMWARE_VERSION}" in
+		[0-9]*.[0-9]*.[0-9]*)
+			MAJOR=$(echo "${FIRMWARE_VERSION}" | cut -d. -f1)
+			MINOR=$(echo "${FIRMWARE_VERSION}" | cut -d. -f2)
+			PATCH=$(echo "${FIRMWARE_VERSION}" | cut -d. -f3)
+			;;
+	esac
+elif [ -z "${FIRMWARE_VERSION}" ] || [ -n "${ENV_MAJOR}" ] || [ -n "${ENV_MINOR}" ] || [ -n "${ENV_PATCH}" ]; then
+	FIRMWARE_VERSION="${MAJOR:-1}.${MINOR:-0}.${PATCH:-05}"
+elif [ "${FIRMWARE_VERSION}" != "${MAJOR}.${MINOR}.${PATCH}" ]; then
+	case "${FIRMWARE_VERSION}" in
+		[0-9]*.[0-9]*.[0-9]*)
+			MAJOR=$(echo "${FIRMWARE_VERSION}" | cut -d. -f1)
+			MINOR=$(echo "${FIRMWARE_VERSION}" | cut -d. -f2)
+			PATCH=$(echo "${FIRMWARE_VERSION}" | cut -d. -f3)
+			;;
+		*)
+			FIRMWARE_VERSION="${MAJOR:-1}.${MINOR:-0}.${PATCH:-05}"
+			;;
+	esac
+fi
+
+FIRMWARE_MAJOR="${MAJOR:-1}"
+FIRMWARE_MINOR="${MINOR:-0}"
+FIRMWARE_PATCH="${PATCH:-05}"
+BUILD="${BUILD:-0}"
+
+VER_STR="${FIRMWARE_VERSION} build ${BUILD}"
+VER_FILENAME="${ProjectName}_v${FIRMWARE_VERSION}_build_${BUILD}"
 echo "Current version: ${VER_STR}"
 
-# Write back new version
-echo "MAJOR=${FIRMWARE_MAJOR}" > ${VER_FILE}
-echo "MINOR=${FIRMWARE_MINOR}" >> ${VER_FILE}
-echo "PATCH=${FIRMWARE_PATCH}" >> ${VER_FILE}
-echo "BUILD=${BUILD}" >> ${VER_FILE}
-#echo "CUSTOMER_VER=${CUSTOMER_VER}" >> ${VER_FILE}
-echo "FIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"" >> ${VER_FILE}
-#echo "ProjectName=\"${ProjectName}\"" > ${WEB_FW_VERSION}
-#echo "FIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"" >> ${WEB_FW_VERSION}
-
-# Jacky.Yang 11-Jan-2008, Write to environment config.
-sed -i '/FIRMWARE_BUILD/d' ${ENV_CONF}
-sed -i '/FIRMWARE_VERSION/d' ${ENV_CONF}
-sed -i '/FIRMWARE_FILENAME/d' ${ENV_CONF}
-sed -i '/ProjectFirmwareVersionDate/d' ${ENV_CONF}
-echo "FIRMWARE_BUILD=${BUILD}" >> ${ENV_CONF}
-echo "FIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"" >> ${ENV_CONF}
-echo "FIRMWARE_FILENAME=\"${VER_FILENAME}\"" >> ${ENV_CONF}
-#echo "ProjectFirmwareVersionDate=\""${VER_STR}", "`date +%e-%b-%Y`\" >> ${ENV_CONF}
-#echo "ProjectFirmwareVersionDate=\""${VER_STR}", "`date +%e-%b-%Y`\" >> ${WEB_FW_VERSION}
-echo "ProjectFirmwareVersionDate=\""${VER_STR}", "`date +'%b %e, %Y'`\" >> ${ENV_CONF}
-#echo "ProjectFirmwareVersionDate=\""${VER_STR}", "`date +'%b %e, %Y'`\" >> ${WEB_FW_VERSION}
-
-# Jacky.Yang 11-Jan-2008, Write to environment /config/autoconf.h for get ProjectFirmwareVersionDate in UI
-#sed -i '/ProjectFirmwareVersionDate/d' ${UI_CONF}
-#echo "#define ProjectFirmwareVersionDate \""${VER_STR}", "`date +%e-%b-%Y`\" >> ${UI_CONF}
-
-#cp -p -v $ROOTDIR/output/bootpImage $ROOTDIR/output/${VER_FILENAME}
+# Update generated build state in config/.config_${MODENAME} (never clobbering config/WAP610N_VERSION)
+cat > "${ENV_CONF}" << EOF
+FIRMWARE_MAJOR=${FIRMWARE_MAJOR}
+FIRMWARE_MINOR=${FIRMWARE_MINOR}
+FIRMWARE_PATCH=${FIRMWARE_PATCH}
+ProjectName=${ProjectName}
+FIRMWARE_BUILD=${BUILD}
+FIRMWARE_VERSION="${FIRMWARE_VERSION}"
+FIRMWARE_FILENAME="${VER_FILENAME}"
+ProjectFirmwareVersionDate="${VER_STR}, $(date +'%b %e, %Y')"
+EOF

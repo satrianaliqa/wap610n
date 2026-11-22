@@ -47,11 +47,28 @@ echo " Workspace: $ROOT_DIR"
 echo " Prerequisites: ✅ Validated"
 echo "=========================================================="
 
+EXTRA_ENV_ARGS=()
+for ev in FIRMWARE_VERSION MAJOR MINOR PATCH BUILD; do
+    if [ -n "${!ev:-}" ]; then
+        EXTRA_ENV_ARGS+=(-e "${ev}=${!ev}")
+    fi
+done
+while IFS='=' read -r ev _; do
+    case "$ev" in
+        CUSTOM_*)
+            if [ -n "${!ev:-}" ]; then
+                EXTRA_ENV_ARGS+=(-e "${ev}=${!ev}")
+            fi
+            ;;
+    esac
+done < <(env)
+
 sudo $CONTAINER_CMD run --rm \
     --privileged \
     -e TARGET_NAME="$TARGET_NAME" \
     -e CURRENT_UID="$CURRENT_UID" \
     -e CURRENT_GID="$CURRENT_GID" \
+    "${EXTRA_ENV_ARGS[@]}" \
     -v "$ROOT_DIR:/workspace:z" \
     -w /workspace \
     wap610n-builder /bin/bash -c '
@@ -79,8 +96,12 @@ sudo $CONTAINER_CMD run --rm \
 
         VER_FILE="config/${TARGET_NAME}_VERSION"
         [ -f "$VER_FILE" ] || VER_FILE="config/WAP610N_VERSION"
-        if [ -e output/bootpImage ] && [ -f "$VER_FILE" ]; then
-            VERSION=$(grep "FIRMWARE_VERSION" "$VER_FILE" | cut -d"\"" -f2)
+        if [ -e output/bootpImage ]; then
+            VERSION="${FIRMWARE_VERSION:-}"
+            if [ -z "$VERSION" ] && [ -f "$VER_FILE" ]; then
+                VERSION=$(grep "FIRMWARE_VERSION" "$VER_FILE" | cut -d"\"" -f2)
+            fi
+            VERSION="${VERSION:-1.0.05}"
             BINNAME="${TARGET_NAME}_v${VERSION}.bin"
             echo "--> Copying bootpImage to output/$BINNAME"
             cp -vf output/bootpImage "output/$BINNAME"

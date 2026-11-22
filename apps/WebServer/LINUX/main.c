@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 	int firewallReloadID;
 	struct msgbuffer {
 		long mtype;
-		char mtext[1024];
+		char mtext[1025];
 	} msgInfo;
 
 	//Jacky.Yang 15-May-209, set open debug message value;
@@ -243,7 +243,7 @@ int main(int argc, char** argv)
 		
 		/* Check IPC message queue for debug toggle */
 		if (firewallReloadID != -1) {
-			int mlen = msgrcv(firewallReloadID, &msgInfo, (size_t)(sizeof(msgInfo.mtext) - 1), 0, IPC_NOWAIT);
+			int mlen = msgrcv(firewallReloadID, &msgInfo, (size_t)(sizeof(msgInfo.mtext) - 1), 0, IPC_NOWAIT | MSG_NOERROR);
 			if (mlen >= 0) {
 				msgInfo.mtext[mlen] = '\0';
 				printf("goahead: Get message from send_event, the message is %s\n", msgInfo.mtext);
@@ -514,7 +514,7 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		unsigned long memTotal = 0, memFree = 0, buffers = 0, cached = 0;
 		unsigned long commitLimit = 0, committedAs = 0;
 		int tcpEstab = 0, tcpListen = 0, tcpCloseWait = 0;
-		char hostRaw[64], hostEsc[128], netType[16], verRaw[96], verEsc[192];
+		char hostRaw[64], hostEsc[128], netType[16], netTypeEsc[32], verRaw[96], verEsc[192];
 
 		memset(hostRaw, 0, sizeof(hostRaw));
 		memset(netType, 0, sizeof(netType));
@@ -522,6 +522,7 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
 		MT_Get_Param("network_type", netType, sizeof(netType) - 1);
 		jsonEscapeCopy(hostEsc, sizeof(hostEsc), hostRaw);
+		jsonEscapeCopy(netTypeEsc, sizeof(netTypeEsc), netType);
 
 		fp = fopen("/proc/uptime", "r");
 		if (fp != NULL) {
@@ -578,7 +579,7 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			"\"mem_kb\":{\"total\":%lu,\"free\":%lu,\"buffers\":%lu,\"cached\":%lu,"
 			"\"commit_limit\":%lu,\"committed_as\":%lu},"
 			"\"tcp\":{\"established\":%d,\"listen\":%d,\"close_wait\":%d}}\n",
-			hostEsc, netType, verEsc, uptimeSec,
+			hostEsc, netTypeEsc, verEsc, uptimeSec,
 			memTotal, memFree, buffers, cached, commitLimit, committedAs,
 			tcpEstab, tcpListen, tcpCloseWait);
 		body[sizeof(body) - 1] = '\0';
@@ -587,8 +588,14 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	}
 
 	if (strcmp(path, "/api/wifi.json") == 0) {
-		char essidRaw[64], essidEsc[128], channel[16], netMode[16];
-		char bonding[16], auth[32], rfBand[16], wpsMode[16];
+		char essidRaw[64], essidEsc[128];
+		char channel[16], channelEsc[32];
+		char netMode[16], netModeEsc[32];
+		char bonding[16], bondingEsc[32];
+		char auth[32], authEsc[64];
+		char secMode[16], secModeEsc[32];
+		char rfBand[16], rfBandEsc[32];
+		char wpsMode[16], wpsModeEsc[32];
 		unsigned long wlanRxB = 0, wlanRxP = 0, wlanTxB = 0, wlanTxP = 0;
 		unsigned long ethRxB = 0, ethRxP = 0, ethTxB = 0, ethTxP = 0;
 
@@ -597,17 +604,35 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		memset(netMode, 0, sizeof(netMode));
 		memset(bonding, 0, sizeof(bonding));
 		memset(auth, 0, sizeof(auth));
+		memset(secMode, 0, sizeof(secMode));
 		memset(rfBand, 0, sizeof(rfBand));
 		memset(wpsMode, 0, sizeof(wpsMode));
 
-		MT_Get_Param("ESSID", essidRaw, sizeof(essidRaw) - 1);
+		MT_Get_Param("NonProc_ESSID", essidRaw, sizeof(essidRaw) - 1);
+		if (essidRaw[0] == '\0') {
+			MT_Get_Param("ESSID", essidRaw, sizeof(essidRaw) - 1);
+		}
 		MT_Get_Param("Channel", channel, sizeof(channel) - 1);
 		MT_Get_Param("NetworkMode", netMode, sizeof(netMode) - 1);
 		MT_Get_Param("ChannelBonding", bonding, sizeof(bonding) - 1);
 		MT_Get_Param("Authentication", auth, sizeof(auth) - 1);
-		MT_Get_Param("RF_Band", rfBand, sizeof(rfBand) - 1);
-		MT_Get_Param("WPS_Mode", wpsMode, sizeof(wpsMode) - 1);
+		MT_Get_Param("NonProcSecurityMode", secMode, sizeof(secMode) - 1);
+		MT_Get_Param("FrequencyBand", rfBand, sizeof(rfBand) - 1);
+		if (rfBand[0] == '\0') {
+			MT_Get_Param("RF_Band", rfBand, sizeof(rfBand) - 1);
+		}
+		MT_Get_Param("NonProc_WPS_ActivateWPS", wpsMode, sizeof(wpsMode) - 1);
+		if (wpsMode[0] == '\0') {
+			MT_Get_Param("WPS_Mode", wpsMode, sizeof(wpsMode) - 1);
+		}
 		jsonEscapeCopy(essidEsc, sizeof(essidEsc), essidRaw);
+		jsonEscapeCopy(channelEsc, sizeof(channelEsc), channel);
+		jsonEscapeCopy(netModeEsc, sizeof(netModeEsc), netMode);
+		jsonEscapeCopy(bondingEsc, sizeof(bondingEsc), bonding);
+		jsonEscapeCopy(authEsc, sizeof(authEsc), auth);
+		jsonEscapeCopy(secModeEsc, sizeof(secModeEsc), secMode);
+		jsonEscapeCopy(rfBandEsc, sizeof(rfBandEsc), rfBand);
+		jsonEscapeCopy(wpsModeEsc, sizeof(wpsModeEsc), wpsMode);
 
 		fp = fopen("/proc/net/dev", "r");
 		if (fp != NULL) {
@@ -631,11 +656,11 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 
 		snprintf(body, sizeof(body),
 			"{\"essid\":\"%s\",\"channel\":\"%s\",\"network_mode\":\"%s\","
-			"\"channel_bonding\":\"%s\",\"authentication\":\"%s\","
+			"\"channel_bonding\":\"%s\",\"authentication\":\"%s\",\"security_mode\":\"%s\","
 			"\"rf_band\":\"%s\",\"wps_mode\":\"%s\","
 			"\"wlan0\":{\"rx_bytes\":%lu,\"rx_packets\":%lu,\"tx_bytes\":%lu,\"tx_packets\":%lu},"
 			"\"eth0\":{\"rx_bytes\":%lu,\"rx_packets\":%lu,\"tx_bytes\":%lu,\"tx_packets\":%lu}}\n",
-			essidEsc, channel, netMode, bonding, auth, rfBand, wpsMode,
+			essidEsc, channelEsc, netModeEsc, bondingEsc, authEsc, secModeEsc, rfBandEsc, wpsModeEsc,
 			wlanRxB, wlanRxP, wlanTxB, wlanTxP,
 			ethRxB, ethRxP, ethTxB, ethTxP);
 		body[sizeof(body) - 1] = '\0';

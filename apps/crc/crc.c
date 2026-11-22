@@ -35,9 +35,9 @@
  * SUCH DAMAGE.
  */
 
-#ifndef lint
+#ifdef LIBC_SCCS
 static char sccsid[] = "@(#)crc.c	5.2 (Berkeley) 4/4/91";
-#endif /* not lint */
+#endif /* LIBC_SCCS */
 
 #define _POSIX_SOURCE
 

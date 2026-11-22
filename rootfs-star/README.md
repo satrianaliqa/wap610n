@@ -98,3 +98,16 @@ ls -l /dev/gpio3 /dev/gpio13 /dev/rdflt0
 
 > [!NOTE]
 > Jika perlu menyimpan capture sementara, selalu gunakan `/tmp` (`tmpfs`), jangan menulis log berulang kali ke `/mnt/jffs2` (`mtdblock4`).
+
+---
+
+## 4. Ringkasan Audit Stabilitas Runtime & Userspace (`RT-17–RT-21`, `K-11`)
+
+| Kode | Subsistem | Masalah yang Diperbaiki |
+|---|---|---|
+| **RT-17** | Early Boot (`mtlk_init_start.sh`) | Membaca `Telnet_Enabled` dan `SSH_Enabled` dari `/mnt/jffs2/sys.conf` (default `1`) sebelum menjalankan `telnetd` / `dropbear`. |
+| **RT-18** | Config Generator (`mtlk_set_config.tcl` & `management.c`) | Mendaftarkan `SSH_Enabled`, `Telnet_Enabled`, dan `WirelessMgmtEnabled` di `sys.conf`, membersihkan prefix `^`, serta deduplikasi key (mencegah `auto_network_type` ganda). |
+| **RT-19** | ConfigFS Sync (`config_umount.sh` & `config_save.sh`) | Menjaga `SSH_Enabled`, `Telnet_Enabled`, dan `WirelessMgmtEnabled` tetap utuh di `/mnt/jffs2/sys.conf` dan `/tmp/sys.conf` pada seluruh pemanggil langsung `config_umount.sh`. |
+| **RT-20** | WPS Init (`mtlk_init_wps.sh`) | Fallback `BSSID_USAGE=1`, `WPS_IGNORESELECTEDREGISTRAR=0`, identitas vendor dari `sys.conf`, dan strip `\r` pada `ESSID`/`NW_KEY`. |
+| **RT-21** | Runtime Shell & CGI | Quoting variabel kosong (`wps_config_flash.sh`, `mtlk_linkstat_event*.sh`, `wpsCleanTempClock.sh`), operator POSIX `=` (`gui_wps_init.sh`), dan restore host key Dropbear di `remote_access.cgi`. |
+| **K-11** | Custom Userspace C Daemons | Zero-fork C I/O untuk `get_config()`/ARP/PID file di `force_ethpc_renew_ip.c`, skip whitespace di `linkUtil.c`, dan pembersihan warning `-Wall` di seluruh utilitas C (`0 warnings`). |

@@ -97,6 +97,82 @@ static int isValidDigits(const char *s)
 	return 1;
 }
 
+static int readSysConfValue(const char *path, const char *key, char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[256];
+	size_t keyLen;
+
+	if (path == NULL || key == NULL || out == NULL || outSize == 0) {
+		return 0;
+	}
+	keyLen = strlen(key);
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		char *p = line;
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (strncmp(p, key, keyLen) == 0) {
+			char *eq = p + keyLen;
+			while (*eq == ' ' || *eq == '\t') {
+				eq++;
+			}
+			if (*eq == '=') {
+				char *val = eq + 1;
+				size_t len;
+				while (*val == ' ' || *val == '\t') {
+					val++;
+				}
+				snprintf(out, outSize, "%s", val);
+				len = strlen(out);
+				while (len > 0 && (out[len - 1] == '\n' || out[len - 1] == '\r' ||
+				                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
+					out[--len] = '\0';
+				}
+				fclose(fp);
+				return 1;
+			}
+		}
+	}
+	fclose(fp);
+	return 0;
+}
+
+static void preserveCustomSysConf(const char *wirelessMgmtOverride)
+{
+	static const char * const keys[3] = {
+		"SSH_Enabled",
+		"Telnet_Enabled",
+		"WirelessMgmtEnabled"
+	};
+	char vals[3][16];
+	int i;
+	FILE *fp;
+
+	for (i = 0; i < 3; i++) {
+		if (i == 2 && wirelessMgmtOverride != NULL && wirelessMgmtOverride[0] != '\0') {
+			snprintf(vals[i], sizeof(vals[i]), "%s", wirelessMgmtOverride);
+		} else if (!readSysConfValue("/tmp/sys.conf", keys[i], vals[i], sizeof(vals[i]))) {
+			snprintf(vals[i], sizeof(vals[i]), "1");
+		}
+	}
+
+	fp = fopen("/mnt/jffs2/sys.conf", "a");
+	if (fp != NULL) {
+		for (i = 0; i < 3; i++) {
+			char existing[16];
+			if (!readSysConfValue("/mnt/jffs2/sys.conf", keys[i], existing, sizeof(existing))) {
+				fprintf(fp, "%s = %s\n", keys[i], vals[i]);
+			}
+		}
+		fclose(fp);
+	}
+}
+
 void management(webs_t wp, char_t *path, char_t *query)
 {
 	char_t *rebootTag;
@@ -205,6 +281,7 @@ void management(webs_t wp, char_t *path, char_t *query)
 			if (paramCount > 0) {
 				MT_WriteConfFiles(paramCount, paramNames);
 			}
+			preserveCustomSysConf(wirelessMgmt);
 			submitToFlash();
 			startWPS_PBC();
 			childFinishAndExit();

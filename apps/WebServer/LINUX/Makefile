@@ -64,7 +64,7 @@ DEPEND_FILES	= ../asp.o ../balloc.o ../base64.o ../cgi.o ../default.o  \
 
 ############### Settings for Snapgear -these are overridden by other platforms ################
 PLATFORM_CFLAGS ?= -mlittle-endian -mapcs-32 -march=armv4 -mtune=arm9tdmi -msoft-float \
-        -Os -fomit-frame-pointer
+        -Os -fomit-frame-pointer -fno-strict-aliasing
 # SNAPGEAR = /home/arnonm/Desktop/svn/wl/linux/trunk/snapgear/dongle-2.0
 SNAPGEAR ?= /tools/dongle-2.0
 CROSS_COMPILE ?= $(SNAPGEAR)/tools/ucfront-gcc arm-linux-

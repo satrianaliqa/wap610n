@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 		char mtext[MSG_SIZE];
 	} msgInfo;
 
-	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0600);
+	firewallReloadID = msgget(FIREWALL_RELOAD_KEY, IPC_CREAT | 0666);
 	if (firewallReloadID == -1) {
 		printf("send_event: Create firewall reload message queue fail!\n");
 		perror("msgget");

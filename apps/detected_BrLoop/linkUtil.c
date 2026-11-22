@@ -96,6 +96,8 @@ int get_config(char *config_value, char *config_name, char *config_file)
 	while (fgets(line, sizeof(line), fptr) != NULL) {
 		char *p = line;
 		char *eq, *nl;
+		while (*p == ' ' || *p == '\t')
+			p++;
 		if (strncmp(p, config_name, klen) == 0 &&
 		    (p[klen] == '=' || p[klen] == ' ' || p[klen] == '\t')) {
 			eq = strchr(p + klen, '=');
@@ -266,7 +268,6 @@ int detect_layer3_link_by_dhcp(void)
 	FILE *fptr;
 	char lease_status[16]={0};
 	int i=0;
-	char	gateway[16]={0};
 
 	fptr = fopen("/tmp/dhcp_client_lease_status", "r");
 	if(fptr==NULL){
@@ -322,7 +323,6 @@ int detect_layer3_link_by_dhcp_retry(void)
 {
 	FILE *fptr;
 	char retry_count[16]={0};
-	int i=0;
 
 	fptr = fopen("/tmp/dhcp_client_retry_count", "r");
 	if(fptr==NULL){

@@ -15,6 +15,32 @@ echo "--> Preparing rootfs files and version..."
 if [ ! -d "${ROOTFS_DIR}/bin" ]; then
 	mkdir -p "${ROOTFS_DIR}"
 	cp -a "${STAR_DIR}/." "${ROOTFS_DIR}/"
+else
+	for subdir in bin etc sbin usr var dev; do
+		if [ -d "${STAR_DIR}/${subdir}" ]; then
+			SUBDIR_EXCLUDES=""
+			for compiled_bin in \
+				bin/busybox bin/simpdiff bin/get_env_param bin/set_env_param \
+				bin/crc bin/vconfig bin/tclsh bin/send_event \
+				sbin/udhcpc usr/sbin/udhcpd usr/sbin/dropbear usr/sbin/dropbearmulti \
+				usr/bin/dropbearkey usr/bin/dropbearconvert usr/bin/dbclient usr/bin/ssh usr/bin/scp \
+				usr/bin/dumpleases usr/bin/DetectedBrLoop etc/Detected_BrLoop; do
+				case "${compiled_bin}" in
+					${subdir}/*)
+						rel_bin="${compiled_bin#${subdir}/}"
+						if [ -e "${ROOTFS_DIR}/${compiled_bin}" ]; then
+							SUBDIR_EXCLUDES="${SUBDIR_EXCLUDES} --exclude=${rel_bin}"
+						fi
+						;;
+				esac
+			done
+			mkdir -p "${ROOTFS_DIR}/${subdir}"
+			tar -C "${STAR_DIR}/${subdir}" ${SUBDIR_EXCLUDES} -cf - . | tar -C "${ROOTFS_DIR}/${subdir}" -xf - || {
+				echo "ERROR: Failed to sync ${STAR_DIR}/${subdir}"
+				exit 1
+			}
+		fi
+	done
 fi
 mkdir -p "${ROOTFS_DIR}/root/mtlk" "${ROOTFS_DIR}/etc"
 
@@ -70,17 +96,127 @@ if [ -d "packages" ]; then
 	done
 fi
 
+# Load config/WAP610N_VERSION while preserving any caller environment overrides
+load_custom_build_vars() {
+	local var val
+	if [ -f "config/WAP610N_VERSION" ]; then
+		while IFS='=' read -r var val; do
+			case "$var" in
+				''|\#*) continue ;;
+			esac
+			var=$(echo "$var" | tr -d ' \t\r')
+			val=$(echo "$val" | sed -e 's/^[ \t]*//' -e 's/[ \t\r]*$//' -e 's/^"//' -e 's/"$//')
+			[ -n "$var" ] || continue
+			if [ -z "${!var:-}" ]; then
+				export "${var}=${val}"
+			fi
+		done < "config/WAP610N_VERSION"
+	fi
+	if [ -z "${FIRMWARE_VERSION:-}" ]; then
+		FIRMWARE_VERSION="${MAJOR:-1}.${MINOR:-0}.${PATCH:-05}"
+	fi
+	BUILD="${BUILD:-0}"
+}
+
+set_conf_kv() {
+	local file="$1" key="$2" val="$3"
+	[ -f "$file" ] || return 0
+	[ -n "$val" ] || return 0
+	awk -v k="$key" -v v="$val" '
+		BEGIN { found = 0 }
+		{
+			line = $0
+			sub(/\r$/, "", line)
+			if (match(line, /^[ \t]*\^?[A-Za-z0-9_]+[ \t]*=/)) {
+				lhs = line
+				sub(/[ \t]*=.*/, "", lhs)
+				gsub(/^[ \t]+|[ \t]+$/, "", lhs)
+				clean_lhs = lhs
+				sub(/^\^/, "", clean_lhs)
+				if (clean_lhs == k) {
+					if (!found) {
+						prefix = (substr(lhs, 1, 1) == "^") ? "^" : ""
+						print prefix k " = " v
+						found = 1
+					}
+					next
+				}
+			}
+			print line
+		}
+		END {
+			if (!found) print k " = " v
+		}
+	' "$file" > "${file}.tmp" && mv "${file}.tmp" "$file"
+}
+
+load_custom_build_vars
+
 # 5. Auto-generate mtdblock4 factory default config.img.gz from plain-text config/mtdblock4-defaults/
 if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-defaults/wlan0.conf" ]; then
 	echo "Generating factory default config.img.gz from config/mtdblock4-defaults/..."
-	cp -af "config/mtdblock4-defaults/sys.conf" "${ROOTFS_DIR}/root/mtlk/etc/sys.conf"
-	cp -af "config/mtdblock4-defaults/sys.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default"
-	cp -af "config/mtdblock4-defaults/wlan0.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"
-
 	TMP_CFG_DIR=$(mktemp -d)
 	TMP_CFG_IMG=$(mktemp)
 	install -m 600 "config/mtdblock4-defaults/sys.conf" "${TMP_CFG_DIR}/sys.conf"
 	install -m 600 "config/mtdblock4-defaults/wlan0.conf" "${TMP_CFG_DIR}/wlan0.conf"
+
+	# Apply custom build variables & firmware version to staged default configs
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "FirmwareVersion" "v${FIRMWARE_VERSION}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "HostName" "${CUSTOM_HOSTNAME:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DeviceName" "${CUSTOM_HOSTNAME:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "ip_lan" "${CUSTOM_LAN_IP:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "subnet_lan" "${CUSTOM_LAN_SUBNET:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "default_gw" "${CUSTOM_DEFAULT_GW:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDEnabled" "${CUSTOM_DHCPD_ENABLED:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDStartAddress" "${CUSTOM_DHCP_START:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDEndAddress" "${CUSTOM_DHCP_END:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDDNS1" "${CUSTOM_DNS1:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDDNS2" "${CUSTOM_DNS2:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AdminUserName" "${CUSTOM_ADMIN_USER:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AdminPassword" "${CUSTOM_ADMIN_PASS:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AuthenticationTimeout" "${CUSTOM_AUTH_TIMEOUT:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "SSH_Enabled" "${CUSTOM_SSH_ENABLED:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "Telnet_Enabled" "${CUSTOM_TELNET_ENABLED:-}"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "WirelessMgmtEnabled" "${CUSTOM_WIRELESS_MGMT:-}"
+
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "HostName" "${CUSTOM_HOSTNAME:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "ip_lan" "${CUSTOM_LAN_IP:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "subnet_lan" "${CUSTOM_LAN_SUBNET:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "default_gw" "${CUSTOM_DEFAULT_GW:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "DHCPDEnabled" "${CUSTOM_DHCPD_ENABLED:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "DHCPDStartAddress" "${CUSTOM_DHCP_START:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "DHCPDEndAddress" "${CUSTOM_DHCP_END:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "DHCPDDNS1" "${CUSTOM_DNS1:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "DHCPDDNS2" "${CUSTOM_DNS2:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "WirelessMgmtEnabled" "${CUSTOM_WIRELESS_MGMT:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "NonProc_ESSID" "${CUSTOM_WIFI_SSID:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "FrequencyBand" "${CUSTOM_WIFI_BAND:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "Channel" "${CUSTOM_WIFI_CHANNEL:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "ChannelBonding" "${CUSTOM_WIFI_BONDING:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "Country" "${CUSTOM_WIFI_COUNTRY:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "NonProcSecurityMode" "${CUSTOM_WIFI_SEC_MODE:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "NonProc_WPA_Personal_PSK" "${CUSTOM_WIFI_WPA_PSK:-}"
+	set_conf_kv "${TMP_CFG_DIR}/wlan0.conf" "NonProc_WPS_ActivateWPS" "${CUSTOM_WPS_ENABLED:-}"
+
+	cp -af "${TMP_CFG_DIR}/sys.conf" "${ROOTFS_DIR}/root/mtlk/etc/sys.conf"
+	cp -af "${TMP_CFG_DIR}/sys.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default"
+	cp -af "${TMP_CFG_DIR}/wlan0.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"
+
+	if [ -f "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" ]; then
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "FirmwareVersion" "v${FIRMWARE_VERSION}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "DeviceName" "${CUSTOM_HOSTNAME:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "AdminUserName" "${CUSTOM_ADMIN_USER:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "AdminPassword" "${CUSTOM_ADMIN_PASS:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "AuthenticationTimeout" "${CUSTOM_AUTH_TIMEOUT:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "SSH_Enabled" "${CUSTOM_SSH_ENABLED:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "Telnet_Enabled" "${CUSTOM_TELNET_ENABLED:-}"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "WirelessMgmtEnabled" "${CUSTOM_WIRELESS_MGMT:-}"
+	fi
+
 	if command -v genext2fs >/dev/null 2>&1; then
 		genext2fs -U -b 128 -d "${TMP_CFG_DIR}" "${TMP_CFG_IMG}" >/dev/null 2>&1
 	else
@@ -147,14 +283,12 @@ fi
 # 8. Force ProjectName to WAP610N and ensure WebUI symlinks/files
 if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
 	echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
-	CURR_VER="1.0.05"
-	if [ -f "config/WAP610N_VERSION" ]; then
-		CURR_VER=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d'"' -f2 2>/dev/null || echo "1.0.05")
-	fi
+	CURR_VER="${FIRMWARE_VERSION:-1.0.05}"
+	CURR_BUILD="${BUILD:-0}"
 	cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
 FIRMWARE_VERSION="${CURR_VER}"
-ProjectFirmwareVersionDate="${CURR_VER} build 0, $(date '+%b %d, %Y')"
+ProjectFirmwareVersionDate="${CURR_VER} build ${CURR_BUILD}, $(date '+%b %d, %Y')"
 EOF
 	cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
 	mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"

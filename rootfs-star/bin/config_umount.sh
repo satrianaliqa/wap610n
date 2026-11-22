@@ -52,6 +52,25 @@ then
 		$DIAG_LOG "config_umount: missing or empty wlan0.conf/sys.conf; aborting flash write" 2>/dev/null || true
 		exit 1
 	fi
+	SYS_ADDED=0
+	for key in SSH_Enabled Telnet_Enabled WirelessMgmtEnabled; do
+		if ! grep -q "^[[:space:]]*${key}[[:space:]]*=" "$CONFIG_MNT/sys.conf" 2>/dev/null; then
+			val=""
+			if [ -f /tmp/sys.conf ]; then
+				val=$(awk -F= -v k="$key" '{
+					lhs=$1; gsub(/^[ \t]+|[ \t]+$/, "", lhs);
+					if (lhs == k) {
+						rhs=$2; gsub(/^[ \t]+|[ \t\r]+$/, "", rhs);
+						print rhs;
+					}
+				}' /tmp/sys.conf 2>/dev/null | tail -n 1)
+			fi
+			[ -z "$val" ] && val=1
+			echo "${key} = ${val}" >> "$CONFIG_MNT/sys.conf" 2>/dev/null || true
+			SYS_ADDED=1
+		fi
+	done
+	[ "$SYS_ADDED" = "1" ] && cp -f "$CONFIG_MNT/sys.conf" /tmp/sys.conf 2>/dev/null || true
 	if ! mount -o remount,ro "$CONFIG_MNT" 2>/dev/null; then
 		sleep 1
 		sync

@@ -154,7 +154,7 @@ int getPreDisPort()
 
 int main(int argc, char* argv[])
 {	
-	int i, checkTime = 0, tp_time_out = 0, checkStillLoopTime = 0;
+	int i, checkTime = 0, tp_time_out = 0;
 	static TPState tp;
 	int cur_ifw_status = 0;
 	char cmd_sys[CMD_LEN], cmd_loop[CMD_LEN];

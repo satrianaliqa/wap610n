@@ -1060,6 +1060,7 @@ extern int		symSubOpen();
 extern void 	symSubClose();
 
 extern void		trace(int lev, char_t *fmt, ...);
+extern void		debug_printf(const char *fmt, ...);
 extern void		traceRaw(char_t *buf);
 extern void		(*traceSetHandler(void (*function)(int level, char_t *buf))) 
 					(int level, char_t *buf);

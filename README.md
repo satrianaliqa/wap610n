@@ -27,6 +27,9 @@ Repositori terpadu (**1 Board `STR8132`, 1 Product `WAP610N`, 1 Source Tree**) u
 # 2. Full compile dalam container 32-bit Debian 8 + audit QA otomatis
 ./docker/compile.sh WAP610N
 
+# 2b. (Opsional) Override versi & default AP langsung dari CLI atau edit config/WAP610N_VERSION
+FIRMWARE_VERSION="1.0.06" CUSTOM_WIFI_SSID="MyAP" ./docker/compile.sh WAP610N
+
 # 3. Verifikasi manual biner hasil build
 ./docker/verify-firmware.sh output/WAP610N_v1.0.05.bin
 ```

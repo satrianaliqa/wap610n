@@ -4,7 +4,7 @@ CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
 STRIP = $(CROSS_COMPILE)strip
 ROOTFS_WEB ?= ../../../rootfs-star/root/mtlk/web
-PLATFORM_CFLAGS = -Os -march=armv4 -msoft-float
+PLATFORM_CFLAGS = -Os -march=armv4 -msoft-float -fno-strict-aliasing
 INCLUDE =
 LIBPATH = 
 LIB =

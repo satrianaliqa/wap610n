@@ -138,16 +138,16 @@ fi
 mkdir -p /mnt/jffs2 2>/dev/null || true
 if [ -d /mnt/jffs2 ]; then
     touch /mnt/jffs2/sys.conf 2>/dev/null || true
-    sed -i '/^SSH_Enabled/d' /mnt/jffs2/sys.conf 2>/dev/null || true
+    sed -i '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' /mnt/jffs2/sys.conf 2>/dev/null || true
     echo "SSH_Enabled = $SSH_VAL" >> /mnt/jffs2/sys.conf 2>/dev/null || true
-    sed -i '/^Telnet_Enabled/d' /mnt/jffs2/sys.conf 2>/dev/null || true
+    sed -i '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' /mnt/jffs2/sys.conf 2>/dev/null || true
     echo "Telnet_Enabled = $TELNET_VAL" >> /mnt/jffs2/sys.conf 2>/dev/null || true
     # Synchronize to /tmp/sys.conf
     cp -af /mnt/jffs2/sys.conf /tmp/sys.conf 2>/dev/null || true
 elif [ -f /tmp/sys.conf ]; then
-    sed -i '/^SSH_Enabled/d' /tmp/sys.conf 2>/dev/null || true
+    sed -i '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' /tmp/sys.conf 2>/dev/null || true
     echo "SSH_Enabled = $SSH_VAL" >> /tmp/sys.conf 2>/dev/null || true
-    sed -i '/^Telnet_Enabled/d' /tmp/sys.conf 2>/dev/null || true
+    sed -i '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' /tmp/sys.conf 2>/dev/null || true
     echo "Telnet_Enabled = $TELNET_VAL" >> /tmp/sys.conf 2>/dev/null || true
 fi
 if [ "$LOCKED" = "1" ] && [ -x /bin/config_unlock.sh ]; then
@@ -160,12 +160,16 @@ if [ "$SSH_VAL" = "0" ]; then
 else
     mkdir -p /etc/dropbear 2>/dev/null || true
     chmod 700 /etc/dropbear 2>/dev/null || true
-    if [ ! -f /etc/dropbear/dropbear_rsa_host_key ]; then
-        /usr/bin/dropbearkey -t rsa -s 1024 -f /etc/dropbear/dropbear_rsa_host_key >/dev/null 2>&1 || true
-    fi
-    if [ ! -f /etc/dropbear/dropbear_dss_host_key ]; then
-        /usr/bin/dropbearkey -t dss -s 1024 -f /etc/dropbear/dropbear_dss_host_key >/dev/null 2>&1 || true
-    fi
+    for keyname in dropbear_rsa_host_key dropbear_dss_host_key; do
+        keytype=rsa
+        [ "$keyname" = "dropbear_dss_host_key" ] && keytype=dss
+        if [ ! -f "/etc/dropbear/$keyname" ] && [ -f "/mnt/jffs2/dropbear/$keyname" ]; then
+            cp -f "/mnt/jffs2/dropbear/$keyname" "/etc/dropbear/$keyname" 2>/dev/null || true
+        fi
+        if [ ! -f "/etc/dropbear/$keyname" ] && [ -x /usr/bin/dropbearkey ]; then
+            /usr/bin/dropbearkey -t "$keytype" -s 1024 -f "/etc/dropbear/$keyname" >/dev/null 2>&1 || true
+        fi
+    done
     chmod 600 /etc/dropbear/*_host_key 2>/dev/null || true
     if ! pidof dropbear >/dev/null 2>&1; then
         /usr/sbin/dropbear -p 22 </dev/null >/dev/null 2>&1 &
@@ -182,7 +186,7 @@ fi
 
 # Persist changes to physical flash in background without blocking HTTP response
 if [ -x /bin/config_save.sh ]; then
-    /bin/config_save.sh >/dev/null 2>&1 &
+    /bin/config_save.sh </dev/null >/dev/null 2>&1 &
 fi
 
 # apps/WebServer/cgi.c:318 already writes "HTTP/1.0 200 OK\r\n"

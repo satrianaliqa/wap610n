@@ -4,11 +4,16 @@ WPSHistory=/var/WPS_History
 
 echo "" > $WPSHistory
 
+LIMIT="${1:-180}"
+case "$LIMIT" in
+	*[!0-9]*|'') LIMIT=180 ;;
+esac
+
 n=1
-while [ "$n" -lt $1 ]
+while [ "$n" -lt "$LIMIT" ]
 do
 	CurrentTime=`cat /proc/uptime | awk -F "." '{print $1}'`
-	WPSCurrentStatus=`cat /tmp/wps_current_status | awk -F " = " '{printf $2}'`
+	WPSCurrentStatus=`cat /tmp/wps_current_status 2>/dev/null | awk -F " = " '{printf $2}'`
 	if [ "$WPSCurrentStatus" = "" ]
 	then
 		WPSCurrentStatus=-1

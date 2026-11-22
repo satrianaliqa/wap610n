@@ -1,5 +1,46 @@
+# ==============================================================================
+# WAP610N Unified Versioning & Custom Build Variables
+# Edit these values to customize firmware version and factory default settings,
+# or override any variable on the command line, e.g.:
+#   FIRMWARE_VERSION="1.0.06" CUSTOM_WIFI_SSID="MyAP" ./docker/compile.sh WAP610N
+# ==============================================================================
+
+# --- Firmware Semantic Versioning ---
 MAJOR=1
 MINOR=0
 PATCH=05
 BUILD=0
 FIRMWARE_VERSION="1.0.05"
+
+# --- Device Identity ---
+CUSTOM_VENDOR_NAME="Cisco-Linksys, LLC"
+CUSTOM_MODEL_NAME="Wireless-N Access Point with Dual-Band"
+CUSTOM_HOSTNAME="WAP610N"
+
+# --- Default LAN & DHCP Server (sys.conf) ---
+CUSTOM_LAN_IP="192.168.1.1"
+CUSTOM_LAN_SUBNET="255.255.255.0"
+CUSTOM_DEFAULT_GW="192.168.1.1"
+CUSTOM_DHCPD_ENABLED="1"
+CUSTOM_DHCP_START="192.168.1.10"
+CUSTOM_DHCP_END="192.168.1.20"
+CUSTOM_DNS1="1.1.1.1"
+CUSTOM_DNS2="8.8.8.8"
+
+# --- Default Admin & Remote Access (sys.conf) ---
+CUSTOM_ADMIN_USER="admin"
+CUSTOM_ADMIN_PASS="admin"
+CUSTOM_AUTH_TIMEOUT="600"
+CUSTOM_SSH_ENABLED="1"
+CUSTOM_TELNET_ENABLED="1"
+CUSTOM_WIRELESS_MGMT="1"
+
+# --- Default Wireless Radio (wlan0.conf) ---
+CUSTOM_WIFI_SSID="linksys"
+CUSTOM_WIFI_BAND="1"
+CUSTOM_WIFI_CHANNEL="0"
+CUSTOM_WIFI_BONDING="0"
+CUSTOM_WIFI_COUNTRY="US"
+CUSTOM_WIFI_SEC_MODE="1"
+CUSTOM_WIFI_WPA_PSK="12345678"
+CUSTOM_WPS_ENABLED="0"

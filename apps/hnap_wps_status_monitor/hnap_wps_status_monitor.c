@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	int result;
 	int wps_status=0;
 	int delay_exit;
-	int retry=0, i=0;
+	int retry=0;
 	int last_status=0;
 
 	struct sigaction sa;   

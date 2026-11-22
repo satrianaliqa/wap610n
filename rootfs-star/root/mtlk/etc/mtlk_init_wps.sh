@@ -41,7 +41,7 @@ then
 fi
 #WPS parameters
 
-ESSID=`cat ${WLAN_CONF} | grep NonProc_ESSID | sed 's#^[^=]*=[ ]*##'`
+ESSID=`cat ${WLAN_CONF} | grep '^NonProc_ESSID' | sed 's#^[^=]*=[ ]*##' | tr -d '\r' | tail -n 1`
 if [ ! "$ESSID" ]
 then 
 	ESSID="WPSMetalink"
@@ -109,7 +109,7 @@ then
 	SECURITY_MODE=`awk -F "=" '/^NonProcSecurityMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 	if [ "$SECURITY_MODE" = "$Security_Wpa" ]
 	then		
-		NW_KEY=`cat ${WLAN_CONF} | grep NonProc_WPA_Personal_PSK | sed 's#^[^=]*=[ ]*##'`				
+		NW_KEY=`cat ${WLAN_CONF} | grep '^NonProc_WPA_Personal_PSK' | sed 's#^[^=]*=[ ]*##' | tr -d '\r' | tail -n 1`
 	elif [ "$SECURITY_MODE" = "$Security_Wep" ]
 	then
 		WepTxKeyIdx=`awk -F "=" '/^WepTxKeyIdx/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
@@ -145,18 +145,28 @@ then
 	BRIDGE_MODE=`awk -F "=" '/^BridgeMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${SYS_CONF}`
 fi
 
-WPS_IGNORESELECTEDREGISTRAR=0
 WPS_IGNORESELECTEDREGISTRAR=`awk -F "=" '/^WPS_IgnoreSelectedRegistrar/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
+[ -z "$WPS_IGNORESELECTEDREGISTRAR" ] && WPS_IGNORESELECTEDREGISTRAR=0
 
-BSSID_USAGE=1
 BSSID_USAGE=`awk -F "=" '/^WPS_BSSID_USAGE/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
+[ -z "$BSSID_USAGE" ] && BSSID_USAGE=1
 
 
 # Vendor specific information
-MANUFACTURER=`get_env_param manufacturer`
-MODEL_NAME=`get_env_param model_name`
-MODEL_NUMBER=`get_env_param model_number`
-DEVICE_NAME=`get_env_param device_name`
+MANUFACTURER=`get_env_param manufacturer 2>/dev/null | tr -d '\r'`
+[ -z "$MANUFACTURER" ] && MANUFACTURER=`awk -F "=" '/^VendorName/ {sub(/^[ \t]+/, "", $2); sub(/[ \t\r]+$/, "", $2); print $2}' ${SYS_CONF} 2>/dev/null`
+[ -z "$MANUFACTURER" ] && MANUFACTURER="Cisco-Linksys, LLC"
+
+MODEL_NAME=`get_env_param model_name 2>/dev/null | tr -d '\r'`
+[ -z "$MODEL_NAME" ] && MODEL_NAME=`awk -F "=" '/^ModelName/ {sub(/^[ \t]+/, "", $2); sub(/[ \t\r]+$/, "", $2); print $2}' ${SYS_CONF} 2>/dev/null`
+[ -z "$MODEL_NAME" ] && MODEL_NAME="Wireless-N Access Point with Dual-Band"
+
+MODEL_NUMBER=`get_env_param model_number 2>/dev/null | tr -d '\r'`
+[ -z "$MODEL_NUMBER" ] && MODEL_NUMBER="WAP610N"
+
+DEVICE_NAME=`get_env_param device_name 2>/dev/null | tr -d '\r'`
+[ -z "$DEVICE_NAME" ] && DEVICE_NAME=`awk -F "=" '/^DeviceName/ {sub(/^[ \t]+/, "", $2); sub(/[ \t\r]+$/, "", $2); print $2}' ${SYS_CONF} 2>/dev/null`
+[ -z "$DEVICE_NAME" ] && DEVICE_NAME="WAP610N"
 
 # Serial number can be read from the ENV. uncomment next line to take serial number from ENV
 #SERIAL_NUMBER=`get_env_param serial_no`

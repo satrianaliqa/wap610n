@@ -43,6 +43,7 @@ proc read_param_db {dbFile} {
 				set value [string trim $value]
 				if {[string compare $key "Name"] == 0} { 
 					set lastKey $value 
+					regsub {^\^} $lastKey "" lastKey
 				} elseif {[string compare $key "ConfFile"] == 0} {
 					if {$value == "wlan"} {
 						puts $wlan_tmp "${lastKey}=${value}"
@@ -52,6 +53,9 @@ proc read_param_db {dbFile} {
 				}
 			}
 		}
+		puts $sys_tmp "SSH_Enabled=sys"
+		puts $sys_tmp "Telnet_Enabled=sys"
+		puts $sys_tmp "WirelessMgmtEnabled=sys"
 		close $sys_tmp
 		close $wlan_tmp
 		exec cat /tmp/sys_tmp.ini /tmp/wlan_tmp.ini > /tmp/mt_param.ini
@@ -72,15 +76,25 @@ proc do_config_import {in_file} {
 	set wlan_t [open $wlan_conf w]
 	set web_db [read_param_db $db]
 	set import_lines [file_load $in_file]
+	array set seen_wlan {}
+	array set seen_sys {}
 
 	foreach line $import_lines {
 
 		if {[regexp {([^=]*)=(.*)} $line all key value] == 1 } {
-			if {[IniGetKey $web_db wlan $key] != ""} {
-				puts $wlan_t "$all"
+			set clean_key [string trim $key]
+			regsub {^\^} $clean_key "" clean_key
+			set clean_val [string trim $value]
+			if {$clean_key eq ""} {
+				continue
+			}
+			if {[IniGetKey $web_db wlan $clean_key] != "" && ![info exists seen_wlan($clean_key)]} {
+				set seen_wlan($clean_key) 1
+				puts $wlan_t "${clean_key} = ${clean_val}"
 			} 
-			if {[IniGetKey $web_db sys $key] != ""} {
-				puts $sys_t "$all"
+			if {[IniGetKey $web_db sys $clean_key] != "" && ![info exists seen_sys($clean_key)]} {
+				set seen_sys($clean_key) 1
+				puts $sys_t "${clean_key} = ${clean_val}"
 			}
 		}
 	}

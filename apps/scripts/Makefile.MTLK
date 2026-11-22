@@ -20,7 +20,7 @@ clean:
         $(MAKE) -f Makefile.MTLK CLEAN -C $(TOPDIR)/$$dir; \
         done
 	# Clean   should clean up rootfs too
-	sudo rm -rf $(E_DEST)/*
+	rm -rf $(E_DEST)/* 2>/dev/null || sudo rm -rf $(E_DEST)/*
 
 comp: 
 	for dir in $(MTLK_APPS); do \
@@ -43,7 +43,7 @@ link:
 	TOPDIR=$(E_TOPDIR) ./dolink.sh
 
 install_:
-	@sudo rm -fr $(E_DEST)
+	@rm -fr $(E_DEST) 2>/dev/null || sudo rm -fr $(E_DEST)
 	@install -m 755 -d $(E_DEST)
 	cp -a $(E_SRC)/. $(E_DEST)/
 	for dir in $(MTLK_APPS); do \
@@ -57,7 +57,7 @@ svnclean:
 #  TODO: Consider deleting them from svn, and then remove this step of the build process
 unused_remove:	
 	for f in $(FILES_UNUSED); do \
-	sudo rm -fr $(E_DEST)/$$f; \
+	rm -fr $(E_DEST)/$$f 2>/dev/null || sudo rm -fr $(E_DEST)/$$f; \
 	done
 
 debugfs:

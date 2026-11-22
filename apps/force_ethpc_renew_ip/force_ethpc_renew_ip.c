@@ -78,41 +78,43 @@ static int is_valid_ip(const char *ip)
 int get_config(char *config_value, char *config_name, char *config_file)
 {
 	FILE *fptr;
-	char command[256];
-	const char *p;
+	char line[512];
+	size_t klen;
 
 	if (!config_value || !config_name || !config_file)
 		return -1;
 
-	/* Validate config_name to prevent shell injection */
-	for (p = config_name; *p; p++) {
-		if (!((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') ||
-		      (*p >= '0' && *p <= '9') || *p == '_'))
-			return -1;
-	}
-
-	memset(command, 0, sizeof(command));
-	snprintf(command, sizeof(command),
-		"awk -F \"=\" '/^%s/ {str = $2; gsub(/ /, \"\", str); sub(/\\r/, \"\", str); sub(/\\n/, \"\", str); print str}' %s",
-		config_name, config_file);
-
-	fptr = popen(command, "r");
-	if(fptr==NULL){
-		printf("ERROR: popen fail for get_config..\n");
-		return -1;
-	}
-
 	memset(config_value, 0, CONFIG_VALUE_MAXLEN);
-	if(fgets(config_value, CONFIG_VALUE_MAXLEN, fptr)==NULL){
-		pclose(fptr);
+	fptr = fopen(config_file, "r");
+	if (fptr == NULL) {
 		return -1;
 	}
-	{
-		char *nl = strpbrk(config_value, "\r\n");
-		if (nl) *nl = '\0';
+	klen = strlen(config_name);
+	while (fgets(line, sizeof(line), fptr) != NULL) {
+		char *p = line;
+		while (*p == ' ' || *p == '\t')
+			p++;
+		if (strncmp(p, config_name, klen) == 0 &&
+		    (p[klen] == '=' || p[klen] == ' ' || p[klen] == '\t')) {
+			char *eq = strchr(p + klen, '=');
+			if (eq) {
+				char *val = eq + 1;
+				int out_i = 0;
+				char *nl = strpbrk(val, "\r\n");
+				if (nl) *nl = '\0';
+				while (*val && out_i < CONFIG_VALUE_MAXLEN - 1) {
+					if (*val != ' ' && *val != '\t')
+						config_value[out_i++] = *val;
+					val++;
+				}
+				config_value[out_i] = '\0';
+				fclose(fptr);
+				return 0;
+			}
+		}
 	}
-	pclose(fptr);
-	return 0;
+	fclose(fptr);
+	return -1;
 }
 
 int getClientGateway(char *gateway, int isDHCP)
@@ -231,26 +233,26 @@ int check_gateway_in_arptable(char *gateway)
 	FILE *arp_table;
 	char buf[512]={0};
 	char ip[16]={0}, hw_type[16]={0}, flags[16]={0}, hw_addr[24]={0}, mask[16]={0}, device[16]={0};
-	arp_table=popen("cat /proc/net/arp", "r");
+	arp_table=fopen("/proc/net/arp", "r");
 	if(arp_table == NULL)
 		return 0;
-	fgets(buf, 512, arp_table);
-	memset(buf, 0, 512);
-	while(fgets(buf, 512, arp_table)!=NULL){
+	fgets(buf, sizeof(buf), arp_table);
+	memset(buf, 0, sizeof(buf));
+	while(fgets(buf, sizeof(buf), arp_table)!=NULL){
 		if(sscanf(buf, "%15s %15s %15s %23s %15s %15s", ip, hw_type, flags, hw_addr, mask, device)==6){
 			printf("gateway=%s, arp record: %s %s %s %s %s %s\n", gateway, ip, hw_type, flags, hw_addr, mask, device);
 			if(!strcmp(gateway, ip) && strcmp(hw_addr, "00:00:00:00:00:00") && strcmp(flags, "0x0")){
 				printf("Found gateway in ARP table\n");
-				pclose(arp_table);
+				fclose(arp_table);
 				return 1;
 			}
 		}
-		memset(buf, 0, 512);
-		memset(ip, 0, 16);
-		memset(flags, 0, 16);
-		memset(hw_addr, 0, 24);
+		memset(buf, 0, sizeof(buf));
+		memset(ip, 0, sizeof(ip));
+		memset(flags, 0, sizeof(flags));
+		memset(hw_addr, 0, sizeof(hw_addr));
 	}
-	pclose(arp_table);
+	fclose(arp_table);
 	printf("Doesn't found gateway in ARP table\n");
 	return 0;
 }
@@ -281,7 +283,6 @@ int detect_layer3_link_by_dhcp(void)
 	FILE *fptr;
 	char lease_status[16]={0};
 	int i=0;
-	char	gateway[16]={0};
 
 	fptr = fopen("/tmp/dhcp_client_lease_status", "r");
 	if(fptr==NULL){
@@ -337,7 +338,6 @@ int detect_layer3_link_by_dhcp_retry(void)
 {
 	FILE *fptr;
 	char retry_count[16]={0};
-	int i=0;
 
 	fptr = fopen("/tmp/dhcp_client_retry_count", "r");
 	if(fptr==NULL){
@@ -449,13 +449,16 @@ end:
 int main(int argc, char** argv)
 {
 	char configValue[CONFIG_VALUE_MAXLEN]={0};
-	char buf[128]={0};
 	int tempCount=0;
 	struct sigaction sa;
+	FILE *pidfp;
 
 	printf("daemon start for force PC at ethernet port of device to renew ..\n");
-	snprintf(buf, sizeof(buf), "echo %d > /var/run/force_ethpc_renew_ip", getpid());
-	system(buf);
+	pidfp = fopen("/var/run/force_ethpc_renew_ip", "w");
+	if (pidfp != NULL) {
+		fprintf(pidfp, "%d\n", getpid());
+		fclose(pidfp);
+	}
 	memset(&sa, 0, sizeof(sa));   
     	sa.sa_handler = &signal_handler;   
     	sigaction(SIGUSR1, &sa, NULL);   
@@ -503,7 +506,7 @@ int main(int argc, char** argv)
 		sleep(1);
 	}
 	
-	system("rm /var/run/force_ethpc_renew_ip");
+	unlink("/var/run/force_ethpc_renew_ip");
 	printf("Terminate force_ethpc_renew_ip ..\n");
 
 	return 0;

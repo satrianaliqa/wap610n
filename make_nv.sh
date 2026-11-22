@@ -143,8 +143,8 @@ function pack_firmware()
 	if [ ! -f "${ENV_CONF}" ] || ! grep -q "^ProjectName=${MODENAME}$" "${ENV_CONF}" 2>/dev/null; then
 		sed -i '/ProjectName/d' "${ENV_CONF}" 2>/dev/null || true
 		echo "ProjectName=${MODENAME}" >> "${ENV_CONF}"
-		devscripts/count_version.sh "${MODENAME}"
 	fi
+	devscripts/count_version.sh "${MODENAME}"
 
 	mkdir -p "${ROOTDIR}/output" "${ROOTDIR}/images"
 	rm -f "${ROOTDIR}/images/ramdisk_2.6.16.img.lzma"
