@@ -61,6 +61,15 @@ static void RevULong(unsigned int* pVal)
 		((*pVal) >> 24);
 }
 
+static void writeFwUpgradeStatus(int state, int pct)
+{
+	FILE *statusFp = fopen("/var/fw_upgrade_status", "w");
+	if (statusFp != NULL) {
+		fprintf(statusFp, "%d,%d\n", state, pct);
+		fclose(statusFp);
+	}
+}
+
 void *MT_BurnAndVerifyImage(void* data)
 {
 	int locWrite = 0;
@@ -147,9 +156,9 @@ void *MT_BurnAndVerifyImage(void* data)
 		}
 		if ((fp = fopen(gMTBurnParams.fName, "w+b")) != NULL)
 		{
-			doSystem("rm -f /var/fw_upgrade_status");
+			unlink("/var/fw_upgrade_status");
 			while (numLeft > 0) {
-				doSystem("echo %d,%d >> /var/fw_upgrade_status", gMTBurnParams.burnState, gMTBurnParams.precentComplete);
+				writeFwUpgradeStatus(gMTBurnParams.burnState, gMTBurnParams.precentComplete);
 				debug_printf("\n\n\n\n");
 				debug_printf("MT_BurnAndVerifyImage: 1. check numLeft(%d)(pid=%d), gMTBurnParams.precentComplete=%d > FILE_SINGLE_WRITE ? FILE_SINGLE_WRITE : numLeft\n", numLeft, getpid(), gMTBurnParams.precentComplete);
 				size = numLeft > FILE_SINGLE_WRITE ? FILE_SINGLE_WRITE : numLeft;
@@ -177,7 +186,7 @@ void *MT_BurnAndVerifyImage(void* data)
 
 				debug_printf("MT_BurnAndVerifyImage: Next while loop. numLeft > 0(numLef=%d)\n", numLeft);
 			}
-			doSystem("echo %d,%d >> /var/fw_upgrade_status", gMTBurnParams.burnState, gMTBurnParams.precentComplete);
+			writeFwUpgradeStatus(gMTBurnParams.burnState, gMTBurnParams.precentComplete);
 			debug_printf("MT_BurnAndVerifyImage: Exit loop, numLeft > 0(numLef=%d)\n", numLeft);
 			
 			if (numLeft == 0) {
@@ -293,6 +302,7 @@ void *MT_BurnAndVerifyImage(void* data)
 		gMTBurnParams.precentComplete = -1;
 		gMTBurnParams.burnState = error_e;
 		sprintf(gMTBurnParams.errorMessage,T("Error : Error verifying image at location %d<br>ferror=%d"), locVerify, ferror_val);
+		unlink("/var/firmware_upgrading");
 	}
 	else
 	{
@@ -302,7 +312,7 @@ void *MT_BurnAndVerifyImage(void* data)
 		gMTBurnParams.precentComplete = 100;
 		
 		
-		doSystem("rm -f /var/firmware_upgrading");
+		unlink("/var/firmware_upgrading");
 		debug_printf("MT_BurnAndVerifyImage: Start to reboot\n");
 		system("sleep 3 ; reboot &");
 	}
@@ -987,6 +997,9 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 	}
     
 #endif
+	if (gMTBurnParams.burnState <= error_e) {
+		unlink("/var/firmware_upgrading");
+	}
 	printf("BurnImage: gMTBurnParams.precentComplete:%d\n", gMTBurnParams.precentComplete);
 	{
 		FILE *conFp = fopen("/dev/console", "w");

@@ -165,6 +165,13 @@ proc Activate_WEP {device_type SSID WEP_length authentication Used_Key key1 key2
 
 	#
 	# Write to the proc for on-the-fly connection
+	if {$key1 != ""} { catch {set_proc_var $key1 WepKeys_DefaultKey0} }
+	if {$key2 != ""} { catch {set_proc_var $key2 WepKeys_DefaultKey1} }
+	if {$key3 != ""} { catch {set_proc_var $key3 WepKeys_DefaultKey2} }
+	if {$key4 != ""} { catch {set_proc_var $key4 WepKeys_DefaultKey3} }
+	if {[regexp {^[0-3]$} $Used_Key]} {
+		catch {set_proc_var $Used_Key WepTxKeyIdx}
+	}
 	set proc_err [set_proc_var 1 WepEncryption]
 	if {$device_type == 2}  {
 		set proc_err [set_proc_var $authentication Authentication]

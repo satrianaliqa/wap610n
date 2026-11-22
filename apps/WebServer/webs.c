@@ -567,10 +567,20 @@ void websReadEvent(webs_t wp)
 						done++;
 						break;
 					}
+					{
+						FILE *upFlag = fopen("/var/firmware_upgrading", "w");
+						if (upFlag != NULL) {
+							fputs("1\n", upFlag);
+							fclose(upFlag);
+						}
+					}
 					if (gMTBurnParams.burnState > error_e || wp->FileContentLen < 0 ||
 						wp->clen < 0 || wp->clen > maxUpload ||
 						!(buffer = (char *)malloc((size_t)(wp->clen + wp->lenPostData + 1))))
 					{
+						if (gMTBurnParams.burnState <= error_e) {
+							unlink("/var/firmware_upgrading");
+						}
 						if (gMTBurnParams.burnState > error_e) {
 							websError(wp, 503, T("Firmware upgrade already in progress"));
 						} else if (wp->clen > maxUpload) {
@@ -629,6 +639,7 @@ void websReadEvent(webs_t wp)
 							break;
 						} else {
 							/* Incomplete upload / early disconnect (W-08) */
+							unlink("/var/firmware_upgrading");
 							websError(wp, 400, T("Incomplete upload"));
 							done++;
 							break;

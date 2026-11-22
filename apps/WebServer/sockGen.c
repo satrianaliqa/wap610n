@@ -450,10 +450,14 @@ int socketGetInput(int sid, char *buf, int toRead, int *errCode)
  */
 	if (sp->flags & SOCKET_DATAGRAM) {
 		len = sizeof(server);
-		bytesRead = recvfrom(sp->sock, buf, toRead, 0,
-			(struct sockaddr *) &server, &len);
+		do {
+			bytesRead = recvfrom(sp->sock, buf, toRead, 0,
+				(struct sockaddr *) &server, &len);
+		} while (bytesRead < 0 && errno == EINTR);
 	} else {
-		bytesRead = recv(sp->sock, buf, toRead, 0);
+		do {
+			bytesRead = recv(sp->sock, buf, toRead, 0);
+		} while (bytesRead < 0 && errno == EINTR);
 	}
    
    /*
@@ -468,6 +472,9 @@ int socketGetInput(int sid, char *buf, int toRead, int *errCode)
    if (bytesRead < 0) 
    {
       *errCode = socketGetError();
+      if (*errCode == EINTR || *errCode == EAGAIN) {
+         *errCode = EWOULDBLOCK;
+      }
       if (*errCode == ECONNRESET) 
       {
          sp->flags |= SOCKET_CONNRESET | SOCKET_EOF;

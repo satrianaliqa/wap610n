@@ -14,7 +14,7 @@ do
 			fi
 		done
 		memSize=`ps | awk '$5 ~ /(^|\/)webs$/ {if ($3+0 > max) max=$3+0} END {if (max > 0) print max}'`
-		if [ -n "$memSize" ] && [ "$memSize" -gt 6000 ] 2>/dev/null; then
+		if [ -n "$memSize" ] && [ "$memSize" -gt 10240 ] 2>/dev/null; then
 			echo "monitor_web.sh: webs VSZ ($memSize KB) exceeded threshold, triggering respawn via inittab"
 			killall webs 2>/dev/null || true
 		fi

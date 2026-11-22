@@ -510,7 +510,7 @@ function page_load() {
 
 		if (mode*1 == 0 || mode*1 == 2) // Both STA and AP mode (WAP610N)
 		{
-			document.modeOption.nowMode.value = "stationMode";
+			document.modeOption.nowMode.value = (mode*1 == 2) ? "apMode" : "stationMode";
 			selectMode(mode*1);
 			removeAllOption("frequencyBand");
 			addNewOption("frequencyBand", "", "", "0", "5GHz");

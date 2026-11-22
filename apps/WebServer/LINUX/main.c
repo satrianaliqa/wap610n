@@ -91,6 +91,642 @@ static void websDiag(const char *message)
 	printf("wap610n-webs: %s\n", message);
 }
 
+/*
+ * Wrap vfork() used by precompiled proprietary object blobs (e.g. wireless.o).
+ * On uClibc/Linux, vfork() suspends the parent thread and shares address space,
+ * which freezes GoAhead HTTP serving, corrupts heap via lang_free(), and leaks
+ * open HTTP sockets into background daemons. Replace with fork() + FD close.
+ */
+pid_t __wrap_vfork(void)
+{
+	pid_t pid;
+	int fd;
+
+	pid = fork();
+	if (pid == 0) {
+		for (fd = 3; fd < 256; fd++) {
+			close(fd);
+		}
+	}
+	return pid;
+}
+
+static void safeCopyFormVar(webs_t wp, char_t *name, char *dst, size_t dstSize)
+{
+	char_t *val;
+
+	if (dst == NULL || dstSize == 0) {
+		return;
+	}
+	dst[0] = '\0';
+	val = websGetVar(wp, name, T(""));
+	if (val != NULL && val[0] != '\0') {
+		snprintf(dst, dstSize, "%s", val);
+		dst[dstSize - 1] = '\0';
+	}
+}
+
+static int isAllHexDigits(const char *s)
+{
+	const char *p;
+
+	if (s == NULL || *s == '\0') {
+		return 0;
+	}
+	for (p = s; *p != '\0'; p++) {
+		if (!((*p >= '0' && *p <= '9') ||
+		      (*p >= 'a' && *p <= 'f') ||
+		      (*p >= 'A' && *p <= 'F'))) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static void formatWepKeyParam(const char *inKey, char *outKey, size_t outSize)
+{
+	size_t len;
+
+	if (outKey == NULL || outSize == 0) {
+		return;
+	}
+	outKey[0] = '\0';
+	if (inKey == NULL || inKey[0] == '\0') {
+		return;
+	}
+	len = strlen(inKey);
+	if ((len == 10 || len == 26) && isAllHexDigits(inKey)) {
+		snprintf(outKey, outSize, "0x%s", inKey);
+	} else {
+		snprintf(outKey, outSize, "%s", inKey);
+	}
+	outKey[outSize - 1] = '\0';
+}
+
+static int readConfValueExact(const char *path, const char *key, char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[256];
+	size_t keyLen;
+
+	if (path == NULL || key == NULL || out == NULL || outSize == 0) {
+		return 0;
+	}
+	keyLen = strlen(key);
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		char *p = line;
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (strncmp(p, key, keyLen) == 0) {
+			char *eq = p + keyLen;
+			while (*eq == ' ' || *eq == '\t') {
+				eq++;
+			}
+			if (*eq == '=') {
+				char *val = eq + 1;
+				size_t len;
+				while (*val == ' ' || *val == '\t') {
+					val++;
+				}
+				snprintf(out, outSize, "%s", val);
+				len = strlen(out);
+				while (len > 0 && (out[len - 1] == '\n' || out[len - 1] == '\r' ||
+				                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
+					out[--len] = '\0';
+				}
+				fclose(fp);
+				return 1;
+			}
+		}
+	}
+	fclose(fp);
+	return 0;
+}
+
+static void preserveCustomSysConfKeys(void)
+{
+	static const char * const keys[3] = {
+		"SSH_Enabled",
+		"Telnet_Enabled",
+		"WirelessMgmtEnabled"
+	};
+	char vals[3][16];
+	int i;
+	FILE *fp;
+
+	for (i = 0; i < 3; i++) {
+		if (!readConfValueExact("/tmp/sys.conf", keys[i], vals[i], sizeof(vals[i]))) {
+			snprintf(vals[i], sizeof(vals[i]), "1");
+		}
+	}
+	fp = fopen("/mnt/jffs2/sys.conf", "a");
+	if (fp != NULL) {
+		for (i = 0; i < 3; i++) {
+			char existing[16];
+			if (!readConfValueExact("/mnt/jffs2/sys.conf", keys[i], existing, sizeof(existing))) {
+				fprintf(fp, "%s = %s\n", keys[i], vals[i]);
+			}
+		}
+		fclose(fp);
+	}
+}
+
+static int safeAspWaitToRedirect(int eid, webs_t wp, int argc, char_t **argv)
+{
+	(void)eid;
+	(void)argc;
+	(void)argv;
+	return websWrite(wp, T("%s"), (access("/var/old_web_pid", F_OK) == 0) ? T("1") : T("0"));
+}
+
+static int safeAspGetWirelessChannel(int eid, webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp;
+	char buf[512];
+	char chStr[16];
+	int nread;
+	char *p;
+	size_t i;
+
+	(void)eid;
+	(void)argc;
+	(void)argv;
+	chStr[0] = '\0';
+	fp = popen("/sbin/iwconfig wlan0 2>/dev/null", "r");
+	if (fp != NULL) {
+		nread = (int)fread(buf, 1, sizeof(buf) - 1, fp);
+		pclose(fp);
+		if (nread > 0) {
+			buf[nread] = '\0';
+			p = strstr(buf, "Channel=");
+			if (p != NULL) {
+				p += 8;
+				i = 0;
+				while (*p >= '0' && *p <= '9' && i < sizeof(chStr) - 1) {
+					chStr[i++] = *p++;
+				}
+				chStr[i] = '\0';
+			}
+		}
+	}
+	if (chStr[0] == '\0') {
+		MT_Get_Param("Channel", chStr, sizeof(chStr) - 1);
+		chStr[sizeof(chStr) - 1] = '\0';
+	}
+	if (chStr[0] == '\0') {
+		snprintf(chStr, sizeof(chStr), "0");
+	}
+	return websWrite(wp, T("%s"), chStr);
+}
+
+static int safeAspGetBSSID(int eid, webs_t wp, int argc, char_t **argv)
+{
+	FILE *fp;
+	char buf[512];
+	char macStr[24];
+	int nread;
+	char *p;
+	size_t i;
+
+	(void)eid;
+	(void)argc;
+	(void)argv;
+	macStr[0] = '\0';
+	fp = popen("/sbin/iwconfig wlan0 2>/dev/null", "r");
+	if (fp != NULL) {
+		nread = (int)fread(buf, 1, sizeof(buf) - 1, fp);
+		pclose(fp);
+		if (nread > 0) {
+			buf[nread] = '\0';
+			p = strstr(buf, "Access Point:");
+			if (p != NULL) {
+				p += 13;
+				while (*p == ' ' || *p == '\t') {
+					p++;
+				}
+				if (strncmp(p, "Not-Associated", 14) != 0) {
+					i = 0;
+					while (*p != '\0' && *p != ' ' && *p != '\t' &&
+					       *p != '\r' && *p != '\n' && i < sizeof(macStr) - 1) {
+						macStr[i++] = *p++;
+					}
+					macStr[i] = '\0';
+				}
+			}
+		}
+	}
+	if (macStr[0] == '\0') {
+		fp = fopen("/sys/class/net/wlan0/address", "r");
+		if (fp != NULL) {
+			if (fgets(macStr, sizeof(macStr), fp) != NULL) {
+				size_t len = strlen(macStr);
+				while (len > 0 && (macStr[len - 1] == '\n' || macStr[len - 1] == '\r')) {
+					macStr[--len] = '\0';
+				}
+			}
+			fclose(fp);
+		}
+	}
+	if (macStr[0] == '\0') {
+		snprintf(macStr, sizeof(macStr), "00:00:00:00:00:00");
+	}
+	return websWrite(wp, T("%s"), macStr);
+}
+
+static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
+{
+	char ipConfigMethod[16];
+	char hostName[64];
+	char lanIP[32];
+	char lanSubnet[32];
+	char gateway[32];
+	char priDns[32];
+	char secDns[32];
+	char langSelection[16];
+	char cloneMAC[32];
+	char *paramNames[10];
+	int paramCount;
+	pid_t pid;
+	int fd;
+
+	(void)path;
+	(void)query;
+
+	if (checkLoadDefault() == 1) {
+		websRedirect(wp, T("/admin/upgrade.asp"));
+		return;
+	}
+	if (waitOtherProcess != 0) {
+		websError(wp, 503, T("Another configuration operation is in progress"));
+		return;
+	}
+
+	safeCopyFormVar(wp, T("ipConfigMethod"), ipConfigMethod, sizeof(ipConfigMethod));
+	safeCopyFormVar(wp, T("hostName"), hostName, sizeof(hostName));
+	safeCopyFormVar(wp, T("lanIP"), lanIP, sizeof(lanIP));
+	safeCopyFormVar(wp, T("lanSubnet"), lanSubnet, sizeof(lanSubnet));
+	safeCopyFormVar(wp, T("gateway"), gateway, sizeof(gateway));
+	safeCopyFormVar(wp, T("priDns"), priDns, sizeof(priDns));
+	safeCopyFormVar(wp, T("secDns"), secDns, sizeof(secDns));
+	safeCopyFormVar(wp, T("langSelection"), langSelection, sizeof(langSelection));
+	safeCopyFormVar(wp, T("cloneMAC"), cloneMAC, sizeof(cloneMAC));
+
+	if (ipConfigMethod[0] == '\0' || hostName[0] == '\0' || lanIP[0] == '\0') {
+		websRedirect(wp, T("/network/sta_network.asp"));
+		return;
+	}
+
+	saveOldWebPid(getpid(), "sta_network.asp");
+	waitOtherProcess = 1;
+	pid = fork();
+	if (pid < 0) {
+		waitOtherProcess = 0;
+		unlink("/var/old_web_pid");
+		websError(wp, 500, T("Unable to save network settings"));
+		return;
+	}
+	if (pid != 0) {
+		websRedirect(wp, T("/wait_page.asp"));
+		return;
+	}
+
+	for (fd = 3; fd < 256; fd++) {
+		close(fd);
+	}
+	waitRedirectPage();
+	stopWPS_PBC();
+
+	paramCount = 0;
+	MT_Set_Param("ip_config_method", ipConfigMethod, 1);
+	paramNames[paramCount++] = "ip_config_method";
+	MT_Set_Param("HostName", hostName, 1);
+	paramNames[paramCount++] = "HostName";
+	MT_Set_Param("ip_lan", lanIP, 1);
+	paramNames[paramCount++] = "ip_lan";
+	if (lanSubnet[0] != '\0') {
+		MT_Set_Param("subnet_lan", lanSubnet, 1);
+		paramNames[paramCount++] = "subnet_lan";
+	}
+	if (gateway[0] != '\0') {
+		MT_Set_Param("default_gw", gateway, 1);
+		paramNames[paramCount++] = "default_gw";
+	}
+	if (priDns[0] != '\0') {
+		MT_Set_Param("DHCPDDNS1", priDns, 1);
+		paramNames[paramCount++] = "DHCPDDNS1";
+	}
+	if (secDns[0] != '\0') {
+		MT_Set_Param("DHCPDDNS2", secDns, 1);
+		paramNames[paramCount++] = "DHCPDDNS2";
+	}
+	if (langSelection[0] != '\0') {
+		MT_Set_Param("Language", langSelection, 1);
+		paramNames[paramCount++] = "Language";
+	}
+	MT_Set_Param("auto_network_type", "0", 1);
+	paramNames[paramCount++] = "auto_network_type";
+
+	MT_WriteConfFiles(paramCount, paramNames);
+	preserveCustomSysConfKeys();
+	submitToFlash();
+
+	{
+		FILE *hf = fopen("/etc/hostname", "w");
+		if (hf != NULL) {
+			fprintf(hf, "%s\n", hostName);
+			fclose(hf);
+		}
+	}
+
+	if (strcmp(ipConfigMethod, "0") == 0) {
+		doSystem("killall udhcpc >/dev/null 2>&1; /etc/udhcpc/dhcp.tcl startup &");
+	} else {
+		doSystem("killall udhcpc >/dev/null 2>&1");
+		if (lanIP[0] != '\0' && lanSubnet[0] != '\0') {
+			doSystem("ifconfig br0 %s netmask %s", lanIP, lanSubnet);
+		}
+		if (gateway[0] != '\0' && strcmp(gateway, "0.0.0.0") != 0 && strcmp(gateway, lanIP) != 0) {
+			doSystem("route del default >/dev/null 2>&1; route add default gw %s dev br0", gateway);
+		}
+		{
+			FILE *rf = fopen("/tmp/resolv.conf", "w");
+			if (rf != NULL) {
+				if (priDns[0] != '\0' && strcmp(priDns, "0.0.0.0") != 0 && strcmp(priDns, lanIP) != 0) {
+					fprintf(rf, "nameserver %s\n", priDns);
+				}
+				if (secDns[0] != '\0' && strcmp(secDns, "0.0.0.0") != 0 && strcmp(secDns, lanIP) != 0) {
+					fprintf(rf, "nameserver %s\n", secDns);
+				}
+				fclose(rf);
+			}
+		}
+	}
+
+	startWPS_PBC();
+	childFinishAndExit();
+}
+
+static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
+{
+	char netType[16];
+	char nowMode[24];
+	char essid[64];
+	char freqBand[8];
+	char country[16];
+	char channel[16];
+	char channelBonding[8];
+	char upperLower[8];
+	char bssid[32];
+	char secMode[8];
+	char wepKeyRaw[4][64];
+	char wepKeyFmt[4][72];
+	char defaultWEPKey[8];
+	char wepKeyLen[16];
+	char wepAuth[8];
+	char wpaPersMode[8];
+	char wpaPersEnc[8];
+	char wpaPSK[128];
+	char wpaEntMode[8];
+	char wpaEntEnc[8];
+	char wpaRadIP[32];
+	char wpaRadPort[16];
+	char wpaRadKey[64];
+	char radRekey[16];
+	char *paramNames[28];
+	int paramCount;
+	int i;
+	int isApMode;
+	pid_t pid;
+	int fd;
+
+	(void)path;
+	(void)query;
+
+	if (checkLoadDefault() == 1) {
+		websRedirect(wp, T("/admin/upgrade.asp"));
+		return;
+	}
+	if (waitOtherProcess != 0) {
+		websError(wp, 503, T("Another configuration operation is in progress"));
+		return;
+	}
+
+	memset(netType, 0, sizeof(netType));
+	MT_Get_Param("network_type", netType, sizeof(netType) - 1);
+	netType[sizeof(netType) - 1] = '\0';
+
+	safeCopyFormVar(wp, T("nowMode"), nowMode, sizeof(nowMode));
+	safeCopyFormVar(wp, T("submit_ESSID"), essid, sizeof(essid));
+	safeCopyFormVar(wp, T("frequencyBand"), freqBand, sizeof(freqBand));
+	safeCopyFormVar(wp, T("country"), country, sizeof(country));
+	safeCopyFormVar(wp, T("channel"), channel, sizeof(channel));
+	safeCopyFormVar(wp, T("channelBounding"), channelBonding, sizeof(channelBonding));
+	safeCopyFormVar(wp, T("upperLower"), upperLower, sizeof(upperLower));
+	safeCopyFormVar(wp, T("BSSID"), bssid, sizeof(bssid));
+	safeCopyFormVar(wp, T("securityMode"), secMode, sizeof(secMode));
+	safeCopyFormVar(wp, T("WEPKey0"), wepKeyRaw[0], sizeof(wepKeyRaw[0]));
+	safeCopyFormVar(wp, T("WEPKey1"), wepKeyRaw[1], sizeof(wepKeyRaw[1]));
+	safeCopyFormVar(wp, T("WEPKey2"), wepKeyRaw[2], sizeof(wepKeyRaw[2]));
+	safeCopyFormVar(wp, T("WEPKey3"), wepKeyRaw[3], sizeof(wepKeyRaw[3]));
+	safeCopyFormVar(wp, T("defaultWEPKey"), defaultWEPKey, sizeof(defaultWEPKey));
+	safeCopyFormVar(wp, T("WEPKeyLength"), wepKeyLen, sizeof(wepKeyLen));
+	safeCopyFormVar(wp, T("WEPAuth"), wepAuth, sizeof(wepAuth));
+	safeCopyFormVar(wp, T("WPAPersonalMode"), wpaPersMode, sizeof(wpaPersMode));
+	safeCopyFormVar(wp, T("WPAPersonalEncryption"), wpaPersEnc, sizeof(wpaPersEnc));
+	safeCopyFormVar(wp, T("WPAPSK"), wpaPSK, sizeof(wpaPSK));
+	safeCopyFormVar(wp, T("WPAEnterpriseMode"), wpaEntMode, sizeof(wpaEntMode));
+	safeCopyFormVar(wp, T("WPAEnterpriseEncryption"), wpaEntEnc, sizeof(wpaEntEnc));
+	safeCopyFormVar(wp, T("WPARadiusIP"), wpaRadIP, sizeof(wpaRadIP));
+	safeCopyFormVar(wp, T("WPARadiusPort"), wpaRadPort, sizeof(wpaRadPort));
+	safeCopyFormVar(wp, T("WPARadiusKey"), wpaRadKey, sizeof(wpaRadKey));
+	safeCopyFormVar(wp, T("RadiusReKeyInterval"), radRekey, sizeof(radRekey));
+
+	isApMode = (atoi(netType) == 2 || strcmp(nowMode, "apMode") == 0) ? 1 : 0;
+
+	saveOldWebPid(getpid(), "wireless_basic.asp");
+	waitOtherProcess = 1;
+	pid = fork();
+	if (pid < 0) {
+		waitOtherProcess = 0;
+		unlink("/var/old_web_pid");
+		websError(wp, 500, T("Unable to save wireless settings"));
+		return;
+	}
+	if (pid != 0) {
+		websRedirect(wp, T("/wait_page.asp"));
+		return;
+	}
+
+	for (fd = 3; fd < 256; fd++) {
+		close(fd);
+	}
+	waitRedirectPage();
+	stopWPS_PBC();
+
+	paramCount = 0;
+	if (essid[0] != '\0') {
+		MT_Set_Param("NonProc_ESSID", essid, 1);
+		paramNames[paramCount++] = "NonProc_ESSID";
+		MT_Set_Param("Wildcard_ESSID", essid, 1);
+		paramNames[paramCount++] = "Wildcard_ESSID";
+	}
+	if (!isApMode && bssid[0] != '\0') {
+		MT_Set_Param("BSSID", bssid, 1);
+		paramNames[paramCount++] = "BSSID";
+	}
+	if (freqBand[0] != '\0') {
+		MT_Set_Param("FrequencyBand", freqBand, 1);
+		paramNames[paramCount++] = "FrequencyBand";
+		if (strcmp(freqBand, "0") == 0) {
+			MT_Set_Param("NetworkMode", "14", 1);
+			paramNames[paramCount++] = "NetworkMode";
+		} else if (strcmp(freqBand, "1") == 0) {
+			MT_Set_Param("NetworkMode", "23", 1);
+			paramNames[paramCount++] = "NetworkMode";
+		}
+	}
+	if (country[0] != '\0') {
+		MT_Set_Param("Country", country, 1);
+		paramNames[paramCount++] = "Country";
+	}
+	if (channel[0] != '\0') {
+		MT_Set_Param("Channel", channel, 1);
+		paramNames[paramCount++] = "Channel";
+	}
+	if (channelBonding[0] != '\0') {
+		MT_Set_Param("ChannelBonding", channelBonding, 1);
+		paramNames[paramCount++] = "ChannelBonding";
+		MT_Set_Param("IsHTEnabled", "1", 1);
+		paramNames[paramCount++] = "IsHTEnabled";
+	}
+	if (upperLower[0] != '\0') {
+		MT_Set_Param("UpperLowerChannelBonding", upperLower, 1);
+		paramNames[paramCount++] = "UpperLowerChannelBonding";
+	}
+
+	if (secMode[0] != '\0') {
+		MT_Set_Param("NonProcSecurityMode", secMode, 1);
+		paramNames[paramCount++] = "NonProcSecurityMode";
+
+		if (strcmp(secMode, "2") == 0) {
+			static char * const wepParamNames[4] = {
+				"WepKeys_DefaultKey0",
+				"WepKeys_DefaultKey1",
+				"WepKeys_DefaultKey2",
+				"WepKeys_DefaultKey3"
+			};
+			for (i = 0; i < 4; i++) {
+				formatWepKeyParam(wepKeyRaw[i], wepKeyFmt[i], sizeof(wepKeyFmt[i]));
+				if (wepKeyFmt[i][0] != '\0') {
+					MT_Set_Param(wepParamNames[i], wepKeyFmt[i], 1);
+					paramNames[paramCount++] = wepParamNames[i];
+				}
+			}
+			if (defaultWEPKey[0] != '\0') {
+				MT_Set_Param("WepTxKeyIdx", defaultWEPKey, 1);
+				paramNames[paramCount++] = "WepTxKeyIdx";
+			}
+			if (wepKeyLen[0] != '\0') {
+				MT_Set_Param("NonProc_WepKeyLength", wepKeyLen, 1);
+				paramNames[paramCount++] = "NonProc_WepKeyLength";
+			}
+			if (wepAuth[0] != '\0') {
+				MT_Set_Param("NonProc_Authentication", wepAuth, 1);
+				paramNames[paramCount++] = "NonProc_Authentication";
+				MT_Set_Param("Authentication", wepAuth, 1);
+				paramNames[paramCount++] = "Authentication";
+			}
+			MT_Set_Param("WepEncryption", "1", 1);
+			paramNames[paramCount++] = "WepEncryption";
+		} else {
+			MT_Set_Param("WepEncryption", "0", 1);
+			paramNames[paramCount++] = "WepEncryption";
+			MT_Set_Param("Authentication", "0", 1);
+			paramNames[paramCount++] = "Authentication";
+		}
+
+		if (strcmp(secMode, "3") == 0) {
+			if (wpaPersMode[0] == '\0') {
+				snprintf(wpaPersMode, sizeof(wpaPersMode),
+					(strcmp(wpaPersEnc, "2") == 0) ? "3" : "2");
+			}
+			MT_Set_Param("NonProc_WPA_Personal_Mode", wpaPersMode, 1);
+			paramNames[paramCount++] = "NonProc_WPA_Personal_Mode";
+			if (wpaPersEnc[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Personal_Encapsulation", wpaPersEnc, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Personal_Encapsulation";
+			}
+			if (wpaPSK[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Personal_PSK", wpaPSK, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Personal_PSK";
+			}
+		} else if (strcmp(secMode, "4") == 0) {
+			if (wpaEntMode[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Mode", wpaEntMode, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Mode";
+			}
+			if (wpaEntEnc[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Encapsulation", wpaEntEnc, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Encapsulation";
+			}
+			if (wpaRadIP[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Radius_IP", wpaRadIP, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Radius_IP";
+			}
+			if (wpaRadPort[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Radius_Port", wpaRadPort, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Radius_Port";
+			}
+			if (wpaRadKey[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Radius_Key", wpaRadKey, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Radius_Key";
+			}
+			if (radRekey[0] != '\0') {
+				MT_Set_Param("NonProc_WPA_Enterprise_Radius_ReKey_Interval", radRekey, 1);
+				paramNames[paramCount++] = "NonProc_WPA_Enterprise_Radius_ReKey_Interval";
+			}
+		}
+	}
+
+	MT_Set_Param("unconfigured", "0", 1);
+	paramNames[paramCount++] = "unconfigured";
+	MT_Set_Param("forceWlanDisconnect", "0", 1);
+	paramNames[paramCount++] = "forceWlanDisconnect";
+
+	MT_WriteConfFiles(paramCount, paramNames);
+	submitToFlash();
+
+	if (isApMode) {
+		if (country[0] != '\0') {
+			doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
+		}
+		if (freqBand[0] != '\0') {
+			doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand %s >/dev/null 2>&1", freqBand);
+		}
+		if (channelBonding[0] != '\0') {
+			doSystem("/root/mtlk/etc/mtpriv wlan0 ChannelBonding %s >/dev/null 2>&1", channelBonding);
+		}
+		if (upperLower[0] != '\0') {
+			doSystem("/root/mtlk/etc/mtpriv wlan0 UpperLowerChannelBonding %s >/dev/null 2>&1", upperLower);
+		}
+		if (channel[0] != '\0') {
+			if (strcmp(channel, "0") == 0) {
+				doSystem("/sbin/iwconfig wlan0 channel auto >/dev/null 2>&1");
+			} else {
+				doSystem("/sbin/iwconfig wlan0 channel %s >/dev/null 2>&1", channel);
+			}
+		}
+	}
+	doSystem("cd /root/mtlk/web/ && /root/mtlk/web/init_security.tcl reactivate >/dev/null 2>&1");
+	startWPS_PBC();
+	childFinishAndExit();
+}
+
 /* Safe non-blocking form overrides to eliminate legacy U-Media blocking bugs */
 static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
 {
@@ -264,6 +900,7 @@ int main(int argc, char** argv)
 			loadConfigFromFile("/mnt/jffs2/sys.conf");
 			MT_ParseOnLoad();
 			websInitRealm();
+			lang_free();
 			lang_init();
 			waitOtherProcess = 0;
 		}
@@ -415,6 +1052,11 @@ static int initWebs()
 	websFormDefine(T("dumpFirmware"), formDumpFirmware);
 	websFormDefine(T("getCurrentWPSStatus"), safeFormGetCurrentWPSStatus);
 	websFormDefine(T("wirelessTypeSet"), safeFormWirelessTypeSet);
+	websFormDefine(T("networkBasic"), safeFormNetworkBasic);
+	websFormDefine(T("wirelessBasic"), safeFormWirelessBasic);
+	websAspDefine(T("waitToRedirect"), safeAspWaitToRedirect);
+	websAspDefine(T("getWirelessChannel"), safeAspGetWirelessChannel);
+	websAspDefine(T("getBSSID"), safeAspGetBSSID);
 
 /*
  *	Create the Form handlers for the User Management pages
