@@ -13,7 +13,8 @@ fi
 
 echo "--> Preparing rootfs files and version..."
 if [ ! -d "${ROOTFS_DIR}/bin" ]; then
-	cp -a "${STAR_DIR}" "${ROOTFS_DIR}"
+	mkdir -p "${ROOTFS_DIR}"
+	cp -a "${STAR_DIR}/." "${ROOTFS_DIR}/"
 fi
 mkdir -p "${ROOTFS_DIR}/root/mtlk" "${ROOTFS_DIR}/etc"
 

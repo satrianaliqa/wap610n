@@ -18,7 +18,6 @@
 /build/
 /output/
 /images/
-_wlan.tar.gz
 
 # Intermediate build binaries & libraries
 *.a

@@ -30,7 +30,7 @@ CONF:
          shared no-idea no-mdc2 no-rc5
 
 COMP:
-	$(MAKE) CC=$(CC) -f Makefile all build-shared
+	$(MAKE) CC=$(CC) -f Makefile build_libs build-shared
 
 CLEAN:
 	$(MAKE) -f Makefile clean

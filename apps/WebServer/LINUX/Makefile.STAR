@@ -17,4 +17,5 @@ include Makefile
 
 install: webs
 	$(STRIP) webs
+	mkdir -p ../../../rootfs/root/mtlk/web
 	cp -f webs ../../../rootfs/root/mtlk/web/webs

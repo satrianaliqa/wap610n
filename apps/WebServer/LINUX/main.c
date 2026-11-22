@@ -27,6 +27,7 @@
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
 #include	"../wireless.h"
+#include	"../wps.h"
 #include	"../management.h"
 #include	"../utils.h"
 
@@ -53,7 +54,6 @@ void	formDefineUserMgmt(void);
 
 static char_t		*rootWeb = T("web");			/* Root web directory */
 static char_t		*password = T("");				/* Security password */
-static int			port = 80;
 static int			retries = 5;					/* Server port retries */
 static int			finished;						/* Finished flag */
 
@@ -146,7 +146,6 @@ int main(int argc, char** argv)
 {
 	struct sigaction setup_action;
 	sigset_t block_mask;
-	char cmd[256];
 	int firewallReloadID;
 	struct msgbuffer {
 		long mtype;
@@ -300,7 +299,6 @@ int main(int argc, char** argv)
 
 static int initWebs()
 {
-	struct hostent	*hp;
 	struct in_addr	intaddr = {0};
 	char			host[128] = "localhost", dir[128], webdir[128];
 	char			*cp;

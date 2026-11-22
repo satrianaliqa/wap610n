@@ -10,7 +10,6 @@ MODENAME=$1
 VER_PATH=${ROOTDIR}/config
 ENV_CONF=${ROOTDIR}/config/.config_$MODENAME
 UI_CONF=${ROOTDIR}/config/autoconf.h
-WEB_FW_VERSION=${ROOTDIR}/_wlan.tar.gz/web/fw_version.txt
 
 . ${ENV_CONF}
 

@@ -1239,7 +1239,6 @@ void hnap_active_lan_basic(char *lanIP, char *lanNetmask)
 
 void hnap_active_wlan_basic(int isRadioOn)
 {
-	char command[256]={0};
 	char paramValue[MT_MAX_PARAM_VALUE_LENGTH]={0};
 	
 	hnap_doSystem("/sbin/ifconfig wlan0 down");
@@ -1505,7 +1504,6 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 	int retryCount = 0;
 	int verifiedOk = 0;
 	//int i = 0;
-	int chunkSize = 0;
 	FILE* fp = NULL;
 	MT_IMAGE_HEADER imageHeader;
 	int isLittleEndian = hnap_IsLittleEndian();

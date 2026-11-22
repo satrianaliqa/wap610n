@@ -61,14 +61,6 @@ static void RevULong(unsigned int* pVal)
 		((*pVal) >> 24);
 }
 
-static int MT_ReturnCRCClearError()
-{
-	printf("%s\n",gMTBurnParams.errorMessage);
-	gMTBurnParams.precentComplete = -1;
-	gMTBurnParams.burnState = error_e;
-	return 0; // Bad image
-}
-
 void *MT_BurnAndVerifyImage(void* data)
 {
 	int locWrite = 0;
@@ -80,7 +72,6 @@ void *MT_BurnAndVerifyImage(void* data)
 	int retryCount = 0;
 	int verifiedOk = 0;
 	int i = 0;
-	int chunkSize = 0;
 	FILE* fp = NULL;
 	MT_IMAGE_HEADER imageHeader;
 	int isLittleEndian = MT_IsLittleEndian();
