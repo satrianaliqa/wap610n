@@ -73,17 +73,10 @@ static void websDiag(const char *message)
 {
 	int fd;
 
-	fd = open("/dev/kmsg", O_WRONLY);
+	fd = open("/dev/kmsg", O_WRONLY | O_NONBLOCK);
 	if (fd >= 0) {
 		write(fd, "<4>wap610n-webs: ",
 			sizeof("<4>wap610n-webs: ") - 1);
-		write(fd, message, strlen(message));
-		write(fd, "\n", 1);
-		close(fd);
-	}
-	fd = open("/dev/console", O_WRONLY);
-	if (fd >= 0) {
-		write(fd, "[wap610n-webs] ", sizeof("[wap610n-webs] ") - 1);
 		write(fd, message, strlen(message));
 		write(fd, "\n", 1);
 		close(fd);
@@ -99,16 +92,7 @@ static void websDiag(const char *message)
  */
 pid_t __wrap_vfork(void)
 {
-	pid_t pid;
-	int fd;
-
-	pid = fork();
-	if (pid == 0) {
-		for (fd = 3; fd < 256; fd++) {
-			close(fd);
-		}
-	}
-	return pid;
+	return fork();
 }
 
 static void safeCopyFormVar(webs_t wp, char_t *name, char *dst, size_t dstSize)

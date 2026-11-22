@@ -18,4 +18,4 @@ fi
 if [ ! -f /tmp/sys.conf ]; then
 	$DIAG_LOG "webs supervisor: /tmp/sys.conf is missing before startup" 2>/dev/null || true
 fi
-exec ./webs
+exec ./webs </dev/null >/dev/null 2>&1
