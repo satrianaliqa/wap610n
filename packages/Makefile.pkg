@@ -1,0 +1,35 @@
+# Standard WAP610N Package Makefile Template (GCC 3.4.6 / C89 / uClibc)
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR is not defined")
+endif
+
+CFLAGS += -Os -std=gnu89 -Wall -mlittle-endian -march=armv4 -msoft-float
+
+.PHONY: CONF COMP STRIP INSTALL CLEAN
+
+CONF:
+	@true
+
+COMP: $(PKG_BIN)
+
+$(PKG_BIN): $(PKG_OBJS)
+	$(E_CC) $(CFLAGS) -o $@ $^ $(PKG_LDFLAGS)
+
+%.o: %.c
+	$(E_CC) $(CFLAGS) $(PKG_CPPFLAGS) -c -o $@ $<
+
+STRIP:
+	@if [ -n "$(PKG_BIN)" ] && [ -f "$(PKG_BIN)" ]; then \
+		$(E_STRIP) "$(PKG_BIN)"; \
+		echo "  [pkg] $(PKG_BIN) stripped size: $$(wc -c < "$(PKG_BIN)") bytes"; \
+	fi
+
+INSTALL:
+	@if [ -n "$(PKG_BIN)" ] && [ -f "$(PKG_BIN)" ]; then \
+		install -D -m 755 "$(PKG_BIN)" "$(E_DEST)/$(PKG_INSTALL_DIR)/$(PKG_BIN)"; \
+	fi
+
+CLEAN:
+	rm -f $(PKG_BIN) $(PKG_OBJS)

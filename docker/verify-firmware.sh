@@ -217,6 +217,18 @@ sudo $CONTAINER_CMD run --rm --privileged \
             exit 1
         fi
 
+        # Host-path leak check inside ramdisk scripts & configs
+        if grep -rnE '/home/satszz|/workspaces/wap610n' /tmp/mnt_chk/etc /tmp/mnt_chk/root/mtlk/etc /tmp/mnt_chk/bin 2>/dev/null; then
+            echo '   - Host Path Leak Check          : ❌ TERDETEKSI hardcoded host path!'
+            exit 1
+        else
+            echo '   - Host Path Leak Check          : ✅ BERSIH'
+        fi
+
+        # Top 10 largest files in ramdisk
+        echo '   - Top 10 Largest Ramdisk Files  :'
+        find /tmp/mnt_chk -type f -printf '     %8s  %p\n' | sed 's|/tmp/mnt_chk||' | sort -nr | head -n 10
+
         umount /tmp/mnt_chk
         rm -rf /tmp/chk_rd /tmp/mnt_chk
     "
@@ -224,7 +236,7 @@ sudo $CONTAINER_CMD run --rm --privileged \
 # 5. Check Critical Shell Scripts Syntax
 echo -n "5. Pengecekan Sintaks Seluruh Skrip Shell Kritis: "
 SCRIPTS_OK=1
-for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh "$ROOT_DIR"/rootfs-star/etc/*.sh "$ROOT_DIR"/apps/jffs2-etc/networking/VB/*.sh; do
+for s in "$ROOT_DIR"/rootfs-star/bin/*.sh "$ROOT_DIR"/rootfs-star/root/mtlk/etc/*.sh "$ROOT_DIR"/rootfs-star/etc/*.sh; do
     if [ -f "$s" ]; then
         FIRST_LINE=$(head -n 1 "$s" 2>/dev/null)
         case "$FIRST_LINE" in
@@ -248,6 +260,15 @@ if [ $SCRIPTS_OK -eq 1 ]; then
 else
     exit 1
 fi
+
+# 6. Flash & Ramdisk Budget Telemetry
+HEADROOM_BYTES=$((MAX_FLASH_SIZE - FILE_SIZE))
+HEADROOM_KB=$((HEADROOM_BYTES / 1024))
+RD_SIZE=$(stat -c %s "$RAMDISK_LZMA" 2>/dev/null || echo 0)
+echo "6. Flash & Ramdisk Budget Telemetry:"
+echo "   - bootpImage      : $FILE_SIZE bytes ($SIZE_MB MB)"
+echo "   - Ramdisk (LZMA)  : $RD_SIZE bytes"
+echo "   - Flash Headroom  : $HEADROOM_BYTES bytes ($HEADROOM_KB KB free below 3,801,088 B)"
 
 echo "=========================================================="
 echo " 🎉 KESIMPULAN: FIRMWARE 100% SIAP DAN AMAN DI-FLASH!"

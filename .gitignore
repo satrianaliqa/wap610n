@@ -6,14 +6,16 @@
 /kernel/linux-2.6.16-star/vmlinux
 /kernel/linux-2.6.16-star/System.map
 
-# DO NOT ignore prebuilt objects in toolchain, rootfs, and vendor proprietary blobs
+# DO NOT ignore prebuilt objects in toolchain, rootfs-star, and vendor proprietary blobs
 !tools/**
 !rootfs-star/**
-!rootfs/**
+!vendor/mtlk/**
 !apps/WebServer/*.o
 !*.lds*
 
 # Output and Firmware Images
+/rootfs/
+/build/
 output/
 images/
 _wlan.tar.gz
@@ -78,3 +80,5 @@ log.log
 toolchain/arm-uclibc-3.4.6.tgz
 apps/openssl-0.9.8a/**/lib
 apps/openssl-0.9.8a/*.pc
+apps/Intel-WPS/linux/wsccmd_debug
+apps/wpa_supplicant-0.5/wpa_supplicant_debug

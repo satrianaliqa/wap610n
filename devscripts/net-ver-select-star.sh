@@ -45,12 +45,18 @@ then
  ./RUNME
  popd
 else
- # Update kernel configuration
+ # Update kernel configuration (skip forced make clean if .config is unchanged)
  pushd kernel/linux-2.6.16-star > /dev/null
+ NEED_KCLEAN=1
+ if [ -e .config ] && cmp -s .config "../../boards/${SELECTED_PLATFORM}/kernel/.config" 2>/dev/null; then
+  NEED_KCLEAN=0
+ fi
  rm -f .config
  ln -fs ../../boards/${SELECTED_PLATFORM}/kernel/.config
  export PATH=../../tools/arm-uclibc-3.4.6/bin/:$PATH
- make clean
+ if [ "$NEED_KCLEAN" -eq 1 ]; then
+  make clean
+ fi
  yes "" | make oldconfig
  cp -f ../../boards/${SELECTED_PLATFORM}/kernel/device_id.h arch/arm/boot/bootp/
  popd > /dev/null

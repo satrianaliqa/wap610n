@@ -1,0 +1,11 @@
+######### Metalink (c) #####################
+ifdef E_TOPDIR
+include $(E_TOPDIR)/scripts/Makefile.MTLK.vars
+else
+$(error "E_TOPDIR doesn't defined")
+endif
+
+.PHONY: CONF COMP CLEAN INSTALL STRIP
+
+CONF COMP CLEAN INSTALL STRIP:
+	$(MAKE) -f Makefile.MTLK $@ -C linux

@@ -105,7 +105,38 @@ $(NAME): Makefile main.o $(ARCH)
 		$(CFLAGS) $(IFLAGS) \
 		main.o $(ARCH) $(LDFLAGS) $(ADDITIONAL_OBJS) 
 
-PROPRIETARY_BLOBS = ../mt_api.o ../mt_task.o ../mt_validation.o ../wireless.o ../wps.o ../utils.o ../hnap_implementation.o
+# Modular proprietary blob switches (set USE_BLOB_<MOD>=0 when <mod>.c is available)
+USE_BLOB_MT_API        ?= 1
+USE_BLOB_MT_TASK       ?= 1
+USE_BLOB_MT_VALIDATION ?= 1
+USE_BLOB_WIRELESS      ?= 1
+USE_BLOB_WPS           ?= 1
+USE_BLOB_UTILS         ?= 1
+USE_BLOB_HNAP_IMPL     ?= 1
+
+PROPRIETARY_BLOBS =
+ifeq ($(USE_BLOB_MT_API),1)
+PROPRIETARY_BLOBS += ../mt_api.o
+endif
+ifeq ($(USE_BLOB_MT_TASK),1)
+PROPRIETARY_BLOBS += ../mt_task.o
+endif
+ifeq ($(USE_BLOB_MT_VALIDATION),1)
+PROPRIETARY_BLOBS += ../mt_validation.o
+endif
+ifeq ($(USE_BLOB_WIRELESS),1)
+PROPRIETARY_BLOBS += ../wireless.o
+endif
+ifeq ($(USE_BLOB_WPS),1)
+PROPRIETARY_BLOBS += ../wps.o
+endif
+ifeq ($(USE_BLOB_UTILS),1)
+PROPRIETARY_BLOBS += ../utils.o
+endif
+ifeq ($(USE_BLOB_HNAP_IMPL),1)
+PROPRIETARY_BLOBS += ../hnap_implementation.o
+endif
+
 CLEAN_FILES = $(filter-out $(PROPRIETARY_BLOBS), $(DEPEND_FILES)) main.o
 
 clean:

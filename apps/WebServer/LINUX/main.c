@@ -62,6 +62,8 @@ static int			finished;						/* Finished flag */
 static int 	initWebs();
 static int  websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 				int arg, char_t *url, char_t *path, char_t *query);
+static int  websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
+				int arg, char_t *url, char_t *path, char_t *query);
 extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
@@ -399,6 +401,7 @@ static int initWebs()
 	websUrlHandlerDefine(T("/mt_stat"), NULL, 0, websStatisticsHandler, 0); 
 #endif
 	websUrlHandlerDefine(T("/HNAP1"), NULL, 0, websHNAPHandler, 0); //Ricky Test	
+	websUrlHandlerDefine(T("/api"), NULL, 0, websApiHandler, 0);
 	websUrlHandlerDefine(T(""), NULL, 0, websDefaultHandler, 
 		WEBS_HANDLER_LAST); 
 
@@ -454,6 +457,196 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		return 1;
 	}
 	return 0;
+}
+
+/******************************************************************************/
+/*
+ *	Zero-fork C89 JSON telemetry endpoints (/api/status.json, /api/wifi.json)
+ */
+
+static void jsonEscapeCopy(char *dst, size_t dstSize, const char *src)
+{
+	size_t i = 0;
+	if (dstSize == 0) {
+		return;
+	}
+	if (src == NULL) {
+		dst[0] = '\0';
+		return;
+	}
+	while (*src != '\0' && i + 2 < dstSize) {
+		unsigned char c = (unsigned char)*src++;
+		if (c == '\"' || c == '\\') {
+			dst[i++] = '\\';
+			dst[i++] = (char)c;
+		} else if (c >= 0x20 && c < 0x7f) {
+			dst[i++] = (char)c;
+		}
+	}
+	dst[i] = '\0';
+}
+
+static void sendJsonResponse(webs_t wp, int status, const char *body)
+{
+	size_t bodyLen = strlen(body);
+	wp->flags &= ~WEBS_KEEP_ALIVE;
+	websWrite(wp, T("HTTP/1.0 %d %s\r\n"), status, (status == 200) ? "OK" : "Not Found");
+	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
+	websWrite(wp, T("Connection: close\r\n"));
+	websWrite(wp, T("Cache-Control: no-store\r\n"));
+	websWrite(wp, T("Content-Type: application/json\r\n"));
+	websWrite(wp, T("Content-Length: %lu\r\n\r\n"), (unsigned long)bodyLen);
+	websWriteBlock(wp, (char_t *)body, (int)bodyLen);
+	websDone(wp, status);
+}
+
+static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
+	int arg, char_t *url, char_t *path, char_t *query)
+{
+	char body[1024];
+	FILE *fp;
+	char line[256];
+
+	if (path == NULL) {
+		return 0;
+	}
+
+	if (strcmp(path, "/api/status.json") == 0) {
+		unsigned long uptimeSec = 0;
+		unsigned long memTotal = 0, memFree = 0, buffers = 0, cached = 0;
+		unsigned long commitLimit = 0, committedAs = 0;
+		int tcpEstab = 0, tcpListen = 0, tcpCloseWait = 0;
+		char hostRaw[64], hostEsc[128], netType[16], verRaw[96], verEsc[192];
+
+		memset(hostRaw, 0, sizeof(hostRaw));
+		memset(netType, 0, sizeof(netType));
+		memset(verRaw, 0, sizeof(verRaw));
+		MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
+		MT_Get_Param("network_type", netType, sizeof(netType) - 1);
+		jsonEscapeCopy(hostEsc, sizeof(hostEsc), hostRaw);
+
+		fp = fopen("/proc/uptime", "r");
+		if (fp != NULL) {
+			if (fgets(line, sizeof(line), fp) != NULL) {
+				sscanf(line, "%lu", &uptimeSec);
+			}
+			fclose(fp);
+		}
+
+		fp = fopen("/proc/meminfo", "r");
+		if (fp != NULL) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				unsigned long val = 0;
+				if (sscanf(line, "MemTotal: %lu", &val) == 1) memTotal = val;
+				else if (sscanf(line, "MemFree: %lu", &val) == 1) memFree = val;
+				else if (sscanf(line, "Buffers: %lu", &val) == 1) buffers = val;
+				else if (sscanf(line, "Cached: %lu", &val) == 1) cached = val;
+				else if (sscanf(line, "CommitLimit: %lu", &val) == 1) commitLimit = val;
+				else if (sscanf(line, "Committed_AS: %lu", &val) == 1) committedAs = val;
+			}
+			fclose(fp);
+		}
+
+		fp = fopen("/proc/net/tcp", "r");
+		if (fp != NULL) {
+			if (fgets(line, sizeof(line), fp) != NULL) {
+				while (fgets(line, sizeof(line), fp) != NULL) {
+					unsigned int st = 0;
+					if (sscanf(line, "%*d: %*x:%*x %*x:%*x %x", &st) == 1) {
+						if (st == 1) tcpEstab++;
+						else if (st == 10) tcpListen++;
+						else if (st == 8) tcpCloseWait++;
+					}
+				}
+			}
+			fclose(fp);
+		}
+
+		fp = fopen("/etc/version", "r");
+		if (fp != NULL) {
+			if (fgets(verRaw, sizeof(verRaw), fp) != NULL) {
+				size_t len = strlen(verRaw);
+				while (len > 0 && (verRaw[len - 1] == '\n' || verRaw[len - 1] == '\r')) {
+					verRaw[--len] = '\0';
+				}
+			}
+			fclose(fp);
+		}
+		jsonEscapeCopy(verEsc, sizeof(verEsc), verRaw);
+
+		snprintf(body, sizeof(body),
+			"{\"model\":\"WAP610N\",\"hostname\":\"%s\",\"network_type\":\"%s\","
+			"\"version\":\"%s\",\"uptime_sec\":%lu,"
+			"\"mem_kb\":{\"total\":%lu,\"free\":%lu,\"buffers\":%lu,\"cached\":%lu,"
+			"\"commit_limit\":%lu,\"committed_as\":%lu},"
+			"\"tcp\":{\"established\":%d,\"listen\":%d,\"close_wait\":%d}}\n",
+			hostEsc, netType, verEsc, uptimeSec,
+			memTotal, memFree, buffers, cached, commitLimit, committedAs,
+			tcpEstab, tcpListen, tcpCloseWait);
+		body[sizeof(body) - 1] = '\0';
+		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	if (strcmp(path, "/api/wifi.json") == 0) {
+		char essidRaw[64], essidEsc[128], channel[16], netMode[16];
+		char bonding[16], auth[32], rfBand[16], wpsMode[16];
+		unsigned long wlanRxB = 0, wlanRxP = 0, wlanTxB = 0, wlanTxP = 0;
+		unsigned long ethRxB = 0, ethRxP = 0, ethTxB = 0, ethTxP = 0;
+
+		memset(essidRaw, 0, sizeof(essidRaw));
+		memset(channel, 0, sizeof(channel));
+		memset(netMode, 0, sizeof(netMode));
+		memset(bonding, 0, sizeof(bonding));
+		memset(auth, 0, sizeof(auth));
+		memset(rfBand, 0, sizeof(rfBand));
+		memset(wpsMode, 0, sizeof(wpsMode));
+
+		MT_Get_Param("ESSID", essidRaw, sizeof(essidRaw) - 1);
+		MT_Get_Param("Channel", channel, sizeof(channel) - 1);
+		MT_Get_Param("NetworkMode", netMode, sizeof(netMode) - 1);
+		MT_Get_Param("ChannelBonding", bonding, sizeof(bonding) - 1);
+		MT_Get_Param("Authentication", auth, sizeof(auth) - 1);
+		MT_Get_Param("RF_Band", rfBand, sizeof(rfBand) - 1);
+		MT_Get_Param("WPS_Mode", wpsMode, sizeof(wpsMode) - 1);
+		jsonEscapeCopy(essidEsc, sizeof(essidEsc), essidRaw);
+
+		fp = fopen("/proc/net/dev", "r");
+		if (fp != NULL) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				char *p = strchr(line, ':');
+				if (p != NULL) {
+					unsigned long rxB = 0, rxP = 0, txB = 0, txP = 0;
+					*p = '\0';
+					if (sscanf(p + 1, "%lu %lu %*u %*u %*u %*u %*u %*u %lu %lu",
+							&rxB, &rxP, &txB, &txP) == 4) {
+						if (strstr(line, "wlan0") != NULL) {
+							wlanRxB = rxB; wlanRxP = rxP; wlanTxB = txB; wlanTxP = txP;
+						} else if (strstr(line, "eth0") != NULL) {
+							ethRxB = rxB; ethRxP = rxP; ethTxB = txB; ethTxP = txP;
+						}
+					}
+				}
+			}
+			fclose(fp);
+		}
+
+		snprintf(body, sizeof(body),
+			"{\"essid\":\"%s\",\"channel\":\"%s\",\"network_mode\":\"%s\","
+			"\"channel_bonding\":\"%s\",\"authentication\":\"%s\","
+			"\"rf_band\":\"%s\",\"wps_mode\":\"%s\","
+			"\"wlan0\":{\"rx_bytes\":%lu,\"rx_packets\":%lu,\"tx_bytes\":%lu,\"tx_packets\":%lu},"
+			"\"eth0\":{\"rx_bytes\":%lu,\"rx_packets\":%lu,\"tx_bytes\":%lu,\"tx_packets\":%lu}}\n",
+			essidEsc, channel, netMode, bonding, auth, rfBand, wpsMode,
+			wlanRxB, wlanRxP, wlanTxB, wlanTxP,
+			ethRxB, ethRxP, ethTxB, ethTxP);
+		body[sizeof(body) - 1] = '\0';
+		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	sendJsonResponse(wp, 404, "{\"error\":\"not_found\"}\n");
+	return 1;
 }
 
 /******************************************************************************/

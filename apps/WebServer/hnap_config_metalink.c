@@ -1724,10 +1724,6 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 	unsigned int crcFromFooter, imageSizeFromFile;
 	MT_IMAGE_HEADER imageHeader;
 	uLong crc;
-	char tmpOutputFile[MT_MAX_PATH_LENGTH];
-	char mtdBlockCmnd[MT_MAX_PATH_LENGTH];
-	FILE* tmpFile;
-	int mtdDeviceID = 0;
 	int isLittleEndian = hnap_IsLittleEndian();
 
 	if (imageBuf == NULL || imageSize < (int)(sizeof(MT_IMAGE_HEADER) + 16) || imageSize > KERNEL_MTD_PARTITION_SIZE){
@@ -1760,38 +1756,10 @@ int hnap_validate_Image(const char_t* imageBuf, int imageSize)
 		return -1;
 	}
 
-	// Check if the device ID is the same as in mtdblock3:
-	sprintf(tmpOutputFile, "%s/web_device_id.tmp", MT_WebTmpDir);
-	sprintf(mtdBlockCmnd, "get_env_param device_id >%s", tmpOutputFile);
-	system(mtdBlockCmnd);
-	tmpFile = fopen(tmpOutputFile, "rt");
-	if (tmpFile)
-	{
-		fscanf(tmpFile, "%x", &mtdDeviceID);
-		fclose(tmpFile);
-	}
-	unlink(tmpOutputFile);
-
-	if (mtdDeviceID != 0) // If there's information in mtdblock3, compare device ID
-	{
-		if (imageHeader.deviceID != mtdDeviceID)
-		{
-//june.chen, 2011-01-17, support Device ID for both WES610N (0x13) and WET610N (0x11). This is because WET610N and WES610N fw is interchangeable
-#if 1
-			if(((imageHeader.deviceID == 0x11) || (imageHeader.deviceID == 0x12) || (imageHeader.deviceID == 0x13)) && ((mtdDeviceID == 0x11) || (mtdDeviceID == 0x12) || (mtdDeviceID == 0x13))){
-			}
-			else{
-				printf("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)", imageHeader.deviceID, mtdDeviceID);
-				return -1;
-			}
-#else
-			printf("Error: The image is not compatible with this hardware (device ID 0x%08X instead of 0x%08X)", imageHeader.deviceID, mtdDeviceID);
-			return -1;
-#endif
-//june.chen end
-		}
-	}else{
-		printf("Warning: device ID not stored in mtdblock3 (or not stored correctly)\n");
+	/* Strict zero-fork WAP610N hardware Device ID check (0x0012) */
+	if (imageHeader.deviceID != 0x0012){
+		printf("Error: The image is not compatible with WAP610N hardware (device ID 0x%08X instead of 0x00000012)\n", imageHeader.deviceID);
+		return -1;
 	}
 
 	memcpy(&crcFromFooter, imageBuf + imageSize - 4, 4);

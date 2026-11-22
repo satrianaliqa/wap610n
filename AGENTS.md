@@ -154,10 +154,18 @@ Physical 4 MB NOR Flash layout (`0x10000000` – `0x10400000`):
 │       ├── kernel/.config          ├→ Production kernel build configuration
 │       └── busybox/.config         ├→ BusyBox applet configuration
 │
-├── 📁 rootfs/                      [Root filesystem base template]
-├── 📁 rootfs-star/                 [Pre-built source-of-truth root filesystem template]
+├── 📁 rootfs-star/                 [Single Source of Truth RootFS Template]
 │   ├── etc/                        ├→ Inittab, udhcpc scripts, hostname, network templates
-│   └── root/mtlk/                  ├→ Metalink wireless scripts, web UI assets, firmware binaries
+│   └── root/mtlk/                  ├→ Metalink wireless scripts, web UI assets, configs
+│
+├── 📁 vendor/mtlk/                 [Open Proprietary Radio/Binary Blobs Directory]
+│   ├── driver/                     ├→ Proprietary mtlk.ko wireless driver
+│   ├── images/                     ├→ Radio microcode & ProgModel_*.bin calibration files
+│   ├── bcl/                        ├→ BclSockServer & bcl_util.tcl
+│   └── etc/                        ├→ drvhlpr, mtdump, mtpriv, wsccmd, wpa_supplicant
+│
+├── 📁 packages/                    [Standardized Modular C89 Plugin Framework]
+│   └── Makefile.pkg                ├→ Shared C89/uClibc/strip plugin build template
 │
 ├── 📁 u-boot-1.1.4/                [U-Boot 1.1.4 bootloader source tree]
 ├── 📁 tools/                       [Precompiled cross-compilation toolchains]
@@ -169,15 +177,17 @@ Physical 4 MB NOR Flash layout (`0x10000000` – `0x10400000`):
 │   └── verify-firmware.sh          ├→ Strict automated firmware QA & size gatekeeper
 │
 ├── 📁 .github/workflows/           [CI/CD automation pipeline]
-│   └── compile.yml                 ├→ GitHub Actions workflow for automated firmware builds
+│   └── compile.yml                 ├→ GitHub Actions workflow with container image cache
 │
 ├── 📁 devscripts/                  [Build automation & developer tools]
 │   ├── validate-build-prerequisites.sh ├→ Pre-flight environment sanity checks
-│   ├── net-ver-mkrootfs.sh         ├→ Rootfs assembler & overlay builder
-│   └── select-star.sh              ├→ BSP platform selector
+│   ├── net-ver-mkrootfs.sh         ├→ Deterministic rootless ramdisk assembler
+│   └── net-ver-select-star.sh      ├→ BSP platform selector
 │
-└── 📁 config/                      [Version & product configurations]
-    └── WAP610N_VERSION             ├→ Semantic version configuration file
+└── 📁 config/                      [Version, Device Table & MTD4 Defaults]
+    ├── WAP610N_VERSION             ├→ Semantic version configuration file
+    ├── rootfs-device-table.txt     ├→ Device node table for rootless genext2fs
+    └── mtdblock4-defaults/         └→ Plain-text sys.conf & wlan0.conf for auto config.img.gz
 ```
 
 ---
@@ -238,18 +248,19 @@ sequenceDiagram
   ```bash
   grep -q "NOPASSWD: ALL" /etc/sudoers || echo "$USER ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
   ```
-- Workspace directory `rootfs/` is isolated cleanly from `rootfs-star/`. `compile.sh` uses `cp -a rootfs-star rootfs` rather than symlinking to prevent clean rules from wiping the reference source tree.
+- Workspace directory `rootfs/` is an untracked temporary assembly copy (listed in `.gitignore`). `compile.sh` and `net-ver-mkrootfs.sh` assemble `rootfs/` deterministically from `rootfs-star/`, compiled `apps/` & `WebServer`, `packages/*/`, and open `vendor/mtlk/` blobs, then auto-generate `config.img.gz` from `config/mtdblock4-defaults/` and pack the ext2 ramdisk via rootless `genext2fs` (with `config/rootfs-device-table.txt` fallback).
 
 ### 6.2 Pre-Build Validation Suite (`devscripts/validate-build-prerequisites.sh`)
 Runs before any compilation begins (fail-fast principle):
-1. **Archive integrity**: Verifies `wlan.tar.gz` and `rootfs-star.tgz`.
-2. **Directory validation**: Verifies presence of `kernel/`, `apps/`, `boards/`, `tools/`.
-3. **Toolchain check**: Validates `arm-linux-uclibc-gcc` (3.4.6) executable and libraries.
+1. **Open Vendor & RootFS validation**: Verifies `vendor/mtlk/` (`mtlk.ko`, `ap_upper.bin`, `drvhlpr`) and `rootfs-star/`.
+2. **Directory validation**: Verifies presence of `kernel/`, `apps/`, `boards/`, `tools/`, `u-boot-1.1.4/`.
+3. **Config & Device Table check**: Validates `config/WAP610N_VERSION`, `config/mtdblock4-defaults/{sys.conf,wlan0.conf}`, and `config/rootfs-device-table.txt`.
 4. **Output directories**: Automatically creates `output/` and scratch staging areas.
 
-### 6.3 Fail-Fast Make Orchestration (`devscripts/make_nv.sh`)
-- Enforces `set -o pipefail` so that compilation failures hidden behind pipes (`make 2>&1 | tee ...`) correctly propagate non-zero exit codes.
-- Explicit `exit 1` statements replace ambiguous bare exits across all configuration routines.
+### 6.3 Fail-Fast & Granular Make Orchestration (`Makefile` & `make_nv.sh`)
+- Enforces `set -o pipefail` so compilation failures hidden behind pipes (`make 2>&1 | tee ...`) correctly propagate non-zero exit codes.
+- Granular developer targets in `Makefile`: `make image`, `make kernel`, `make apps`, `make webs`, `make pack`, `make verify`, `make docker-image`, `make docker-shell`, `make mtlk-driver`, `make clean`.
+- `devscripts/net-ver-select-star.sh` skips forced `make clean` on the kernel when `.config` is unchanged.
 - `apps/scripts/Makefile.MTLK` enforces strict `|| exit 1` error termination in applet build loops.
 
 ### 6.4 Dynamic Versioning
@@ -339,7 +350,11 @@ Summary of verified fixes across Phases 1–6 (all synchronized across `rootfs-s
 | **Phase 5** | Multi-Subsystem Hardening | Fixed U-Boot recovery size (`0x39ffff`) & `CONFIGFS_OFFSET` (`0x103E0000`) in `star_orion_umedia.h`, `CFG_OFFSET` (`0x3e0000`) in `mach-str9100/Kconfig`, `star_gsw.c` NULL/tailroom guards, `star_gsw_phy.c` GPIO3 `#ifdef`, `mkcsum.c` exit code, `str9100_gpio.c` IRQ mask, `gpioDevice.c` 16B stack buffer; fixed `management.c` `rebootTag`, `upldform.c` path/MTD bounds & `_exit(0)`, `device_discover.c` DoS guards, `hnap_config_metalink.c` dual-band/HT; restored `WPS_PBC.sh` (removed `poweroff`), `mtlk_wps_msgloop.tcl`, `mtlk_wps_event.sh` LED, `mtlk_init_wps.sh` (`RF_BAND=3`), `update_security.tcl`; removed `shell.cgi`, enabled `CONFIG_BB_SYSCTL`/`CONFIG_HEAD`, `syslogd`/`klogd`, `/etc/shadow` hardening, pre-baked Dropbear RSA/DSS keys, default AP DHCP (`192.168.1.10`–`.20`), clean AP `config.img.gz`, and GPIO3 AP reset (`mtlk_restore_defaults.sh 1 1`). |
 | **Phase 6** | CLI, SSH & Diagnostics | Built Dropbear multi-binary (`dropbear`, `dbclient`, `dropbearkey`, `/usr/bin/ssh` symlink) with reverse tunneling (`-R`) and root shadow hash (`admin`); added POSIX/Awk `/bin/sysmon`, `/bin/curl`, `/bin/json`, `/bin/nettest`, `/bin/flashdump`, `/bin/help`, and `/etc/profile`; symlinked 12 unused `STRINGS_*.txt` & `linksys_arabic.css` to English (~180 KB saved). |
 
-### 8.1 Future Architectural Roadmap
+### 8.1 Unified Platform & Modernization Enhancements (2026-11)
+- **Zero-Fork C89 JSON Telemetry API (`apps/WebServer/LINUX/main.c`)**: Added `/api/status.json` and `/api/wifi.json` handlers reading `/proc/uptime`, `/proc/meminfo`, `/proc/net/tcp`, `/proc/net/dev`, `/etc/version`, and `MT_Get_Param` directly in C without spawning shells.
+- **Zero-Fork Strict `0x0012` Pre-Flash Guard (`upldform.c`, `hnap_config_metalink.c`)**: Enforced `imageHeader.deviceID == 0x0012` directly in C without calling `system("get_env_param ...")` while holding a 3.6 MB upload buffer.
+- **ConfigFS Integrity Guard (`rootfs-star/bin/config_umount.sh`)**: Aborts flash write if `/mnt/jffs2/wlan0.conf` or `/mnt/jffs2/sys.conf` is missing or empty.
+- **Modular 7-`.o` Blob Switches (`apps/WebServer/LINUX/Makefile`)**: Per-module `USE_BLOB_*` switches allow swapping any of the 7 proprietary `.o` blobs for C89 source files individually.
 - **Custom Dropbear SSH Key Upload**: Add WebUI/CLI upload to `/mnt/jffs2/dropbear/` with boot-time priority fallback over pre-baked `/root/mtlk/etc/dropbear/` keys.
 
 ---
@@ -551,7 +566,7 @@ Before staging or committing any code changes:
 - [x] **Shell Syntax Check**: Verify all shell scripts across `rootfs-star/`, `rootfs/`, and `devscripts/` with `bash -n` or `sh -n`.
 - [x] **Tcl Syntax Check**: Verify Tcl scripts using `echo 'source script.tcl; puts OK' | tclsh`.
 - [x] **Whitespace & Diff Sanity**: Run `git diff --check` to ensure no whitespace errors, carriage returns (`\r`), or merge conflicts.
-- [x] **Rootfs Synchronization**: Ensure any script modified in `rootfs-star/` is copied identically to `rootfs/` and `apps/jffs2-etc/networking/VB/`.
+- [x] **Single Rootfs Source of Truth**: Edit runtime files strictly under `rootfs-star/` (never edit generated `rootfs/` staging directory).
 
 ---
 

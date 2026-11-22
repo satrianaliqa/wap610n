@@ -7,7 +7,6 @@ TARGET_NAME="${1:-WAP610N}"
 CURRENT_UID="$(id -u)"
 CURRENT_GID="$(id -g)"
 
-# Detect container runtime (docker or podman)
 if command -v docker >/dev/null 2>&1; then
     CONTAINER_CMD="docker"
 elif command -v podman >/dev/null 2>&1; then
@@ -28,12 +27,12 @@ fi
 
 # Validate prerequisites
 echo "Validating prerequisites..."
-if [ ! -f "$ROOT_DIR/wlan.tar.gz" ]; then
-    echo "❌ ERROR: wlan.tar.gz not found at $ROOT_DIR/wlan.tar.gz"
+if [ ! -f "$ROOT_DIR/vendor/mtlk/driver/mtlk.ko" ]; then
+    echo "❌ ERROR: vendor/mtlk/driver/mtlk.ko not found"
     exit 1
 fi
-if [ ! -f "$ROOT_DIR/rootfs-star.tgz" ]; then
-    echo "❌ ERROR: rootfs-star.tgz not found at $ROOT_DIR/rootfs-star.tgz"
+if [ ! -d "$ROOT_DIR/rootfs-star" ]; then
+    echo "❌ ERROR: rootfs-star directory not found"
     exit 1
 fi
 if [ ! -f "$ROOT_DIR/config/WAP610N_VERSION" ]; then
@@ -59,25 +58,14 @@ sudo $CONTAINER_CMD run --rm \
         set -e
         export PATH="/workspace/tools/arm-uclibc-3.4.6/bin:$PATH"
         mkdir -p /workspace/output
-        
-        echo "--> Step 1: Checking and preparing rootfs..."
-        echo "--> Validating required archives..."
-        [ -f /workspace/wlan.tar.gz ] || { echo "ERROR: wlan.tar.gz not found"; exit 1; }
-        [ -f /workspace/rootfs-star.tgz ] || { echo "ERROR: rootfs-star.tgz not found"; exit 1; }
-        if [ ! -d rootfs-star ]; then
-            tar -zxvf rootfs-star.tgz
-        fi
-        if [ -L rootfs ]; then
-            echo "--> Replacing rootfs symlink with a real staging copy of rootfs-star..."
-            rm -f rootfs
-        fi
-        if [ ! -e rootfs ]; then
-            # Must be a real copy: packaging extracts wlan.tar.gz into rootfs and
-            # "make clean" wipes $(E_DEST)/*, which would destroy rootfs-star via a symlink.
-            cp -a rootfs-star rootfs
-        fi
 
-        # Ensure init symlinks
+        echo "--> Step 1: Preparing clean staging rootfs from rootfs-star..."
+        [ -f /workspace/vendor/mtlk/driver/mtlk.ko ] || { echo "ERROR: vendor/mtlk/driver/mtlk.ko not found"; exit 1; }
+        [ -d /workspace/rootfs-star ] || { echo "ERROR: rootfs-star not found"; exit 1; }
+
+        rm -rf rootfs
+        cp -a rootfs-star rootfs
+
         ln -sf bin/busybox rootfs/init 2>/dev/null || true
         ln -sf ../bin/busybox rootfs/sbin/init 2>/dev/null || true
         ln -sf bin/busybox rootfs/linuxrc 2>/dev/null || true
@@ -87,9 +75,8 @@ sudo $CONTAINER_CMD run --rm \
         ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
 
         echo "--> Step 3: Compiling Kernel, Applications, and building Firmware..."
-        ./make_nv.sh build wlan.tar.gz $TARGET_NAME
+        ./make_nv.sh build vendor/mtlk "$TARGET_NAME"
 
-        # Dynamically copy bootpImage with version from config/${TARGET_NAME}_VERSION
         VER_FILE="config/${TARGET_NAME}_VERSION"
         [ -f "$VER_FILE" ] || VER_FILE="config/WAP610N_VERSION"
         if [ -e output/bootpImage ] && [ -f "$VER_FILE" ]; then
@@ -104,7 +91,6 @@ sudo $CONTAINER_CMD run --rm \
         chown -R $CURRENT_UID:$CURRENT_GID /workspace/images 2>/dev/null || true
     '
 
-# Audit & Verifikasi hasil compile otomatis (dynamically find firmware)
 echo ""
 echo "Firmware artifacts generated:"
 ls -lh "$ROOT_DIR/output"/ 2>/dev/null || echo "  (output directory not found)"

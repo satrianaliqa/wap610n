@@ -1,190 +1,178 @@
 #!/bin/bash
 set -e
-# Create an LZMA compressed ext2 ramdisk rootfs file system, containing all files in rootfs.
+# Assemble an LZMA-compressed ext2 ramdisk rootfs deterministically for WAP610N.
 ROOTFS_DIR=rootfs
-# rootfs-star is the tracked source of truth for all WAP610N customizations.
 STAR_DIR=rootfs-star
-ROOTFS_STAR="${STAR_DIR}"
+VENDOR_DIR="${1:-vendor/mtlk}"
 
-# Safety guard: rootfs must be a separate staging tree. If it is a symlink to
-# (or the same directory as) rootfs-star, extracting wlan.tar.gz below would
-# overwrite the WAP610N customizations inside rootfs-star itself.
 if [ -d "${STAR_DIR}" ] && [ -e "${ROOTFS_DIR}" ] && \
    [ "$(readlink -f "${ROOTFS_DIR}")" = "$(readlink -f "${STAR_DIR}")" ]; then
-	echo "ERROR: ${ROOTFS_DIR} resolves to ${STAR_DIR}. Use a real copy (cp -a ${STAR_DIR} ${ROOTFS_DIR}), not a symlink."
+	echo "ERROR: ${ROOTFS_DIR} resolves to ${STAR_DIR}. Use a real copy, not a symlink."
 	exit 1
 fi
 
 echo "--> Preparing rootfs files and version..."
-mkdir -p ${ROOTFS_DIR}/root/mtlk
-mkdir -p ${ROOTFS_DIR}/etc
+if [ ! -d "${ROOTFS_DIR}/bin" ]; then
+	cp -a "${STAR_DIR}" "${ROOTFS_DIR}"
+fi
+mkdir -p "${ROOTFS_DIR}/root/mtlk" "${ROOTFS_DIR}/etc"
 
 # Create version file
-echo -n "Git Revision $(git rev-parse --short HEAD 2>/dev/null || echo 1)  " > ${ROOTFS_DIR}/etc/version
-date >> ${ROOTFS_DIR}/etc/version
+echo -n "Git Revision $(git rev-parse --short HEAD 2>/dev/null || echo 1)  " > "${ROOTFS_DIR}/etc/version"
+date >> "${ROOTFS_DIR}/etc/version"
 
-# Extract WLAN files directly into rootfs/root/mtlk/
-if [ -n "$1" ]; then
-	if [ -d "$1" ]; then
-		echo "Copying WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
-		tar -C "$1" --exclude=web/webs --exclude=./web/webs -cf - . | tar -C "${ROOTFS_DIR}/root/mtlk/" -xf -
-	elif [ -f "$1" ]; then
-		echo "Extracting WLAN files from $1 to ${ROOTFS_DIR}/root/mtlk/"
-		tar -xzf "$1" --exclude=web/webs --exclude=./web/webs -C "${ROOTFS_DIR}/root/mtlk/"
-	fi
+# 1. Install proprietary Metalink blobs from open directory vendor/mtlk/
+if [ -d "${VENDOR_DIR}" ]; then
+	echo "Installing proprietary Metalink blobs from ${VENDOR_DIR} to ${ROOTFS_DIR}/root/mtlk/..."
+	cp -af "${VENDOR_DIR}/." "${ROOTFS_DIR}/root/mtlk/"
+elif [ -f "${VENDOR_DIR}" ]; then
+	echo "Extracting WLAN archive ${VENDOR_DIR} to ${ROOTFS_DIR}/root/mtlk/..."
+	tar -xzf "${VENDOR_DIR}" --exclude=web/webs --exclude=./web/webs -C "${ROOTFS_DIR}/root/mtlk/"
+else
+	echo "ERROR: Vendor directory ${VENDOR_DIR} not found!"
+	exit 1
+fi
 
-	# Keep all ProgModel microcode files intact for full hardware revision compatibility
-	echo "Keeping all ProgModel microcode calibration files intact in ${ROOTFS_DIR}/root/mtlk/images/..."
-
-	# Install Metalink init scripts & platform configurations
-	if [ -d "apps/jffs2-etc/networking/VB" ]; then
-		echo "Installing Metalink VB startup scripts to ${ROOTFS_DIR}/root/mtlk/etc/..."
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/etc" "${ROOTFS_DIR}/root/mtlk/saved_configs"
-		cp -af apps/jffs2-etc/networking/VB/*.sh "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
-		for vb_tcl in mtlk_set_config.tcl mtlk_wps_cmd.tcl mtlk_wps_msgloop.tcl combined_ver_path.tcl; do
-			[ -f "apps/jffs2-etc/networking/VB/$vb_tcl" ] && cp -af "apps/jffs2-etc/networking/VB/$vb_tcl" "${ROOTFS_DIR}/root/mtlk/etc/"
-		done
-		cp -af apps/jffs2-etc/networking/VB/etherdump_awk "${ROOTFS_DIR}/root/mtlk/etc/" 2>/dev/null || true
-		cp -af apps/jffs2-etc/networking/VB/*.conf "${ROOTFS_DIR}/root/mtlk/saved_configs/" 2>/dev/null || true
-		[ -f "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" ] && \
-			cp -af "apps/jffs2-etc/networking/VB/mtlk_init_platform.sh.platform.UMEDIA" "${ROOTFS_DIR}/root/mtlk/etc/mtlk_init_platform.sh"
-	fi
-
-	# Overlay the WAP610N source of truth (rootfs-star/root/mtlk) on top of the
-	# stock WET610N files from wlan.tar.gz and the SDK VB scripts, excluding
-	# build-generated artifacts when freshly compiled copies already exist in rootfs/.
-	if [ -d "${STAR_DIR}/root/mtlk" ]; then
-		echo "Overlaying ${STAR_DIR}/root/mtlk onto ${ROOTFS_DIR}/root/mtlk (WAP610N customizations)..."
-		TAR_EXCLUDES=""
-		for built_art in etc/gpio.ko etc/hnap_wps_status_monitor etc/force_ethpc_renew_ip web/webs; do
-			if [ -e "${ROOTFS_DIR}/root/mtlk/${built_art}" ]; then
-				TAR_EXCLUDES="${TAR_EXCLUDES} --exclude=${built_art}"
-			fi
-		done
-		tar -C "${STAR_DIR}/root/mtlk" ${TAR_EXCLUDES} -cf - . | tar -C "${ROOTFS_DIR}/root/mtlk" -xf - || {
-			echo "ERROR: Failed to overlay ${STAR_DIR}/root/mtlk"
-			exit 1
-		}
-	fi
-	# Never allow stale prebuilt web/webs blobs to replace a freshly compiled WebServer binary
-	if [ -x "apps/WebServer/LINUX/webs" ]; then
-		echo "Installing freshly compiled GoAhead WebServer (apps/WebServer/LINUX/webs)..."
-		install -m 755 "apps/WebServer/LINUX/webs" "${ROOTFS_DIR}/root/mtlk/web/webs" || {
-			echo "ERROR: Failed to install compiled WebServer binary"
-			exit 1
-		}
-	fi
-	find "${ROOTFS_DIR}/root/mtlk" -type d -exec chmod 755 {} + 2>/dev/null || true
-	find "${ROOTFS_DIR}/root/mtlk" -type f -exec chmod 644 {} + 2>/dev/null || true
-	find "${ROOTFS_DIR}/root/mtlk" -type f \( -name '*.sh' -o -name '*.tcl' -o -name '*.cgi' \) -exec chmod 755 {} + 2>/dev/null || true
-	for exec_bin in \
-		"${ROOTFS_DIR}/root/mtlk/web/webs" \
-		"${ROOTFS_DIR}/root/mtlk/etc/mtpriv" \
-		"${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" \
-		"${ROOTFS_DIR}/root/mtlk/etc/hostapd" \
-		"${ROOTFS_DIR}/root/mtlk/etc/hostapd_cli" \
-		"${ROOTFS_DIR}/root/mtlk/etc/wpa_supplicant" \
-		"${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" \
-		"${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase" \
-		"${ROOTFS_DIR}/root/mtlk/etc/wsccmd" \
-		"${ROOTFS_DIR}/root/mtlk/etc/upnpd" \
-		"${ROOTFS_DIR}/root/mtlk/etc/hnap_wps_status_monitor" \
-		"${ROOTFS_DIR}/root/mtlk/etc/force_ethpc_renew_ip" \
-		"${ROOTFS_DIR}/root/mtlk/etc/wlan_logger"; do
-		[ -f "$exec_bin" ] && chmod 755 "$exec_bin"
+# 2. Overlay the WAP610N single source of truth (rootfs-star/root/mtlk) excluding
+# build-generated artifacts when freshly compiled copies already exist in rootfs/.
+if [ -d "${STAR_DIR}/root/mtlk" ]; then
+	echo "Syncing ${STAR_DIR}/root/mtlk onto ${ROOTFS_DIR}/root/mtlk..."
+	TAR_EXCLUDES=""
+	for built_art in etc/gpio.ko etc/hnap_wps_status_monitor etc/force_ethpc_renew_ip web/webs; do
+		if [ -e "${ROOTFS_DIR}/root/mtlk/${built_art}" ]; then
+			TAR_EXCLUDES="${TAR_EXCLUDES} --exclude=${built_art}"
+		fi
 	done
-	rm -f "${ROOTFS_DIR}/root/mtlk/web/crc"
-	rm -f "${ROOTFS_DIR}"/etc/udhcpd/LICENSE "${ROOTFS_DIR}"/etc/udhcpd/README \
-	      "${ROOTFS_DIR}"/etc/udhcpc/LICENSE "${ROOTFS_DIR}"/etc/udhcpc/README \
-	      "${ROOTFS_DIR}"/etc/hotplug/LICENSE "${ROOTFS_DIR}"/etc/hotplug/README \
-	      "${ROOTFS_DIR}"/etc/hotplug.d/LICENSE "${ROOTFS_DIR}"/etc/hotplug.d/README 2>/dev/null || true
-	if [ -x "tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip" ]; then
-		STRIP_BIN="tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip"
-		for ubin in "${ROOTFS_DIR}/root/mtlk/web/webs" "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
-			[ -x "$ubin" ] && "$STRIP_BIN" "$ubin" 2>/dev/null || true
-		done
-		find "${ROOTFS_DIR}" -name '*.ko' -exec "$STRIP_BIN" --strip-unneeded {} + 2>/dev/null || true
-	fi
-
-	# Fail hard if any WAP610N customization was lost during packaging.
-	OVERLAY_OK=1
-	check_marker() {
-		if ! grep -qF -- "$2" "${ROOTFS_DIR}/$1" 2>/dev/null; then
-			echo "ERROR: Packaging regression: '$2' missing in ${ROOTFS_DIR}/$1"
-			OVERLAY_OK=0
-		fi
-	}
-	check_marker root/mtlk/etc/mtlk_init.sh "/proc/sys/vm/min_free_kbytes"
-	check_marker root/mtlk/etc/mtlk_init.sh "echo 1 > /dev/led0"
-	check_marker root/mtlk/etc/mtlk_init_hostname.sh 'if [ -z "$1" ]'
-	check_marker root/mtlk/web/status/device_status.asp "Access Point Information"
-	check_marker root/mtlk/web/station/wireless_basic.asp 'objectDisplay("freqBand", value)'
-	if [ "$OVERLAY_OK" != 1 ]; then
+	tar -C "${STAR_DIR}/root/mtlk" ${TAR_EXCLUDES} -cf - . | tar -C "${ROOTFS_DIR}/root/mtlk" -xf - || {
+		echo "ERROR: Failed to sync ${STAR_DIR}/root/mtlk"
 		exit 1
-	fi
+	}
+fi
 
-	# Force ProjectName to WAP610N (Access Point mode with SSID linksys)
-	if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
-		echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
-		CURR_VER="1.0.05"
-		if [ -f "config/WAP610N_VERSION" ]; then
-			CURR_VER=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d'"' -f2 2>/dev/null || echo "1.0.05")
-		fi
-		cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
+# 3. Never allow stale prebuilt web/webs blobs to replace a freshly compiled WebServer binary
+if [ -x "apps/WebServer/LINUX/webs" ]; then
+	echo "Installing freshly compiled GoAhead WebServer (apps/WebServer/LINUX/webs)..."
+	install -m 755 "apps/WebServer/LINUX/webs" "${ROOTFS_DIR}/root/mtlk/web/webs" || {
+		echo "ERROR: Failed to install compiled WebServer binary"
+		exit 1
+	}
+fi
+
+# 4. Install optional standardized packages from packages/*/
+if [ -d "packages" ]; then
+	for pkg_mk in packages/*/Makefile.pkg; do
+		[ -f "$pkg_mk" ] || continue
+		pkg_dir="$(dirname "$pkg_mk")"
+		echo "Building and installing package: $pkg_dir..."
+		E_TOPDIR="$(pwd)/apps" E_DEST="$(pwd)/${ROOTFS_DIR}" \
+			make -C "$pkg_dir" -f Makefile.pkg COMP STRIP INSTALL || exit 1
+	done
+fi
+
+# 5. Auto-generate mtdblock4 factory default config.img.gz from plain-text config/mtdblock4-defaults/
+if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-defaults/wlan0.conf" ]; then
+	echo "Generating factory default config.img.gz from config/mtdblock4-defaults/..."
+	cp -af "config/mtdblock4-defaults/sys.conf" "${ROOTFS_DIR}/root/mtlk/etc/sys.conf"
+	cp -af "config/mtdblock4-defaults/sys.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default"
+	cp -af "config/mtdblock4-defaults/wlan0.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"
+
+	TMP_CFG_DIR=$(mktemp -d)
+	TMP_CFG_IMG=$(mktemp)
+	install -m 600 "config/mtdblock4-defaults/sys.conf" "${TMP_CFG_DIR}/sys.conf"
+	install -m 600 "config/mtdblock4-defaults/wlan0.conf" "${TMP_CFG_DIR}/wlan0.conf"
+	if command -v genext2fs >/dev/null 2>&1; then
+		genext2fs -U -b 128 -d "${TMP_CFG_DIR}" "${TMP_CFG_IMG}" >/dev/null 2>&1
+	else
+		mke2fs -d "${TMP_CFG_DIR}" -F -b 1024 -m 0 "${TMP_CFG_IMG}" 128 >/dev/null 2>&1
+	fi
+	gzip -n -9 -c "${TMP_CFG_IMG}" > "${ROOTFS_DIR}/root/mtlk/etc/config.img.gz"
+	rm -rf "${TMP_CFG_DIR}" "${TMP_CFG_IMG}"
+fi
+
+# 6. Normalize permissions & symlinks under rootfs/root/mtlk
+find "${ROOTFS_DIR}/root/mtlk" -type d -exec chmod 755 {} + 2>/dev/null || true
+find "${ROOTFS_DIR}/root/mtlk" -type f -exec chmod 644 {} + 2>/dev/null || true
+find "${ROOTFS_DIR}/root/mtlk" -type f \( -name '*.sh' -o -name '*.tcl' -o -name '*.cgi' -o -name '*_awk' \) -exec chmod 755 {} + 2>/dev/null || true
+for exec_bin in \
+	"${ROOTFS_DIR}/root/mtlk/web/webs" \
+	"${ROOTFS_DIR}/root/mtlk/bcl/BclSockServer" \
+	"${ROOTFS_DIR}/root/mtlk/etc/mtpriv" \
+	"${ROOTFS_DIR}/root/mtlk/etc/mtdump" \
+	"${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" \
+	"${ROOTFS_DIR}/root/mtlk/etc/hostapd" \
+	"${ROOTFS_DIR}/root/mtlk/etc/hostapd_cli" \
+	"${ROOTFS_DIR}/root/mtlk/etc/wpa_supplicant" \
+	"${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" \
+	"${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase" \
+	"${ROOTFS_DIR}/root/mtlk/etc/wsccmd" \
+	"${ROOTFS_DIR}/root/mtlk/etc/upnpd" \
+	"${ROOTFS_DIR}/root/mtlk/etc/hnap_wps_status_monitor" \
+	"${ROOTFS_DIR}/root/mtlk/etc/force_ethpc_renew_ip" \
+	"${ROOTFS_DIR}/root/mtlk/etc/wlan_logger"; do
+	[ -f "$exec_bin" ] && chmod 755 "$exec_bin"
+done
+
+rm -f "${ROOTFS_DIR}/root/mtlk/web/crc"
+rm -f "${ROOTFS_DIR}"/etc/udhcpd/LICENSE "${ROOTFS_DIR}"/etc/udhcpd/README \
+      "${ROOTFS_DIR}"/etc/udhcpc/LICENSE "${ROOTFS_DIR}"/etc/udhcpc/README \
+      "${ROOTFS_DIR}"/etc/hotplug/LICENSE "${ROOTFS_DIR}"/etc/hotplug/README \
+      "${ROOTFS_DIR}"/etc/hotplug.d/LICENSE "${ROOTFS_DIR}"/etc/hotplug.d/README 2>/dev/null || true
+
+if [ -x "tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip" ]; then
+	STRIP_BIN="tools/arm-uclibc-3.4.6/bin/arm-linux-uclibc-strip"
+	for ubin in "${ROOTFS_DIR}/root/mtlk/web/webs" "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
+		[ -x "$ubin" ] && "$STRIP_BIN" "$ubin" 2>/dev/null || true
+	done
+	find "${ROOTFS_DIR}" -name '*.ko' -exec "$STRIP_BIN" --strip-unneeded {} + 2>/dev/null || true
+fi
+
+# 7. Fail hard if any WAP610N customization was lost during packaging.
+OVERLAY_OK=1
+check_marker() {
+	if ! grep -qF -- "$2" "${ROOTFS_DIR}/$1" 2>/dev/null; then
+		echo "ERROR: Packaging regression: '$2' missing in ${ROOTFS_DIR}/$1"
+		OVERLAY_OK=0
+	fi
+}
+check_marker root/mtlk/etc/mtlk_init.sh "/proc/sys/vm/min_free_kbytes"
+check_marker root/mtlk/etc/mtlk_init.sh "echo 1 > /dev/led0"
+check_marker root/mtlk/etc/mtlk_init_hostname.sh 'if [ -z "$1" ]'
+check_marker root/mtlk/web/status/device_status.asp "Access Point Information"
+check_marker root/mtlk/web/station/wireless_basic.asp 'objectDisplay("freqBand", value)'
+if [ "$OVERLAY_OK" != 1 ]; then
+	exit 1
+fi
+
+# 8. Force ProjectName to WAP610N and ensure WebUI symlinks/files
+if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
+	echo "Configuring WAP610N Access Point Mode in fw_version.txt..."
+	CURR_VER="1.0.05"
+	if [ -f "config/WAP610N_VERSION" ]; then
+		CURR_VER=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d'"' -f2 2>/dev/null || echo "1.0.05")
+	fi
+	cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
 FIRMWARE_VERSION="${CURR_VER}"
 ProjectFirmwareVersionDate="${CURR_VER} build 0, $(date '+%b %d, %Y')"
 EOF
-		cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"
-		ln -sf sta_network.asp "${ROOTFS_DIR}/root/mtlk/web/network/ap_network.asp" 2>/dev/null || true
-		ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/security.asp" 2>/dev/null || true
-		ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_basic.asp" 2>/dev/null || true
-		ln -sf ../station/wireless_advanced.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_advanced.asp" 2>/dev/null || true
-		ln -sf ../station/wmm.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wmm.asp" 2>/dev/null || true
-		ln -sf ../station/wps_status.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wps_status.asp" 2>/dev/null || true
-		ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/lang"
-		touch "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_EN.txt"
-		ln -sf STRINGS_EN.txt "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_.txt" 2>/dev/null || true
-		mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
-		rm -f "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi"
-		[ -f "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
-			cp -af "rootfs-star/root/mtlk/web/cgi-bin/dump_firmware.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
-		[ -f "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
-			cp -af "rootfs-star/root/mtlk/web/cgi-bin/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/"
-		[ -x "${ROOTFS_DIR}/root/mtlk/web/webs" ] || {
-			[ -f "rootfs-star/root/mtlk/web/webs" ] && cp -af "rootfs-star/root/mtlk/web/webs" "${ROOTFS_DIR}/root/mtlk/web/"
-		}
-		for web_file in run_webs.sh monitor_web.sh reload_web.sh killchildweb.sh mt_current_stat.tcl; do
-			[ -f "rootfs-star/root/mtlk/web/$web_file" ] && \
-				cp -af "rootfs-star/root/mtlk/web/$web_file" "${ROOTFS_DIR}/root/mtlk/web/"
-		done
-		[ -f "rootfs-star/root/mtlk/saved_configs/default_admin.conf" ] && \
-			cp -af "rootfs-star/root/mtlk/saved_configs/default_admin.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/"
-		[ -f "rootfs-star/root/mtlk/etc/sys.conf" ] && \
-			cp -af "rootfs-star/root/mtlk/etc/sys.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default"
-		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && \
-			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" 2>/dev/null || true
-		[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" ] && \
-			chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" 2>/dev/null || true
-		[ -f "rootfs-star/root/mtlk/web/admin/management.asp" ] && \
-			cp -af "rootfs-star/root/mtlk/web/admin/management.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/management.asp"
-		[ -f "rootfs-star/root/mtlk/web/admin/upgrade.asp" ] && \
-			cp -af "rootfs-star/root/mtlk/web/admin/upgrade.asp" "${ROOTFS_DIR}/root/mtlk/web/admin/upgrade.asp"
-		for cfg_script in config_mount.sh config_save.sh config_umount.sh config_lock.sh config_unlock.sh config_init.sh diag_log.sh sysmon curl help json nettest flashdump; do
-			[ -f "rootfs-star/bin/$cfg_script" ] && cp -af "rootfs-star/bin/$cfg_script" "${ROOTFS_DIR}/bin/"
-		done
-		if [ ! -e $ROOTFS_DIR/bin/simpdiff ] && [ -e $ROOTFS_STAR/bin/simpdiff ]; then
-			cp -fv $ROOTFS_STAR/bin/simpdiff $ROOTFS_DIR/bin/simpdiff
-		fi
-		[ -f "rootfs-star/root/mtlk/etc/WPS_PBC.sh" ] && cp -af "rootfs-star/root/mtlk/etc/WPS_PBC.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
-		[ -f "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" ] && cp -af "rootfs-star/root/mtlk/etc/mtlk_init_wls_daemons.sh" "${ROOTFS_DIR}/root/mtlk/etc/"
-		[ -f "rootfs-star/etc/inittab" ] && cp -af "rootfs-star/etc/inittab" "${ROOTFS_DIR}/etc/"
-		[ -f "rootfs-star/etc/sysctl.conf" ] && cp -af "rootfs-star/etc/sysctl.conf" "${ROOTFS_DIR}/etc/"
-		[ -f "rootfs-star/etc/mtlk_init_start.sh" ] && cp -af "rootfs-star/etc/mtlk_init_start.sh" "${ROOTFS_DIR}/etc/"
-		[ -f "rootfs-star/etc/profile" ] && cp -af "rootfs-star/etc/profile" "${ROOTFS_DIR}/etc/"
-		[ -f "rootfs-star/etc/shadow" ] && cp -af "rootfs-star/etc/shadow" "${ROOTFS_DIR}/etc/"
+	cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true
+	mkdir -p "${ROOTFS_DIR}/root/mtlk/web/network" "${ROOTFS_DIR}/root/mtlk/web/wireless"
+	ln -sf sta_network.asp "${ROOTFS_DIR}/root/mtlk/web/network/ap_network.asp" 2>/dev/null || true
+	ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/security.asp" 2>/dev/null || true
+	ln -sf ../station/wireless_basic.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_basic.asp" 2>/dev/null || true
+	ln -sf ../station/wireless_advanced.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wireless_advanced.asp" 2>/dev/null || true
+	ln -sf ../station/wmm.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wmm.asp" 2>/dev/null || true
+	ln -sf ../station/wps_status.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/wps_status.asp" 2>/dev/null || true
+	ln -sf ../station/site_survey.asp "${ROOTFS_DIR}/root/mtlk/web/wireless/site_survey.asp" 2>/dev/null || true
+	mkdir -p "${ROOTFS_DIR}/root/mtlk/web/lang"
+	touch "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_EN.txt"
+	ln -sf STRINGS_EN.txt "${ROOTFS_DIR}/root/mtlk/web/lang/STRINGS_.txt" 2>/dev/null || true
+	mkdir -p "${ROOTFS_DIR}/root/mtlk/web/cgi-bin"
+	rm -f "${ROOTFS_DIR}/root/mtlk/web/remote_access.cgi" "${ROOTFS_DIR}/root/mtlk/web/dump_firmware.cgi"
+	[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" ] && chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/dump_firmware.cgi" 2>/dev/null || true
+	[ -f "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" ] && chmod +x "${ROOTFS_DIR}/root/mtlk/web/cgi-bin/remote_access.cgi" 2>/dev/null || true
+	if [ ! -e "${ROOTFS_DIR}/bin/simpdiff" ] && [ -e "${STAR_DIR}/bin/simpdiff" ]; then
+		cp -fv "${STAR_DIR}/bin/simpdiff" "${ROOTFS_DIR}/bin/simpdiff"
 	fi
 fi
 
@@ -212,7 +200,6 @@ create_device_nodes() {
 	local target_dev="$1"
 	mkdir -p "$target_dev" "$target_dev/pts" "$target_dev/shm" "$target_dev/net" "$target_dev/input"
 
-	# Core essential device nodes
 	[ -e "$target_dev/console" ] || mknod "$target_dev/console" c 5 1 2>/dev/null || true
 	[ -e "$target_dev/null" ] || mknod "$target_dev/null" c 1 3 2>/dev/null || true
 	[ -e "$target_dev/zero" ] || mknod "$target_dev/zero" c 1 5 2>/dev/null || true
@@ -224,7 +211,6 @@ create_device_nodes() {
 	[ -e "$target_dev/ptmx" ] || mknod -m 666 "$target_dev/ptmx" c 5 2 2>/dev/null || true
 	[ -e "$target_dev/tty" ] || mknod "$target_dev/tty" c 5 0 2>/dev/null || true
 
-	# Serial and Virtual Terminals
 	[ -e "$target_dev/ttyS0" ] || mknod "$target_dev/ttyS0" c 4 64 2>/dev/null || true
 	[ -e "$target_dev/ttyS1" ] || mknod "$target_dev/ttyS1" c 4 65 2>/dev/null || true
 	[ -e "$target_dev/ttyS2" ] || mknod "$target_dev/ttyS2" c 4 66 2>/dev/null || true
@@ -237,7 +223,6 @@ create_device_nodes() {
 		[ -e "$target_dev/ttyP$i" ] || mknod "$target_dev/ttyP$i" c 57 $i 2>/dev/null || true
 	done
 
-	# RAM & Loop Devices
 	for i in 0 1 2 3; do
 		[ -e "$target_dev/ram$i" ] || mknod "$target_dev/ram$i" b 1 $i 2>/dev/null || true
 	done
@@ -246,14 +231,12 @@ create_device_nodes() {
 		[ -e "$target_dev/loop$i" ] || mknod "$target_dev/loop$i" b 7 $i 2>/dev/null || true
 	done
 
-	# MTD Raw Character & Block Devices (mtd0-4, mtdblock0-4)
 	for i in 0 1 2 3 4; do
 		local mtd_minor=$((i * 2))
 		[ -e "$target_dev/mtd$i" ] || mknod "$target_dev/mtd$i" c 90 $mtd_minor 2>/dev/null || true
 		[ -e "$target_dev/mtdblock$i" ] || mknod "$target_dev/mtdblock$i" b 31 $i 2>/dev/null || true
 	done
 
-	# Star Semiconductor GPIOs (0..31) and physical LEDs (0..2 on WAP610N; pin 3 is RESET_PB)
 	for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31; do
 		[ -e "$target_dev/gpio$i" ] || mknod "$target_dev/gpio$i" c 42 $i 2>/dev/null || true
 	done
@@ -261,14 +244,11 @@ create_device_nodes() {
 	for i in 0 1 2; do
 		[ -e "$target_dev/led$i" ] || mknod "$target_dev/led$i" c 42 $i 2>/dev/null || true
 	done
-	# rdflt0 is Reset to Default Button (GPIO 3, minor 3)
 	rm -f "$target_dev/rdflt0" 2>/dev/null || true
 	mknod -m 644 "$target_dev/rdflt0" c 42 3 2>/dev/null || mknod -m 644 "$target_dev/rdflt0" c 240 3 2>/dev/null || true
 
-	# Network TUN
 	[ -e "$target_dev/net/tun" ] || mknod "$target_dev/net/tun" c 10 200 2>/dev/null || true
 
-	# Symlinks & Permissions
 	ln -sf /tmp/log "$target_dev/log" 2>/dev/null || true
 	chmod 600 "$target_dev/console" "$target_dev/ttyS0" 2>/dev/null || true
 	chmod 666 "$target_dev/null" "$target_dev/zero" "$target_dev/random" "$target_dev/urandom" "$target_dev/tty" "$target_dev/ptmx" 2>/dev/null || true
@@ -281,62 +261,66 @@ create_device_nodes() {
 create_device_nodes "${ROOTFS_DIR}/dev"
 
 # Ensure init symlinks
-ln -sf bin/busybox ${ROOTFS_DIR}/init 2>/dev/null || true
-ln -sf ../bin/busybox ${ROOTFS_DIR}/sbin/init 2>/dev/null || true
-ln -sf bin/busybox ${ROOTFS_DIR}/linuxrc 2>/dev/null || true
-ln -sf busybox ${ROOTFS_DIR}/bin/sh 2>/dev/null || true
+ln -sf bin/busybox "${ROOTFS_DIR}/init" 2>/dev/null || true
+ln -sf ../bin/busybox "${ROOTFS_DIR}/sbin/init" 2>/dev/null || true
+ln -sf bin/busybox "${ROOTFS_DIR}/linuxrc" 2>/dev/null || true
+ln -sf busybox "${ROOTFS_DIR}/bin/sh" 2>/dev/null || true
 
 # Strip compile-time static libraries (*.a) from runtime rootfs
 rm -f "${ROOTFS_DIR}"/lib/*.a "${ROOTFS_DIR}"/usr/lib/*.a 2>/dev/null || true
 
-echo "--> Generating ext2 ramdisk image directly from ${ROOTFS_DIR}..."
+echo "--> Generating ext2 ramdisk image from ${ROOTFS_DIR}..."
 mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
 
 RD=images/ramdisk_2.6.16.img
-dd if=/dev/zero of=${RD} bs=1k count=12288 >/dev/null 2>&1
-mke2fs -F -b 1024 -m 0 ${RD} >/dev/null 2>&1
-
-MNT_DIR=/tmp/mnt_rd_$$
-mkdir -p ${MNT_DIR}
-if mount -o loop ${RD} ${MNT_DIR} 2>/dev/null || sudo mount -o loop ${RD} ${MNT_DIR} 2>/dev/null; then
-    (cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/ || sudo cp -a ${ROOTFS_DIR}/. ${MNT_DIR}/) || {
-        echo "ERROR: Failed to copy rootfs to ramdisk mount!"
-        umount ${MNT_DIR} 2>/dev/null || sudo umount ${MNT_DIR} 2>/dev/null || true
-        exit 1
-    }
-    ensure_rootfs_dirs "${MNT_DIR}"
-    create_device_nodes "${MNT_DIR}/dev"
-    (chown -R 0:0 "${MNT_DIR}" || sudo chown -R 0:0 "${MNT_DIR}") 2>/dev/null || true
-    umount ${MNT_DIR} 2>/dev/null || sudo umount ${MNT_DIR} || {
-        echo "ERROR: Failed to unmount ramdisk mount!"
-        exit 1
-    }
-    rmdir ${MNT_DIR} 2>/dev/null || true
-elif command -v genext2fs >/dev/null 2>&1; then
-    rm -f ${RD}
-    genext2fs -U -b 12288 -d "${ROOTFS_DIR}" "${RD}" || {
-        echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
-        exit 1
-    }
-elif mke2fs -d ${ROOTFS_DIR} -F -b 1024 -m 0 ${RD} 12288 >/dev/null 2>&1; then
-    :
+if command -v genext2fs >/dev/null 2>&1; then
+	DEV_TABLE_ARGS=""
+	if [ ! -c "${ROOTFS_DIR}/dev/console" ] && [ -f "config/rootfs-device-table.txt" ]; then
+		DEV_TABLE_ARGS="-D config/rootfs-device-table.txt"
+	fi
+	genext2fs -U -b 12288 ${DEV_TABLE_ARGS} -d "${ROOTFS_DIR}" "${RD}" || {
+		echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
+		exit 1
+	}
+elif mke2fs -d "${ROOTFS_DIR}" -F -b 1024 -m 0 "${RD}" 12288 >/dev/null 2>&1; then
+	:
 else
-    echo "ERROR: Failed to generate ext2 ramdisk!"
-    exit 1
+	dd if=/dev/zero of="${RD}" bs=1k count=12288 >/dev/null 2>&1
+	mke2fs -F -b 1024 -m 0 "${RD}" >/dev/null 2>&1
+	MNT_DIR=/tmp/mnt_rd_$$
+	mkdir -p "${MNT_DIR}"
+	if mount -o loop "${RD}" "${MNT_DIR}" 2>/dev/null || sudo mount -o loop "${RD}" "${MNT_DIR}" 2>/dev/null; then
+		(cp -a "${ROOTFS_DIR}/." "${MNT_DIR}/" || sudo cp -a "${ROOTFS_DIR}/." "${MNT_DIR}/") || {
+			echo "ERROR: Failed to copy rootfs to ramdisk mount!"
+			umount "${MNT_DIR}" 2>/dev/null || sudo umount "${MNT_DIR}" 2>/dev/null || true
+			exit 1
+		}
+		ensure_rootfs_dirs "${MNT_DIR}"
+		create_device_nodes "${MNT_DIR}/dev"
+		(chown -R 0:0 "${MNT_DIR}" || sudo chown -R 0:0 "${MNT_DIR}") 2>/dev/null || true
+		umount "${MNT_DIR}" 2>/dev/null || sudo umount "${MNT_DIR}" || {
+			echo "ERROR: Failed to unmount ramdisk mount!"
+			exit 1
+		}
+		rmdir "${MNT_DIR}" 2>/dev/null || true
+	else
+		echo "ERROR: Failed to generate ext2 ramdisk (neither genext2fs nor loop mount worked)!"
+		exit 1
+	fi
 fi
 
 if [ ! -f "${RD}" ] || [ $(stat -c %s "${RD}" 2>/dev/null || echo 0) -lt 1000000 ]; then
-    echo "ERROR: Ramdisk image ${RD} is missing or empty!"
-    exit 1
+	echo "ERROR: Ramdisk image ${RD} is missing or empty!"
+	exit 1
 fi
 
 echo "--> Compressing ramdisk image with LZMA..."
-lzma -f -z ${RD}
+lzma -f -z "${RD}"
 
 if [ ! -f "${RD}.lzma" ]; then
-    echo "ERROR: Failed to compress ${RD} with LZMA!"
-    exit 1
+	echo "ERROR: Failed to compress ${RD} with LZMA!"
+	exit 1
 fi
 
 echo "--> Ramdisk generation complete: images/ramdisk_2.6.16.img.lzma ($(ls -lh images/ramdisk_2.6.16.img.lzma | awk '{print $5}'))"

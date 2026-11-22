@@ -1,33 +1,50 @@
 # --------------------------------------------------------------------
-# 
-# Basic Makefile to build the WET610N Video Bridge
-# 
+# Unified WAP610N Build System (1 Board: STR8132, 1 Product: WAP610N)
 # --------------------------------------------------------------------
-# 
-# Copyright 2008 Metalink Ltd.
-# 
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# http://www.gnu.org/licenses/gpl.txt
-# --------------------------------------------------------------------
-
-
-
+.PHONY: all image configure build kernel apps webs pack verify docker-image docker-shell mtlk-driver clean
 
 all: configure build
+
+image: all
 
 configure:
 	./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela
 
 build:
-	./make_nv.sh build wlan.tar.gz WAP610N
+	./make_nv.sh build vendor/mtlk WAP610N
+
+kernel:
+	./make_nv.sh kernel
+
+apps:
+	./make_nv.sh apps
+
+webs:
+	./make_nv.sh webs
+
+pack:
+	./make_nv.sh pack
+
+verify:
+	./docker/verify-firmware.sh output/bootpImage
+
+docker-image:
+	./docker/compile.sh WAP610N
+
+docker-shell:
+	@docker run --rm -it --privileged -v "$(CURDIR):/workspace:z" -w /workspace \
+		-e PATH="/workspace/tools/arm-uclibc-3.4.6/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+		wap610n-builder /bin/bash
+
+mtlk-driver:
+	@if [ -n "$(MTLK_DRIVER_SRC)" ] && [ -d "$(MTLK_DRIVER_SRC)" ]; then \
+		echo "Building mtlk.ko from $(MTLK_DRIVER_SRC)..."; \
+		PATH="$(CURDIR)/tools/arm-uclibc-3.4.6/bin:$$PATH" \
+		$(MAKE) -C kernel/linux-2.6.16-star M="$(MTLK_DRIVER_SRC)" ARCH=arm CROSS_COMPILE=arm-linux-uclibc- modules && \
+		cp -vf "$(MTLK_DRIVER_SRC)/mtlk.ko" vendor/mtlk/driver/mtlk.ko; \
+	else \
+		echo "Using prebuilt vendor/mtlk/driver/mtlk.ko (pass MTLK_DRIVER_SRC=/path/to/src to build from source)"; \
+	fi
 
 clean:
 	./make_nv.sh clean WAP610N

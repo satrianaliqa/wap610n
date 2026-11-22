@@ -47,6 +47,11 @@ fi
 sync
 if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
 then
+	if [ ! -s "$CONFIG_MNT/wlan0.conf" ] || [ ! -s "$CONFIG_MNT/sys.conf" ]; then
+		echo " ($$) config_umount: critical config missing or empty in $CONFIG_MNT; aborting flash write"
+		$DIAG_LOG "config_umount: missing or empty wlan0.conf/sys.conf; aborting flash write" 2>/dev/null || true
+		exit 1
+	fi
 	if ! mount -o remount,ro "$CONFIG_MNT" 2>/dev/null; then
 		sleep 1
 		sync

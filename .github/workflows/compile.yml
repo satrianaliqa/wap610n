@@ -25,22 +25,32 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Build wap610n-builder Container
+      - name: Cache wap610n-builder Docker Image
+        id: cache-builder
+        uses: actions/cache@v4
+        with:
+          path: /tmp/wap610n-builder.tar.gz
+          key: wap610n-builder-i386-${{ hashFiles('docker/Dockerfile', 'docker/build-builder.sh') }}
+
+      - name: Load or Build wap610n-builder Container
         run: |
-          ./docker/build-builder.sh
+          if [ -f /tmp/wap610n-builder.tar.gz ]; then
+            echo "Loading cached wap610n-builder image..."
+            docker load -i /tmp/wap610n-builder.tar.gz
+          else
+            ./docker/build-builder.sh
+            docker save wap610n-builder | gzip > /tmp/wap610n-builder.tar.gz
+          fi
+
+      - name: Validate Build Prerequisites
+        run: ./devscripts/validate-build-prerequisites.sh
 
       - name: Compile Firmware in 32-bit Container
         run: |
           TARGET="${{ github.event.inputs.target || 'WAP610N' }}"
           echo "Building target: $TARGET"
-          
-          # Validate prerequisites
-          echo "Validating prerequisites..."
-          [ -f wlan.tar.gz ] || { echo "❌ ERROR: wlan.tar.gz not found"; exit 1; }
-          [ -f rootfs-star.tgz ] || { echo "❌ ERROR: rootfs-star.tgz not found"; exit 1; }
-          [ -f config/WAP610N_VERSION ] || { echo "❌ ERROR: config/WAP610N_VERSION not found"; exit 1; }
           mkdir -p output/
-          
+
           docker run --rm \
             --privileged \
             -v ${{ github.workspace }}:/workspace \
@@ -49,27 +59,20 @@ jobs:
             wap610n-builder /bin/bash -c '
               set -e
               export PATH="/workspace/tools/arm-uclibc-3.4.6/bin:$PATH"
-              echo "--> Step 1: Checking and preparing rootfs..."
-              echo "--> Validating required archives..."
-              [ -f /workspace/wlan.tar.gz ] || { echo "❌ ERROR: wlan.tar.gz not found"; exit 1; }
-              [ -f /workspace/rootfs-star.tgz ] || { echo "❌ ERROR: rootfs-star.tgz not found"; exit 1; }
-              
-              if [ ! -d rootfs-star ]; then
-                  tar -zxvf rootfs-star.tgz
-              fi
-              if [ -L rootfs ]; then
-                  rm -f rootfs
-              fi
-              if [ ! -e rootfs ]; then
-                  # Real copy, never a symlink: packaging writes into rootfs.
-                  cp -a rootfs-star rootfs
-              fi
+              echo "--> Step 1: Preparing clean staging rootfs from rootfs-star..."
+              [ -f /workspace/vendor/mtlk/driver/mtlk.ko ] || { echo "❌ ERROR: vendor/mtlk/driver/mtlk.ko not found"; exit 1; }
+              [ -d /workspace/rootfs-star ] || { echo "❌ ERROR: rootfs-star not found"; exit 1; }
 
-              # Build host mkcsum tool if missing
+              rm -rf rootfs
+              cp -a rootfs-star rootfs
+              ln -sf bin/busybox rootfs/init 2>/dev/null || true
+              ln -sf ../bin/busybox rootfs/sbin/init 2>/dev/null || true
+              ln -sf bin/busybox rootfs/linuxrc 2>/dev/null || true
+              ln -sf busybox rootfs/bin/sh 2>/dev/null || true
+
               gcc -O2 kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum.c -lz -o kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
               chmod +x kernel/linux-2.6.16-star/arch/arm/boot/bootp/mkcsum
-              
-              # Verify toolchain availability
+
               which arm-linux-gcc || { echo "❌ ERROR: arm-linux-gcc not in PATH"; exit 1; }
               which arm-linux-uclibc-gcc || { echo "❌ ERROR: arm-linux-uclibc-gcc not in PATH"; exit 1; }
 
@@ -77,9 +80,8 @@ jobs:
               ./make_nv.sh reconf star-6.7.2-mtlk-U-Media-vela || { echo "❌ ERROR: make_nv.sh reconf failed"; exit 1; }
 
               echo "--> Step 3: Compiling Kernel, Apps, and RootFS ($TARGET)..."
-              ./make_nv.sh build wlan.tar.gz "$TARGET" || { echo "❌ ERROR: make_nv.sh build failed"; exit 1; }
+              ./make_nv.sh build vendor/mtlk "$TARGET" || { echo "❌ ERROR: make_nv.sh build failed"; exit 1; }
 
-              # Dynamically copy bootpImage with version from config
               if [ -e output/bootpImage ] && [ -f config/WAP610N_VERSION ]; then
                   VERSION=$(grep "FIRMWARE_VERSION" config/WAP610N_VERSION | cut -d"\"" -f2)
                   BINNAME="WAP610N_v${VERSION}.bin"
@@ -87,11 +89,8 @@ jobs:
                   cp -vf output/bootpImage "output/$BINNAME"
               fi
 
-              # Fix permissions for runner user
               chmod -R u+rwX,go+rX output/ 2>/dev/null || true
               chmod -R u+rwX,go+rX images/ 2>/dev/null || true
-
-              echo "--> Listing outputs:"
               ls -lh output/
             '
 
@@ -102,9 +101,14 @@ jobs:
               ls -lh "${{ github.workspace }}/output/" || true
               exit 1
           fi
-          
-          echo "✅ Firmware compiled successfully. Running audit..."
           ./docker/verify-firmware.sh
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f output/bootpImage ]; then
+            SZ=$(stat -c %s output/bootpImage)
+            HEADROOM=$((3801088 - SZ))
+            echo "### WAP610N Firmware Build Summary" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **bootpImage**: \`${SZ} bytes\` (\`$(awk -v s="$SZ" 'BEGIN{printf "%.2f MB", s/1048576}')\`)" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Flash Headroom**: \`${HEADROOM} bytes\` (\`$((HEADROOM / 1024)) KB\` free under 3,801,088 B)" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload Firmware Artifacts
         uses: actions/upload-artifact@v4
