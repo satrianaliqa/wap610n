@@ -435,7 +435,7 @@ if command -v genext2fs >/dev/null 2>&1; then
 	if [ ! -c "${ROOTFS_DIR}/dev/console" ] && [ -f "config/rootfs-device-table.txt" ]; then
 		DEV_TABLE_ARGS="-D config/rootfs-device-table.txt"
 	fi
-	genext2fs -U -b 12288 ${DEV_TABLE_ARGS} -d "${ROOTFS_DIR}" "${RD}" || {
+	genext2fs -U -b 12288 -N 1536 ${DEV_TABLE_ARGS} -d "${ROOTFS_DIR}" "${RD}" || {
 		echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
 		exit 1
 	}

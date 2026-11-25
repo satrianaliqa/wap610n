@@ -73,6 +73,16 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 				$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 				/usr/sbin/dropbear -R -p 22 >/dev/null 2>&1 &
 			fi
+			SSHJ_EN=""
+			for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
+				if [ -f "$conf" ] && [ -z "$SSHJ_EN" ]; then
+					SSHJ_EN=$(sed -n 's/^[[:space:]]*SSHJ_Enabled[[:space:]]*=[[:space:]]*\([01]\).*/\1/p' "$conf" 2>/dev/null | tail -n 1)
+				fi
+			done
+			if [ "$SSHJ_EN" = "1" ] && [ -x /bin/sshj_tunnel.sh ]; then
+				$DIAG_LOG "early boot: scheduling ssh-j.com reverse tunnel" 2>/dev/null || true
+				( sleep 10; /bin/sshj_tunnel.sh start ) </dev/null >/dev/null 2>&1 &
+			fi
 		fi
 	) &
 fi

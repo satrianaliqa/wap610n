@@ -140,6 +140,18 @@ function page_load() {
 	loadRemoteStatus();
 }
 
+function updateSshjPreview() {
+	var user = (document.getElementById("sshj_user").value || "").replace(/^\s+|\s+$/g, "");
+	var host = (document.getElementById("sshj_host").value || "").replace(/^\s+|\s+$/g, "");
+	if (!host) host = "wap610n";
+	var preview = document.getElementById("sshj_cmd_preview");
+	if (preview) {
+		preview.innerHTML = user
+			? ("ssh -J " + user + "@ssh-j.com root@" + host)
+			: ("ssh -J &lt;username&gt;@ssh-j.com root@" + host);
+	}
+}
+
 function loadRemoteStatus() {
 	var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
 	if (!xhr) return;
@@ -149,6 +161,11 @@ function loadRemoteStatus() {
 			var txt = xhr.responseText || "";
 			var sshMatch = txt.match(/"ssh"\s*:\s*([01])/);
 			var telMatch = txt.match(/"telnet"\s*:\s*([01])/);
+			var sshjMatch = txt.match(/"sshj"\s*:\s*([01])/);
+			var sshjRunMatch = txt.match(/"sshj_running"\s*:\s*([01])/);
+			var sshjWdMatch = txt.match(/"sshj_watchdog"\s*:\s*([01])/);
+			var sshjUserMatch = txt.match(/"sshj_user"\s*:\s*"([^"]*)"/);
+			var sshjHostMatch = txt.match(/"sshj_host"\s*:\s*"([^"]*)"/);
 			if (sshMatch) {
 				document.getElementById("ssh_en").checked = (sshMatch[1] == "1");
 				document.getElementById("ssh_dis").checked = (sshMatch[1] == "0");
@@ -157,6 +174,27 @@ function loadRemoteStatus() {
 				document.getElementById("telnet_en").checked = (telMatch[1] == "1");
 				document.getElementById("telnet_dis").checked = (telMatch[1] == "0");
 			}
+			if (sshjMatch) {
+				document.getElementById("sshj_en").checked = (sshjMatch[1] == "1");
+				document.getElementById("sshj_dis").checked = (sshjMatch[1] == "0");
+			}
+			if (sshjUserMatch) {
+				document.getElementById("sshj_user").value = sshjUserMatch[1];
+			}
+			if (sshjHostMatch && sshjHostMatch[1]) {
+				document.getElementById("sshj_host").value = sshjHostMatch[1];
+			}
+			var stateEl = document.getElementById("sshj_state");
+			if (stateEl) {
+				if (sshjRunMatch && sshjRunMatch[1] == "1") {
+					stateEl.innerHTML = "<span style='color:#008800;font-weight:bold;'>[Connected]</span>";
+				} else if (sshjWdMatch && sshjWdMatch[1] == "1") {
+					stateEl.innerHTML = "<span style='color:#cc6600;font-weight:bold;'>[Connecting...]</span>";
+				} else {
+					stateEl.innerHTML = "<span style='color:#666666;'>[Stopped]</span>";
+				}
+			}
+			updateSshjPreview();
 		}
 	};
 	xhr.send(null);
@@ -165,7 +203,26 @@ function loadRemoteStatus() {
 function applyRemote() {
 	var sshVal = document.getElementById("ssh_en").checked ? "1" : "0";
 	var telnetVal = document.getElementById("telnet_en").checked ? "1" : "0";
+	var sshjVal = document.getElementById("sshj_en").checked ? "1" : "0";
+	var sshjUser = (document.getElementById("sshj_user").value || "").replace(/^\s+|\s+$/g, "");
+	var sshjHost = (document.getElementById("sshj_host").value || "").replace(/^\s+|\s+$/g, "");
+	if (!sshjHost) sshjHost = "wap610n";
+
 	var statusDiv = document.getElementById("remote_status");
+	var identRe = /^[A-Za-z0-9_-]+$/;
+	if (sshjVal == "1" && !sshjUser) {
+		statusDiv.innerHTML = "<span style='color: #ff0000;'>SSH-J username is required.</span>";
+		return;
+	}
+	if (sshjUser && !identRe.test(sshjUser)) {
+		statusDiv.innerHTML = "<span style='color: #ff0000;'>Invalid SSH-J username (use A-Z, 0-9, _ or -).</span>";
+		return;
+	}
+	if (!identRe.test(sshjHost)) {
+		statusDiv.innerHTML = "<span style='color: #ff0000;'>Invalid Device Name (use A-Z, 0-9, _ or -).</span>";
+		return;
+	}
+
 	statusDiv.innerHTML = "<span style='color: #0000ff;'>Applying settings...</span>";
 	
 	var xhr = window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP");
@@ -177,13 +234,17 @@ function applyRemote() {
 			          xhr.responseText.indexOf('"status":"success"') != -1);
 			if (ok) {
 				statusDiv.innerHTML = "<span style='color: #008800; font-weight: bold;'>Settings applied successfully!</span>";
+				setTimeout(loadRemoteStatus, 2500);
 			} else {
-				statusDiv.innerHTML = "<span style='color: #ff0000;'>Failed to apply settings.</span>";
+				var msgMatch = xhr.responseText ? xhr.responseText.match(/"message"\s*:\s*"([^"]*)"/) : null;
+				statusDiv.innerHTML = "<span style='color: #ff0000;'>" + (msgMatch ? msgMatch[1] : "Failed to apply settings.") + "</span>";
 			}
 			setTimeout(function() { statusDiv.innerHTML = ""; }, 4000);
 		}
 	};
-	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal);
+	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal + "&sshj=" + sshjVal +
+	         "&sshj_user=" + encodeURIComponent(sshjUser) +
+	         "&sshj_host=" + encodeURIComponent(sshjHost));
 }
 </script>
 <!-- InstanceEndEditable -->
@@ -377,6 +438,40 @@ function applyRemote() {
 						<td class="tdContent">
 							<input type="radio" id="telnet_en" name="telnet_toggle" checked> Enabled
 							<input type="radio" id="telnet_dis" name="telnet_toggle"> Disabled (Port 23)
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">SSH-J Tunnel (ssh-j.com):</td>
+						<td class="tdContent">
+							<input type="radio" id="sshj_en" name="sshj_toggle"> Enabled
+							<input type="radio" id="sshj_dis" name="sshj_toggle" checked> Disabled
+							<span id="sshj_state" style="margin-left: 8px;"></span>
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">SSH-J Username:</td>
+						<td class="tdContent">
+							<input type="text" id="sshj_user" size="24" maxlength="48" placeholder="unique_username" oninput="updateSshjPreview();">
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">SSH-J Device Name:</td>
+						<td class="tdContent">
+							<input type="text" id="sshj_host" size="24" maxlength="32" value="wap610n" oninput="updateSshjPreview();">
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">Remote Command:</td>
+						<td class="tdContent">
+							<code id="sshj_cmd_preview" style="font-size: 11px; color: #333;">ssh -J &lt;username&gt;@ssh-j.com root@wap610n</code>
 						</td>
 					</tr>
 					<tr>

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Real-time Remote Access (SSH / Telnet) Manager for Cisco WAP610N Web GUI
+# Real-time Remote Access (SSH / Telnet / SSH-J Tunnel) Manager for Cisco WAP610N Web GUI
 
 # Retrieve admin password from system configuration (/mnt/jffs2 first)
 ADMIN_PASS=""
@@ -43,6 +43,64 @@ if [ "$REQUEST_METHOD" = "POST" ] && [ -n "$HTTP_HOST" ]; then
     fi
 fi
 
+get_conf_val() {
+    key="$1"
+    for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
+        if [ -f "$conf" ]; then
+            val=$(awk -v k="$key" '
+                $0 ~ "^[ \t]*" k "[ \t]*=" {
+                    idx = index($0, "=")
+                    v = substr($0, idx + 1)
+                    sub(/^[ \t]+/, "", v)
+                    sub(/[ \t\r]+$/, "", v)
+                    print v
+                }
+            ' "$conf" 2>/dev/null | tail -n 1)
+            if [ -n "$val" ]; then
+                printf '%s' "$val"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+is_pidfile_alive() {
+    pf="$1"
+    if [ -f "$pf" ]; then
+        pid=$(cat "$pf" 2>/dev/null)
+        case "$pid" in
+            ""|*[!0-9]*)
+                return 1
+                ;;
+            *)
+                kill -0 "$pid" 2>/dev/null && return 0
+                ;;
+        esac
+    fi
+    return 1
+}
+
+is_valid_ident() {
+    case "$1" in
+        ""|*[!A-Za-z0-9_-]*)
+            return 1
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+}
+
+json_error() {
+    echo "Content-Type: application/json"
+    echo "Pragma: no-cache"
+    echo "Cache-Control: no-cache"
+    echo ""
+    echo "{\"status\":\"error\",\"message\":\"$1\"}"
+    exit 0
+}
+
 QUERY="${QUERY_STRING}"
 if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ]; then
     case "$CONTENT_LENGTH" in
@@ -50,7 +108,7 @@ if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ]; then
             CONTENT_LENGTH=0
             ;;
     esac
-    if [ "$CONTENT_LENGTH" -gt 256 ] 2>/dev/null; then
+    if [ "$CONTENT_LENGTH" -gt 512 ] 2>/dev/null; then
         echo "Status: 413 Payload Too Large"
         echo "Content-Type: application/json"
         echo ""
@@ -71,11 +129,21 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
             pidof dropbear >/dev/null 2>&1 && CURRENT_SSH=1
             CURRENT_TELNET=0
             pidof telnetd >/dev/null 2>&1 && CURRENT_TELNET=1
+            SSHJ_EN=$(get_conf_val "SSHJ_Enabled")
+            [ -z "$SSHJ_EN" ] && SSHJ_EN=0
+            SSHJ_USER=$(get_conf_val "SSHJ_User")
+            is_valid_ident "$SSHJ_USER" || SSHJ_USER=""
+            SSHJ_HOST=$(get_conf_val "SSHJ_Host")
+            is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
+            SSHJ_RUNNING=0
+            is_pidfile_alive /tmp/sshj_ssh.pid && SSHJ_RUNNING=1
+            SSHJ_WATCHDOG=0
+            is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
             echo "Content-Type: application/json"
             echo "Pragma: no-cache"
             echo "Cache-Control: no-cache"
             echo ""
-            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET}"
+            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"sshj\":$SSHJ_EN,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
             exit 0
             ;;
         *)
@@ -94,41 +162,68 @@ elif [ -n "$REQUEST_METHOD" ] && [ "$REQUEST_METHOD" != "POST" ]; then
     exit 0
 fi
 
-# Require explicit ssh= or telnet= parameter before changing state
+# Require at least one supported parameter before changing state
 case "$QUERY" in
-    *ssh=*|*telnet=*)
+    *ssh=*|*telnet=*|*sshj=*)
         ;;
     *)
-        echo "Content-Type: application/json"
-        echo ""
-        echo '{"status":"error","message":"Missing parameters"}'
-        exit 0
+        json_error "Missing parameters"
         ;;
 esac
 
-# Initialize from current live daemon state so toggling one service preserves the other
+# Initialize from current live daemon / config state so toggling one preserves others
 SSH_VAL=0
 pidof dropbear >/dev/null 2>&1 && SSH_VAL=1
 TELNET_VAL=0
 pidof telnetd >/dev/null 2>&1 && TELNET_VAL=1
+SSHJ_VAL=$(get_conf_val "SSHJ_Enabled")
+[ -z "$SSHJ_VAL" ] && SSHJ_VAL=0
+SSHJ_USER=$(get_conf_val "SSHJ_User")
+is_valid_ident "$SSHJ_USER" || SSHJ_USER=""
+SSHJ_HOST=$(get_conf_val "SSHJ_Host")
+is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
 
-case "$QUERY" in
-    *ssh=0*)
-        SSH_VAL=0
-        ;;
-    *ssh=1*)
-        SSH_VAL=1
-        ;;
-esac
+OLD_IFS="$IFS"
+IFS='&'
+for kv in $QUERY; do
+    key="${kv%%=*}"
+    val="${kv#*=}"
+    val=$(printf '%s' "$val" | tr -d '\r\n')
+    case "$key" in
+        ssh)
+            [ "$val" = "0" ] && SSH_VAL=0
+            [ "$val" = "1" ] && SSH_VAL=1
+            ;;
+        telnet)
+            [ "$val" = "0" ] && TELNET_VAL=0
+            [ "$val" = "1" ] && TELNET_VAL=1
+            ;;
+        sshj)
+            [ "$val" = "0" ] && SSHJ_VAL=0
+            [ "$val" = "1" ] && SSHJ_VAL=1
+            ;;
+        sshj_user)
+            SSHJ_USER="$val"
+            ;;
+        sshj_host)
+            SSHJ_HOST="$val"
+            ;;
+    esac
+done
+IFS="$OLD_IFS"
 
-case "$QUERY" in
-    *telnet=0*)
-        TELNET_VAL=0
-        ;;
-    *telnet=1*)
-        TELNET_VAL=1
-        ;;
-esac
+if [ -n "$SSHJ_USER" ]; then
+    if ! is_valid_ident "$SSHJ_USER" || [ ${#SSHJ_USER} -gt 48 ]; then
+        json_error "Invalid characters in SSH-J username"
+    fi
+fi
+[ -z "$SSHJ_HOST" ] && SSHJ_HOST="wap610n"
+if ! is_valid_ident "$SSHJ_HOST" || [ ${#SSHJ_HOST} -gt 32 ]; then
+    json_error "Invalid characters in SSH-J device name"
+fi
+if [ "$SSHJ_VAL" = "1" ] && [ -z "$SSHJ_USER" ]; then
+    json_error "SSH-J username is required"
+fi
 
 # Persist to /mnt/jffs2/sys.conf under config lock
 LOCKED=0
@@ -136,19 +231,29 @@ if [ -x /bin/config_lock.sh ] && /bin/config_lock.sh $$ >/dev/null 2>&1; then
     LOCKED=1
 fi
 mkdir -p /mnt/jffs2 2>/dev/null || true
+update_conf() {
+    target="$1"
+    sed -i \
+        -e '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' \
+        -e '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' \
+        -e '/^[[:space:]]*SSHJ_Enabled[[:space:]]*=/d' \
+        -e '/^[[:space:]]*SSHJ_User[[:space:]]*=/d' \
+        -e '/^[[:space:]]*SSHJ_Host[[:space:]]*=/d' \
+        "$target" 2>/dev/null || true
+    {
+        echo "SSH_Enabled = $SSH_VAL"
+        echo "Telnet_Enabled = $TELNET_VAL"
+        echo "SSHJ_Enabled = $SSHJ_VAL"
+        echo "SSHJ_User = $SSHJ_USER"
+        echo "SSHJ_Host = $SSHJ_HOST"
+    } >> "$target" 2>/dev/null || true
+}
 if [ -d /mnt/jffs2 ]; then
     touch /mnt/jffs2/sys.conf 2>/dev/null || true
-    sed -i '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' /mnt/jffs2/sys.conf 2>/dev/null || true
-    echo "SSH_Enabled = $SSH_VAL" >> /mnt/jffs2/sys.conf 2>/dev/null || true
-    sed -i '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' /mnt/jffs2/sys.conf 2>/dev/null || true
-    echo "Telnet_Enabled = $TELNET_VAL" >> /mnt/jffs2/sys.conf 2>/dev/null || true
-    # Synchronize to /tmp/sys.conf
+    update_conf /mnt/jffs2/sys.conf
     cp -af /mnt/jffs2/sys.conf /tmp/sys.conf 2>/dev/null || true
 elif [ -f /tmp/sys.conf ]; then
-    sed -i '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' /tmp/sys.conf 2>/dev/null || true
-    echo "SSH_Enabled = $SSH_VAL" >> /tmp/sys.conf 2>/dev/null || true
-    sed -i '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' /tmp/sys.conf 2>/dev/null || true
-    echo "Telnet_Enabled = $TELNET_VAL" >> /tmp/sys.conf 2>/dev/null || true
+    update_conf /tmp/sys.conf
 fi
 if [ "$LOCKED" = "1" ] && [ -x /bin/config_unlock.sh ]; then
     /bin/config_unlock.sh $$ >/dev/null 2>&1 || true
@@ -183,14 +288,27 @@ else
     fi
 fi
 
+if [ -x /bin/sshj_tunnel.sh ]; then
+    if [ "$SSHJ_VAL" = "1" ]; then
+        /bin/sshj_tunnel.sh restart </dev/null >/dev/null 2>&1 &
+    else
+        /bin/sshj_tunnel.sh stop </dev/null >/dev/null 2>&1 || true
+    fi
+fi
+
 # Persist changes to physical flash in background without blocking HTTP response
 if [ -x /bin/config_save.sh ]; then
     /bin/config_save.sh </dev/null >/dev/null 2>&1 &
 fi
+
+SSHJ_RUNNING=0
+is_pidfile_alive /tmp/sshj_ssh.pid && SSHJ_RUNNING=1
+SSHJ_WATCHDOG=0
+is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
 
 # apps/WebServer/cgi.c:318 already writes "HTTP/1.0 200 OK\r\n"
 echo "Content-Type: application/json"
 echo "Pragma: no-cache"
 echo "Cache-Control: no-cache"
 echo ""
-echo "{\"status\":\"success\",\"ssh\":$SSH_VAL,\"telnet\":$TELNET_VAL}"
+echo "{\"status\":\"success\",\"ssh\":$SSH_VAL,\"telnet\":$TELNET_VAL,\"sshj\":$SSHJ_VAL,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
