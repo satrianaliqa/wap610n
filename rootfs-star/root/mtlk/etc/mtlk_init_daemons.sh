@@ -20,7 +20,16 @@ then
 	nice -n 15 ./mtlk_ledman.sh &
 fi
 
-# Start the UPnP daemon once br0 interface is up and available
+UPNP_ENABLED=""
+for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
+	if [ -f "$conf" ] && [ -z "$UPNP_ENABLED" ]; then
+		UPNP_ENABLED=$(sed -n 's/^[[:space:]]*UPnP_Enabled[[:space:]]*=[[:space:]]*\([01]\).*/\1/p' "$conf" 2>/dev/null | tail -n 1)
+	fi
+done
+[ -z "$UPNP_ENABLED" ] && UPNP_ENABLED=1
+
+# Start the UPnP daemon once br0 interface is up and available (if enabled)
+if [ "$UPNP_ENABLED" != "0" ]; then
 (
 	count=0
 	while [ ! -d /sys/class/net/br0 ] && ! ifconfig br0 >/dev/null 2>&1 && [ "$count" -lt 15 ]; do
@@ -39,6 +48,7 @@ fi
 		fi
 	fi
 ) &
+fi
 
 # Start the DHCP Client / Server (Telnet/Dropbear are owned by /etc/mtlk_init_start.sh)
 DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
@@ -71,7 +81,9 @@ fi
 # nice -n 18 upnpd &
 
 # Start the upnp monitor (prevents mem leaks from upnpd)
-nice -n 18 ./mtlk_upnpd_monitor.sh &
+if [ "$UPNP_ENABLED" != "0" ]; then
+	nice -n 18 ./mtlk_upnpd_monitor.sh &
+fi
 
 # Start the SW reboot daemon (This will do nothing if board supports HW reboot)
 ./mtlk_pbc_reboot.sh &

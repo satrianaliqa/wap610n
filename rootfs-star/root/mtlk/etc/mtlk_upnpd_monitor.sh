@@ -25,6 +25,15 @@ cat /proc/uptime | awk '{print $1}' >> $DEBUG_LOG
 
 while [ 1 ]
 do
+	UPNP_EN=""
+	for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
+		if [ -f "$conf" ] && [ -z "$UPNP_EN" ]; then
+			UPNP_EN=$(sed -n 's/^[[:space:]]*UPnP_Enabled[[:space:]]*=[[:space:]]*\([01]\).*/\1/p' "$conf" 2>/dev/null | tail -n 1)
+		fi
+	done
+	if [ "$UPNP_EN" = "0" ]; then
+		exit 0
+	fi
 	if ! pidof upnpd >/dev/null 2>&1; then
 		if [ -x /bin/upnpd ]; then
 			nice -n 18 /bin/upnpd br0 &

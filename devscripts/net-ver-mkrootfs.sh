@@ -425,7 +425,25 @@ ln -sf busybox "${ROOTFS_DIR}/bin/sh" 2>/dev/null || true
 # Strip compile-time static libraries (*.a) from runtime rootfs
 rm -f "${ROOTFS_DIR}"/lib/*.a "${ROOTFS_DIR}"/usr/lib/*.a 2>/dev/null || true
 
-echo "--> Generating ext2 ramdisk image from ${ROOTFS_DIR}..."
+# Strip unstripped vendor userspace ELF binaries (never touch *.ko kernel modules)
+STRIP_BIN="${TOOLCHAIN_BIN:-tools/arm-uclibc-3.4.6/bin}/arm-linux-uclibc-strip"
+if command -v "$STRIP_BIN" >/dev/null 2>&1 || [ -x "$STRIP_BIN" ]; then
+	for vbin in "${ROOTFS_DIR}/root/mtlk/etc/drvhlpr" "${ROOTFS_DIR}/root/mtlk/etc/wpa_cli" "${ROOTFS_DIR}/root/mtlk/etc/wpa_passphrase"; do
+		[ -f "$vbin" ] && "$STRIP_BIN" "$vbin" 2>/dev/null || true
+	done
+fi
+
+# Record build UTC timestamp for offline clock fallback (BusyBox date -u format)
+date -u +"%m%d%H%M%Y.%S" > "${ROOTFS_DIR}/etc/build_time_utc" 2>/dev/null || true
+chmod 644 "${ROOTFS_DIR}/etc/build_time_utc" 2>/dev/null || true
+
+# Dynamically size ext2 ramdisk to avoid wasting permanent SDRAM on empty blocks
+ROOTFS_KB=$(du -sk "${ROOTFS_DIR}" | awk '{print $1}')
+RD_BLOCKS=$(( ((ROOTFS_KB + 1024 + 255) / 256) * 256 ))
+[ "$RD_BLOCKS" -lt 8192 ] && RD_BLOCKS=8192
+[ "$RD_BLOCKS" -gt 14336 ] && RD_BLOCKS=14336
+
+echo "--> Generating ext2 ramdisk image from ${ROOTFS_DIR} (${ROOTFS_KB} KB data -> ${RD_BLOCKS} KB ext2, 1536 inodes)..."
 mkdir -p images
 rm -f images/ramdisk_2.6.16.img images/ramdisk_2.6.16.img.lzma images/ramdisk_2.6.16.img.gz
 
@@ -435,14 +453,14 @@ if command -v genext2fs >/dev/null 2>&1; then
 	if [ ! -c "${ROOTFS_DIR}/dev/console" ] && [ -f "config/rootfs-device-table.txt" ]; then
 		DEV_TABLE_ARGS="-D config/rootfs-device-table.txt"
 	fi
-	genext2fs -U -b 12288 -N 1536 ${DEV_TABLE_ARGS} -d "${ROOTFS_DIR}" "${RD}" || {
+	genext2fs -U -b "${RD_BLOCKS}" -N 1536 ${DEV_TABLE_ARGS} -d "${ROOTFS_DIR}" "${RD}" || {
 		echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
 		exit 1
 	}
-elif mke2fs -d "${ROOTFS_DIR}" -F -b 1024 -m 0 "${RD}" 12288 >/dev/null 2>&1; then
+elif mke2fs -d "${ROOTFS_DIR}" -F -b 1024 -m 0 "${RD}" "${RD_BLOCKS}" >/dev/null 2>&1; then
 	:
 else
-	dd if=/dev/zero of="${RD}" bs=1k count=12288 >/dev/null 2>&1
+	dd if=/dev/zero of="${RD}" bs=1k count="${RD_BLOCKS}" >/dev/null 2>&1
 	mke2fs -F -b 1024 -m 0 "${RD}" >/dev/null 2>&1
 	MNT_DIR=/tmp/mnt_rd_$$
 	mkdir -p "${MNT_DIR}"

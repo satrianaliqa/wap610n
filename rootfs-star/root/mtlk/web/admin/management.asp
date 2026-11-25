@@ -161,6 +161,7 @@ function loadRemoteStatus() {
 			var txt = xhr.responseText || "";
 			var sshMatch = txt.match(/"ssh"\s*:\s*([01])/);
 			var telMatch = txt.match(/"telnet"\s*:\s*([01])/);
+			var upnpMatch = txt.match(/"upnp"\s*:\s*([01])/);
 			var sshjMatch = txt.match(/"sshj"\s*:\s*([01])/);
 			var sshjRunMatch = txt.match(/"sshj_running"\s*:\s*([01])/);
 			var sshjWdMatch = txt.match(/"sshj_watchdog"\s*:\s*([01])/);
@@ -173,6 +174,10 @@ function loadRemoteStatus() {
 			if (telMatch) {
 				document.getElementById("telnet_en").checked = (telMatch[1] == "1");
 				document.getElementById("telnet_dis").checked = (telMatch[1] == "0");
+			}
+			if (upnpMatch) {
+				document.getElementById("upnp_en").checked = (upnpMatch[1] == "1");
+				document.getElementById("upnp_dis").checked = (upnpMatch[1] == "0");
 			}
 			if (sshjMatch) {
 				document.getElementById("sshj_en").checked = (sshjMatch[1] == "1");
@@ -203,6 +208,7 @@ function loadRemoteStatus() {
 function applyRemote() {
 	var sshVal = document.getElementById("ssh_en").checked ? "1" : "0";
 	var telnetVal = document.getElementById("telnet_en").checked ? "1" : "0";
+	var upnpVal = document.getElementById("upnp_en").checked ? "1" : "0";
 	var sshjVal = document.getElementById("sshj_en").checked ? "1" : "0";
 	var sshjUser = (document.getElementById("sshj_user").value || "").replace(/^\s+|\s+$/g, "");
 	var sshjHost = (document.getElementById("sshj_host").value || "").replace(/^\s+|\s+$/g, "");
@@ -242,7 +248,7 @@ function applyRemote() {
 			setTimeout(function() { statusDiv.innerHTML = ""; }, 4000);
 		}
 	};
-	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal + "&sshj=" + sshjVal +
+	xhr.send("ssh=" + sshVal + "&telnet=" + telnetVal + "&upnp=" + upnpVal + "&sshj=" + sshjVal +
 	         "&sshj_user=" + encodeURIComponent(sshjUser) +
 	         "&sshj_host=" + encodeURIComponent(sshjHost));
 }
@@ -438,6 +444,15 @@ function applyRemote() {
 						<td class="tdContent">
 							<input type="radio" id="telnet_en" name="telnet_toggle" checked> Enabled
 							<input type="radio" id="telnet_dis" name="telnet_toggle"> Disabled (Port 23)
+						</td>
+					</tr>
+					<tr>
+						<td class="subMenuSubContent"></td>
+						<td class="subMenuLeftSide"></td>
+						<td class="tdLabel">UPnP Service (upnpd):</td>
+						<td class="tdContent">
+							<input type="radio" id="upnp_en" name="upnp_toggle" checked> Enabled
+							<input type="radio" id="upnp_dis" name="upnp_toggle"> Disabled (Saves ~1.5 MB RAM)
 						</td>
 					</tr>
 					<tr>

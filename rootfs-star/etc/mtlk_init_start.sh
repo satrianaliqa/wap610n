@@ -83,6 +83,13 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 				$DIAG_LOG "early boot: scheduling ssh-j.com reverse tunnel" 2>/dev/null || true
 				( sleep 10; /bin/sshj_tunnel.sh start ) </dev/null >/dev/null 2>&1 &
 			fi
+			if [ -x /bin/timesync.sh ]; then
+				/bin/timesync.sh </dev/null >/dev/null 2>&1 &
+			fi
+			if [ -x /mnt/jffs2/rc.local ]; then
+				$DIAG_LOG "early boot: scheduling /mnt/jffs2/rc.local" 2>/dev/null || true
+				( sleep 5; /mnt/jffs2/rc.local ) </dev/null >/tmp/rc_local.log 2>&1 &
+			fi
 		fi
 	) &
 fi

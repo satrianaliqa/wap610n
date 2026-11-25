@@ -129,6 +129,8 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
             pidof dropbear >/dev/null 2>&1 && CURRENT_SSH=1
             CURRENT_TELNET=0
             pidof telnetd >/dev/null 2>&1 && CURRENT_TELNET=1
+            CURRENT_UPNP=0
+            pidof upnpd >/dev/null 2>&1 && CURRENT_UPNP=1
             SSHJ_EN=$(get_conf_val "SSHJ_Enabled")
             [ -z "$SSHJ_EN" ] && SSHJ_EN=0
             SSHJ_USER=$(get_conf_val "SSHJ_User")
@@ -143,7 +145,7 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
             echo "Pragma: no-cache"
             echo "Cache-Control: no-cache"
             echo ""
-            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"sshj\":$SSHJ_EN,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
+            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"upnp\":$CURRENT_UPNP,\"sshj\":$SSHJ_EN,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
             exit 0
             ;;
         *)
@@ -164,7 +166,7 @@ fi
 
 # Require at least one supported parameter before changing state
 case "$QUERY" in
-    *ssh=*|*telnet=*|*sshj=*)
+    *ssh=*|*telnet=*|*upnp=*|*sshj=*)
         ;;
     *)
         json_error "Missing parameters"
@@ -176,6 +178,8 @@ SSH_VAL=0
 pidof dropbear >/dev/null 2>&1 && SSH_VAL=1
 TELNET_VAL=0
 pidof telnetd >/dev/null 2>&1 && TELNET_VAL=1
+UPNP_VAL=$(get_conf_val "UPnP_Enabled")
+[ -z "$UPNP_VAL" ] && { pidof upnpd >/dev/null 2>&1 && UPNP_VAL=1 || UPNP_VAL=0; }
 SSHJ_VAL=$(get_conf_val "SSHJ_Enabled")
 [ -z "$SSHJ_VAL" ] && SSHJ_VAL=0
 SSHJ_USER=$(get_conf_val "SSHJ_User")
@@ -197,6 +201,10 @@ for kv in $QUERY; do
         telnet)
             [ "$val" = "0" ] && TELNET_VAL=0
             [ "$val" = "1" ] && TELNET_VAL=1
+            ;;
+        upnp)
+            [ "$val" = "0" ] && UPNP_VAL=0
+            [ "$val" = "1" ] && UPNP_VAL=1
             ;;
         sshj)
             [ "$val" = "0" ] && SSHJ_VAL=0
@@ -236,6 +244,7 @@ update_conf() {
     sed -i \
         -e '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' \
         -e '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' \
+        -e '/^[[:space:]]*UPnP_Enabled[[:space:]]*=/d' \
         -e '/^[[:space:]]*SSHJ_Enabled[[:space:]]*=/d' \
         -e '/^[[:space:]]*SSHJ_User[[:space:]]*=/d' \
         -e '/^[[:space:]]*SSHJ_Host[[:space:]]*=/d' \
@@ -243,6 +252,7 @@ update_conf() {
     {
         echo "SSH_Enabled = $SSH_VAL"
         echo "Telnet_Enabled = $TELNET_VAL"
+        echo "UPnP_Enabled = $UPNP_VAL"
         echo "SSHJ_Enabled = $SSHJ_VAL"
         echo "SSHJ_User = $SSHJ_USER"
         echo "SSHJ_Host = $SSHJ_HOST"
@@ -288,6 +298,18 @@ else
     fi
 fi
 
+if [ "$UPNP_VAL" = "0" ]; then
+    killall -SIGINT upnpd 2>/dev/null || true
+    killall mtlk_upnpd_monitor.sh 2>/dev/null || true
+else
+    if ! pidof upnpd >/dev/null 2>&1 && [ -x /bin/upnpd ]; then
+        nice -n 18 /bin/upnpd br0 </dev/null >/dev/null 2>&1 &
+    fi
+    if ! pidof mtlk_upnpd_monitor.sh >/dev/null 2>&1 && [ -x /root/mtlk/etc/mtlk_upnpd_monitor.sh ]; then
+        ( cd /root/mtlk/etc && nice -n 18 ./mtlk_upnpd_monitor.sh ) </dev/null >/dev/null 2>&1 &
+    fi
+fi
+
 if [ -x /bin/sshj_tunnel.sh ]; then
     if [ "$SSHJ_VAL" = "1" ]; then
         /bin/sshj_tunnel.sh restart </dev/null >/dev/null 2>&1 &
@@ -311,4 +333,4 @@ echo "Content-Type: application/json"
 echo "Pragma: no-cache"
 echo "Cache-Control: no-cache"
 echo ""
-echo "{\"status\":\"success\",\"ssh\":$SSH_VAL,\"telnet\":$TELNET_VAL,\"sshj\":$SSHJ_VAL,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
+echo "{\"status\":\"success\",\"ssh\":$SSH_VAL,\"telnet\":$TELNET_VAL,\"upnp\":$UPNP_VAL,\"sshj\":$SSHJ_VAL,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
