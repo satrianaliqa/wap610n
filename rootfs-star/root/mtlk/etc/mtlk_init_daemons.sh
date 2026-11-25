@@ -26,7 +26,7 @@ for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
 		UPNP_ENABLED=$(sed -n 's/^[[:space:]]*UPnP_Enabled[[:space:]]*=[[:space:]]*\([01]\).*/\1/p' "$conf" 2>/dev/null | tail -n 1)
 	fi
 done
-[ -z "$UPNP_ENABLED" ] && UPNP_ENABLED=1
+[ -z "$UPNP_ENABLED" ] && UPNP_ENABLED=0
 
 # Start the UPnP daemon once br0 interface is up and available (if enabled)
 if [ "$UPNP_ENABLED" != "0" ]; then

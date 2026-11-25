@@ -451,8 +451,8 @@ function applyRemote() {
 						<td class="subMenuLeftSide"></td>
 						<td class="tdLabel">UPnP Service (upnpd):</td>
 						<td class="tdContent">
-							<input type="radio" id="upnp_en" name="upnp_toggle" checked> Enabled
-							<input type="radio" id="upnp_dis" name="upnp_toggle"> Disabled (Saves ~1.5 MB RAM)
+							<input type="radio" id="upnp_en" name="upnp_toggle"> Enabled
+							<input type="radio" id="upnp_dis" name="upnp_toggle" checked> Disabled (Saves ~1.5 MB RAM)
 						</td>
 					</tr>
 					<tr>
