@@ -216,6 +216,11 @@ proc stop_upnpd {} {
 # Start the UPNP daemon
 ##################################################################
 proc start_upnpd {} {
+	set upnp_en [string trim [get_parameter UPnP_Enabled]]
+	if {$upnp_en != "1"} {
+		log "UPNPD disabled (UPnP_Enabled != 1)\n"
+		return
+	}
 	log "Starting UPNPD\n"
 	catch {exec upnpd br0 &}
 }

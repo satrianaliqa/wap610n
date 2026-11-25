@@ -11,7 +11,7 @@
 # 3. location of log file
 UPNPD_MEM_LIMIT=2000
 SLEEP_TIME=120
-DEBUG_LOG=/dev/console
+DEBUG_LOG=/dev/null
 ##DEBUG_LOG=/tmp/upnpd_monitor.txt
 
 
@@ -28,10 +28,10 @@ do
 	UPNP_EN=""
 	for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
 		if [ -f "$conf" ] && [ -z "$UPNP_EN" ]; then
-			UPNP_EN=$(sed -n 's/^[[:space:]]*UPnP_Enabled[[:space:]]*=[[:space:]]*\([01]\).*/\1/p' "$conf" 2>/dev/null | tail -n 1)
+			UPNP_EN=$(awk -F= '/^[ \t]*UPnP_Enabled[ \t]*=/ {v=$2; gsub(/^[ \t]+|[ \t\r]+$/, "", v); print v}' "$conf" 2>/dev/null | tail -n 1)
 		fi
 	done
-	if [ "$UPNP_EN" = "0" ]; then
+	if [ "$UPNP_EN" != "1" ]; then
 		exit 0
 	fi
 	if ! pidof upnpd >/dev/null 2>&1; then

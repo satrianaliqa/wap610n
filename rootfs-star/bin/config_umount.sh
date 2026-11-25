@@ -53,19 +53,31 @@ then
 		exit 1
 	fi
 	SYS_ADDED=0
-	for key in SSH_Enabled Telnet_Enabled WirelessMgmtEnabled; do
-		if ! grep -q "^[[:space:]]*${key}[[:space:]]*=" "$CONFIG_MNT/sys.conf" 2>/dev/null; then
+	for key in SSH_Enabled Telnet_Enabled WirelessMgmtEnabled UPnP_Enabled SSHJ_Enabled SSHJ_User SSHJ_Host; do
+		if ! grep -q "^[ \t]*${key}[ \t]*=" "$CONFIG_MNT/sys.conf" 2>/dev/null; then
 			val=""
+			found=0
 			if [ -f /tmp/sys.conf ]; then
-				val=$(awk -F= -v k="$key" '{
-					lhs=$1; gsub(/^[ \t]+|[ \t]+$/, "", lhs);
-					if (lhs == k) {
-						rhs=$2; gsub(/^[ \t]+|[ \t\r]+$/, "", rhs);
-						print rhs;
+				val=$(awk -v k="$key" '
+					$0 ~ "^[ \t]*" k "[ \t]*=" {
+						idx = index($0, "=")
+						v = substr($0, idx + 1)
+						sub(/^[ \t]+/, "", v)
+						sub(/[ \t\r]+$/, "", v)
+						print v
+						f = 1
 					}
-				}' /tmp/sys.conf 2>/dev/null | tail -n 1)
+					END { if (!f) exit 1 }
+				' /tmp/sys.conf 2>/dev/null | tail -n 1) && found=1
 			fi
-			[ -z "$val" ] && val=1
+			if [ "$found" = "0" ]; then
+				case "$key" in
+					UPnP_Enabled|SSHJ_Enabled) val="0" ;;
+					SSHJ_User) val="" ;;
+					SSHJ_Host) val="wap610n" ;;
+					*) val="1" ;;
+				esac
+			fi
 			echo "${key} = ${val}" >> "$CONFIG_MNT/sys.conf" 2>/dev/null || true
 			SYS_ADDED=1
 		fi

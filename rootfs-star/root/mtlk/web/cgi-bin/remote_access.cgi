@@ -232,6 +232,9 @@ fi
 if [ "$SSHJ_VAL" = "1" ] && [ -z "$SSHJ_USER" ]; then
     json_error "SSH-J username is required"
 fi
+if [ "$SSHJ_VAL" = "1" ] && [ "$SSH_VAL" = "0" ]; then
+    json_error "SSH must be enabled to use SSH-J tunnel"
+fi
 
 # Persist to /mnt/jffs2/sys.conf under config lock
 LOCKED=0
@@ -241,14 +244,12 @@ fi
 mkdir -p /mnt/jffs2 2>/dev/null || true
 update_conf() {
     target="$1"
-    sed -i \
-        -e '/^[[:space:]]*SSH_Enabled[[:space:]]*=/d' \
-        -e '/^[[:space:]]*Telnet_Enabled[[:space:]]*=/d' \
-        -e '/^[[:space:]]*UPnP_Enabled[[:space:]]*=/d' \
-        -e '/^[[:space:]]*SSHJ_Enabled[[:space:]]*=/d' \
-        -e '/^[[:space:]]*SSHJ_User[[:space:]]*=/d' \
-        -e '/^[[:space:]]*SSHJ_Host[[:space:]]*=/d' \
-        "$target" 2>/dev/null || true
+    tmp_target="${target}.tmp.$$"
+    if [ -f "$target" ]; then
+        awk '!/^[ \t]*(SSH_Enabled|Telnet_Enabled|UPnP_Enabled|SSHJ_Enabled|SSHJ_User|SSHJ_Host)[ \t]*=/' "$target" > "$tmp_target" 2>/dev/null || : > "$tmp_target"
+    else
+        : > "$tmp_target"
+    fi
     {
         echo "SSH_Enabled = $SSH_VAL"
         echo "Telnet_Enabled = $TELNET_VAL"
@@ -256,7 +257,9 @@ update_conf() {
         echo "SSHJ_Enabled = $SSHJ_VAL"
         echo "SSHJ_User = $SSHJ_USER"
         echo "SSHJ_Host = $SSHJ_HOST"
-    } >> "$target" 2>/dev/null || true
+    } >> "$tmp_target" 2>/dev/null || true
+    chmod 600 "$tmp_target" 2>/dev/null || true
+    mv -f "$tmp_target" "$target" 2>/dev/null || true
 }
 if [ -d /mnt/jffs2 ]; then
     touch /mnt/jffs2/sys.conf 2>/dev/null || true
@@ -327,6 +330,12 @@ SSHJ_RUNNING=0
 is_pidfile_alive /tmp/sshj_ssh.pid && SSHJ_RUNNING=1
 SSHJ_WATCHDOG=0
 is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
+if [ "$SSHJ_VAL" = "1" ]; then
+    SSHJ_WATCHDOG=1
+else
+    SSHJ_RUNNING=0
+    SSHJ_WATCHDOG=0
+fi
 
 # apps/WebServer/cgi.c:318 already writes "HTTP/1.0 200 OK\r\n"
 echo "Content-Type: application/json"

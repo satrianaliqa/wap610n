@@ -47,6 +47,7 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 			trap 'rmdir "$LOCKDIR" 2>/dev/null || true' 0
 			mkdir -p /etc/dropbear /mnt/jffs2/dropbear 2>/dev/null || true
 			chmod 700 /etc/dropbear /mnt/jffs2/dropbear 2>/dev/null || true
+			HOSTKEY_GENERATED=0
 			for keyname in dropbear_ed25519_host_key; do
 				if [ -f "/mnt/jffs2/dropbear/$keyname" ]; then
 					cp -f "/mnt/jffs2/dropbear/$keyname" "/etc/dropbear/$keyname" 2>/dev/null || true
@@ -55,6 +56,7 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 					if [ -f "/etc/dropbear/$keyname" ] && [ -d /mnt/jffs2/dropbear ]; then
 						cp -f "/etc/dropbear/$keyname" "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
 						chmod 600 "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
+						HOSTKEY_GENERATED=1
 					fi
 				fi
 				[ -f "/etc/dropbear/$keyname" ] && chmod 600 "/etc/dropbear/$keyname" 2>/dev/null || true
@@ -72,6 +74,16 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 			if [ "$SSH_EN" != "0" ] && ! pidof dropbear >/dev/null 2>&1; then
 				$DIAG_LOG "early boot: starting Dropbear SSH daemon on port 22" 2>/dev/null || true
 				/usr/sbin/dropbear -R -p 22 >/dev/null 2>&1 &
+			fi
+			if [ "$HOSTKEY_GENERATED" = "1" ] && [ -x /bin/config_save.sh ]; then
+				(
+					c=0
+					while [ ! -f /tmp/init_done ] && [ "$c" -lt 45 ]; do
+						sleep 1
+						c=$((c + 1))
+					done
+					/bin/config_save.sh >/dev/null 2>&1 || true
+				) </dev/null >/dev/null 2>&1 &
 			fi
 			SSHJ_EN=""
 			for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do

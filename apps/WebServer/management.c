@@ -102,6 +102,7 @@ static int readSysConfValue(const char *path, const char *key, char *out, size_t
 	FILE *fp;
 	char line[256];
 	size_t keyLen;
+	int found = 0;
 
 	if (path == NULL || key == NULL || out == NULL || outSize == 0) {
 		return 0;
@@ -133,38 +134,50 @@ static int readSysConfValue(const char *path, const char *key, char *out, size_t
 				                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
 					out[--len] = '\0';
 				}
-				fclose(fp);
-				return 1;
+				found = 1;
 			}
 		}
 	}
 	fclose(fp);
-	return 0;
+	return found;
 }
 
 static void preserveCustomSysConf(const char *wirelessMgmtOverride)
 {
-	static const char * const keys[3] = {
+	static const char * const keys[7] = {
 		"SSH_Enabled",
 		"Telnet_Enabled",
-		"WirelessMgmtEnabled"
+		"WirelessMgmtEnabled",
+		"UPnP_Enabled",
+		"SSHJ_Enabled",
+		"SSHJ_User",
+		"SSHJ_Host"
 	};
-	char vals[3][16];
+	static const char * const defaults[7] = {
+		"1",
+		"1",
+		"1",
+		"0",
+		"0",
+		"",
+		"wap610n"
+	};
+	char vals[7][64];
 	int i;
 	FILE *fp;
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 7; i++) {
 		if (i == 2 && wirelessMgmtOverride != NULL && wirelessMgmtOverride[0] != '\0') {
 			snprintf(vals[i], sizeof(vals[i]), "%s", wirelessMgmtOverride);
 		} else if (!readSysConfValue("/tmp/sys.conf", keys[i], vals[i], sizeof(vals[i]))) {
-			snprintf(vals[i], sizeof(vals[i]), "1");
+			snprintf(vals[i], sizeof(vals[i]), "%s", defaults[i]);
 		}
 	}
 
 	fp = fopen("/mnt/jffs2/sys.conf", "a");
 	if (fp != NULL) {
-		for (i = 0; i < 3; i++) {
-			char existing[16];
+		for (i = 0; i < 7; i++) {
+			char existing[64];
 			if (!readSysConfValue("/mnt/jffs2/sys.conf", keys[i], existing, sizeof(existing))) {
 				fprintf(fp, "%s = %s\n", keys[i], vals[i]);
 			}
