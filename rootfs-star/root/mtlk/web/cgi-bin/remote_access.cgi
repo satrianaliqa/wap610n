@@ -160,19 +160,18 @@ if [ "$SSH_VAL" = "0" ]; then
 else
     mkdir -p /etc/dropbear 2>/dev/null || true
     chmod 700 /etc/dropbear 2>/dev/null || true
-    for keyname in dropbear_rsa_host_key dropbear_dss_host_key; do
-        keytype=rsa
-        [ "$keyname" = "dropbear_dss_host_key" ] && keytype=dss
-        if [ ! -f "/etc/dropbear/$keyname" ] && [ -f "/mnt/jffs2/dropbear/$keyname" ]; then
-            cp -f "/mnt/jffs2/dropbear/$keyname" "/etc/dropbear/$keyname" 2>/dev/null || true
-        fi
-        if [ ! -f "/etc/dropbear/$keyname" ] && [ -x /usr/bin/dropbearkey ]; then
-            /usr/bin/dropbearkey -t "$keytype" -s 1024 -f "/etc/dropbear/$keyname" >/dev/null 2>&1 || true
-        fi
-    done
+    if [ ! -f "/etc/dropbear/dropbear_ed25519_host_key" ] && [ -f "/mnt/jffs2/dropbear/dropbear_ed25519_host_key" ]; then
+        cp -f "/mnt/jffs2/dropbear/dropbear_ed25519_host_key" "/etc/dropbear/dropbear_ed25519_host_key" 2>/dev/null || true
+    fi
+    if [ ! -f "/etc/dropbear/dropbear_ed25519_host_key" ] && [ -x /usr/bin/dropbearkey ]; then
+        /usr/bin/dropbearkey -t ed25519 -f "/etc/dropbear/dropbear_ed25519_host_key" >/dev/null 2>&1 || true
+    fi
+    if [ ! -f "/etc/dropbear/dropbear_rsa_host_key" ] && [ -f "/mnt/jffs2/dropbear/dropbear_rsa_host_key" ]; then
+        cp -f "/mnt/jffs2/dropbear/dropbear_rsa_host_key" "/etc/dropbear/dropbear_rsa_host_key" 2>/dev/null || true
+    fi
     chmod 600 /etc/dropbear/*_host_key 2>/dev/null || true
     if ! pidof dropbear >/dev/null 2>&1; then
-        /usr/sbin/dropbear -p 22 </dev/null >/dev/null 2>&1 &
+        /usr/sbin/dropbear -R -p 22 </dev/null >/dev/null 2>&1 &
     fi
 fi
 
