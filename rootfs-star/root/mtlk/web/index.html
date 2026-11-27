@@ -1,0 +1,655 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WAP610N</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:12px/1.35 system-ui,-apple-system,sans-serif;background:#eef2f6;color:#1e293b}
+.a{background:#0f172a;color:#fff;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #0284c7}
+.a small{color:#94a3b8;margin-left:6px}
+.b{max-width:980px;margin:8px auto;padding:0 8px;display:grid;grid-template-columns:136px 1fr;gap:8px;align-items:start}
+nav,.p,input,select,.t{background:#fff;border:1px solid #cbd5e1;border-radius:3px}
+nav{padding:2px 0}
+nav a{display:block;cursor:pointer;padding:5px 9px;color:#334155;border-left:3px solid transparent;text-decoration:none}
+nav a:hover{background:#f8fafc}nav a.on{background:#e0f2fe;color:#0369a1;border-left-color:#0284c7;font-weight:600}
+.p{padding:8px 10px;margin-bottom:8px}
+h2{font-size:12px;padding-bottom:4px;margin-bottom:6px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
+.g,.k,.f{display:grid;gap:4px 8px;align-items:center}
+.g{grid-template-columns:1fr 1fr;align-items:start}.k{grid-template-columns:84px 1fr}.f{grid-template-columns:130px 1fr}
+.k span:nth-child(odd),.f label{color:#475569}
+.m,pre,code{font-family:ui-monospace,Consolas,monospace;font-size:11px}
+code{background:#f1f5f9;padding:2px 5px;border-radius:2px;display:inline-block;word-break:break-all}
+input,select,.t{padding:3px 6px;font:inherit}input,select{width:100%}input:focus,select:focus{outline:0;border-color:#0284c7}
+.r,.c{display:flex;gap:4px;align-items:center;flex-wrap:wrap}.r input,.r select{flex:1}.c{cursor:pointer}.c input,.w0{width:auto}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:4px 5px;border-bottom:1px solid #e2e8f0}th{background:#f8fafc;color:#475569;font-size:11px}
+.t{cursor:pointer;white-space:nowrap;text-decoration:none;color:inherit;display:inline-block}.t:hover{background:#f1f5f9}.t.p{background:#0284c7;border-color:#0284c7;color:#fff}.t.p:hover{background:#0369a1}.t.d{color:#dc2626;border-color:#fca5a5;background:#fef2f2}.t.d:hover{background:#fee2e2}.t.s{padding:2px 6px;font-size:11px}
+.z{display:flex;justify-content:flex-end;gap:5px;margin-top:6px}
+pre{background:#0f172a;color:#e2e8f0;padding:6px;border-radius:3px;max-height:210px;overflow:auto;margin-top:5px;white-space:pre-wrap;word-break:break-word}
+.u{font-size:11px;padding:1px 5px;border-radius:2px;font-weight:600;background:#dcfce7;color:#15803d}.u.w{background:#fef3c7;color:#b45309}.u.e{background:#fee2e2;color:#b91c1c}
+.o{position:fixed;bottom:10px;right:10px;background:#0f172a;color:#fff;padding:5px 10px;border-radius:3px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:120}.o.on{opacity:1}
+.md{position:fixed;inset:0;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;z-index:99}.md[hidden]{display:none}
+.mb{background:#fff;border:1px solid #cbd5e1;border-radius:4px;padding:14px;width:min(380px,92vw)}
+.pr{height:12px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin:8px 0}.pr i{display:block;height:100%;width:0;background:#0284c7;transition:width .18s linear}
+details summary{cursor:pointer;font-weight:600;color:#0369a1;padding:2px 0;user-select:none}
+.sub{color:#64748b;font-size:11px}
+@media(max-width:700px){.b,.g{grid-template-columns:1fr}nav{display:flex;overflow-x:auto}nav a{border-left:0;border-bottom:2px solid transparent;white-space:nowrap}nav a.on{border-bottom-color:#0284c7}.f{grid-template-columns:1fr}}
+</style></head><body>
+<header class="a"><div><b id="hm">WAP610N</b><small id="hv"></small></div><div class="r"><span class="u" id="hs">LOADING</span><button class="t d s" onclick="doReboot()">Reboot</button></div></header>
+<div class="b"><nav id="nv"></nav><main id="mn"></main></div>
+<div class="o" id="ts"></div>
+<div class="md" id="md" hidden><div class="mb"><h2 id="mt">Working</h2><div class="m" id="ms">Please wait...</div><div class="pr"><i id="mp"></i></div><div class="r" style="justify-content:space-between"><small id="mpct">0%</small><small id="mhint" style="color:#64748b">Do not power off device</small></div><div class="z" id="mact" hidden><button type="button" class="t d s" onclick="cancelModal()">Cancel</button></div></div></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const S={st:{},wf:{},cf:{},wm:{current_wmm:'0',ac:{}},cl:[],rm:{},aps:[],selAp:-1,conAp:null,upSec:0,dgTool:'ping',dgHost:'1.1.1.1',dgOut:'Ready.',dmOut:'Click Refresh to load kernel log.'};
+let T=0,tmToast=null,modalTimer=null,wpsAbort=null;
+
+function msg(t){const e=$('ts');e.textContent=t;e.classList.add('on');clearTimeout(tmToast);tmToast=setTimeout(()=>e.classList.remove('on'),2500);}
+const ut=s=>{const p=n=>String(n|0).padStart(2,'0');return`${s/86400|0}d ${p(s%86400/3600)}:${p(s%3600/60)}:${p(s%60)}`;};
+function fmtB(n){n=Number(n)||0;if(n<1024)return n+' B';if(n<1048576)return(n/1024).toFixed(1)+' KB';if(n<1073741824)return(n/1048576).toFixed(2)+' MB';return(n/1073741824).toFixed(2)+' GB';}
+
+async function getJ(u){const r=await fetch(u,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+async function getT(u){const r=await fetch(u,{cache:'no-store',credentials:'same-origin'});if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}
+async function postForm(u,params){
+  const body=new URLSearchParams();
+  Object.keys(params).forEach(k=>{if(params[k]!=null)body.append(k,String(params[k]));});
+  const r=await fetch(u,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.text();
+}
+
+function isIp(s){
+  const m=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(s||'').trim());
+  if(!m)return false;
+  const o=m.slice(1).map(Number);
+  if(o.some(x=>x<0||x>255))return false;
+  if(o[0]===0||o[0]===127||o[0]>=224)return false;
+  return true;
+}
+function isMask(s){
+  const m=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(s||'').trim());
+  if(!m)return false;
+  const o=m.slice(1).map(Number);
+  if(o[0]!==255)return false;
+  const v=((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;
+  if(v===0||v===0xFFFFFFFF)return false;
+  const inv=(~v)>>>0;
+  return (inv&(inv+1))===0;
+}
+function sameSub(ip1,ip2,mask){
+  const toN=s=>s.split('.').reduce((a,x)=>((a<<8)|Number(x))>>>0,0);
+  const m=toN(mask);
+  return (toN(ip1)&m)===(toN(ip2)&m);
+}
+const isMac=s=>/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(String(s||'').trim());
+const isHost=s=>/^[A-Za-z0-9-]{1,32}$/.test(String(s||'').trim());
+const isIdent=s=>/^[A-Za-z0-9_-]+$/.test(String(s||'').trim());
+
+function showModal(title,status,pct,hint,canCancel){
+  $('mt').textContent=title;$('ms').textContent=status;
+  const v=Math.max(0,Math.min(100,pct|0));
+  $('mp').style.width=v+'%';$('mpct').textContent=v+'%';
+  $('mhint').textContent=hint||'Do not power off device';
+  $('mact').hidden=!canCancel;
+  $('md').hidden=false;
+}
+function hideModal(){clearInterval(modalTimer);modalTimer=null;wpsAbort=null;$('md').hidden=true;$('mact').hidden=true;}
+function cancelModal(){if(wpsAbort){wpsAbort();}else{hideModal();}}
+
+function waitBusy(title,secs,newUrl){
+  let t=0,maxT=Math.max(5,secs||15);
+  showModal(title,'Saving configuration...',10,'Device applying settings...');
+  const hs=$('hs');hs.textContent='APPLYING';hs.className='u w';
+  modalTimer=setInterval(async()=>{
+    t++;
+    const pct=Math.min(95,10+Math.round((t/maxT)*85));
+    showModal(title,'Applying changes & syncing flash...',pct,'Waiting for device...');
+    if(newUrl&&secs<30&&t>=Math.min(8,maxT-2)){
+      clearInterval(modalTimer);modalTimer=null;
+      showModal(title,'Redirecting to new address...',100,'Connecting to '+newUrl);
+      setTimeout(()=>{location.href=newUrl;},1500);
+      return;
+    }
+    if(t>=2&&secs<30){
+      try{
+        const r=await fetch('/api/status.json',{cache:'no-store',credentials:'same-origin'});
+        if(r.ok){
+          const j=await r.json();
+          if(!j.busy){
+            hideModal();await refreshAll();ren();msg('Settings applied');return;
+          }
+        }
+      }catch{}
+    }
+    if(t>=maxT){
+      hideModal();
+      if(newUrl){location.href=newUrl;}
+      else{await refreshAll();ren();msg('Operation finished');}
+    }
+  },1000);
+}
+
+async function applyGoForm(url,params,title,secs,newUrl){
+  try{
+    showModal(title,'Submitting request...',5,'Sending to device...');
+    await postForm(url,params);
+    waitBusy(title,secs,newUrl);
+  }catch(err){
+    hideModal();msg('Save failed: '+err.message);
+  }
+}
+
+async function refreshAll(){
+  const tasks=[
+    getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||0;}).catch(()=>{}),
+    getJ('/api/wifi.json').then(d=>{S.wf=d;}).catch(()=>{}),
+    getJ('/api/config.json').then(d=>{S.cf=d;}).catch(()=>{}),
+    getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];}).catch(()=>{}),
+    getJ('/cgi-bin/remote_access.cgi?action=status&_t='+Date.now()).then(d=>{S.rm=d;}).catch(()=>{})
+  ];
+  await Promise.all(tasks);
+  updateHeader();
+}
+
+function updateHeader(){
+  const st=S.st,cf=S.cf;
+  const host=st.hostname||cf.hostname||'WAP610N';
+  const ip=st.ip||cf.ip_lan||location.hostname;
+  const ver=st.version?('FW '+st.version):'WAP610N';
+  $('hm').textContent=host;
+  $('hv').textContent=`${ver} | ${ip}`;
+  document.title=`${host} - ${ip}`;
+  const hs=$('hs');
+  if(st.busy){hs.textContent='BUSY';hs.className='u w';}
+  else if(cf.network_type==='0'){hs.textContent='STA UP';hs.className='u';}
+  else{hs.textContent='AP UP';hs.className='u';}
+}
+
+const secName=m=>({'1':'Open','2':'WEP','3':'WPA/WPA2-Personal','4':'WPA/WPA2-Enterprise'}[String(m)]||('Mode '+m));
+const chName=c=>(!c||String(c)==='0')?'Auto':'Ch '+c;
+const CH2=[['0','Auto'],...[1,2,3,4,5,6,7,8,9,10,11].map(x=>[String(x),'Ch '+x])];
+const CH5=[['0','Auto'],...[36,40,44,48,149,153,157,161,165].map(x=>[String(x),'Ch '+x])];
+
+function kv(t,rows,extra=''){
+  return `<div class="p"><h2>${esc(t)}${extra}</h2><div class="k">${rows.map(([k,v,cls])=>`<span>${esc(k)}</span><span class="${cls||''}">${v}</span>`).join('')}</div></div>`;
+}
+const opt=(vals,cur)=>vals.map(([v,l])=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(l)}</option>`).join('');
+
+function pStatus(){
+  const st=S.st,wf=S.wf,cf=S.cf,rm=S.rm,cl=S.cl,mem=st.mem_kb||{},tcp=st.tcp||{};
+  const usedMb=mem.total?(((mem.total-(mem.free||0)-(mem.buffers||0)-(mem.cached||0))/1024).toFixed(1)+' / '+(mem.total/1024).toFixed(1)+' MB'):'-';
+  const wlan=wf.wlan0||{},eth=wf.eth0||{};
+  const modeStr=cf.network_type==='0'?'Station Bridge':'Access Point';
+  const bandStr=cf.frequency_band==='0'?'5 GHz (802.11a/n)':'2.4 GHz (802.11b/g/n)';
+  const sjStr=rm.sshj?(rm.sshj_running?'<span class="u">Connected</span>':(rm.sshj_watchdog?'<span class="u w">Connecting</span>':'<span class="u w">Standby</span>')):'Off';
+  const apCard=kv('Access Point',[
+    ['Model','WAP610N ('+esc(modeStr)+')'],
+    ['Firmware',esc(cf.fw_date||st.version||'-')],
+    ['Hostname',esc(st.hostname||cf.hostname||'-')],
+    ['Uptime','<b id="ut">'+esc(ut(S.upSec))+'</b>'],
+    ['Load / RAM',esc((st.load||'-')+' | '+usedMb),'m'],
+    ['Local MAC',esc(st.mac||cf.mac_lan||'-'),'m']
+  ]);
+  const netCard=kv('Network (br0)',[
+    ['Mode',cf.ip_config_method==='0'?'DHCP Client':'Static IP'],
+    ['Bridge IPv4',esc(st.ip||cf.ip_lan||'-'),'m'],
+    ['Subnet Mask',esc(st.mask||cf.subnet_lan||'-'),'m'],
+    ['Gateway',esc(st.gateway||cf.default_gw||'-'),'m'],
+    ['DNS',esc([cf.dns1,cf.dns2].filter(Boolean).join(', ')||'-'),'m'],
+    ['eth0 I/O',esc(fmtB(eth.rx_bytes)+' RX / '+fmtB(eth.tx_bytes)+' TX'),'m']
+  ],`<button class="t s" onclick="refreshAll().then(ren)">Refresh</button>`);
+  const wifiCard=kv('Wireless (wlan0)',[
+    ['Band',esc(bandStr)],
+    ['SSID',esc(wf.essid||cf.essid||'-')],
+    ['Channel',esc(chName(wf.channel||cf.channel)+' ('+(cf.channel_bonding==='1'?'40MHz':'20MHz')+')')],
+    ['Security',esc(secName(cf.security_mode))],
+    ['BSSID',esc(cf.bssid||'-'),'m'],
+    ['wlan0 I/O',esc(fmtB(wlan.rx_bytes)+' RX / '+fmtB(wlan.tx_bytes)+' TX'),'m']
+  ]);
+  const svcCard=kv('Services & Health',[
+    ['SSH / Telnet',`SSH:${rm.ssh?'On (22)':'Off'} | Tel:${rm.telnet?'On (23)':'Off'}`],
+    ['UPnP / WPS',`UPnP:${rm.upnp?'On':'Off'} | WPS:${cf.wps_pin?esc(cf.wps_pin):'Ready'}`],
+    ['SSH-J Tunnel',sjStr],
+    ['Wireless UI',cf.wireless_mgmt==='0'?'Wired LAN Only':'Allowed'],
+    ['Sockets',esc((tcp.established||0)+' estab / '+(tcp.listen||0)+' listen'),'m'],
+    ['Clients',esc(cl.length+' bridged')]
+  ]);
+  const clRows=cl.length?cl.map((c,i)=>`<tr><td>${i+1}</td><td class="m">${esc(c.mac)}</td><td class="m">${esc(c.ip||'-')}</td><td><span class="u${c.iface==='LAN'?' w':''}">${esc(c.iface)}</span></td></tr>`).join(''):`<tr><td colspan="4" class="sub">No external bridge clients recorded yet.</td></tr>`;
+  const clCard=`<div class="p"><h2>Connected Clients (br0)<button class="t s" onclick="getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];ren();msg('Refreshed')})">Refresh</button></h2><table><thead><tr><th>#</th><th>MAC Address</th><th>IPv4 (ARP)</th><th>Interface</th></tr></thead><tbody>${clRows}</tbody></table></div>`;
+  return `<div class="g">${apCard}${netCard}${wifiCard}${svcCard}</div>${clCard}`;
+}
+
+function pNetwork(){
+  const cf=S.cf,isStat=(cf.ip_config_method!=='0');
+  return `<div class="p"><h2>Bridge &amp; IP Setup</h2><form id="fnet" onsubmit="saveNet(event)"><div class="f">
+    <label>IP Configuration</label><select name="ipConfigMethod" id="nipcfg" onchange="togNet(this.value)">${opt([['1','Static IP'],['0','Automatic - DHCP']],cf.ip_config_method||'1')}</select>
+    <label>Hostname</label><input name="hostName" id="nhost" maxlength="32" value="${esc(cf.hostname||'WAP610N')}" required>
+    <label class="nst">Bridge IPv4</label><input class="nst" name="lanIP" id="nip" value="${esc(cf.ip_lan||'192.168.1.1')}">
+    <label class="nst">Subnet Mask</label><input class="nst" name="lanSubnet" id="nmask" value="${esc(cf.subnet_lan||'255.255.255.0')}">
+    <label class="nst">Default Gateway</label><input class="nst" name="gateway" id="ngw" value="${esc(cf.default_gw||'192.168.1.1')}">
+    <label>Primary DNS</label><input name="priDns" id="nd1" value="${esc(cf.dns1||'1.1.1.1')}">
+    <label>Secondary DNS</label><input name="secDns" id="nd2" value="${esc(cf.dns2||'8.8.8.8')}">
+    <label>Language</label><select name="langSelection">${opt([['EN','English']],cf.language||'EN')}</select>
+  </div><div class="z"><button class="t p">Save Network</button></div></form></div>`;
+}
+function togNet(v){
+  const show=(v==='1');
+  document.querySelectorAll('#fnet .nst').forEach(el=>{el.style.display=show?'':'none';});
+}
+function saveNet(e){
+  e.preventDefault();
+  const f=e.target,m=f.ipConfigMethod.value,hn=f.hostName.value.trim();
+  const ip=f.lanIP.value.trim(),mk=f.lanSubnet.value.trim(),gw=f.gateway.value.trim();
+  const d1=f.priDns.value.trim(),d2=f.secDns.value.trim();
+  if(!isHost(hn))return msg('Invalid hostname (1-32 A-Z, 0-9, -)');
+  if(m==='1'){
+    if(!isIp(ip))return msg('Invalid Bridge IPv4');
+    if(!isMask(mk))return msg('Invalid Subnet Mask');
+    if(gw&&(!isIp(gw)||!sameSub(ip,gw,mk)))return msg('Gateway must be valid IP in same subnet');
+  }
+  if(d1&&!isIp(d1))return msg('Invalid Primary DNS');
+  if(d2&&!isIp(d2))return msg('Invalid Secondary DNS');
+  const params={ipConfigMethod:m,hostName:hn,lanIP:ip,lanSubnet:mk,gateway:gw,priDns:d1,secDns:d2,langSelection:f.langSelection.value};
+  const newUrl=(m==='1'&&ip!==location.hostname)?`http://${ip}/index.html`:null;
+  applyGoForm('/goform/networkBasic',params,'Applying Network Settings',15,newUrl);
+}
+
+function fillChannels(){
+  const b=$('wband'),ch=$('wch'),ul=$('wul'),bw=$('wbw');
+  if(!b||!ch)return;
+  const list=(b.value==='0')?CH5:CH2,cur=ch.dataset.cur||ch.value||'0';
+  ch.innerHTML=opt(list,list.some(x=>x[0]===cur)?cur:'0');
+  if(ul&&bw)ul.disabled=(bw.value!=='1');
+}
+function togSec(){
+  const sm=$('wsec')?.value||'1';
+  document.querySelectorAll('.s-wep').forEach(x=>x.style.display=(sm==='2')?'':'none');
+  document.querySelectorAll('.s-wpa').forEach(x=>x.style.display=(sm==='3')?'':'none');
+  document.querySelectorAll('.s-ent').forEach(x=>x.style.display=(sm==='4')?'':'none');
+}
+function pWireless(){
+  const cf=S.cf,isSta=(cf.network_type==='0'),band=(cf.frequency_band==='0'?'0':'1');
+  const countries=[['US','US'],['EU','EU'],['JP','JP'],['CA','CA'],['AU','AU']];
+  if(cf.country&&!countries.some(x=>x[0]===cf.country))countries.push([cf.country,cf.country]);
+  const chList=(band==='0')?CH5:CH2;
+  const ac=(S.wm&&S.wm.ac&&S.wm.ac.AC_BK)?S.wm.ac.AC_BK:{};
+  const wmmCur=(S.wm&&S.wm.current_wmm)?S.wm.current_wmm:'0';
+  return `<div class="p"><h2>Radio &amp; Wireless Security</h2><form id="fwl" onsubmit="saveWireless(event)"><div class="f">
+    <label>Frequency Band</label><select name="frequencyBand" id="wband" onchange="fillChannels()">${opt([['1','2.4 GHz (802.11b/g/n)'],['0','5 GHz (802.11a/n)']],band)}</select>
+    <label>Network Name (SSID)</label><input name="submit_ESSID" id="wssid" maxlength="32" value="${esc(cf.essid||'linksys')}" required>
+    <label>Channel</label><select name="channel" id="wch" data-cur="${esc(cf.channel||'0')}">${opt(chList,cf.channel||'0')}</select>
+    <label>Channel Width</label><div class="r"><select name="channelBounding" id="wbw" onchange="fillChannels()">${opt([['0','20 MHz'],['1','40 MHz (20/40)']],cf.channel_bonding||'0')}</select><select name="upperLower" id="wul">${opt([['0','Lower Sideband'],['1','Upper Sideband']],cf.upper_lower||'0')}</select></div>
+    <label>Country Region</label><select name="country">${opt(countries,cf.country||'US')}</select>
+    ${isSta?`<label>Target BSSID</label><input name="BSSID" id="wbssid" placeholder="Optional AA:BB:CC:DD:EE:FF" value="${esc(cf.bssid||'')}">`:''}
+    <label>Security Mode</label><select name="securityMode" id="wsec" onchange="togSec()">${opt([['1','Open / Disabled'],['2','WEP'],['3','WPA / WPA2 Personal'],['4','WPA / WPA2 Enterprise']],cf.security_mode||'1')}</select>
+    <label class="s-wpa">WPA Version</label><select class="s-wpa" name="WPAPersonalMode">${opt([['2','WPA2-Personal'],['3','WPA/WPA2 Mixed'],['1','WPA-Personal']],cf.wpa_pers_mode||'2')}</select>
+    <label class="s-wpa">Encryption</label><select class="s-wpa" name="WPAPersonalEncryption">${opt([['1','AES'],['2','TKIP or AES'],['0','TKIP']],cf.wpa_pers_enc||'1')}</select>
+    <label class="s-wpa">Passphrase</label><div class="r s-wpa"><input type="password" id="wpsk" name="WPAPSK" maxlength="64" value="${esc(cf.wpa_psk||'')}"><button type="button" class="t s" onclick="const e=$('wpsk');e.type=e.type==='password'?'text':'password'">Show</button></div>
+    <label class="s-wep">WEP Key Length</label><select class="s-wep" name="WEPKeyLength">${opt([['64','64-bit (10 hex)'],['128','128-bit (26 hex)']],cf.wep_key_len||'64')}</select>
+    <label class="s-wep">WEP Auth / Tx</label><div class="r s-wep"><select name="WEPAuth">${opt([['3','Auto'],['1','Open'],['2','Shared']],cf.wep_auth||'3')}</select><select name="defaultWEPKey">${opt([['0','Key 1'],['1','Key 2'],['2','Key 3'],['3','Key 4']],cf.wep_tx_idx||'0')}</select></div>
+    <label class="s-wep">WEP Key 1</label><input class="s-wep" name="WEPKey0" maxlength="32" value="${esc(cf.wep_key0||'')}">
+    <label class="s-ent">Enterprise / Enc</label><div class="r s-ent"><select name="WPAEnterpriseMode">${opt([['2','WPA2'],['3','Mixed'],['1','WPA']],cf.wpa_ent_mode||'2')}</select><select name="WPAEnterpriseEncryption">${opt([['1','AES'],['2','TKIP/AES'],['0','TKIP']],cf.wpa_ent_enc||'1')}</select></div>
+    <label class="s-ent">RADIUS IP / Port</label><div class="r s-ent"><input name="WPARadiusIP" value="${esc(cf.wpa_rad_ip||'')}"><input name="WPARadiusPort" type="number" min="1" max="65535" value="${esc(cf.wpa_rad_port||'1812')}"></div>
+    <label class="s-ent">RADIUS Secret</label><input class="s-ent" type="password" name="WPARadiusKey" maxlength="63" value="${esc(cf.wpa_rad_key||'')}">
+    <label class="s-ent">Rekey Interval (s)</label><input class="s-ent" name="RadiusReKeyInterval" type="number" min="0" max="86400" value="${esc(cf.wpa_rad_rekey||'0')}">
+  </div><div class="z"><button class="t p">Save Radio &amp; Security</button></div></form></div>
+
+  <div class="p"><h2>Advanced Wireless</h2><form id="fadv" onsubmit="saveAdv(event)"><div class="f">
+    <label>TX Power</label><select name="PowerSelection">${opt([['0','100%'],['-3','50%'],['-6','25%'],['-9','12%']],cf.tx_power||'0')}</select>
+    <label>LDPC Coding</label><select name="AdvancedCoding">${opt([['1','Enabled'],['0','Disabled']],cf.ldpc||'1')}</select>
+    <label>ERP / 11n Prot</label><div class="r"><select name="ERPProtectionType">${opt([['0','None'],['1','RTS/CTS'],['2','CTS2Self']],cf.erp_prot||'1')}</select><select name="ProtectionType">${opt([['0','11n None'],['1','11n RTS/CTS'],['2','11n CTS2Self']],cf.n_prot||'1')}</select></div>
+    <label>QoS Class Map</label><select name="Use11QMap">${opt([['0','802.1D'],['1','802.1Q']],cf.use_11q_map||'0')}</select>
+    ${isSta?`<label>Ethernet Re-Link</label><select name="EthDownUp">${opt([['0','No'],['1','Yes']],cf.eth_down_up||'0')}</select>`:`
+    <label>AP Options</label><div class="r"><label class="c"><input type="checkbox" name="HiddenSSID"${cf.hidden_ssid==='1'?' checked':''}>Hidden SSID</label><label class="c"><input type="checkbox" name="APforwarding"${cf.ap_forwarding!=='0'?' checked':''}>AP Forwarding</label><label class="c"><input type="checkbox" name="OverlappingBSSProtection"${cf.obss_prot!=='0'?' checked':''}>OBSS</label><label class="c"><input type="checkbox" name="ReliableMulticast"${cf.reliable_mcast!=='0'?' checked':''}>Rel. Mcast</label><label class="c"><input type="checkbox" name="RadarDetect"${cf.radar_detect==='1'?' checked':''}>DFS Radar</label></div>
+    <label>AOCS Restricted</label><input name="AocsRestrictCh" value="${esc(cf.aocs_restrict_ch||'None')}">`}
+  </div><div class="z"><button class="t p">Save Advanced</button></div></form></div>
+
+  <div class="p"><h2>Wi-Fi Protected Setup (WPS)<span class="sub">PIN: <code>${esc(cf.wps_pin||'N/A')}</code></span></h2><div class="r" style="justify-content:space-between"><span class="sub">Pair wireless clients/bridges via PBC or Device PIN.</span><div class="r"><button class="t p" onclick="startWps('getPBC')">Start PBC</button><button class="t" onclick="startWps('getPin')">Start PIN</button></div></div></div>
+
+  <div class="p"><details ontoggle="if(this.open)loadWmm()"><summary>WMM® QoS Parameters (Advanced)</summary><form id="fwmm" style="margin-top:8px" onsubmit="saveWmm(event)"><div class="f">
+    <label>Access Category</label><select name="accessMode" id="wmmac" onchange="fillWmmCat(this.value)">${opt([['0','Background (AC_BK)'],['1','Best Effort (AC_BE)'],['2','Video (AC_VI)'],['3','Voice (AC_VO)']],wmmCur)}</select>
+    <label>STA / AP Aggr</label><div class="r"><select name="AC_BK_UseAggregation" id="wm_ua">${opt([['0','Use Aggr: No'],['1','Use Aggr: Yes']],ac.UseAggregation||'0')}</select><select name="AC_BK_AcceptAggregation" id="wm_aa">${opt([['0','Accept: No'],['1','Accept: Yes']],ac.AcceptAggregation||'1')}</select></div>
+    <label>Packets / Bytes</label><div class="r"><input id="wm_mp" name="AC_BK_MaxNumOfPackets" type="number" value="${esc(ac.MaxNumOfPackets||'7')}"><input id="wm_mb" name="AC_BK_MaxNumOfBytes" type="number" value="${esc(ac.MaxNumOfBytes||'12000')}"></div>
+    <label>Timeout / Min Pkt</label><div class="r"><input id="wm_ti" name="AC_BK_TimeoutInterval" type="number" value="${esc(ac.TimeoutInterval||'3')}"><input id="wm_ms" name="AC_BK_MinSizeOfPacketInAggr" type="number" value="${esc(ac.MinSizeOfPacketInAggr||'10')}"></div>
+    <label>ADDBA / Window</label><div class="r"><input id="wm_ad" name="AC_BK_ADDBATimeout" type="number" value="${esc(ac.ADDBATimeout||'0')}"><input id="wm_aw" name="AC_BK_AggregationWindowSize" type="number" value="${esc(ac.AggregationWindowSize||'64')}"></div>
+    <label>STA CWmin / CWmax</label><div class="r"><select id="wm_smin" name="selectCWMinSTA"></select><select id="wm_smax" name="selectCWMaxSTA"></select></div>
+    <label>STA AIFSN / TXOP</label><div class="r"><input id="wm_sai" name="AC_BK_AIFSN" type="number" value="${esc(ac.AIFSN||'7')}"><input id="wm_stx" name="AC_BK_TXOP" type="number" value="${esc(ac.TXOP||'0')}"></div>
+    <label>AP CWmin / CWmax</label><div class="r"><select id="wm_amin" name="selectCWMinAP"></select><select id="wm_amax" name="selectCWMaxAP"></select></div>
+    <label>AP AIFSN / TXOP</label><div class="r"><input id="wm_aai" name="AC_BK_AIFSN_AP" type="number" value="${esc(ac.AIFSN_AP||'7')}"><input id="wm_atx" name="AC_BK_TXOP_AP" type="number" value="${esc(ac.TXOP_AP||'0')}"></div>
+  </div><div class="z"><button class="t p">Save WMM</button></div></form></details></div>`;
+}
+
+function saveWireless(e){
+  e.preventDefault();
+  const f=e.target,cf=S.cf,sm=f.securityMode.value,ssid=f.submit_ESSID.value;
+  if(!ssid||ssid.length>32)return msg('SSID must be 1-32 characters');
+  if(sm==='3'){
+    const psk=f.WPAPSK.value;
+    if(!(psk.length>=8&&psk.length<=63)&&!/^[0-9A-Fa-f]{64}$/.test(psk))return msg('WPA Passphrase must be 8-63 chars or 64 hex');
+  }else if(sm==='2'){
+    const kl=f.WEPKeyLength.value,k0=f.WEPKey0.value.trim();
+    const ok=(kl==='128')?(/^[0-9A-Fa-f]{26}$/.test(k0)||k0.length===13):(/^[0-9A-Fa-f]{10}$/.test(k0)||k0.length===5);
+    if(!ok)return msg('Invalid WEP Key 1 for selected length');
+  }else if(sm==='4'){
+    if(!isIp(f.WPARadiusIP.value.trim()))return msg('Invalid RADIUS IP');
+  }
+  const params={
+    nowMode:cf.network_type==='0'?'stationMode':'apMode',
+    submit_ESSID:ssid,frequencyBand:f.frequencyBand.value,country:f.country.value,
+    channel:f.channel.value,channelBounding:f.channelBounding.value,upperLower:f.upperLower.value,
+    securityMode:sm,WPAPersonalMode:f.WPAPersonalMode.value,WPAPersonalEncryption:f.WPAPersonalEncryption.value,
+    WPAPSK:f.WPAPSK.value,WEPKeyLength:f.WEPKeyLength.value,WEPAuth:f.WEPAuth.value,
+    defaultWEPKey:f.defaultWEPKey.value,WEPKey0:f.WEPKey0.value,
+    WPAEnterpriseMode:f.WPAEnterpriseMode.value,WPAEnterpriseEncryption:f.WPAEnterpriseEncryption.value,
+    WPARadiusIP:f.WPARadiusIP.value.trim(),WPARadiusPort:f.WPARadiusPort.value,
+    WPARadiusKey:f.WPARadiusKey.value,RadiusReKeyInterval:f.RadiusReKeyInterval.value
+  };
+  if(f.BSSID&&f.BSSID.value.trim()){
+    if(!isMac(f.BSSID.value.trim()))return msg('Invalid BSSID MAC format');
+    params.BSSID=f.BSSID.value.trim();
+  }
+  applyGoForm('/goform/wirelessBasic',params,'Applying Wireless Settings',15);
+}
+
+function saveAdv(e){
+  e.preventDefault();
+  const f=e.target,isSta=(S.cf.network_type==='0');
+  const params={
+    nowMode:isSta?'stationMode':'apMode',PowerSelection:f.PowerSelection.value,
+    AdvancedCoding:f.AdvancedCoding.value,ERPProtectionType:f.ERPProtectionType.value,
+    ProtectionType:f.ProtectionType.value,Use11QMap:f.Use11QMap.value
+  };
+  if(isSta){params.EthDownUp=f.EthDownUp.value;}
+  else{
+    params.HiddenSSID=f.HiddenSSID.checked?'1':'0';
+    params.APforwarding=f.APforwarding.checked?'1':'0';
+    params.OverlappingBSSProtection=f.OverlappingBSSProtection.checked?'1':'0';
+    params.ReliableMulticast=f.ReliableMulticast.checked?'1':'0';
+    params.RadarDetect=f.RadarDetect.checked?'1':'0';
+    params.AocsRestrictCh=f.AocsRestrictCh.value.trim()||'None';
+  }
+  applyGoForm('/goform/advancedWireless',params,'Applying Advanced Wireless',12);
+}
+
+const cwOpts=maxE=>{const r=[];for(let i=2;i<=maxE;i++)r.push([String(i),String((1<<i)-1)]);return r;};
+async function loadWmm(){
+  try{S.wm=await getJ('/api/wmm.json');fillWmmCat($('wmmac')?.value||S.wm.current_wmm||'0');}catch{msg('Failed to load WMM');}
+}
+function fillWmmCat(idx){
+  const names=['AC_BK','AC_BE','AC_VI','AC_VO'],d=(S.wm&&S.wm.ac&&S.wm.ac[names[idx|0]])||{};
+  if($('wm_ua'))$('wm_ua').value=d.UseAggregation||'0';
+  if($('wm_aa'))$('wm_aa').value=d.AcceptAggregation||'1';
+  if($('wm_mp'))$('wm_mp').value=d.MaxNumOfPackets||'7';
+  if($('wm_mb'))$('wm_mb').value=d.MaxNumOfBytes||'12000';
+  if($('wm_ti'))$('wm_ti').value=d.TimeoutInterval||'3';
+  if($('wm_ms'))$('wm_ms').value=d.MinSizeOfPacketInAggr||'10';
+  if($('wm_ad'))$('wm_ad').value=d.ADDBATimeout||'0';
+  if($('wm_aw'))$('wm_aw').value=d.AggregationWindowSize||'64';
+  if($('wm_sai'))$('wm_sai').value=d.AIFSN||'3';
+  if($('wm_stx'))$('wm_stx').value=d.TXOP||'0';
+  if($('wm_aai'))$('wm_aai').value=d.AIFSN_AP||'3';
+  if($('wm_atx'))$('wm_atx').value=d.TXOP_AP||'0';
+  const cws=cwOpts(10);
+  if($('wm_smin'))$('wm_smin').innerHTML=opt(cws,d.CWmin||'4');
+  if($('wm_smax'))$('wm_smax').innerHTML=opt(cws,d.CWmax||'10');
+  if($('wm_amin'))$('wm_amin').innerHTML=opt(cws,d.CWmin_AP||'4');
+  if($('wm_amax'))$('wm_amax').innerHTML=opt(cws,d.CWmax_AP||'10');
+}
+function saveWmm(e){
+  e.preventDefault();
+  const f=e.target,isSta=(S.cf.network_type==='0');
+  const params={
+    nowMode:isSta?'stationMode':'apMode',CurrentWMM:f.accessMode.value,accessMode:f.accessMode.value,
+    AC_BK_UseAggregation:f.AC_BK_UseAggregation.value,AC_BK_AcceptAggregation:f.AC_BK_AcceptAggregation.value,
+    AC_BK_MaxNumOfPackets:f.AC_BK_MaxNumOfPackets.value,AC_BK_MaxNumOfBytes:f.AC_BK_MaxNumOfBytes.value,
+    AC_BK_TimeoutInterval:f.AC_BK_TimeoutInterval.value,AC_BK_MinSizeOfPacketInAggr:f.AC_BK_MinSizeOfPacketInAggr.value,
+    AC_BK_ADDBATimeout:f.AC_BK_ADDBATimeout.value,AC_BK_AggregationWindowSize:f.AC_BK_AggregationWindowSize.value,
+    selectCWMinSTA:f.selectCWMinSTA.value,selectCWMaxSTA:f.selectCWMaxSTA.value,
+    AC_BK_AIFSN:f.AC_BK_AIFSN.value,AC_BK_TXOP:f.AC_BK_TXOP.value,
+    selectCWMinAP:f.selectCWMinAP.value,selectCWMaxAP:f.selectCWMaxAP.value,
+    AC_BK_AIFSN_AP:f.AC_BK_AIFSN_AP.value,AC_BK_TXOP_AP:f.AC_BK_TXOP_AP.value
+  };
+  applyGoForm('/goform/accessControl',params,'Applying WMM QoS Settings',12);
+}
+
+async function startWps(mode){
+  try{
+    showModal('Wi-Fi Protected Setup','Starting WPS ('+mode+')...',5,'Press WPS button on peer device...',true);
+    wpsAbort=async()=>{hideModal();fetch('/goform/cleanWPSTemp',{method:'POST',credentials:'same-origin'}).catch(()=>{});msg('WPS cancelled');};
+    await fetch('/goform/startWPS?networkType=STA&nowMode='+encodeURIComponent(mode),{credentials:'same-origin'});
+    let ticks=0;
+    modalTimer=setInterval(async()=>{
+      ticks++;
+      try{
+        const txt=await getT('/goform/getCurrentWPSStatus');
+        const st=(txt.split(',')[0]||'').trim();
+        if(st==='99'){hideModal();msg('WPS Connected!');refreshAll().then(ren);return;}
+        if(['10','11','12','13'].includes(st)){
+          hideModal();fetch('/goform/cleanWPSFailTemp',{method:'POST',credentials:'same-origin'}).catch(()=>{});
+          msg('WPS failed (code '+st+')');return;
+        }
+        const label=st==='1'?'Searching for peer...':st==='2'?'Registering credentials...':st==='3'?'Connecting...':'Waiting for peer WPS...';
+        showModal('Wi-Fi Protected Setup',label,Math.min(95,ticks*2),'Press Cancel to abort',true);
+      }catch{}
+      if(ticks>=60){hideModal();msg('WPS session timed out');}
+    },2000);
+  }catch(err){hideModal();msg('WPS start error: '+err.message);}
+}
+
+function pSurvey(){
+  const isSta=(S.cf.network_type==='0'),aps=S.aps,sel=S.conAp;
+  const rows=aps.length?aps.map((a,i)=>`<tr>
+    ${isSta?`<td><input class="w0" type="radio" name="ap" value="${i}"${S.selAp===i?' checked':''} onchange="S.selAp=${i}"></td>`:''}
+    <td>${esc(a.ssid||'<hidden>')}</td><td class="m">${esc(a.bssid)}</td><td class="m">${esc(a.ch)}</td><td>${esc(a.sig)}</td><td>${esc(a.enc)}</td>
+  </tr>`).join(''):`<tr><td colspan="${isSta?6:5}" class="sub">No scan results loaded. Click Refresh Scan to survey nearby APs.</td></tr>`;
+  const conBox=(isSta&&sel)?`<div class="p"><h2>Connect to Bridge Peer: ${esc(sel.ssid||sel.bssid)}</h2><form onsubmit="connectAp(event)"><div class="f">
+    <label>SSID</label><input name="essid" value="${esc(sel.ssid)}" ${sel.ssid?'readonly':''} required>
+    <label>Security</label><input value="${esc(sel.enc)}" readonly>
+    ${sel.enc==='WEP'?`<label>WEP Length / Key 1</label><div class="r"><select name="wepLen"><option value="64">64-bit (10 hex)</option><option value="128">128-bit (26 hex)</option></select><input name="wepKey" required placeholder="Hex key"></div>`:''}
+    ${sel.enc.indexOf('WPA')===0?`<label>WPA Passphrase</label><input type="password" name="psk" required minlength="8" maxlength="64">`:''}
+  </div><div class="z"><button type="button" class="t" onclick="S.conAp=null;ren()">Cancel</button><button class="t p">Connect</button></div></form></div>`:'';
+  return `<div class="p"><h2>Wireless Network Site Survey<small class="sub">${aps.length} networks</small></h2><table><thead><tr>${isSta?'<th></th>':''}<th>SSID</th><th>BSSID</th><th>Ch</th><th>Signal</th><th>Security</th></tr></thead><tbody>${rows}</tbody></table><div class="z"><button class="t" onclick="runSurvey()">Refresh Scan</button>${isSta?'<button class="t p" onclick="prepConnect()">Connect</button>':''}</div></div>${conBox}`;
+}
+async function runSurvey(){
+  try{
+    msg('Scanning wireless...');
+    const html=await postForm('/goform/updateSiteSurvey',{req:'scan'});
+    const doc=new DOMParser().parseFromString(html,'text/html');
+    const cntEl=doc.getElementById('arrayCount');
+    const cnt=cntEl?(parseInt(cntEl.value,10)||0):64;
+    const list=[];
+    for(let i=0;i<cnt;i++){
+      const eEl=doc.getElementById('ESSID_'+i),bEl=doc.getElementById('BSSID_'+i),cEl=doc.getElementById('channel_'+i),tEl=doc.getElementById('encryType_'+i);
+      if(!eEl&&!bEl)continue;
+      const tr=eEl?eEl.closest('tr'):null;
+      const tds=tr?tr.querySelectorAll('td'):[];
+      const sig=tds.length>=5?tds[tds.length-2].textContent.trim():'';
+      list.push({ssid:(eEl?eEl.textContent:'').trim(),bssid:bEl?bEl.value.trim():'',ch:cEl?cEl.value.trim():'',sig:sig||'-',enc:tEl?tEl.value.trim():'Disabled'});
+    }
+    S.aps=list;S.selAp=list.length?0:-1;ren();msg(`Found ${list.length} networks`);
+  }catch(err){msg('Site survey failed: '+err.message);}
+}
+function prepConnect(){
+  if(S.selAp<0||!S.aps[S.selAp])return msg('Select a network first');
+  const a=S.aps[S.selAp];
+  if(a.enc.indexOf('Enterprise')!==-1)return msg('Enterprise 802.1X not supported in quick bridge');
+  S.conAp=a;ren();
+}
+function connectAp(e){
+  e.preventDefault();
+  const f=e.target,a=S.conAp;if(!a)return;
+  const params={nowMode:'stationMode',activeMode:'connectToAP',BSSID:a.bssid,ESSID:f.essid.value.trim(),rebootNeed:a.ssid?'0':'1'};
+  if(a.enc==='Disabled'||a.enc==='Open'){params.securityMode='1';params.WPAPersonalMode='';}
+  else if(a.enc==='WEP'){params.securityMode='2';params.WPAPersonalMode='';params.WEPKeyLength=f.wepLen.value;params.WEPKey0=f.wepKey.value.trim();}
+  else{
+    params.securityMode='3';
+    params.WPAPersonalMode=(a.enc==='WPA-Personal')?'1':(a.enc==='WPA2-Personal Mixed'?'3':'2');
+    params.WPAPersonalEncryption=(a.enc==='WPA2-Personal')?'1':'2';
+    params.WPAPSK=f.psk.value;
+  }
+  S.conAp=null;applyGoForm('/goform/stationScan',params,'Connecting to '+params.ESSID,25);
+}
+
+function pDiag(){
+  const needTarget=(S.dgTool==='ping'||S.dgTool==='trace');
+  return `<div class="p"><h2>Network Diagnostics</h2><form onsubmit="runDiag(event)"><div class="r">
+    <select id="dgtool" style="max-width:130px" onchange="S.dgTool=this.value;ren()">${opt([['ping','Ping'],['trace','Traceroute'],['arp','ARP Table'],['route','Routing Table'],['ps','Top Processes']],S.dgTool)}</select>
+    ${needTarget?`<input id="dghost" value="${esc(S.dgHost)}" maxlength="64" placeholder="Host or IPv4" required>`:''}
+    <button class="t p" id="dgbtn">Run</button>
+  </div><pre id="dgout">${esc(S.dgOut)}</pre></form></div>
+  <div class="p"><h2>System Log (dmesg)<button class="t s" onclick="loadDmesg()">Refresh</button></h2><pre id="dmout">${esc(S.dmOut)}</pre></div>`;
+}
+async function runDiag(e){
+  e.preventDefault();
+  const btn=$('dgbtn'),tool=S.dgTool,host=$('dghost')?$('dghost').value.trim():'';
+  if($('dghost'))S.dgHost=host;
+  btn.disabled=true;btn.textContent='Running...';
+  $('dgout').textContent=`Running ${tool}${host?' '+host:''}...`;
+  try{
+    const txt=await postForm('/cgi-bin/diagnostics.cgi',{tool,target:host});
+    S.dgOut=txt||'(no output)';
+  }catch(err){S.dgOut='Error: '+err.message;}
+  if($('dgout'))$('dgout').textContent=S.dgOut;
+  if($('dgbtn')){$('dgbtn').disabled=false;$('dgbtn').textContent='Run';}
+}
+async function loadDmesg(){
+  if($('dmout'))$('dmout').textContent='Loading dmesg...';
+  try{S.dmOut=await getT('/cgi-bin/diagnostics.cgi?tool=dmesg&_t='+Date.now())||'(empty)';}
+  catch(err){S.dmOut='Error: '+err.message;}
+  if($('dmout'))$('dmout').textContent=S.dmOut;
+}
+
+function pSystem(){
+  const cf=S.cf,rm=S.rm,sju=rm.sshj_user||'',sjd=rm.sshj_host||'wap610n';
+  const sjState=rm.sshj_running?'<span class="u">Connected</span>':(rm.sshj_watchdog?'<span class="u w">Connecting...</span>':'<span class="u">Stopped</span>');
+  return `<div class="p"><h2>Administration &amp; Access</h2><form onsubmit="saveAdmin(event)"><div class="f">
+    <label>New Password</label><input type="password" name="p1" maxlength="64" placeholder="Leave blank to keep current">
+    <label>Confirm Password</label><input type="password" name="p2" maxlength="64" placeholder="Re-enter new password">
+    <label>Idle Timeout (s)</label><input type="number" name="timeOut" min="60" max="3600" value="${esc(cf.auth_timeout||'600')}" required>
+    <label>Wireless UI Access</label><label class="c"><input type="checkbox" name="wirelessMgmt"${cf.wireless_mgmt!=='0'?' checked':''}>Allow management over Wi-Fi</label>
+  </div><div class="z"><button class="t p">Save Admin Settings</button></div></form></div>
+
+  <div class="p"><h2>Remote Services &amp; SSH-J Tunnel<span>${sjState}</span></h2><form onsubmit="saveRemote(event)"><div class="f">
+    <label>Daemons</label><div class="r"><label class="c"><input type="checkbox" id="rssh"${rm.ssh?' checked':''}>SSH (22)</label><label class="c"><input type="checkbox" id="rtel"${rm.telnet?' checked':''}>Telnet (23)</label><label class="c"><input type="checkbox" id="rupnp"${rm.upnp?' checked':''}>UPnP</label><label class="c"><input type="checkbox" id="rsj"${rm.sshj?' checked':''}>SSH-J Tunnel</label></div>
+    <label>SSH-J User / Host</label><div class="r"><input id="rsju" maxlength="48" placeholder="username" value="${esc(sju)}" oninput="updSjCmd()"><input id="rsjd" maxlength="32" placeholder="wap610n" value="${esc(sjd)}" oninput="updSjCmd()"></div>
+    <label>SSH-J Command</label><div class="r"><code id="sjcmd">ssh -J ${esc(sju||'<username>')}@ssh-j.com root@${esc(sjd)}</code><button type="button" class="t s" onclick="navigator.clipboard&&navigator.clipboard.writeText($('sjcmd').textContent);msg('Copied')">Copy</button></div>
+  </div><div class="z"><button class="t p">Save Remote Access</button></div></form></div>
+
+  <div class="p"><h2>Backup, NOR Flash &amp; Firmware</h2><div class="f">
+    <label>Config Backup</label><div class="r"><button type="button" class="t" onclick="dlConfig()">Download .conf</button><input type="file" id="cfgf" accept=".conf,.cfg,.bin,.tar.gz,.tgz"><button type="button" class="t" onclick="restoreCfg()">Restore</button></div>
+    <label>NOR Flash Dump</label><div class="r"><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=full'">Full 4MB</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=kernel'">Kernel+RootFS (3.6M)</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=config'">Cfg (128K)</button></div>
+    <label>Firmware Upgrade</label><div class="r"><input type="file" id="fwf"><button type="button" class="t p" onclick="flashFw()">Flash</button></div>
+    <label>Maintenance</label><div class="r"><button type="button" class="t d" onclick="doFactory()">Factory Defaults</button><a class="t" href="/network/ap_network.asp">Classic UI</a></div>
+  </div></div>`;
+}
+function updSjCmd(){
+  const u=($('rsju')?.value||'').trim()||'<username>',d=($('rsjd')?.value||'').trim()||'wap610n';
+  if($('sjcmd'))$('sjcmd').textContent=`ssh -J ${u}@ssh-j.com root@${d}`;
+}
+function saveAdmin(e){
+  e.preventDefault();
+  const f=e.target,p1=f.p1.value,p2=f.p2.value,to=Number(f.timeOut.value);
+  if(p1!==p2)return msg('Passwords do not match');
+  if(p1.length>64)return msg('Password max 64 chars');
+  if(isNaN(to)||to<60||to>3600)return msg('Timeout must be 60-3600s');
+  const params={rebootTag:'false',timeOut:String(to),wirelessMgmt:f.wirelessMgmt.checked?'1':'0'};
+  if(p1)params.submit_admPassword=p1;
+  applyGoForm('/goform/management',params,'Applying Admin Settings',12);
+}
+async function saveRemote(e){
+  e.preventDefault();
+  const ssh=$('rssh').checked?'1':'0',tel=$('rtel').checked?'1':'0',upnp=$('rupnp').checked?'1':'0',sshj=$('rsj').checked?'1':'0';
+  const sju=$('rsju').value.trim(),sjd=$('rsjd').value.trim()||'wap610n';
+  if(sshj==='1'&&!sju)return msg('SSH-J username required');
+  if(sju&&!isIdent(sju))return msg('Invalid SSH-J username');
+  if(!isIdent(sjd))return msg('Invalid SSH-J device name');
+  if(sshj==='1'&&ssh==='0')return msg('SSH must be enabled for SSH-J');
+  try{
+    msg('Applying remote services...');
+    const txt=await postForm('/cgi-bin/remote_access.cgi',{ssh,telnet:tel,upnp,sshj,sshj_user:sju,sshj_host:sjd});
+    const j=JSON.parse(txt);
+    if(j.status==='success'){S.rm=j;ren();msg('Remote services updated');setTimeout(()=>getJ('/cgi-bin/remote_access.cgi?action=status&_t='+Date.now()).then(d=>{S.rm=d;if(T===5)ren();}).catch(()=>{}),2500);}
+    else{msg(j.message||'Failed to update remote services');}
+  }catch(err){msg('Remote access error: '+err.message);}
+}
+function dlConfig(){
+  const f=document.createElement('form');f.method='POST';f.action='/goform/sendFileForm';
+  [['isconfig','1'],['filename','/tmp/configfile.conf']].forEach(([n,v])=>{const i=document.createElement('input');i.type='hidden';i.name=n;i.value=v;f.appendChild(i);});
+  document.body.appendChild(f);f.submit();f.remove();
+}
+function restoreCfg(){
+  const f=$('cfgf')?.files?.[0];if(!f)return msg('Select config file first');
+  const fd=new FormData();fd.append('uploadSizeLimit','10');fd.append('configurationfile','1');fd.append('binary',f);
+  const xhr=new XMLHttpRequest();xhr.open('POST','/goform/upldForm',true);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)showModal('Restoring Configuration','Uploading '+f.name+'...',Math.round(e.loaded*100/e.total));};
+  xhr.onload=()=>{
+    if(xhr.status>=200&&xhr.status<400){waitBusy('Restoring Configuration',30,null);}
+    else{hideModal();msg('Restore upload failed');}
+  };
+  xhr.onerror=()=>{hideModal();msg('Upload connection lost');};
+  showModal('Restoring Configuration','Uploading '+f.name+'...',5);xhr.send(fd);
+}
+function flashFw(){
+  const f=$('fwf')?.files?.[0];if(!f)return msg('Select .bin or bootpImage file');
+  const fd=new FormData();
+  fd.append('page_name','admin/upgrade.asp');fd.append('uploadSizeLimit','10000');
+  fd.append('remote_filename','/dev/mtdblock2');fd.append('validate_file_name','bootpImage');fd.append('binary',f);
+  const xhr=new XMLHttpRequest();xhr.open('POST','/goform/upldImage',true);
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)showModal('Firmware Upgrade','Uploading '+f.name+'...',Math.round(e.loaded*100/e.total),'Do NOT power off device');};
+  xhr.onerror=()=>{hideModal();msg('Firmware upload failed');};
+  showModal('Firmware Upgrade','Uploading '+f.name+'...',2,'Do NOT power off device');
+  xhr.send(fd);
+  let waitTicks=0;
+  modalTimer=setInterval(async()=>{
+    try{
+      const r=await fetch('/goform/updateBurnProgress',{method:'POST',credentials:'same-origin',body:'poll'});
+      const txt=await r.text(),parts=txt.trim().split(',');
+      const st=Number(parts[0]),pr=Number(parts[1]);
+      if(pr===-1||st===2){hideModal();msg('Invalid image or flash write failed!');return;}
+      if((st===0||st===3)&&waitTicks++<90){return;}
+      if(st===4){showModal('Firmware Upgrade','Checking image CRC32...',15,'Do NOT power off device');}
+      else if(st===5||st===6){showModal('Firmware Upgrade',(st===6?'Verifying NOR flash: ':'Writing NOR flash (mtd2): ')+pr+'%',pr,'Do NOT power off device');}
+      else if(st===1&&pr===100){
+        clearInterval(modalTimer);modalTimer=null;
+        let sec=45;
+        showModal('Firmware Complete','Rebooting WAP610N...',100,'Reconnecting in 45s...');
+        modalTimer=setInterval(()=>{
+          sec--;showModal('Rebooting Device',`Reconnecting in ${sec}s...`,100-Math.round(sec/45*100),'Wait for AP to boot');
+          if(sec<=0){clearInterval(modalTimer);modalTimer=null;location.href='/index.html';}
+        },1000);
+      }
+    }catch{}
+  },1500);
+}
+function doFactory(){
+  if(!confirm('Reset ALL settings to factory defaults? Device will reboot to 192.168.1.1.'))return;
+  applyGoForm('/goform/resetToDefault',{restoreTag:'AP'},'Factory Reset',45,'http://192.168.1.1/');
+}
+function doReboot(){
+  if(!confirm('Reboot WAP610N now?'))return;
+  applyGoForm('/goform/management',{rebootTag:'true'},'Rebooting Device',45);
+}
+
+const P=[
+  ['Status',pStatus],['Network',pNetwork],['Wireless',pWireless],
+  ['Site Survey',pSurvey],['Diagnostics',pDiag],['System',pSystem]
+];
+$('nv').innerHTML=P.map((m,i)=>`<a data-i="${i}"${i===T?' class="on"':''}>${m[0]}</a>`).join('');
+$('nv').onclick=e=>{
+  const a=e.target.closest('a');if(!a)return;
+  T=+a.dataset.i;[...$('nv').children].forEach(x=>x.classList.toggle('on',x===a));
+  ren();
+  if(T===4&&S.dmOut.indexOf('Click Refresh')===0)loadDmesg();
+};
+function ren(){
+  updateHeader();
+  $('mn').innerHTML=P[T][1]();
+  if(T===1)togNet(S.cf.ip_config_method||'1');
+  if(T===2){fillChannels();togSec();}
+}
+refreshAll().then(ren);
+setInterval(()=>{
+  S.upSec++;const e=$('ut');if(e)e.textContent=ut(S.upSec);
+},1000);
+setInterval(async()=>{
+  if(!$('md').hidden)return;
+  if(T===0){await refreshAll();ren();}
+  else{getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||S.upSec;updateHeader();}).catch(()=>{});}
+},6000);
+</script></body></html>

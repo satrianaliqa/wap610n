@@ -19,10 +19,13 @@
 
 #include	"../uemf.h"
 #include	"../wsIntrn.h"
+#include	<stdarg.h>
 #include	<signal.h>
 #include	<unistd.h> 
 #include	<sys/types.h>
 #include	<sys/wait.h>
+#include	<sys/ioctl.h>
+#include	<net/if.h>
 #include	<fcntl.h>
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
@@ -68,6 +71,7 @@ extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
 extern void formDumpFirmware(webs_t wp, char_t *path, char_t *query);
+extern int getWLSBridgePort(void);
 
 static void websDiag(const char *message)
 {
@@ -1274,7 +1278,7 @@ static int initWebs()
 	//Jacky.Yang 5-Jun-2008, Modify default page
 	//websSetDefaultPage(T("default.asp"));
 	//websSetDefaultPage(T("/station/wireless_basic.asp"));
-	websSetDefaultPage(T("/network/ap_network.asp"));
+	websSetDefaultPage(T("/index.html"));
 	websSetPassword(password);
 
 /* 
@@ -1354,16 +1358,7 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
  *	If the empty or "/" URL is invoked, redirect default URLs to the home page
  */
 	if (*url == '\0' || gstrcmp(url, T("/")) == 0) {
-		char network_type[8];
-		memset(network_type, '\0', sizeof(network_type));
-		MT_Get_Param("network_type", network_type, sizeof(network_type) - 1);
-		network_type[sizeof(network_type) - 1] = '\0';
-		
-		if (strcmp(network_type, "0") == 0)
-			websRedirect(wp, T("/network/sta_network.asp"));
-		else
-			websRedirect(wp, T("/network/ap_network.asp"));
-		
+		websRedirect(wp, T("/index.html"));
 		return 1;
 	}
 	return 0;
@@ -1410,12 +1405,183 @@ static void sendJsonResponse(webs_t wp, int status, const char *body)
 	websDone(wp, status);
 }
 
+typedef struct {
+	unsigned char mac_addr[6];
+	unsigned char port_no;
+	unsigned char is_local;
+	unsigned int ageing_timer_value;
+	unsigned int unused;
+} api_br_fdb_t;
+
+typedef struct {
+	char ip[20];
+	char mac[20];
+} api_arp_entry_t;
+
+static void getIfaceIpv4AndMask(const char *ifname, char *ipOut, size_t ipSize,
+	char *maskOut, size_t maskSize)
+{
+	int fd;
+	struct ifreq ifr;
+
+	if (ipOut != NULL && ipSize > 0) {
+		ipOut[0] = '\0';
+	}
+	if (maskOut != NULL && maskSize > 0) {
+		maskOut[0] = '\0';
+	}
+	if (ifname == NULL || ifname[0] == '\0') {
+		return;
+	}
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		return;
+	}
+	if (ipOut != NULL && ipSize > 0) {
+		memset(&ifr, 0, sizeof(ifr));
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+		if (ioctl(fd, SIOCGIFADDR, &ifr) == 0) {
+			struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
+			snprintf(ipOut, ipSize, "%s", inet_ntoa(sin->sin_addr));
+			ipOut[ipSize - 1] = '\0';
+		}
+	}
+	if (maskOut != NULL && maskSize > 0) {
+		memset(&ifr, 0, sizeof(ifr));
+		strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+		if (ioctl(fd, SIOCGIFNETMASK, &ifr) == 0) {
+			struct sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_netmask;
+			snprintf(maskOut, maskSize, "%s", inet_ntoa(sin->sin_addr));
+			maskOut[maskSize - 1] = '\0';
+		}
+	}
+	close(fd);
+}
+
+static void getIfaceMac(const char *ifname, char *macOut, size_t macSize)
+{
+	char pathBuf[64];
+	FILE *fp;
+	size_t len;
+
+	if (macOut == NULL || macSize == 0) {
+		return;
+	}
+	macOut[0] = '\0';
+	if (ifname == NULL || ifname[0] == '\0') {
+		return;
+	}
+	snprintf(pathBuf, sizeof(pathBuf), "/sys/class/net/%s/address", ifname);
+	fp = fopen(pathBuf, "r");
+	if (fp != NULL) {
+		if (fgets(macOut, (int)macSize, fp) != NULL) {
+			len = strlen(macOut);
+			while (len > 0 && (macOut[len - 1] == '\n' || macOut[len - 1] == '\r' ||
+			                   macOut[len - 1] == ' ' || macOut[len - 1] == '\t')) {
+				macOut[--len] = '\0';
+			}
+		}
+		fclose(fp);
+	}
+}
+
+static void getParamEsc(const char *name, char *escOut, size_t escSize)
+{
+	char raw[256];
+
+	if (escOut == NULL || escSize == 0) {
+		return;
+	}
+	escOut[0] = '\0';
+	if (name == NULL || name[0] == '\0') {
+		return;
+	}
+	memset(raw, 0, sizeof(raw));
+	MT_Get_Param((char *)name, raw, sizeof(raw) - 1);
+	raw[sizeof(raw) - 1] = '\0';
+	jsonEscapeCopy(escOut, escSize, raw);
+}
+
+static size_t jsonAppend(char *buf, size_t bufSize, size_t pos, const char *fmt, ...)
+{
+	va_list ap;
+	int n;
+
+	if (buf == NULL || bufSize == 0 || pos >= bufSize - 1) {
+		return (bufSize > 0) ? (bufSize - 1) : 0;
+	}
+	va_start(ap, fmt);
+	n = vsnprintf(buf + pos, bufSize - pos, fmt, ap);
+	va_end(ap);
+	if (n < 0) {
+		return pos;
+	}
+	if ((size_t)n >= bufSize - pos) {
+		return bufSize - 1;
+	}
+	return pos + (size_t)n;
+}
+
+static void readLiveWlanInfo(char *chOut, size_t chSize, char *bssidOut, size_t bssidSize)
+{
+	if (chOut != NULL && chSize > 0) {
+		chOut[0] = '\0';
+		MT_Get_Param("Channel", chOut, (int)(chSize - 1));
+		chOut[chSize - 1] = '\0';
+	}
+	if (bssidOut != NULL && bssidSize > 0) {
+		getIfaceMac("wlan0", bssidOut, bssidSize);
+		if (bssidOut[0] == '\0') {
+			MT_Get_Param("BSSID", bssidOut, (int)(bssidSize - 1));
+			bssidOut[bssidSize - 1] = '\0';
+		}
+	}
+}
+
+static void readFwDate(char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[256];
+	char *p;
+	size_t len;
+
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	out[0] = '\0';
+	fp = fopen("/root/mtlk/web/fw_version.txt", "r");
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			if (strncmp(line, "ProjectFirmwareVersionDate=", 27) == 0) {
+				p = line + 27;
+				while (*p == ' ' || *p == '\t' || *p == '"') {
+					p++;
+				}
+				snprintf(out, outSize, "%s", p);
+				len = strlen(out);
+				while (len > 0 && (out[len - 1] == '\n' || out[len - 1] == '\r' ||
+				                   out[len - 1] == '"' || out[len - 1] == ' ')) {
+					out[--len] = '\0';
+				}
+				break;
+			}
+		}
+		fclose(fp);
+	}
+}
+
 static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	int arg, char_t *url, char_t *path, char_t *query)
 {
-	char body[1024];
+	char body[4096];
 	FILE *fp;
 	char line[256];
+
+	(void)urlPrefix;
+	(void)webDir;
+	(void)arg;
+	(void)url;
+	(void)query;
 
 	if (path == NULL) {
 		return 0;
@@ -1426,15 +1592,40 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		unsigned long memTotal = 0, memFree = 0, buffers = 0, cached = 0;
 		unsigned long commitLimit = 0, committedAs = 0;
 		int tcpEstab = 0, tcpListen = 0, tcpCloseWait = 0;
+		int busy;
 		char hostRaw[64], hostEsc[128], netType[16], netTypeEsc[32], verRaw[96], verEsc[192];
+		char loadStr[64], loadEsc[96];
+		char ipRaw[32], maskRaw[32], macRaw[32], gwRaw[32];
+		char ipEsc[48], maskEsc[48], macEsc[48], gwEsc[48];
 
 		memset(hostRaw, 0, sizeof(hostRaw));
 		memset(netType, 0, sizeof(netType));
 		memset(verRaw, 0, sizeof(verRaw));
+		memset(loadStr, 0, sizeof(loadStr));
+		memset(gwRaw, 0, sizeof(gwRaw));
 		MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
 		MT_Get_Param("network_type", netType, sizeof(netType) - 1);
+		MT_Get_Param("default_gw", gwRaw, sizeof(gwRaw) - 1);
 		jsonEscapeCopy(hostEsc, sizeof(hostEsc), hostRaw);
 		jsonEscapeCopy(netTypeEsc, sizeof(netTypeEsc), netType);
+		jsonEscapeCopy(gwEsc, sizeof(gwEsc), gwRaw);
+
+		getIfaceIpv4AndMask("br0", ipRaw, sizeof(ipRaw), maskRaw, sizeof(maskRaw));
+		if (ipRaw[0] == '\0') {
+			MT_Get_Param("ip_lan", ipRaw, sizeof(ipRaw) - 1);
+		}
+		if (maskRaw[0] == '\0') {
+			MT_Get_Param("subnet_lan", maskRaw, sizeof(maskRaw) - 1);
+		}
+		getIfaceMac("br0", macRaw, sizeof(macRaw));
+		if (macRaw[0] == '\0') {
+			MT_Get_Param("mac_lan", macRaw, sizeof(macRaw) - 1);
+		}
+		jsonEscapeCopy(ipEsc, sizeof(ipEsc), ipRaw);
+		jsonEscapeCopy(maskEsc, sizeof(maskEsc), maskRaw);
+		jsonEscapeCopy(macEsc, sizeof(macEsc), macRaw);
+
+		busy = (waitOtherProcess != 0 || access("/var/old_web_pid", F_OK) == 0) ? 1 : 0;
 
 		fp = fopen("/proc/uptime", "r");
 		if (fp != NULL) {
@@ -1443,6 +1634,18 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			}
 			fclose(fp);
 		}
+
+		fp = fopen("/proc/loadavg", "r");
+		if (fp != NULL) {
+			if (fgets(line, sizeof(line), fp) != NULL) {
+				char l1[16], l5[16], l15[16];
+				if (sscanf(line, "%15s %15s %15s", l1, l5, l15) == 3) {
+					snprintf(loadStr, sizeof(loadStr), "%s %s %s", l1, l5, l15);
+				}
+			}
+			fclose(fp);
+		}
+		jsonEscapeCopy(loadEsc, sizeof(loadEsc), loadStr);
 
 		fp = fopen("/proc/meminfo", "r");
 		if (fp != NULL) {
@@ -1487,13 +1690,194 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 
 		snprintf(body, sizeof(body),
 			"{\"model\":\"WAP610N\",\"hostname\":\"%s\",\"network_type\":\"%s\","
-			"\"version\":\"%s\",\"uptime_sec\":%lu,"
+			"\"version\":\"%s\",\"uptime_sec\":%lu,\"busy\":%d,\"load\":\"%s\","
+			"\"ip\":\"%s\",\"mask\":\"%s\",\"mac\":\"%s\",\"gateway\":\"%s\","
 			"\"mem_kb\":{\"total\":%lu,\"free\":%lu,\"buffers\":%lu,\"cached\":%lu,"
 			"\"commit_limit\":%lu,\"committed_as\":%lu},"
 			"\"tcp\":{\"established\":%d,\"listen\":%d,\"close_wait\":%d}}\n",
-			hostEsc, netTypeEsc, verEsc, uptimeSec,
+			hostEsc, netTypeEsc, verEsc, uptimeSec, busy, loadEsc,
+			ipEsc, maskEsc, macEsc, gwEsc,
 			memTotal, memFree, buffers, cached, commitLimit, committedAs,
 			tcpEstab, tcpListen, tcpCloseWait);
+		body[sizeof(body) - 1] = '\0';
+		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	if (strcmp(path, "/api/config.json") == 0) {
+		static const char * const paramMap[][2] = {
+			{"network_type", "network_type"},
+			{"ip_config_method", "ip_config_method"},
+			{"hostname", "HostName"},
+			{"ip_lan", "ip_lan"},
+			{"subnet_lan", "subnet_lan"},
+			{"default_gw", "default_gw"},
+			{"dns1", "DHCPDDNS1"},
+			{"dns2", "DHCPDDNS2"},
+			{"mac_lan", "mac_lan"},
+			{"language", "Language"},
+			{"frequency_band", "FrequencyBand"},
+			{"country", "Country"},
+			{"channel_bonding", "ChannelBonding"},
+			{"upper_lower", "UpperLowerChannelBonding"},
+			{"essid", "NonProc_ESSID"},
+			{"security_mode", "NonProcSecurityMode"},
+			{"wep_key_len", "NonProc_WepKeyLength"},
+			{"wep_tx_idx", "WepTxKeyIdx"},
+			{"wep_auth", "NonProc_Authentication"},
+			{"wep_key0", "WepKeys_DefaultKey0"},
+			{"wep_key1", "WepKeys_DefaultKey1"},
+			{"wep_key2", "WepKeys_DefaultKey2"},
+			{"wep_key3", "WepKeys_DefaultKey3"},
+			{"wpa_pers_mode", "NonProc_WPA_Personal_Mode"},
+			{"wpa_pers_enc", "NonProc_WPA_Personal_Encapsulation"},
+			{"wpa_psk", "NonProc_WPA_Personal_PSK"},
+			{"wpa_ent_mode", "NonProc_WPA_Enterprise_Mode"},
+			{"wpa_ent_enc", "NonProc_WPA_Enterprise_Encapsulation"},
+			{"wpa_rad_ip", "NonProc_WPA_Enterprise_Radius_IP"},
+			{"wpa_rad_port", "NonProc_WPA_Enterprise_Radius_Port"},
+			{"wpa_rad_key", "NonProc_WPA_Enterprise_Radius_Key"},
+			{"wpa_rad_rekey", "NonProc_WPA_Enterprise_Radius_ReKey_Interval"},
+			{"wps_active", "NonProc_WPS_ActivateWPS"},
+			{"wps_pin", "NonProc_WPS_DevicePIN"},
+			{"radar_detect", "11hRadarDetect"},
+			{"aocs_restrict_ch", "AocsRestrictCh"},
+			{"ldpc", "AdvancedCoding"},
+			{"hidden_ssid", "HiddenSSID"},
+			{"erp_prot", "ERPProtectionType"},
+			{"obss_prot", "OverlappingBSSProtection"},
+			{"n_prot", "11nProtectionType"},
+			{"ap_forwarding", "APforwarding"},
+			{"reliable_mcast", "ReliableMulticast"},
+			{"tx_power", "PowerSelection"},
+			{"use_11q_map", "Use11QMap"},
+			{"eth_down_up", "EthDownUp"},
+			{"auth_timeout", "AuthenticationTimeout"},
+			{"wireless_mgmt", "WirelessMgmtEnabled"}
+		};
+		size_t pos = 0;
+		size_t idx;
+		size_t total = sizeof(paramMap) / sizeof(paramMap[0]);
+		char esc[256];
+		char chRaw[24], chEsc[48];
+		char bssidRaw[32], bssidEsc[64];
+		char fwDateRaw[96], fwDateEsc[192];
+
+		pos = jsonAppend(body, sizeof(body), pos, "{");
+		for (idx = 0; idx < total; idx++) {
+			getParamEsc(paramMap[idx][1], esc, sizeof(esc));
+			pos = jsonAppend(body, sizeof(body), pos, "%s\"%s\":\"%s\"",
+				(idx == 0) ? "" : ",", paramMap[idx][0], esc);
+		}
+		readLiveWlanInfo(chRaw, sizeof(chRaw), bssidRaw, sizeof(bssidRaw));
+		jsonEscapeCopy(chEsc, sizeof(chEsc), chRaw);
+		jsonEscapeCopy(bssidEsc, sizeof(bssidEsc), bssidRaw);
+		readFwDate(fwDateRaw, sizeof(fwDateRaw));
+		jsonEscapeCopy(fwDateEsc, sizeof(fwDateEsc), fwDateRaw);
+		pos = jsonAppend(body, sizeof(body), pos,
+			",\"channel\":\"%s\",\"bssid\":\"%s\",\"fw_date\":\"%s\"}\n",
+			chEsc, bssidEsc, fwDateEsc);
+		body[sizeof(body) - 1] = '\0';
+		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	if (strcmp(path, "/api/wmm.json") == 0) {
+		static const char * const acNames[4] = {"AC_BK", "AC_BE", "AC_VI", "AC_VO"};
+		static const char * const acFields[16] = {
+			"UseAggregation", "AcceptAggregation", "MaxNumOfPackets", "MaxNumOfBytes",
+			"TimeoutInterval", "MinSizeOfPacketInAggr", "ADDBATimeout", "AggregationWindowSize",
+			"CWmin", "CWmax", "AIFSN", "TXOP",
+			"CWmin_AP", "CWmax_AP", "AIFSN_AP", "TXOP_AP"
+		};
+		char curWmmEsc[32], esc[64], pname[64];
+		size_t pos = 0;
+		size_t i, j;
+
+		getParamEsc("CurrentWMM", curWmmEsc, sizeof(curWmmEsc));
+		pos = jsonAppend(body, sizeof(body), pos, "{\"current_wmm\":\"%s\",\"ac\":{", curWmmEsc);
+		for (i = 0; i < 4; i++) {
+			pos = jsonAppend(body, sizeof(body), pos, "%s\"%s\":{",
+				(i == 0) ? "" : ",", acNames[i]);
+			for (j = 0; j < 16; j++) {
+				snprintf(pname, sizeof(pname), "%s_%s", acNames[i], acFields[j]);
+				getParamEsc(pname, esc, sizeof(esc));
+				pos = jsonAppend(body, sizeof(body), pos, "%s\"%s\":\"%s\"",
+					(j == 0) ? "" : ",", acFields[j], esc);
+			}
+			pos = jsonAppend(body, sizeof(body), pos, "}");
+		}
+		pos = jsonAppend(body, sizeof(body), pos, "}}\n");
+		body[sizeof(body) - 1] = '\0';
+		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	if (strcmp(path, "/api/clients.json") == 0) {
+		api_arp_entry_t arpList[64];
+		int arpCount = 0;
+		api_br_fdb_t recs[32];
+		size_t nread, i;
+		size_t pos = 0;
+		int count = 0;
+		int wlsPort = -1;
+
+		fp = fopen("/proc/net/arp", "r");
+		if (fp != NULL) {
+			if (fgets(line, sizeof(line), fp) != NULL) {
+				while (arpCount < 64 && fgets(line, sizeof(line), fp) != NULL) {
+					char ipBuf[20], macBuf[20];
+					unsigned int flags = 0;
+					if (sscanf(line, "%19s 0x%*x 0x%x %19s", ipBuf, &flags, macBuf) == 3) {
+						if (flags != 0 && strcmp(macBuf, "00:00:00:00:00:00") != 0) {
+							snprintf(arpList[arpCount].ip, sizeof(arpList[arpCount].ip), "%s", ipBuf);
+							snprintf(arpList[arpCount].mac, sizeof(arpList[arpCount].mac), "%s", macBuf);
+							arpCount++;
+						}
+					}
+				}
+			}
+			fclose(fp);
+		}
+
+		pos = jsonAppend(body, sizeof(body), pos, "{\"clients\":[");
+		fp = fopen("/sys/class/net/br0/brforward", "rb");
+		if (fp != NULL) {
+			wlsPort = getWLSBridgePort();
+			while ((nread = fread(recs, sizeof(api_br_fdb_t), 32, fp)) > 0) {
+				for (i = 0; i < nread; i++) {
+					char macStr[20];
+					const char *ipStr = "";
+					const char *ifaceStr;
+					int a;
+					if (recs[i].is_local) {
+						continue;
+					}
+					if (pos + 96 >= sizeof(body)) {
+						break;
+					}
+					snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+						recs[i].mac_addr[0], recs[i].mac_addr[1], recs[i].mac_addr[2],
+						recs[i].mac_addr[3], recs[i].mac_addr[4], recs[i].mac_addr[5]);
+					for (a = 0; a < arpCount; a++) {
+						if (strcasecmp(arpList[a].mac, macStr) == 0) {
+							ipStr = arpList[a].ip;
+							break;
+						}
+					}
+					ifaceStr = (wlsPort > 0 && (int)recs[i].port_no == wlsPort) ? "Wi-Fi" : "LAN";
+					pos = jsonAppend(body, sizeof(body), pos,
+						"%s{\"mac\":\"%s\",\"ip\":\"%s\",\"iface\":\"%s\"}",
+						(count == 0) ? "" : ",", macStr, ipStr, ifaceStr);
+					count++;
+				}
+				if (pos + 96 >= sizeof(body)) {
+					break;
+				}
+			}
+			fclose(fp);
+		}
+		pos = jsonAppend(body, sizeof(body), pos, "]}\n");
 		body[sizeof(body) - 1] = '\0';
 		sendJsonResponse(wp, 200, body);
 		return 1;
