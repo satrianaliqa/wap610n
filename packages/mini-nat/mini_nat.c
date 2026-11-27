@@ -387,7 +387,7 @@ static int replace_table(int sock, const char *name, const mn_buf_t *b,
         return -1;
     }
 
-    old_cnt = (struct xt_counters *)calloc(info.num_counters ? info.num_counters : 1,
+    old_cnt = (struct xt_counters *)calloc(info.num_entries ? info.num_entries : 1,
                                            sizeof(struct xt_counters));
     if (!old_cnt) {
         return -1;
@@ -405,7 +405,7 @@ static int replace_table(int sock, const char *name, const mn_buf_t *b,
     repl->size = (unsigned int)b->len;
     memcpy(repl->hook_entry, hook_entry, sizeof(repl->hook_entry));
     memcpy(repl->underflow, underflow, sizeof(repl->underflow));
-    repl->num_counters = info.num_counters;
+    repl->num_counters = info.num_entries;
     repl->counters = old_cnt;
     memcpy(repl->entries, b->data, b->len);
 
