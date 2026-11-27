@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/socket.h>
-#include <net/if.h>
 #include <netinet/in.h>
 
 #include	"webs.h"
