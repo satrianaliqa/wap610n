@@ -57,14 +57,19 @@ if [ -z "$NETWORK_TYPE" ]; then
 	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
 	[ -z "$NETWORK_TYPE" ] && NETWORK_TYPE=2
 fi
+ROUTER_MODE="bridge"
+if [ -f /mnt/jffs2/router.conf ]; then
+	rm_val=$(awk -F '=' '$1=="ROUTER_MODE"{gsub(/[ \t\r]/,"",$2);print $2}' /mnt/jffs2/router.conf 2>/dev/null | tail -n 1)
+	[ -n "$rm_val" ] && ROUTER_MODE="$rm_val"
+fi
 
-if [ "$IP_CONFIG_METHOD" = "0" ]; then
+if [ "$IP_CONFIG_METHOD" = "0" ] && [ "$ROUTER_MODE" = "bridge" ]; then
 	# DHCP Client Mode: Obtain dynamic IP from upstream router
 	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
 	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
-elif [ "$DHCPD_ENABLED" = "1" ] && [ "$NETWORK_TYPE" = "2" ]; then
-	# Static AP Mode: Run DHCP server (udhcpd) to serve connecting clients
-	$DIAG_LOG "daemon init: starting DHCP server for Access Point" 2>/dev/null || true
+elif [ "$DHCPD_ENABLED" = "1" ] && { [ "$NETWORK_TYPE" = "2" ] || [ "$ROUTER_MODE" != "bridge" ]; }; then
+	# Static AP or Router/WISP LAN Mode: Run DHCP server (udhcpd) to serve LAN clients
+	$DIAG_LOG "daemon init: starting DHCP server on br0 ($ROUTER_MODE)" 2>/dev/null || true
 	if ./mtlk_init_dhcpd.sh; then
 		nice -n 18 udhcpd /tmp/udhcpd.conf &
 	else

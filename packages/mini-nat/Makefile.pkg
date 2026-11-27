@@ -1,0 +1,7 @@
+PKG_BIN         = mini-nat
+PKG_OBJS        = mini_nat.o
+PKG_INSTALL_DIR = sbin
+PKG_CPPFLAGS    = -I$(E_KERNEL)/include
+PKG_LDFLAGS     =
+
+include ../Makefile.pkg

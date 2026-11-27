@@ -123,7 +123,7 @@ fi
 
 if [ "$REQUEST_METHOD" = "GET" ]; then
     case "$TOOL" in
-        dmesg|syslog|arp|route|ps|wlan_stats|tc_stats)
+        dmesg|syslog|arp|route|ps|wlan_stats|tc_stats|nat_stats)
             ;;
         *)
             send_err "405 Method Not Allowed" "Method Not Allowed (POST required for active probes)"
@@ -149,7 +149,7 @@ case "$TOOL" in
                 ;;
         esac
         ;;
-    dmesg|syslog|arp|route|ps|wlan_stats|tc_stats)
+    dmesg|syslog|arp|route|ps|wlan_stats|tc_stats|nat_stats)
         ;;
     *)
         send_err "400 Bad Request" "Unsupported diagnostic tool"
@@ -207,5 +207,18 @@ case "$TOOL" in
         tc -s qdisc show dev wlan0 2>&1 || true
         echo "--- Traffic Control (eth0) ---"
         tc -s qdisc show dev eth0 2>&1 || true
+        ;;
+    nat_stats)
+        if [ -x /sbin/mini-nat ]; then
+            /sbin/mini-nat --status 2>&1 || true
+        else
+            echo "mini-nat binary unavailable"
+        fi
+        if [ -r /proc/net/ip_conntrack ]; then
+            echo "--- Active /proc/net/ip_conntrack (first 40) ---"
+            head -n 40 /proc/net/ip_conntrack 2>&1 || true
+        else
+            echo "/proc/net/ip_conntrack unavailable (netfilter inactive)"
+        fi
         ;;
 esac

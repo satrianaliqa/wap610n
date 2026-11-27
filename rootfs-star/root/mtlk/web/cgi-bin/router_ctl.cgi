@@ -368,6 +368,31 @@ emit_state_json() {
     j_active=$(active_leases_json)
     j_routes=$(lines_to_json_array "$JFFS/routes.conf")
     j_vlans=$(lines_to_json_array "$JFFS/vlan.conf")
+    j_fwd=$(lines_to_json_array "$JFFS/portfwd.conf")
+
+    rt_mode=$(get_kv_file "$JFFS/router.conf" ROUTER_MODE bridge)
+    rt_proto=$(get_kv_file "$JFFS/router.conf" WAN_PROTO dhcp)
+    rt_wip=$(get_kv_file "$JFFS/router.conf" WAN_IP "")
+    rt_wmk=$(get_kv_file "$JFFS/router.conf" WAN_MASK 255.255.255.0)
+    rt_wgw=$(get_kv_file "$JFFS/router.conf" WAN_GW "")
+    rt_wd1=$(get_kv_file "$JFFS/router.conf" WAN_DNS1 1.1.1.1)
+    rt_wd2=$(get_kv_file "$JFFS/router.conf" WAN_DNS2 8.8.8.8)
+    rt_mtu=$(get_kv_file "$JFFS/router.conf" WAN_MTU 1500)
+    fw_spi=$(get_kv_file "$JFFS/router.conf" SPI 1)
+    fw_ping=$(get_kv_file "$JFFS/router.conf" WAN_PING 0)
+    fw_mgmt=$(get_kv_file "$JFFS/router.conf" WAN_MGMT 0)
+    fw_ssh=$(get_kv_file "$JFFS/router.conf" WAN_SSH 0)
+    fw_mss=$(get_kv_file "$JFFS/router.conf" TCPMSS 1)
+    fw_dmz=$(get_kv_file "$JFFS/router.conf" DMZ_IP "")
+    [ "$rt_mode" = "wisp" ] && rt_wif="wlan0" || rt_wif="eth0"
+    [ "$rt_mode" = "bridge" ] && rt_wif=""
+    lw_ip=$(get_kv_file /tmp/wan_status.conf WAN_IP "")
+    lw_mk=$(get_kv_file /tmp/wan_status.conf WAN_MASK "")
+    lw_gw=$(get_kv_file /tmp/wan_status.conf WAN_GW "")
+    lw_dn=$(get_kv_file /tmp/wan_status.conf WAN_DNS "")
+    has_nat=0; [ -x /sbin/mini-nat ] && [ -r /proc/net/ip_conntrack ] && has_nat=1
+    ct_cnt=0; [ -r /proc/net/ip_conntrack ] && ct_cnt=$(wc -l < /proc/net/ip_conntrack 2>/dev/null | tr -d ' ')
+    [ -n "$ct_cnt" ] || ct_cnt=0
 
     json_header
     printf '{"status":"success",'
@@ -389,6 +414,17 @@ emit_state_json() {
         "$(printf '%s' "$rf_stbc" | json_esc)" "$(printf '%s' "$rf_sgi" | json_esc)" \
         "$(printf '%s' "$rf_ska" | json_esc)"
     printf '"routes":%s,"vlans":%s,' "$j_routes" "$j_vlans"
+    printf '"router":{"mode":"%s","wan_proto":"%s","wan_if":"%s","wan_ip":"%s","wan_mask":"%s","wan_gw":"%s","wan_dns1":"%s","wan_dns2":"%s","wan_mtu":"%s","spi":"%s","wan_ping":"%s","wan_mgmt":"%s","wan_ssh":"%s","tcpmss":"%s","dmz_ip":"%s","live_wan_ip":"%s","live_wan_mask":"%s","live_wan_gw":"%s","live_wan_dns":"%s","has_nat":%s,"conntrack_count":%s,"portfwd":%s},' \
+        "$(printf '%s' "$rt_mode" | json_esc)" "$(printf '%s' "$rt_proto" | json_esc)" \
+        "$(printf '%s' "$rt_wif" | json_esc)" "$(printf '%s' "$rt_wip" | json_esc)" \
+        "$(printf '%s' "$rt_wmk" | json_esc)" "$(printf '%s' "$rt_wgw" | json_esc)" \
+        "$(printf '%s' "$rt_wd1" | json_esc)" "$(printf '%s' "$rt_wd2" | json_esc)" \
+        "$(printf '%s' "$rt_mtu" | json_esc)" "$(printf '%s' "$fw_spi" | json_esc)" \
+        "$(printf '%s' "$fw_ping" | json_esc)" "$(printf '%s' "$fw_mgmt" | json_esc)" \
+        "$(printf '%s' "$fw_ssh" | json_esc)" "$(printf '%s' "$fw_mss" | json_esc)" \
+        "$(printf '%s' "$fw_dmz" | json_esc)" "$(printf '%s' "$lw_ip" | json_esc)" \
+        "$(printf '%s' "$lw_mk" | json_esc)" "$(printf '%s' "$lw_gw" | json_esc)" \
+        "$(printf '%s' "$lw_dn" | json_esc)" "$has_nat" "$ct_cnt" "$j_fwd"
     printf '"qos":{"enabled":"%s","down_kbps":"%s","up_kbps":"%s"},' \
         "$(printf '%s' "$qos_en" | json_esc)" "$(printf '%s' "$qos_dn" | json_esc)" "$(printf '%s' "$qos_up" | json_esc)"
     printf '"ddns":{"enabled":"%s","provider":"%s","hostname":"%s","username":"%s","has_pass":%s,"has_token":%s,"custom_url":"%s","interval":"%s","running":%s,"status":"%s"},' \
@@ -451,6 +487,8 @@ P_ROUTES="" P_VLANS="" P_DOWN="" P_UP="" P_PROVIDER="" P_HOSTNAME="" P_USERNAME=
 P_PASSWORD="" P_TOKEN="" P_CUSTOM_URL="" P_INTERVAL="" P_TEST_NOW=""
 P_TARGET="" P_MAX_FAIL="" P_ACT_MODE="" P_TZ="" P_NIGHT="" P_SSH_KEYS="" P_RC_LOCAL=""
 P_BAND="" P_ESSID="" P_SEC="" P_PSK="" P_IPCFG="" P_IP="" P_GW=""
+P_RMODE="" P_WPROTO="" P_WIP="" P_WMASK="" P_WGW="" P_WD1="" P_WD2="" P_WMTU=""
+P_SPI="" P_WPING="" P_WMGMT="" P_WSSH="" P_TCPMSS="" P_DMZ="" P_PORTFWD=""
 
 OLD_IFS="$IFS"
 IFS='&'
@@ -514,9 +552,45 @@ for kv in $QUERY; do
         ip_config_method) P_IPCFG="$sl" ;;
         ip) P_IP="$sl" ;;
         gw) P_GW="$sl" ;;
+        router_mode) P_RMODE="$sl" ;;
+        wan_proto) P_WPROTO="$sl" ;;
+        wan_ip) P_WIP="$sl" ;;
+        wan_mask) P_WMASK="$sl" ;;
+        wan_gw) P_WGW="$sl" ;;
+        wan_dns1) P_WD1="$sl" ;;
+        wan_dns2) P_WD2="$sl" ;;
+        wan_mtu) P_WMTU="$sl" ;;
+        spi) P_SPI="$sl" ;;
+        wan_ping) P_WPING="$sl" ;;
+        wan_mgmt) P_WMGMT="$sl" ;;
+        wan_ssh) P_WSSH="$sl" ;;
+        tcpmss) P_TCPMSS="$sl" ;;
+        dmz_ip) P_DMZ="$sl" ;;
+        portfwd) P_PORTFWD="$dv" ;;
     esac
 done
 IFS="$OLD_IFS"
+
+write_router_conf() {
+    mkdir -p "$JFFS" 2>/dev/null || true
+    {
+        printf 'ROUTER_MODE=%s\n' "$1"
+        printf 'WAN_PROTO=%s\n' "$2"
+        printf 'WAN_IP=%s\n' "$3"
+        printf 'WAN_MASK=%s\n' "$4"
+        printf 'WAN_GW=%s\n' "$5"
+        printf 'WAN_DNS1=%s\n' "$6"
+        printf 'WAN_DNS2=%s\n' "$7"
+        printf 'WAN_MTU=%s\n' "$8"
+        printf 'SPI=%s\n' "$9"
+        shift 9
+        printf 'WAN_PING=%s\n' "$1"
+        printf 'WAN_MGMT=%s\n' "$2"
+        printf 'WAN_SSH=%s\n' "$3"
+        printf 'TCPMSS=%s\n' "$4"
+        printf 'DMZ_IP=%s\n' "$5"
+    } | atomic_write "$JFFS/router.conf" 600
+}
 
 lock_cfg() {
     LOCKED=0
@@ -588,9 +662,34 @@ case "$P_ACTION" in
         [ "$P_ENABLED" = "1" ] || P_ENABLED="0"
         [ "$P_IPCFG" = "0" ] && P_ENABLED="0"
 
+        [ -n "$P_RMODE" ] || P_RMODE="bridge"
+        case "$P_RMODE" in bridge|router|wisp) ;; *) json_error "Invalid router_mode" ;; esac
+        if [ "$P_RMODE" != "bridge" ]; then
+            P_IPCFG="1"
+            P_BR_MODE="4"
+            [ "$P_RMODE" = "wisp" ] && P_NET_TYPE="0" || P_NET_TYPE="2"
+            [ "$P_WPROTO" = "static" ] || P_WPROTO="dhcp"
+            if [ "$P_WPROTO" = "static" ]; then
+                is_ipv4 "$P_WIP" || json_error "Invalid WAN IPv4"
+                is_netmask "$P_WMASK" || json_error "Invalid WAN Subnet Mask"
+                [ -n "$P_WGW" ] && { is_ipv4 "$P_WGW" || json_error "Invalid WAN Gateway"; }
+            fi
+        fi
+
         cur_nt=$(get_conf wlan0.conf network_type 2)
         net_mode="23"
         [ "$P_BAND" = "0" ] && net_mode="14"
+
+        cur_mtu=$(get_kv_file "$JFFS/router.conf" WAN_MTU 1500)
+        cur_wd1=$(get_kv_file "$JFFS/router.conf" WAN_DNS1 1.1.1.1)
+        cur_wd2=$(get_kv_file "$JFFS/router.conf" WAN_DNS2 8.8.8.8)
+        cur_spi=$(get_kv_file "$JFFS/router.conf" SPI 1)
+        cur_ping=$(get_kv_file "$JFFS/router.conf" WAN_PING 0)
+        cur_mgmt=$(get_kv_file "$JFFS/router.conf" WAN_MGMT 0)
+        cur_ssh=$(get_kv_file "$JFFS/router.conf" WAN_SSH 0)
+        cur_mss=$(get_kv_file "$JFFS/router.conf" TCPMSS 1)
+        cur_dmz=$(get_kv_file "$JFFS/router.conf" DMZ_IP "")
+        write_router_conf "$P_RMODE" "${P_WPROTO:-dhcp}" "$P_WIP" "${P_WMASK:-255.255.255.0}" "$P_WGW" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz"
 
         lock_cfg
         ensure_jffs_conf sys.conf
@@ -650,11 +749,132 @@ case "$P_ACTION" in
                 iw_bm="$P_BR_MODE"; [ "$iw_bm" = "4" ] && iw_bm="0"
                 iwpriv wlan0 s_BridgeMode "$iw_bm" >/dev/null 2>&1 || true
                 [ -x /root/mtlk/web/init_security.tcl ] && ( cd /root/mtlk/web && ./init_security.tcl reactivate ) >/dev/null 2>&1 || true
+                /bin/router_apply.sh router >/dev/null 2>&1 || true
             ) </dev/null >/dev/null 2>&1 &
             trigger_save
         fi
         json_header
         printf '{"status":"success","reboot":%s,"ip":"%s"}\n' "$need_reboot" "$(printf '%s' "$P_IP" | json_esc)"
+        ;;
+
+    router_mode)
+        case "$P_MODE" in bridge|router|wisp) ;; *) json_error "Invalid router mode (bridge|router|wisp)" ;; esac
+        [ "$P_WPROTO" = "static" ] || P_WPROTO="dhcp"
+        [ -z "$P_WMASK" ] && P_WMASK="255.255.255.0"
+        [ -z "$P_WMTU" ] && P_WMTU="1500"
+        is_uint_range "$P_WMTU" 576 1500 || json_error "WAN MTU must be 576..1500"
+        if [ "$P_WPROTO" = "static" ] && [ "$P_MODE" != "bridge" ]; then
+            is_ipv4 "$P_WIP" || json_error "Invalid static WAN IPv4"
+            is_netmask "$P_WMASK" || json_error "Invalid WAN Subnet Mask"
+            [ -n "$P_WGW" ] && { is_ipv4 "$P_WGW" || json_error "Invalid WAN Gateway"; }
+        fi
+        [ -n "$P_WD1" ] && { is_ipv4 "$P_WD1" || json_error "Invalid WAN DNS 1"; }
+        [ -n "$P_WD2" ] && { is_ipv4 "$P_WD2" || json_error "Invalid WAN DNS 2"; }
+
+        cur_spi=$(get_kv_file "$JFFS/router.conf" SPI 1)
+        cur_ping=$(get_kv_file "$JFFS/router.conf" WAN_PING 0)
+        cur_mgmt=$(get_kv_file "$JFFS/router.conf" WAN_MGMT 0)
+        cur_ssh=$(get_kv_file "$JFFS/router.conf" WAN_SSH 0)
+        cur_mss=$(get_kv_file "$JFFS/router.conf" TCPMSS 1)
+        cur_dmz=$(get_kv_file "$JFFS/router.conf" DMZ_IP "")
+        write_router_conf "$P_MODE" "$P_WPROTO" "$P_WIP" "$P_WMASK" "$P_WGW" "${P_WD1:-1.1.1.1}" "${P_WD2:-8.8.8.8}" "$P_WMTU" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz"
+
+        need_reboot=0
+        if [ "$P_MODE" != "bridge" ]; then
+            cur_nt=$(get_conf wlan0.conf network_type 2)
+            [ "$P_MODE" = "wisp" ] && target_nt="0" || target_nt="2"
+            lock_cfg
+            ensure_jffs_conf sys.conf
+            ensure_jffs_conf wlan0.conf
+            set_conf_kv "$JFFS/sys.conf" BridgeMode 4
+            set_conf_kv "$JFFS/sys.conf" ip_config_method 1
+            set_conf_kv "$JFFS/sys.conf" DHCPDEnabled 1
+            set_conf_kv "$JFFS/wlan0.conf" network_type "$target_nt"
+            set_conf_kv "$JFFS/wlan0.conf" BridgeMode 4
+            set_conf_kv "$JFFS/wlan0.conf" ip_config_method 1
+            set_conf_kv "$JFFS/wlan0.conf" DHCPDEnabled 1
+            sync_sys_and_wlan
+            unlock_cfg
+            [ "$target_nt" != "$cur_nt" ] && need_reboot=1
+        fi
+        if [ "$need_reboot" = "1" ]; then
+            [ -x /bin/config_save.sh ] && /bin/config_save.sh >/dev/null 2>&1 || true
+            ( sleep 2; sync; /sbin/reboot ) </dev/null >/dev/null 2>&1 &
+        else
+            /bin/router_apply.sh router >/dev/null 2>&1 || true
+            trigger_save
+        fi
+        json_header
+        printf '{"status":"success","reboot":%s}\n' "$need_reboot"
+        ;;
+
+    wan_action)
+        if [ -f /tmp/wan_udhcpc.pid ]; then
+            wpid=$(cat /tmp/wan_udhcpc.pid 2>/dev/null)
+            case "$wpid" in
+                ''|*[!0-9]*) ;;
+                *)
+                    case "$P_CMD" in
+                        renew) kill -USR1 "$wpid" 2>/dev/null || true ;;
+                        release) kill -USR2 "$wpid" 2>/dev/null || true ;;
+                        *) json_error "Invalid WAN DHCP command" ;;
+                    esac
+                    ;;
+            esac
+        fi
+        json_header
+        echo '{"status":"success"}'
+        ;;
+
+    firewall)
+        [ "$P_SPI" = "0" ] || P_SPI="1"
+        [ "$P_WPING" = "1" ] || P_WPING="0"
+        [ "$P_WMGMT" = "1" ] || P_WMGMT="0"
+        [ "$P_WSSH" = "1" ] || P_WSSH="0"
+        [ "$P_TCPMSS" = "0" ] || P_TCPMSS="1"
+        [ -n "$P_DMZ" ] && { is_ipv4 "$P_DMZ" || json_error "Invalid DMZ IPv4 address"; }
+
+        tmp_fw="/tmp/portfwd.stage.$$"
+        : > "$tmp_fw"
+        fw_cnt=0
+        old_ifs="$IFS"
+        IFS='
+'
+        for line in $P_PORTFWD; do
+            line=$(printf '%s' "$line" | sed 's/^[ \t]*//;s/[ \t]*$//')
+            [ -z "$line" ] && continue
+            IFS='|' read -r f_name f_proto f_s f_e f_ip f_int f_en <<EOF
+$line
+EOF
+            is_host "${f_name:-rule}" || { rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Invalid port forward name"; }
+            case "$f_proto" in tcp|udp|both) ;; *) rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Invalid protocol: $f_proto" ;; esac
+            is_uint_range "$f_s" 1 65535 && is_uint_range "$f_e" "$f_s" 65535 || { rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Invalid external port range"; }
+            is_ipv4 "$f_ip" || { rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Invalid target LAN IPv4: $f_ip"; }
+            [ -z "$f_int" ] && f_int="0"
+            is_uint_range "$f_int" 0 65535 || { rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Invalid internal port"; }
+            [ "$f_en" = "0" ] || f_en="1"
+            fw_cnt=$((fw_cnt + 1))
+            [ "$fw_cnt" -gt 32 ] && { rm -f "$tmp_fw"; IFS="$old_ifs"; json_error "Maximum 32 port forwarding rules supported"; }
+            printf '%s|%s|%s|%s|%s|%s|%s\n' "${f_name:-rule}" "$f_proto" "$f_s" "$f_e" "$f_ip" "$f_int" "$f_en" >> "$tmp_fw"
+        done
+        IFS="$old_ifs"
+
+        cur_rm=$(get_kv_file "$JFFS/router.conf" ROUTER_MODE bridge)
+        cur_wp=$(get_kv_file "$JFFS/router.conf" WAN_PROTO dhcp)
+        cur_wip=$(get_kv_file "$JFFS/router.conf" WAN_IP "")
+        cur_wmk=$(get_kv_file "$JFFS/router.conf" WAN_MASK 255.255.255.0)
+        cur_wgw=$(get_kv_file "$JFFS/router.conf" WAN_GW "")
+        cur_wd1=$(get_kv_file "$JFFS/router.conf" WAN_DNS1 1.1.1.1)
+        cur_wd2=$(get_kv_file "$JFFS/router.conf" WAN_DNS2 8.8.8.8)
+        cur_mtu=$(get_kv_file "$JFFS/router.conf" WAN_MTU 1500)
+        write_router_conf "$cur_rm" "$cur_wp" "$cur_wip" "$cur_wmk" "$cur_wgw" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$P_SPI" "$P_WPING" "$P_WMGMT" "$P_WSSH" "$P_TCPMSS" "$P_DMZ"
+
+        chmod 600 "$tmp_fw" 2>/dev/null || true
+        mv -f "$tmp_fw" "$JFFS/portfwd.conf" 2>/dev/null || rm -f "$tmp_fw"
+        /bin/router_apply.sh firewall >/dev/null 2>&1 || true
+        trigger_save
+        json_header
+        echo '{"status":"success"}'
         ;;
 
     dhcp_action)
