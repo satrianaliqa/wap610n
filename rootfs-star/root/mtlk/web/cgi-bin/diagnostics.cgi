@@ -123,7 +123,7 @@ fi
 
 if [ "$REQUEST_METHOD" = "GET" ]; then
     case "$TOOL" in
-        dmesg|arp|route|ps)
+        dmesg|syslog|arp|route|ps|wlan_stats|tc_stats)
             ;;
         *)
             send_err "405 Method Not Allowed" "Method Not Allowed (POST required for active probes)"
@@ -149,7 +149,7 @@ case "$TOOL" in
                 ;;
         esac
         ;;
-    dmesg|arp|route|ps)
+    dmesg|syslog|arp|route|ps|wlan_stats|tc_stats)
         ;;
     *)
         send_err "400 Bad Request" "Unsupported diagnostic tool"
@@ -183,5 +183,29 @@ case "$TOOL" in
         ;;
     dmesg)
         dmesg 2>&1 | tail -n 80
+        ;;
+    syslog)
+        logread 2>&1 | tail -n 80
+        ;;
+    wlan_stats)
+        iwconfig wlan0 2>&1 || true
+        if [ -r /proc/net/mtlk/wlan0/Debug/General ]; then
+            echo "--- /proc/net/mtlk/wlan0/Debug/General ---"
+            cat /proc/net/mtlk/wlan0/Debug/General 2>&1 || true
+        fi
+        if [ -r /proc/net/mtlk/wlan0/Debug/MACStats ]; then
+            echo "--- /proc/net/mtlk/wlan0/Debug/MACStats ---"
+            head -n 40 /proc/net/mtlk/wlan0/Debug/MACStats 2>&1 || true
+        fi
+        ;;
+    tc_stats)
+        echo "--- Bridge (brctl show) ---"
+        brctl show 2>&1 || true
+        echo "--- Interfaces (ip addr) ---"
+        ip -o -4 addr show 2>&1 || ifconfig 2>&1 || true
+        echo "--- Traffic Control (wlan0) ---"
+        tc -s qdisc show dev wlan0 2>&1 || true
+        echo "--- Traffic Control (eth0) ---"
+        tc -s qdisc show dev eth0 2>&1 || true
         ;;
 esac

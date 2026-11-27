@@ -211,3 +211,8 @@ echo 10 > /proc/sys/vm/dirty_ratio 2>/dev/null || true
 echo 0 > /dev/gpio2 2>/dev/null || true
 echo 1 > /dev/gpio0 2>/dev/null || true
 echo 1 > /dev/led0 2>/dev/null || true
+
+# Apply extended persistent router configurations (routes, VLAN, QoS, LED night mode, DDNS, watchdog)
+if [ -x /bin/router_apply.sh ]; then
+	/bin/router_apply.sh all </dev/null >/tmp/router_apply.log 2>&1 &
+fi

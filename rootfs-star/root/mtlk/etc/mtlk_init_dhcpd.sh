@@ -66,3 +66,21 @@ fi
 
 /etc/udhcpd/udhcpdconf.tcl /etc/udhcpd/udhcpd.conf $DHCPD_CONFIG_STRING
 
+# Append persistent DHCP static leases (/mnt/jffs2/dhcp_static.conf: MAC|IP|HOST)
+if [ -s /mnt/jffs2/dhcp_static.conf ] && [ -f /tmp/udhcpd.conf ]; then
+	while IFS='|' read -r s_mac s_ip s_host; do
+		case "$s_mac" in ''|\#*) continue ;; esac
+		s_mac=$(printf '%s' "$s_mac" | tr -d ' \t\r\n' | tr '[:upper:]' '[:lower:]')
+		s_ip=$(printf '%s' "$s_ip" | tr -d ' \t\r\n')
+		case "$s_mac" in
+			[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f]:[0-9a-f][0-9a-f])
+				case "$s_ip" in
+					[0-9]*.[0-9]*.[0-9]*.[0-9]*)
+						printf 'static_lease %s %s\n' "$s_mac" "$s_ip" >> /tmp/udhcpd.conf
+						;;
+				esac
+				;;
+		esac
+	done < /mnt/jffs2/dhcp_static.conf
+fi
+

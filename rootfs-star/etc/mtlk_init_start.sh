@@ -6,6 +6,11 @@ if [ -f /etc/sysctl.conf ] && [ -x /sbin/sysctl ]; then
 	/sbin/sysctl -p /etc/sysctl.conf >/dev/null 2>&1 || true
 fi
 
+# Apply persisted timezone early
+if [ -x /bin/router_apply.sh ]; then
+	/bin/router_apply.sh tz >/dev/null 2>&1 || true
+fi
+
 # Helper to read persisted sys.conf boolean flags (defaults to 1 if unset)
 get_sys_conf_val() {
 	key="$1"
