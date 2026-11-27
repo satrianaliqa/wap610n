@@ -1,5 +1,6 @@
 #!/bin/sh
 # Real-time Remote Access (SSH / Telnet / SSH-J Tunnel) Manager for Cisco WAP610N Web GUI
+set -f
 
 # Retrieve admin password from system configuration (/mnt/jffs2 first)
 ADMIN_PASS=""
@@ -120,11 +121,11 @@ probe_live_state() {
     is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
 
     SSHJ_WATCHDOG=0
-    if is_pidfile_alive /tmp/sshj_tunnel.pid || ps 2>/dev/null | grep -q '[s]shj_tunnel\.sh'; then
+    if is_pidfile_alive /tmp/sshj_tunnel.pid || ps w 2>/dev/null | grep -q '[s]shj_tunnel\.sh'; then
         SSHJ_WATCHDOG=1
     fi
     SSHJ_PROC=0
-    if is_pidfile_alive /tmp/sshj_ssh.pid || ps 2>/dev/null | grep -qE '[ /](ssh|dbclient) .*ssh-j\.com'; then
+    if is_pidfile_alive /tmp/sshj_ssh.pid || ps w 2>/dev/null | grep -qE '[ /](ssh|dbclient) .*ssh-j\.com'; then
         SSHJ_PROC=1
     fi
     SSHJ_RUNNING=0
@@ -184,7 +185,7 @@ json_error() {
 }
 
 QUERY="${QUERY_STRING}"
-if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ]; then
+if [ "$REQUEST_METHOD" = "POST" ] && [ -n "$CONTENT_LENGTH" ]; then
     case "$CONTENT_LENGTH" in
         *[!0-9]*)
             CONTENT_LENGTH=0
@@ -199,7 +200,7 @@ if [ -z "$QUERY" ] && [ -n "$CONTENT_LENGTH" ]; then
     fi
     if [ "$CONTENT_LENGTH" -gt 0 ] 2>/dev/null; then
         POST_DATA=$(dd bs=1 count="$CONTENT_LENGTH" 2>/dev/null)
-        QUERY="$POST_DATA"
+        [ -z "$QUERY" ] && QUERY="$POST_DATA" || QUERY="${QUERY}&${POST_DATA}"
     fi
 fi
 
@@ -261,6 +262,7 @@ IFS='&'
 for kv in $QUERY; do
     key="${kv%%=*}"
     val="${kv#*=}"
+    [ "$key" = "$kv" ] && val=""
     val=$(url_decode "$val" | tr -d '\r\n')
     case "$key" in
         ssh)

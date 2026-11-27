@@ -110,8 +110,8 @@ kill_pidfile() {
 }
 
 do_stop() {
-	kill_pidfile "$SSH_PID_FILE"
 	kill_pidfile "$WATCHDOG_PID_FILE"
+	kill_pidfile "$SSH_PID_FILE"
 }
 
 do_run() {
@@ -130,7 +130,10 @@ do_run() {
 		if [ -n "$SSH_PID" ]; then
 			kill "$SSH_PID" 2>/dev/null || true
 		fi
-		rm -f "$SSH_PID_FILE" "$WATCHDOG_PID_FILE" 2>/dev/null || true
+		rm -f "$SSH_PID_FILE" 2>/dev/null || true
+		if [ "$(cat "$WATCHDOG_PID_FILE" 2>/dev/null)" = "$$" ]; then
+			rm -f "$WATCHDOG_PID_FILE" 2>/dev/null || true
+		fi
 		exit 0
 	' TERM INT EXIT
 

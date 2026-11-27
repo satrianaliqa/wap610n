@@ -14,6 +14,8 @@
 #include "management.h"
 
 extern int waitOtherProcess;
+extern int isWaitOtherProcessBusy(void);
+extern void setWaitOtherProcess(int busy);
 
 static void closeInheritedFds(void)
 {
@@ -179,7 +181,7 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		return;
 	}
 
-	if (waitOtherProcess != 0) {
+	if (isWaitOtherProcessBusy() != 0) {
 		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
@@ -191,10 +193,10 @@ void resetToDefault(webs_t wp, char_t *path, char_t *query)
 		return;
 	}
 
-	waitOtherProcess = 1;
+	setWaitOtherProcess(1);
 	pid = fork();
 	if (pid < 0) {
-		waitOtherProcess = 0;
+		setWaitOtherProcess(0);
 		websError(wp, 500, T("Unable to start factory reset"));
 		return;
 	} else if (pid != 0) {
@@ -345,17 +347,17 @@ void management(webs_t wp, char_t *path, char_t *query)
 		return;
 	}
 
-	if (waitOtherProcess != 0) {
+	if (isWaitOtherProcessBusy() != 0) {
 		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
 
 	rebootTag = websGetVar(wp, T("rebootTag"), T(""));
 	if (rebootTag != NULL && strcmp(rebootTag, "true") == 0) {
-		waitOtherProcess = 1;
+		setWaitOtherProcess(1);
 		pid = fork();
 		if (pid < 0) {
-			waitOtherProcess = 0;
+			setWaitOtherProcess(0);
 			websError(wp, 500, T("Unable to start reboot"));
 			return;
 		} else if (pid != 0) {
@@ -402,10 +404,10 @@ void management(webs_t wp, char_t *path, char_t *query)
 
 		/* When rebootTag is empty or "false", save settings */
 		saveOldWebPid(getpid(), "management.asp");
-		waitOtherProcess = 1;
+		setWaitOtherProcess(1);
 		pid = fork();
 		if (pid < 0) {
-			waitOtherProcess = 0;
+			setWaitOtherProcess(0);
 			unlink("/var/old_web_pid");
 			websError(wp, 500, T("Unable to save settings"));
 			return;

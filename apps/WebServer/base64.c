@@ -23,7 +23,7 @@
  *	Mapping of ANSI chars to base64 Mime encoding alphabet (see below)
  */
 
-static char_t	map64[] = {
+static signed char	map64[] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,

@@ -28,6 +28,7 @@
 #include	<net/if.h>
 #include	<fcntl.h>
 #include	<sys/stat.h>
+#include	<time.h>
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
 #include	"../wireless.h"
@@ -73,6 +74,8 @@ extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
 extern void formDumpFirmware(webs_t wp, char_t *path, char_t *query);
 extern int getWLSBridgePort(void);
+int isWaitOtherProcessBusy(void);
+void setWaitOtherProcess(int busy);
 
 static void websDiag(const char *message)
 {
@@ -553,7 +556,7 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 		websRedirect(wp, T("/admin/upgrade.asp"));
 		return;
 	}
-	if (waitOtherProcess != 0) {
+	if (isWaitOtherProcessBusy() != 0) {
 		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
@@ -599,10 +602,10 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 	}
 
 	saveOldWebPid(getpid(), "sta_network.asp");
-	waitOtherProcess = 1;
+	setWaitOtherProcess(1);
 	pid = fork();
 	if (pid < 0) {
-		waitOtherProcess = 0;
+		setWaitOtherProcess(0);
 		unlink("/var/old_web_pid");
 		websError(wp, 500, T("Unable to save network settings"));
 		return;
@@ -731,7 +734,7 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 		websRedirect(wp, T("/admin/upgrade.asp"));
 		return;
 	}
-	if (waitOtherProcess != 0) {
+	if (isWaitOtherProcessBusy() != 0) {
 		websError(wp, 503, T("Another configuration operation is in progress"));
 		return;
 	}
@@ -802,10 +805,10 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	isApMode = (atoi(netType) == 2 || strcmp(nowMode, "apMode") == 0) ? 1 : 0;
 
 	saveOldWebPid(getpid(), "wireless_basic.asp");
-	waitOtherProcess = 1;
+	setWaitOtherProcess(1);
 	pid = fork();
 	if (pid < 0) {
-		waitOtherProcess = 0;
+		setWaitOtherProcess(0);
 		unlink("/var/old_web_pid");
 		websError(wp, 500, T("Unable to save wireless settings"));
 		return;
@@ -958,15 +961,21 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	MT_WriteConfFiles(paramCount, paramNames);
 	doSystem("cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1");
 
-	if (country[0] != '\0') {
-		FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/Country", "w");
-		if (pf != NULL) {
-			fprintf(pf, "%s\n", country);
-			fclose(pf);
-		}
-		doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
-	}
 	if (isApMode) {
+		int needBounce = (country[0] != '\0' || freqBand[0] != '\0' ||
+		                  channelBonding[0] != '\0' || upperLower[0] != '\0' ||
+		                  channel[0] != '\0') ? 1 : 0;
+		if (needBounce) {
+			doSystem("/sbin/ifconfig wlan0 down >/dev/null 2>&1");
+		}
+		if (country[0] != '\0') {
+			FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/Country", "w");
+			if (pf != NULL) {
+				fprintf(pf, "%s\n", country);
+				fclose(pf);
+			}
+			doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
+		}
 		if (freqBand[0] != '\0') {
 			doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand %s >/dev/null 2>&1", freqBand);
 		}
@@ -993,6 +1002,16 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 				doSystem("/sbin/iwconfig wlan0 channel %s >/dev/null 2>&1", channel);
 			}
 		}
+		if (needBounce) {
+			doSystem("/sbin/ifconfig wlan0 up >/dev/null 2>&1");
+		}
+	} else if (country[0] != '\0') {
+		FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/Country", "w");
+		if (pf != NULL) {
+			fprintf(pf, "%s\n", country);
+			fclose(pf);
+		}
+		doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
 	}
 	doSystem("cd /root/mtlk/web/ && /root/mtlk/web/init_security.tcl reactivate >/dev/null 2>&1");
 	startWPS_PBC();
@@ -1049,7 +1068,24 @@ void CatchSIG(int s)
 
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
 int waitOtherProcess = 0;
+time_t waitOtherProcessSince = 0;
 int websMainPid = 0;
+
+int isWaitOtherProcessBusy(void)
+{
+	if (waitOtherProcess != 0 && waitOtherProcessSince > 0 &&
+	    (time(NULL) - waitOtherProcessSince) > 120) {
+		waitOtherProcess = 0;
+		waitOtherProcessSince = 0;
+	}
+	return waitOtherProcess;
+}
+
+void setWaitOtherProcess(int busy)
+{
+	waitOtherProcess = busy ? 1 : 0;
+	waitOtherProcessSince = busy ? time(NULL) : 0;
+}
 
 static void syncShadowFromSysConf(void)
 {
@@ -1195,7 +1231,7 @@ int main(int argc, char** argv)
 			websInitRealm();
 			lang_free();
 			lang_init();
-			waitOtherProcess = 0;
+			setWaitOtherProcess(0);
 		}
 		//Jacky.Yang 27-Nov-2008, drop it
 		//MT_TaskScheduler(pStatTask); // Will do nothing without #define USE_MT_STAT_TASK
@@ -1394,7 +1430,7 @@ static int syncConfPair(const char *jffsPath, const char *tmpPath,
 	}
 
 	if (hasJ && hasT) {
-		if (stT.st_mtime >= stJ.st_mtime) {
+		if (stT.st_mtime > stJ.st_mtime) {
 			loadConfigFromFile((char_t *)jffsPath);
 			loadConfigFromFile((char_t *)tmpPath);
 		} else {
@@ -1424,15 +1460,40 @@ static void syncConfigFromDiskIfChanged(void)
 	c2 = syncConfPair("/mnt/jffs2/wlan0.conf", "/tmp/wlan0.conf", &wlJM, &wlJS, &wlTM, &wlTS);
 	if (c1 || c2) {
 		MT_ParseOnLoad();
+		if (c1) {
+			syncShadowFromSysConf();
+			websInitRealm();
+		}
 	}
+}
+
+static int isSafeLocalRedirectPath(const char *target)
+{
+	const unsigned char *p;
+
+	if (target == NULL || target[0] != '/') {
+		return 0;
+	}
+	if (target[1] == '/' || target[1] == '\\') {
+		return 0;
+	}
+	for (p = (const unsigned char *)target; *p != '\0'; p++) {
+		if (*p < 0x20 || *p == 0x7f || *p == '\\' ||
+		    *p == '\"' || *p == '<' || *p == '>') {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 static void sendUiModeRedirect(webs_t wp, const char *target, const char *mode)
 {
+	const char *safeTarget = isSafeLocalRedirectPath(target) ? target : "/network/ap_network.asp";
+
 	wp->flags &= ~WEBS_KEEP_ALIVE;
 	websWrite(wp, T("HTTP/1.0 302 Redirect\r\n"));
 	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
-	websWrite(wp, T("Location: %s\r\n"), (char_t *)target);
+	websWrite(wp, T("Location: %s\r\n"), (char_t *)safeTarget);
 	websWrite(wp, T("Set-Cookie: ui=%s; Path=/\r\n"), (char_t *)mode);
 	websWrite(wp, T("Pragma: no-cache\r\n"));
 	websWrite(wp, T("Cache-Control: no-store\r\n"));
@@ -1533,7 +1594,16 @@ static void jsonEscapeCopy(char *dst, size_t dstSize, const char *src)
 		if (c == '\"' || c == '\\') {
 			dst[i++] = '\\';
 			dst[i++] = (char)c;
-		} else if (c >= 0x20 && c < 0x7f) {
+		} else if (c == '\t') {
+			dst[i++] = '\\';
+			dst[i++] = 't';
+		} else if (c == '\r') {
+			dst[i++] = '\\';
+			dst[i++] = 'r';
+		} else if (c == '\n') {
+			dst[i++] = '\\';
+			dst[i++] = 'n';
+		} else if (c >= 0x20 && c != 0x7f) {
 			dst[i++] = (char)c;
 		}
 	}
@@ -1543,8 +1613,17 @@ static void jsonEscapeCopy(char *dst, size_t dstSize, const char *src)
 static void sendJsonResponse(webs_t wp, int status, const char *body)
 {
 	size_t bodyLen = strlen(body);
+	const char *statusText = "OK";
+
+	if (status == 404) {
+		statusText = "Not Found";
+	} else if (status == 500) {
+		statusText = "Internal Server Error";
+	} else if (status != 200) {
+		statusText = "Error";
+	}
 	wp->flags &= ~WEBS_KEEP_ALIVE;
-	websWrite(wp, T("HTTP/1.0 %d %s\r\n"), status, (status == 200) ? "OK" : "Not Found");
+	websWrite(wp, T("HTTP/1.0 %d %s\r\n"), status, statusText);
 	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
 	websWrite(wp, T("Connection: close\r\n"));
 	websWrite(wp, T("Cache-Control: no-store\r\n"));
@@ -1912,7 +1991,7 @@ static void readFwDate(char *out, size_t outSize)
 static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	int arg, char_t *url, char_t *path, char_t *query)
 {
-	char body[4096];
+	char body[8192];
 	FILE *fp;
 	char line[256];
 
@@ -1943,19 +2022,33 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		memset(netType, 0, sizeof(netType));
 		memset(verRaw, 0, sizeof(verRaw));
 		memset(loadStr, 0, sizeof(loadStr));
+		memset(ipRaw, 0, sizeof(ipRaw));
+		memset(maskRaw, 0, sizeof(maskRaw));
+		memset(macRaw, 0, sizeof(macRaw));
 		memset(gwRaw, 0, sizeof(gwRaw));
+		memset(d1Raw, 0, sizeof(d1Raw));
+		memset(d2Raw, 0, sizeof(d2Raw));
 		if (gethostname(hostRaw, sizeof(hostRaw) - 1) != 0 ||
 		    hostRaw[0] == '\0' || strcmp(hostRaw, "(none)") == 0) {
 			MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
+			hostRaw[sizeof(hostRaw) - 1] = '\0';
 		}
 		MT_Get_Param("network_type", netType, sizeof(netType) - 1);
+		netType[sizeof(netType) - 1] = '\0';
 		readLiveDefaultGw(gwRaw, sizeof(gwRaw));
 		if (gwRaw[0] == '\0') {
 			MT_Get_Param("default_gw", gwRaw, sizeof(gwRaw) - 1);
+			gwRaw[sizeof(gwRaw) - 1] = '\0';
 		}
 		readLiveResolvDns(d1Raw, sizeof(d1Raw), d2Raw, sizeof(d2Raw));
-		if (d1Raw[0] == '\0') MT_Get_Param("DHCPDDNS1", d1Raw, sizeof(d1Raw) - 1);
-		if (d2Raw[0] == '\0') MT_Get_Param("DHCPDDNS2", d2Raw, sizeof(d2Raw) - 1);
+		if (d1Raw[0] == '\0') {
+			MT_Get_Param("DHCPDDNS1", d1Raw, sizeof(d1Raw) - 1);
+			d1Raw[sizeof(d1Raw) - 1] = '\0';
+		}
+		if (d2Raw[0] == '\0') {
+			MT_Get_Param("DHCPDDNS2", d2Raw, sizeof(d2Raw) - 1);
+			d2Raw[sizeof(d2Raw) - 1] = '\0';
+		}
 		jsonEscapeCopy(hostEsc, sizeof(hostEsc), hostRaw);
 		jsonEscapeCopy(netTypeEsc, sizeof(netTypeEsc), netType);
 		jsonEscapeCopy(gwEsc, sizeof(gwEsc), gwRaw);
@@ -1965,19 +2058,22 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		getIfaceIpv4AndMask("br0", ipRaw, sizeof(ipRaw), maskRaw, sizeof(maskRaw));
 		if (ipRaw[0] == '\0') {
 			MT_Get_Param("ip_lan", ipRaw, sizeof(ipRaw) - 1);
+			ipRaw[sizeof(ipRaw) - 1] = '\0';
 		}
 		if (maskRaw[0] == '\0') {
 			MT_Get_Param("subnet_lan", maskRaw, sizeof(maskRaw) - 1);
+			maskRaw[sizeof(maskRaw) - 1] = '\0';
 		}
 		getIfaceMac("br0", macRaw, sizeof(macRaw));
 		if (macRaw[0] == '\0') {
 			MT_Get_Param("mac_lan", macRaw, sizeof(macRaw) - 1);
+			macRaw[sizeof(macRaw) - 1] = '\0';
 		}
 		jsonEscapeCopy(ipEsc, sizeof(ipEsc), ipRaw);
 		jsonEscapeCopy(maskEsc, sizeof(maskEsc), maskRaw);
 		jsonEscapeCopy(macEsc, sizeof(macEsc), macRaw);
 
-		busy = (waitOtherProcess != 0 || access("/var/old_web_pid", F_OK) == 0) ? 1 : 0;
+		busy = (isWaitOtherProcessBusy() != 0 || access("/var/old_web_pid", F_OK) == 0) ? 1 : 0;
 
 		fp = fopen("/proc/uptime", "r");
 		if (fp != NULL) {
@@ -2120,8 +2216,18 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		char liveD1[32], liveD2[32], liveGw[32], liveIp[32], liveMask[32];
 
 		memset(cfgChRaw, 0, sizeof(cfgChRaw));
+		memset(chRaw, 0, sizeof(chRaw));
+		memset(bssidRaw, 0, sizeof(bssidRaw));
+		memset(fwDateRaw, 0, sizeof(fwDateRaw));
+		memset(liveEssid, 0, sizeof(liveEssid));
+		memset(liveBand, 0, sizeof(liveBand));
 		memset(liveCountry, 0, sizeof(liveCountry));
 		memset(liveHost, 0, sizeof(liveHost));
+		memset(liveD1, 0, sizeof(liveD1));
+		memset(liveD2, 0, sizeof(liveD2));
+		memset(liveGw, 0, sizeof(liveGw));
+		memset(liveIp, 0, sizeof(liveIp));
+		memset(liveMask, 0, sizeof(liveMask));
 		readLiveWlanIoctl(liveEssid, sizeof(liveEssid), chRaw, sizeof(chRaw),
 			liveBand, sizeof(liveBand), bssidRaw, sizeof(bssidRaw));
 		readProcFirstLine("/proc/sys/dev/mtlk/wlan0/Country", liveCountry, sizeof(liveCountry));
@@ -2172,17 +2278,21 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 				(idx == 0) ? "" : ",", k, esc);
 		}
 		MT_Get_Param("Channel", cfgChRaw, sizeof(cfgChRaw) - 1);
+		cfgChRaw[sizeof(cfgChRaw) - 1] = '\0';
 		if (chRaw[0] == '\0') {
 			snprintf(chRaw, sizeof(chRaw), "%s", cfgChRaw);
+			chRaw[sizeof(chRaw) - 1] = '\0';
 		}
 		if (bssidRaw[0] == '\0') {
 			getIfaceMac("wlan0", bssidRaw, sizeof(bssidRaw));
 			if (bssidRaw[0] == '\0') {
 				MT_Get_Param("BSSID", bssidRaw, sizeof(bssidRaw) - 1);
+				bssidRaw[sizeof(bssidRaw) - 1] = '\0';
 			}
 		}
 		if (liveCountry[0] == '\0') {
 			MT_Get_Param("Country", liveCountry, sizeof(liveCountry) - 1);
+			liveCountry[sizeof(liveCountry) - 1] = '\0';
 		}
 		jsonEscapeCopy(cfgChEsc, sizeof(cfgChEsc), cfgChRaw);
 		jsonEscapeCopy(chEsc, sizeof(chEsc), chRaw);
@@ -2194,6 +2304,10 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			",\"channel\":\"%s\",\"live_channel\":\"%s\",\"live_country\":\"%s\",\"bssid\":\"%s\",\"fw_date\":\"%s\"}\n",
 			cfgChEsc, chEsc, liveCountryEsc, bssidEsc, fwDateEsc);
 		body[sizeof(body) - 1] = '\0';
+		if (pos >= sizeof(body) - 1) {
+			sendJsonResponse(wp, 500, "{\"error\":\"config_json_truncated\"}\n");
+			return 1;
+		}
 		sendJsonResponse(wp, 200, body);
 		return 1;
 	}

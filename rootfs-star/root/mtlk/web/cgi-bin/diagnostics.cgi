@@ -1,5 +1,6 @@
 #!/bin/sh
 # Hardened Real-time Diagnostics & System Log CGI for Cisco Linksys WAP610N
+set -f
 
 # Retrieve admin password from system configuration (/mnt/jffs2 first)
 ADMIN_PASS=""
@@ -185,7 +186,7 @@ case "$TOOL" in
         dmesg 2>&1 | tail -n 80
         ;;
     syslog)
-        logread 2>&1 | tail -n 80
+        { logread 2>/dev/null || busybox logread 2>&1; } | tail -n 80
         ;;
     wlan_stats)
         iwconfig wlan0 2>&1 || true
@@ -202,7 +203,7 @@ case "$TOOL" in
         echo "--- Bridge (brctl show) ---"
         brctl show 2>&1 || true
         echo "--- Interfaces (ip addr) ---"
-        ip -o -4 addr show 2>&1 || ifconfig 2>&1 || true
+        ip -oneline -4 addr show 2>/dev/null || ifconfig 2>&1 || true
         echo "--- Traffic Control (wlan0) ---"
         tc -s qdisc show dev wlan0 2>&1 || true
         echo "--- Traffic Control (eth0) ---"

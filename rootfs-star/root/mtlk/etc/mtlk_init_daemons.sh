@@ -51,10 +51,10 @@ if [ "$UPNP_ENABLED" != "0" ]; then
 fi
 
 # Start the DHCP Client / Server (Telnet/Dropbear are owned by /etc/mtlk_init_start.sh)
-DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
-IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null`
+DHCPD_ENABLED=`awk -F "=" '/^DHCPDEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null | tail -n 1`
+IP_CONFIG_METHOD=`awk -F "=" '/^ip_config_method/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null | tail -n 1`
 if [ -z "$NETWORK_TYPE" ]; then
-	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null`
+	NETWORK_TYPE=`awk -F "=" '/^network_type/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/wlan0.conf 2>/dev/null | tail -n 1`
 	[ -z "$NETWORK_TYPE" ] && NETWORK_TYPE=2
 fi
 ROUTER_MODE="bridge"
@@ -67,8 +67,8 @@ if [ "$IP_CONFIG_METHOD" = "0" ] && [ "$ROUTER_MODE" = "bridge" ]; then
 	# DHCP Client Mode: Obtain dynamic IP from upstream router
 	$DIAG_LOG "daemon init: starting DHCP client" 2>/dev/null || true
 	nice -n 18 /etc/udhcpc/dhcp.tcl startup &
-elif [ "$DHCPD_ENABLED" = "1" ] && { [ "$NETWORK_TYPE" = "2" ] || [ "$ROUTER_MODE" != "bridge" ]; }; then
-	# Static AP or Router/WISP LAN Mode: Run DHCP server (udhcpd) to serve LAN clients
+elif [ "$ROUTER_MODE" = "bridge" ] && [ "$DHCPD_ENABLED" = "1" ] && [ "$NETWORK_TYPE" = "2" ]; then
+	# Static AP Mode: Run DHCP server (udhcpd); Router/WISP modes start udhcpd after WAN detach
 	$DIAG_LOG "daemon init: starting DHCP server on br0 ($ROUTER_MODE)" 2>/dev/null || true
 	if ./mtlk_init_dhcpd.sh; then
 		nice -n 18 udhcpd /tmp/udhcpd.conf &
@@ -76,7 +76,7 @@ elif [ "$DHCPD_ENABLED" = "1" ] && { [ "$NETWORK_TYPE" = "2" ] || [ "$ROUTER_MOD
 		$DIAG_LOG "daemon init: DHCP server configuration failed; udhcpd not started" 2>/dev/null || true
 	fi
 else
-	$DIAG_LOG "daemon init: static IP mode without DHCP server" 2>/dev/null || true
+	$DIAG_LOG "daemon init: deferring or skipping DHCP server ($ROUTER_MODE)" 2>/dev/null || true
 fi
 
 # Start the upnp Daemon
@@ -94,7 +94,7 @@ fi
 ./mtlk_pbc_reboot.sh &
 
 # Turn on loop-breaking features in the STA. 
-LOOP_BREAKING_ENABLED=`awk -F "=" '/^LoopBreakingEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
+LOOP_BREAKING_ENABLED=`awk -F "=" '/^LoopBreakingEnabled/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf 2>/dev/null | tail -n 1`
 if [ -z "$LOOP_BREAKING_ENABLED" ]
 then
 	LOOP_BREAKING_ENABLED=0

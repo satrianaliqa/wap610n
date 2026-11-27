@@ -5,37 +5,6 @@ DIAG_LOG=/bin/diag_log.sh
 
 echo "Saving configuration filesystem"
 
-if [ -f /mnt/jffs2/sys.conf ]; then
-	for key in SSH_Enabled Telnet_Enabled WirelessMgmtEnabled UPnP_Enabled SSHJ_Enabled SSHJ_User SSHJ_Host; do
-		if ! grep -q "^[ \t]*${key}[ \t]*=" /mnt/jffs2/sys.conf 2>/dev/null; then
-			val=""
-			found=0
-			if [ -f /tmp/sys.conf ]; then
-				val=$(awk -v k="$key" '
-					$0 ~ "^[ \t]*" k "[ \t]*=" {
-						idx = index($0, "=")
-						v = substr($0, idx + 1)
-						sub(/^[ \t]+/, "", v)
-						sub(/[ \t\r]+$/, "", v)
-						print v
-						f = 1
-					}
-					END { if (!f) exit 1 }
-				' /tmp/sys.conf 2>/dev/null | tail -n 1) && found=1
-			fi
-			if [ "$found" = "0" ]; then
-				case "$key" in
-					UPnP_Enabled|SSHJ_Enabled) val="0" ;;
-					SSHJ_User) val="" ;;
-					SSHJ_Host) val="wap610n" ;;
-					*) val="1" ;;
-				esac
-			fi
-			echo "${key} = ${val}" >> /mnt/jffs2/sys.conf
-		fi
-	done
-fi
-
 if ! /bin/config_umount.sh
 then
 	echo "Configuration filesystem was not saved"

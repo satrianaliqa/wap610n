@@ -73,6 +73,7 @@ function isMask(s){
   const m=/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(s||'').trim());
   if(!m)return false;
   const o=m.slice(1).map(Number);
+  if(o.some(x=>x<0||x>255))return false;
   if(o[0]!==255)return false;
   const v=((o[0]<<24)|(o[1]<<16)|(o[2]<<8)|o[3])>>>0;
   if(v===0||v===0xFFFFFFFF)return false;
@@ -97,8 +98,9 @@ function showModal(title,status,pct,hint,canCancel){
 function hideModal(){clearInterval(modalTimer);modalTimer=null;wpsAbort=null;$('md').hidden=true;$('mact').hidden=true;}
 function cancelModal(){if(wpsAbort){wpsAbort();}else{hideModal();}}
 
-function waitBusy(title,secs,newUrl){
-  let t=0,maxT=Math.max(5,secs||15);
+function waitBusy(title,secs,newUrl,skipEarly){
+  if(modalTimer){clearInterval(modalTimer);modalTimer=null;}
+  let t=0,maxT=Math.max(5,secs||15),inFlight=false;
   showModal(title,'Saving configuration...',10,'Device applying settings...');
   const hs=$('hs');hs.textContent='APPLYING';hs.className='u w';
   modalTimer=setInterval(async()=>{
@@ -111,11 +113,13 @@ function waitBusy(title,secs,newUrl){
       setTimeout(()=>{location.href=newUrl;},1500);
       return;
     }
-    if(t>=2&&secs<30){
+    if(!newUrl&&!skipEarly&&t>=2&&secs<30&&!inFlight){
+      inFlight=true;
       try{
         const r=await fetch('/api/status.json',{cache:'no-store',credentials:'same-origin'});
+        if(r.status===401){hideModal();location.reload();return;}
         if(r.ok){const j=await r.json();if(!j.busy){hideModal();await refreshAll(true);ren();msg('Settings applied');return;}}
-      }catch{}
+      }catch{}finally{inFlight=false;}
     }
     if(t>=maxT){
       hideModal();
@@ -315,14 +319,15 @@ async function saveQuick(e){
   if(nt!==curNt&&!confirm('Changing AP/Station radio mode requires rebooting WAP610N (~40s). Continue?'))return;
   try{
     showModal('Quick Setup','Applying configuration...',15,'Please wait...');
+    const allowDhcp=isNat||(ipm==='1'&&qm==='ap');
     const j=await postCtl({
       action:'quick_setup',router_mode:rmode,network_type:nt,bridge_mode:bm,band:f.band.value,essid:ssid,
-      sec_mode:sec,psk:sec==='3'?psk:'',ip_config_method:ipm,ip,subnet:sub,gw,enabled:f.dhcpd?.checked?'1':'0',
+      sec_mode:sec,psk:sec==='3'?psk:'',ip_config_method:ipm,ip,subnet:sub,gw,enabled:(allowDhcp&&f.dhcpd?.checked)?'1':'0',
       wan_proto:wp,wan_ip:wip,wan_mask:wmk,wan_gw:wgw
     });
     const newUrl=(ipm==='1'&&ip!==location.hostname)?`http://${ip}/index.html`:null;
     if(j.reboot){waitBusy('Rebooting into New Mode',42,newUrl);}
-    else{waitBusy('Applying Quick Setup',12,newUrl);}
+    else{waitBusy('Applying Quick Setup',12,newUrl,!newUrl);}
   }catch(err){hideModal();msg('Quick Setup failed: '+err.message);}
 }
 
@@ -358,11 +363,13 @@ function togNet(v){document.querySelectorAll('#fnet .nst').forEach(el=>{el.style
 function saveNet(e){
   e.preventDefault();
   const f=e.target,m=f.ipConfigMethod.value,hn=f.hostName.value.trim(),ip=f.lanIP.value.trim(),mk=f.lanSubnet.value.trim(),gw=f.gateway.value.trim(),d1=f.priDns.value.trim(),d2=f.secDns.value.trim();
-  if(!isHost(hn))return msg('Invalid hostname');
+  if(!/^[A-Za-z0-9-]{1,32}$/.test(hn))return msg('Hostname must be 1-32 letters, numbers, or hyphens');
   if(m==='1'){if(!isIp(ip)||!isMask(mk))return msg('Invalid Bridge IPv4 or Mask');if(gw&&(!isIp(gw)||!sameSub(ip,gw,mk)))return msg('Gateway must match subnet');}
   if((d1&&!isIp(d1))||(d2&&!isIp(d2)))return msg('Invalid DNS IP');
   const newUrl=(m==='1'&&ip!==location.hostname)?`http://${ip}/index.html`:null;
-  applyGoForm('/goform/networkBasic',{ipConfigMethod:m,hostName:hn,lanIP:ip,lanSubnet:mk,gateway:gw,priDns:d1,secDns:d2,langSelection:f.langSelection.value},'Applying Network Settings',15,newUrl);
+  const params={ipConfigMethod:m,hostName:hn,priDns:d1,secDns:d2,langSelection:f.langSelection.value};
+  if(m==='1'){params.lanIP=ip;params.lanSubnet=mk;params.gateway=gw;}
+  applyGoForm('/goform/networkBasic',params,'Applying Network Settings',15,newUrl);
 }
 function addSl(){
   const mac=$('sl_mac').value.trim().toLowerCase(),ip=$('sl_ip').value.trim(),host=$('sl_host').value.trim();
@@ -389,10 +396,12 @@ async function saveDhcp(e){
   }catch(err){msg(err.message);}
 }
 
+function cwOpts(maxE){const r=[];for(let i=2;i<=maxE;i++)r.push([String(i),String((1<<i)-1)]);return r;}
 function fillChannels(){
   const b=$('wband'),ch=$('wch'),ul=$('wul'),bw=$('wbw');
   if(!b||!ch)return;
-  const list=(b.value==='0')?CH5:CH2,cur=ch.dataset.cur||ch.value||'0';
+  const list=(b.value==='0')?CH5:CH2,cur=ch.value||ch.dataset.cur||'0';
+  delete ch.dataset.cur;
   ch.innerHTML=opt(list,list.some(x=>x[0]===cur)?cur:'0');
   if(ul&&bw)ul.disabled=(bw.value!=='1');
 }
@@ -407,8 +416,8 @@ function pWireless(){
   const liveCtry=cf.live_country||cf.country||'US';
   const countries=[['US','US'],['SG','SG'],['ID','ID'],['EU','EU'],['GB','GB'],['JP','JP'],['CA','CA'],['AU','AU'],['CN','CN'],['TW','TW']];
   if(liveCtry&&!countries.some(x=>x[0]===liveCtry))countries.push([liveCtry,liveCtry]);
-  const chList=(band==='0')?CH5:CH2,ac=(S.wm&&S.wm.ac&&S.wm.ac.AC_BK)||{},wmmCur=(S.wm&&S.wm.current_wmm)?S.wm.current_wmm:'0';
-  const aclRows=S.aclList.length?S.aclList.map((m,i)=>`<tr><td class="m">${esc(m)}</td><td><button type="button" class="t d s" onclick="S.aclList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="2" class="sub">No MAC filter entries.</td></tr>';
+  const chList=(band==='0')?CH5:CH2,ac=(S.wm&&S.wm.ac&&S.wm.ac.AC_BK)||{},wmmCur=(S.wm&&S.wm.current_wmm)?S.wm.current_wmm:'0',cws=cwOpts(10);
+  const aclRows=S.aclList.length?S.aclList.map((m,i)=>`<tr><td class="m">${esc(m)}</td><td><button type="button" class="t d s" onclick="delAcl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="2" class="sub">No MAC filter entries.</td></tr>';
   const clOpts=S.cl.map(c=>`<option value="${esc(c.mac)}">${esc(c.mac)} (${esc(c.ip||c.iface)})</option>`).join('');
   return `<div class="p"><h2>Radio &amp; Wireless Security</h2><form id="fwl" onsubmit="saveWireless(event)"><div class="f">
     <label>Frequency Band</label><select name="frequencyBand" id="wband" onchange="fillChannels()">${opt([['1','2.4 GHz (802.11b/g/n)'],['0','5 GHz (802.11a/n)']],band)}</select>
@@ -423,7 +432,7 @@ function pWireless(){
     <label class="s-wpa">Passphrase</label><div class="r s-wpa"><input type="password" id="wpsk" name="WPAPSK" maxlength="64" value="${esc(cf.wpa_psk||'')}"><button type="button" class="t s" onclick="const e=$('wpsk');e.type=e.type==='password'?'text':'password'">Show</button></div>
     <label class="s-wep">WEP Key Length</label><select class="s-wep" name="WEPKeyLength">${opt([['64','64-bit (10 hex)'],['128','128-bit (26 hex)']],cf.wep_key_len||'64')}</select>
     <label class="s-wep">WEP Auth / Tx</label><div class="r s-wep"><select name="WEPAuth">${opt([['3','Auto'],['1','Open'],['2','Shared']],cf.wep_auth||'3')}</select><select name="defaultWEPKey">${opt([['0','Key 1'],['1','Key 2'],['2','Key 3'],['3','Key 4']],cf.wep_tx_idx||'0')}</select></div>
-    <label class="s-wep">WEP Key 1</label><input class="s-wep" name="WEPKey0" maxlength="32" value="${esc(cf.wep_key0||'')}">
+    <label class="s-wep">WEP Key 1</label><input class="s-wep" name="WEPKey0" maxlength="32" value="${esc((cf.wep_key0||'').replace(/^0[xX]/,''))}">
     <label class="s-ent">Enterprise / Enc</label><div class="r s-ent"><select name="WPAEnterpriseMode">${opt([['2','WPA2'],['3','Mixed'],['1','WPA']],cf.wpa_ent_mode||'2')}</select><select name="WPAEnterpriseEncryption">${opt([['1','AES'],['2','TKIP/AES'],['0','TKIP']],cf.wpa_ent_enc||'1')}</select></div>
     <label class="s-ent">RADIUS IP / Port</label><div class="r s-ent"><input name="WPARadiusIP" value="${esc(cf.wpa_rad_ip||'')}"><input name="WPARadiusPort" type="number" min="1" max="65535" value="${esc(cf.wpa_rad_port||'1812')}"></div>
     <label class="s-ent">RADIUS Secret</label><input class="s-ent" type="password" name="WPARadiusKey" maxlength="63" value="${esc(cf.wpa_rad_key||'')}">
@@ -455,14 +464,14 @@ function pWireless(){
   <div class="p"><h2>Wi-Fi Protected Setup (WPS)<span class="sub">PIN: <code>${esc(cf.wps_pin||'N/A')}</code></span></h2><div class="r" style="justify-content:space-between"><span class="sub">Pair wireless clients/bridges via PBC or Device PIN.</span><div class="r"><button class="t p" onclick="startWps('getPBC')">Start PBC</button><button class="t" onclick="startWps('getPin')">Start PIN</button></div></div></div>
 
   <div class="p"><details ontoggle="if(this.open)loadWmm()"><summary>WMM&reg; QoS Parameters (Advanced)</summary><form id="fwmm" style="margin-top:8px" onsubmit="saveWmm(event)"><div class="f">
-    <label>Access Category</label><select name="accessMode" id="wmmac" onchange="fillWmmCat(this.value)">${opt([['0','Background (AC_BK)'],['1','Best Effort (AC_BE)'],['2','Video (AC_VI)'],['3','Voice (AC_VO)']],wmmCur)}</select>
+    <label>Access Category</label><select name="accessMode" id="wmmac" onchange="this.dataset.userSet='1';fillWmmCat(this.value)">${opt([['0','Background (AC_BK)'],['1','Best Effort (AC_BE)'],['2','Video (AC_VI)'],['3','Voice (AC_VO)']],wmmCur)}</select>
     <label>STA / AP Aggr</label><div class="r"><select name="AC_BK_UseAggregation" id="wm_ua">${opt([['0','Use Aggr: No'],['1','Use Aggr: Yes']],ac.UseAggregation||'0')}</select><select name="AC_BK_AcceptAggregation" id="wm_aa">${opt([['0','Accept: No'],['1','Accept: Yes']],ac.AcceptAggregation||'1')}</select></div>
     <label>Packets / Bytes</label><div class="r"><input id="wm_mp" name="AC_BK_MaxNumOfPackets" type="number" value="${esc(ac.MaxNumOfPackets||'7')}"><input id="wm_mb" name="AC_BK_MaxNumOfBytes" type="number" value="${esc(ac.MaxNumOfBytes||'12000')}"></div>
     <label>Timeout / Min Pkt</label><div class="r"><input id="wm_ti" name="AC_BK_TimeoutInterval" type="number" value="${esc(ac.TimeoutInterval||'3')}"><input id="wm_ms" name="AC_BK_MinSizeOfPacketInAggr" type="number" value="${esc(ac.MinSizeOfPacketInAggr||'10')}"></div>
     <label>ADDBA / Window</label><div class="r"><input id="wm_ad" name="AC_BK_ADDBATimeout" type="number" value="${esc(ac.ADDBATimeout||'0')}"><input id="wm_aw" name="AC_BK_AggregationWindowSize" type="number" value="${esc(ac.AggregationWindowSize||'64')}"></div>
-    <label>STA CWmin / CWmax</label><div class="r"><select id="wm_smin" name="selectCWMinSTA"></select><select id="wm_smax" name="selectCWMaxSTA"></select></div>
+    <label>STA CWmin / CWmax</label><div class="r"><select id="wm_smin" name="selectCWMinSTA">${opt(cws,ac.CWmin||'4')}</select><select id="wm_smax" name="selectCWMaxSTA">${opt(cws,ac.CWmax||'10')}</select></div>
     <label>STA AIFSN / TXOP</label><div class="r"><input id="wm_sai" name="AC_BK_AIFSN" type="number" value="${esc(ac.AIFSN||'7')}"><input id="wm_stx" name="AC_BK_TXOP" type="number" value="${esc(ac.TXOP||'0')}"></div>
-    <label>AP CWmin / CWmax</label><div class="r"><select id="wm_amin" name="selectCWMinAP"></select><select id="wm_amax" name="selectCWMaxAP"></select></div>
+    <label>AP CWmin / CWmax</label><div class="r"><select id="wm_amin" name="selectCWMinAP">${opt(cws,ac.CWmin_AP||'4')}</select><select id="wm_amax" name="selectCWMaxAP">${opt(cws,ac.CWmax_AP||'10')}</select></div>
     <label>AP AIFSN / TXOP</label><div class="r"><input id="wm_aai" name="AC_BK_AIFSN_AP" type="number" value="${esc(ac.AIFSN_AP||'7')}"><input id="wm_atx" name="AC_BK_TXOP_AP" type="number" value="${esc(ac.TXOP_AP||'0')}"></div>
   </div><div class="z"><button class="t p">Save WMM</button></div></form></details></div>`;
 }
@@ -471,14 +480,15 @@ function saveWireless(e){
   e.preventDefault();
   const f=e.target,cf=S.cf,sm=f.securityMode.value,ssid=f.submit_ESSID.value;
   if(!ssid||ssid.length>32)return msg('SSID must be 1-32 chars');
+  let k0=f.WEPKey0.value.trim().replace(/^0[xX]/,'');
   if(sm==='3'){const psk=f.WPAPSK.value;if(!(psk.length>=8&&psk.length<=63)&&!/^[0-9A-Fa-f]{64}$/.test(psk))return msg('WPA Passphrase must be 8-63 chars or 64 hex');}
-  else if(sm==='2'){const kl=f.WEPKeyLength.value,k0=f.WEPKey0.value.trim(),ok=(kl==='128')?(/^[0-9A-Fa-f]{26}$/.test(k0)||k0.length===13):(/^[0-9A-Fa-f]{10}$/.test(k0)||k0.length===5);if(!ok)return msg('Invalid WEP Key 1');}
+  else if(sm==='2'){const kl=f.WEPKeyLength.value,ok=(kl==='128')?(/^[0-9A-Fa-f]{26}$/.test(k0)||k0.length===13):(/^[0-9A-Fa-f]{10}$/.test(k0)||k0.length===5);if(!ok)return msg('Invalid WEP Key 1');}
   else if(sm==='4'&&!isIp(f.WPARadiusIP.value.trim()))return msg('Invalid RADIUS IP');
   const params={
     nowMode:cf.network_type==='0'?'stationMode':'apMode',submit_ESSID:ssid,frequencyBand:f.frequencyBand.value,country:f.country.value,
     channel:f.channel.value,channelBounding:f.channelBounding.value,upperLower:f.upperLower.value,securityMode:sm,
     WPAPersonalMode:f.WPAPersonalMode.value,WPAPersonalEncryption:f.WPAPersonalEncryption.value,WPAPSK:f.WPAPSK.value,
-    WEPKeyLength:f.WEPKeyLength.value,WEPAuth:f.WEPAuth.value,defaultWEPKey:f.defaultWEPKey.value,WEPKey0:f.WEPKey0.value,
+    WEPKeyLength:f.WEPKeyLength.value,WEPAuth:f.WEPAuth.value,defaultWEPKey:f.defaultWEPKey.value,WEPKey0:k0,
     WPAEnterpriseMode:f.WPAEnterpriseMode.value,WPAEnterpriseEncryption:f.WPAEnterpriseEncryption.value,
     WPARadiusIP:f.WPARadiusIP.value.trim(),WPARadiusPort:f.WPARadiusPort.value,WPARadiusKey:f.WPARadiusKey.value,RadiusReKeyInterval:f.RadiusReKeyInterval.value
   };
@@ -501,10 +511,15 @@ async function saveRf(e){
     await refreshAll(false);msg('RF parameters applied live');
   }catch(err){msg(err.message);}
 }
+function delAcl(i){
+  S.ex=S.ex||{};S.ex.acl=S.ex.acl||{};if($('acl_mode'))S.ex.acl.mode=$('acl_mode').value;
+  S.aclList.splice(i,1);ren();
+}
 function addAcl(){
   const m=$('acl_new').value.trim().toUpperCase();
   if(!isMac(m))return msg('Invalid MAC format');
   if(S.aclList.length>=32)return msg('Max 32 MAC entries');
+  S.ex=S.ex||{};S.ex.acl=S.ex.acl||{};if($('acl_mode'))S.ex.acl.mode=$('acl_mode').value;
   if(!S.aclList.includes(m))S.aclList.push(m);
   ren();
 }
@@ -514,8 +529,14 @@ async function saveAcl(e){
   catch(err){msg(err.message);}
 }
 
-const cwOpts=maxE=>{const r=[];for(let i=2;i<=maxE;i++)r.push([String(i),String((1<<i)-1)]);return r;};
-async function loadWmm(){try{S.wm=await getJ('/api/wmm.json');fillWmmCat($('wmmac')?.value||S.wm.current_wmm||'0');}catch{msg('Failed to load WMM');}}
+async function loadWmm(){
+  try{
+    S.wm=await getJ('/api/wmm.json');
+    const sel=$('wmmac'),cur=S.wm.current_wmm||'0';
+    if(sel&&!sel.dataset.userSet){sel.value=cur;}
+    fillWmmCat(sel?sel.value:cur);
+  }catch{msg('Failed to load WMM');}
+}
 function fillWmmCat(idx){
   const names=['AC_BK','AC_BE','AC_VI','AC_VO'],d=(S.wm&&S.wm.ac&&S.wm.ac[names[idx|0]])||{};
   if($('wm_ua'))$('wm_ua').value=d.UseAggregation||'0';if($('wm_aa'))$('wm_aa').value=d.AcceptAggregation||'1';
@@ -533,16 +554,18 @@ function saveWmm(e){
   applyGoForm('/goform/accessControl',{nowMode:isSta?'stationMode':'apMode',CurrentWMM:f.accessMode.value,accessMode:f.accessMode.value,AC_BK_UseAggregation:f.AC_BK_UseAggregation.value,AC_BK_AcceptAggregation:f.AC_BK_AcceptAggregation.value,AC_BK_MaxNumOfPackets:f.AC_BK_MaxNumOfPackets.value,AC_BK_MaxNumOfBytes:f.AC_BK_MaxNumOfBytes.value,AC_BK_TimeoutInterval:f.AC_BK_TimeoutInterval.value,AC_BK_MinSizeOfPacketInAggr:f.AC_BK_MinSizeOfPacketInAggr.value,AC_BK_ADDBATimeout:f.AC_BK_ADDBATimeout.value,AC_BK_AggregationWindowSize:f.AC_BK_AggregationWindowSize.value,selectCWMinSTA:f.selectCWMinSTA.value,selectCWMaxSTA:f.selectCWMaxSTA.value,AC_BK_AIFSN:f.AC_BK_AIFSN.value,AC_BK_TXOP:f.AC_BK_TXOP.value,selectCWMinAP:f.selectCWMinAP.value,selectCWMaxAP:f.selectCWMaxAP.value,AC_BK_AIFSN_AP:f.AC_BK_AIFSN_AP.value,AC_BK_TXOP_AP:f.AC_BK_TXOP_AP.value},'Applying WMM QoS Settings',12);
 }
 async function startWps(mode){
+  if(modalTimer){clearInterval(modalTimer);modalTimer=null;}
   try{
     showModal('Wi-Fi Protected Setup','Starting WPS ('+mode+')...',5,'Press WPS button on peer device...',true);
     wpsAbort=async()=>{hideModal();fetch('/goform/cleanWPSTemp',{method:'POST',credentials:'same-origin'}).catch(()=>{});msg('WPS cancelled');};
-    await fetch('/goform/startWPS?networkType=STA&nowMode='+encodeURIComponent(mode),{credentials:'same-origin'});
+    const sr=await fetch('/goform/startWPS?networkType=STA&nowMode='+encodeURIComponent(mode),{credentials:'same-origin'});
+    if(!sr.ok)throw new Error('HTTP '+sr.status);
     let ticks=0;
     modalTimer=setInterval(async()=>{
       ticks++;
       try{
         const txt=await getT('/goform/getCurrentWPSStatus'),st=(txt.split(',')[0]||'').trim();
-        if(st==='99'){hideModal();msg('WPS Connected!');refreshAll().then(ren);return;}
+        if(st==='99'){hideModal();fetch('/goform/cleanWPSTemp',{method:'POST',credentials:'same-origin'}).catch(()=>{});msg('WPS Connected!');refreshAll().then(ren);return;}
         if(['10','11','12','13'].includes(st)){hideModal();fetch('/goform/cleanWPSFailTemp',{method:'POST',credentials:'same-origin'}).catch(()=>{});msg('WPS failed (code '+st+')');return;}
         const label=st==='1'?'Searching for peer...':st==='2'?'Registering credentials...':st==='3'?'Connecting...':'Waiting for peer WPS...';
         showModal('Wi-Fi Protected Setup',label,Math.min(95,ticks*2),'Press Cancel to abort',true);
@@ -580,8 +603,13 @@ function connectAp(e){
   e.preventDefault();const f=e.target,a=S.conAp;if(!a)return;
   const params={nowMode:'stationMode',activeMode:'connectToAP',BSSID:a.bssid,ESSID:f.essid.value.trim(),rebootNeed:a.ssid?'0':'1'};
   if(a.enc==='Disabled'||a.enc==='Open'){params.securityMode='1';params.WPAPersonalMode='';}
-  else if(a.enc==='WEP'){params.securityMode='2';params.WPAPersonalMode='';params.WEPKeyLength=f.wepLen.value;params.WEPKey0=f.wepKey.value.trim();}
-  else{params.securityMode='3';params.WPAPersonalMode=(a.enc==='WPA-Personal')?'1':(a.enc==='WPA2-Personal Mixed'?'3':'2');params.WPAPersonalEncryption=(a.enc==='WPA2-Personal')?'1':'2';params.WPAPSK=f.psk.value;}
+  else if(a.enc==='WEP'){
+    const kl=f.wepLen.value,k0=f.wepKey.value.trim().replace(/^0[xX]/,'');
+    const ok=(kl==='128')?(/^[0-9A-Fa-f]{26}$/.test(k0)||k0.length===13):(/^[0-9A-Fa-f]{10}$/.test(k0)||k0.length===5);
+    if(!ok)return msg('Invalid WEP key');
+    params.securityMode='2';params.WPAPersonalMode='';params.defaultWEPKey='0';params.WEPAuth='3';params.WEPKeyLength=kl;params.WEPKey0=k0;
+  }
+  else{params.securityMode='3';params.WPAPersonalMode=(a.enc==='WPA-Personal')?'1':(a.enc==='WPA2-Personal Mixed'?'3':'2');params.WPAPersonalEncryption=(a.enc==='WPA-Personal')?'0':(a.enc==='WPA2-Personal'?'1':'2');params.WPAPSK=f.psk.value;}
   S.conAp=null;applyGoForm('/goform/stationScan',params,'Connecting to '+params.ESSID,25);
 }
 
@@ -769,7 +797,7 @@ function pSystem(){
   <div class="p"><h2>Remote Services &amp; SSH-J Tunnel<span>${rmBadges}</span></h2><form onsubmit="saveRemote(event)"><div class="f">
     <label>Daemons</label><div class="r"><label class="c"><input type="checkbox" id="rssh"${rm.ssh?' checked':''}>SSH (22)</label><label class="c"><input type="checkbox" id="rtel"${rm.telnet?' checked':''}>Telnet (23)</label><label class="c"><input type="checkbox" id="rupnp"${rm.upnp?' checked':''}>UPnP</label><label class="c"><input type="checkbox" id="rsj"${rm.sshj?' checked':''}>SSH-J Tunnel</label></div>
     <label>SSH-J User / Host</label><div class="r"><input id="rsju" maxlength="48" placeholder="username" value="${esc(sju)}" oninput="updSjCmd()"><input id="rsjd" maxlength="32" placeholder="wap610n" value="${esc(sjd)}" oninput="updSjCmd()"></div>
-    <label>SSH-J Command</label><div class="r"><code id="sjcmd">ssh -J ${esc(sju||'<username>')}@ssh-j.com root@${esc(sjd)}</code><button type="button" class="t s" onclick="navigator.clipboard&&navigator.clipboard.writeText($('sjcmd').textContent);msg('Copied')">Copy</button></div>
+    <label>SSH-J Command</label><div class="r"><code id="sjcmd">ssh -J ${esc(sju||'<username>')}@ssh-j.com root@${esc(sjd)}</code><button type="button" class="t s" onclick="copyTxt($('sjcmd').textContent)">Copy</button></div>
   </div><div class="z"><button class="t p">Save Remote Access</button></div></form></div>
 
   <div class="p"><h2>Clock, Timezone &amp; Hardware Guards</h2><div class="f">
@@ -799,6 +827,11 @@ function pSystem(){
   </div></div>`;
 }
 
+async function copyTxt(s){
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(s);msg('Copied');return;}}catch{}
+  try{const t=document.createElement('textarea');t.value=s;t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();const ok=document.execCommand('copy');t.remove();if(ok){msg('Copied');return;}}catch{}
+  msg('Copy failed');
+}
 function updSjCmd(){const u=($('rsju')?.value||'').trim()||'<username>',d=($('rsjd')?.value||'').trim()||'wap610n';if($('sjcmd'))$('sjcmd').textContent=`ssh -J ${u}@ssh-j.com root@${d}`;}
 function saveAdmin(e){
   e.preventDefault();const f=e.target,p1=f.p1.value,p2=f.p2.value,to=Number(f.timeOut.value);
@@ -814,7 +847,7 @@ async function saveRemote(e){
   try{
     msg('Applying remote services...');
     const j=JSON.parse(await postForm('/cgi-bin/remote_access.cgi',{ssh,telnet:tel,upnp,sshj,sshj_user:sju,sshj_host:sjd}));
-    if(j.status==='success'){S.rm=j;ren();msg('Remote services updated');setTimeout(()=>getJ('/cgi-bin/remote_access.cgi?action=status&_t='+Date.now()).then(d=>{S.rm=d;if(P[T][2]==='system')ren();}).catch(()=>{}),2500);}
+    if(j.status==='success'){S.rm=j;ren();msg('Remote services updated');setTimeout(()=>getJ('/cgi-bin/remote_access.cgi?action=status&_t='+Date.now()).then(d=>{if(d&&d.status==='success'){S.rm=d;const ae=document.activeElement;const busyEdit=ae&&$('mn')?.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName);if(P[T][2]==='system'&&!busyEdit)ren();}}).catch(()=>{}),2500);}
     else{msg(j.message||'Failed');}
   }catch(err){msg('Remote access error: '+err.message);}
 }
@@ -861,34 +894,61 @@ function restoreCfg(){
   const fd=new FormData();fd.append('uploadSizeLimit','10');fd.append('configurationfile','1');fd.append('binary',f);
   const xhr=new XMLHttpRequest();xhr.open('POST','/goform/upldForm',true);
   xhr.upload.onprogress=e=>{if(e.lengthComputable)showModal('Restoring Configuration','Uploading '+f.name+'...',Math.round(e.loaded*100/e.total));};
-  xhr.onload=()=>{if(xhr.status>=200&&xhr.status<400)waitBusy('Restoring Configuration',30,null);else{hideModal();msg('Restore upload failed');}};
+  xhr.onload=()=>{
+    if(xhr.status>=200&&xhr.status<400){
+      const rt=xhr.responseText||'';
+      const em=/error=([^"'&\s<]+)/i.exec(rt);
+      if(em||rt.indexOf('reboot_page.asp')===-1){
+        hideModal();
+        let errMsg='Invalid or rejected configuration file';
+        if(em&&em[1]){try{errMsg=decodeURIComponent(em[1].replace(/\+/g,' '));}catch{errMsg=em[1];}}
+        msg('Restore failed: '+errMsg);
+        return;
+      }
+      waitBusy('Restoring Configuration',30,null);
+    }else{hideModal();msg('Restore upload failed (HTTP '+xhr.status+')');}
+  };
   xhr.onerror=()=>{hideModal();msg('Upload connection lost');};
   showModal('Restoring Configuration','Uploading '+f.name+'...',5);xhr.send(fd);
 }
 function flashFw(){
   const f=$('fwf')?.files?.[0];if(!f)return msg('Select .bin or bootpImage file');
+  if(modalTimer){clearInterval(modalTimer);modalTimer=null;}
   const fd=new FormData();fd.append('page_name','admin/upgrade.asp');fd.append('uploadSizeLimit','10000');
   fd.append('remote_filename','/dev/mtdblock2');fd.append('validate_file_name','bootpImage');fd.append('binary',f);
   const xhr=new XMLHttpRequest();xhr.open('POST','/goform/upldImage',true);
   xhr.upload.onprogress=e=>{if(e.lengthComputable)showModal('Firmware Upgrade','Uploading '+f.name+'...',Math.round(e.loaded*100/e.total),'Do NOT power off device');};
   xhr.onerror=()=>{hideModal();msg('Firmware upload failed');};
+  xhr.onload=()=>{
+    if(xhr.status<200||xhr.status>=400){hideModal();msg('Firmware upload failed (HTTP '+xhr.status+')');return;}
+    const rt=xhr.responseText||'';
+    const em=/error=([^"'&\s<]+)/i.exec(rt);
+    if(em){
+      hideModal();
+      let errMsg='Image rejected';
+      try{errMsg=decodeURIComponent(em[1].replace(/\+/g,' '));}catch{errMsg=em[1];}
+      msg('Firmware upgrade failed: '+errMsg);
+      return;
+    }
+    let waitTicks=0;
+    modalTimer=setInterval(async()=>{
+      try{
+        const r=await fetch('/goform/updateBurnProgress',{method:'POST',credentials:'same-origin',body:'poll'});
+        const parts=(await r.text()).trim().split(','),st=Number(parts[0]),pr=Number(parts[1]);
+        if(pr===-1||st===2){hideModal();msg('Invalid image or flash write failed!');return;}
+        if((st===0||st===3)&&waitTicks++<90)return;
+        if(waitTicks>=90){hideModal();msg('Firmware flash timed out');return;}
+        if(st===4)showModal('Firmware Upgrade','Checking image CRC32...',15,'Do NOT power off device');
+        else if(st===5||st===6)showModal('Firmware Upgrade',(st===6?'Verifying NOR flash: ':'Writing NOR flash (mtd2): ')+pr+'%',pr,'Do NOT power off device');
+        else if(st===1&&pr===100){
+          clearInterval(modalTimer);modalTimer=null;let sec=45;
+          showModal('Firmware Complete','Rebooting WAP610N...',100,'Reconnecting in 45s...');
+          modalTimer=setInterval(()=>{sec--;showModal('Rebooting Device',`Reconnecting in ${sec}s...`,100-Math.round(sec/45*100),'Wait for AP to boot');if(sec<=0){clearInterval(modalTimer);modalTimer=null;location.href='/index.html';}},1000);
+        }
+      }catch{}
+    },1500);
+  };
   showModal('Firmware Upgrade','Uploading '+f.name+'...',2,'Do NOT power off device');xhr.send(fd);
-  let waitTicks=0;
-  modalTimer=setInterval(async()=>{
-    try{
-      const r=await fetch('/goform/updateBurnProgress',{method:'POST',credentials:'same-origin',body:'poll'});
-      const parts=(await r.text()).trim().split(','),st=Number(parts[0]),pr=Number(parts[1]);
-      if(pr===-1||st===2){hideModal();msg('Invalid image or flash write failed!');return;}
-      if((st===0||st===3)&&waitTicks++<90)return;
-      if(st===4)showModal('Firmware Upgrade','Checking image CRC32...',15,'Do NOT power off device');
-      else if(st===5||st===6)showModal('Firmware Upgrade',(st===6?'Verifying NOR flash: ':'Writing NOR flash (mtd2): ')+pr+'%',pr,'Do NOT power off device');
-      else if(st===1&&pr===100){
-        clearInterval(modalTimer);modalTimer=null;let sec=45;
-        showModal('Firmware Complete','Rebooting WAP610N...',100,'Reconnecting in 45s...');
-        modalTimer=setInterval(()=>{sec--;showModal('Rebooting Device',`Reconnecting in ${sec}s...`,100-Math.round(sec/45*100),'Wait for AP to boot');if(sec<=0){clearInterval(modalTimer);modalTimer=null;location.href='/index.html';}},1000);
-      }
-    }catch{}
-  },1500);
 }
 function doFactory(){if(confirm('Reset ALL settings to factory defaults? Device will reboot to 192.168.1.1.'))applyGoForm('/goform/resetToDefault',{restoreTag:'AP'},'Factory Reset',45,'http://192.168.1.1/');}
 function doReboot(){if(confirm('Reboot WAP610N now?'))applyGoForm('/goform/management',{rebootTag:'true'},'Rebooting Device',45);}

@@ -45,13 +45,18 @@ read_conf() {
     [ "$MAX_FAIL" -gt 20 ] && MAX_FAIL=20
     [ "$ACTION" != "reboot" ] && ACTION="recover"
     case "$TARGET" in
-        ''|*[!A-Za-z0-9._-]*) return 1 ;;
+        [A-Za-z0-9]*) ;;
+        *) return 1 ;;
+    esac
+    case "$TARGET" in
+        *[!A-Za-z0-9._-]*) return 1 ;;
     esac
     return 0
 }
 
+SLEEP_PID=""
 echo $$ > "$PID_FILE"
-trap 'rm -f "$PID_FILE" 2>/dev/null || true; exit 0' 0 1 2 15
+trap '[ -n "$SLEEP_PID" ] && kill "$SLEEP_PID" 2>/dev/null || true; rm -f "$PID_FILE" 2>/dev/null || true; exit 0' 0 1 2 15
 
 # Boot grace period: never probe until uptime >= 90s to avoid false failure / boot loops
 while :; do
@@ -104,7 +109,9 @@ while :; do
     fi
 
     sleep "$INTERVAL" &
-    wait $! 2>/dev/null || sleep "$INTERVAL"
+    SLEEP_PID=$!
+    wait "$SLEEP_PID" 2>/dev/null || true
+    SLEEP_PID=""
 done
 
 rm -f "$PID_FILE" 2>/dev/null || true

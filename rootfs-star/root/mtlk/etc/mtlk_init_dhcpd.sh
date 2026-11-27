@@ -12,8 +12,13 @@ DHCP_SUBNET=`awk -F "=" '/^DHCPDSubnet/ {str = $2; gsub(/ /, "", str); sub(/\r/,
 DHCP_WINS=`awk -F "=" '/^DHCPDWINS/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
 DHCP_DOMAIN=`awk -F "=" '/^DHCPDDomain/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
 DHCP_LEASETIME=`awk -F "=" '/^DHCPDLeaseTime/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-DHCP_GATEWAY=`awk -F "=" '/^default_gw/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf`
-if [ -z "$DHCP_GATEWAY" ] || [ "$DHCP_GATEWAY" = "0.0.0.0" ]; then
+DHCP_GATEWAY=`awk -F "=" '/^default_gw/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' /tmp/sys.conf | tail -n 1`
+ROUTER_MODE="bridge"
+if [ -f /mnt/jffs2/router.conf ]; then
+	rm_val=`awk -F '=' '$1=="ROUTER_MODE"{gsub(/[ \t\r]/,"",$2);print $2}' /mnt/jffs2/router.conf 2>/dev/null | tail -n 1`
+	[ -n "$rm_val" ] && ROUTER_MODE="$rm_val"
+fi
+if [ "$ROUTER_MODE" = "router" ] || [ "$ROUTER_MODE" = "wisp" ] || [ -z "$DHCP_GATEWAY" ] || [ "$DHCP_GATEWAY" = "0.0.0.0" ]; then
 	DHCP_GATEWAY=$DHCP_IP_LAN
 fi
 

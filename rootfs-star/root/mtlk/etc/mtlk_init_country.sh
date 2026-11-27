@@ -26,20 +26,27 @@ then
 	fi
 #end june.chen
 	
-	if [ "$CONFIG_COMMAND_RET" = "200" ] && [ -n "$COUNTRY_CODE" ] && expr "$COUNTRY_CODE" : '[A-Z][A-Z]' >/dev/null
+	case "$COUNTRY_CODE" in
+		[A-Z][A-Z]) valid_cc=1 ;;
+		*) valid_cc=0 ;;
+	esac
+
+	if [ "$CONFIG_COMMAND_RET" = "200" ] && [ "$valid_cc" = "1" ]
 	then
 		echo "$COUNTRY_CODE" > /proc/sys/dev/mtlk/wlan0/Country
-		grep -v "Country" "$WLAN_TMP" | grep -v "EEPROMCountryValid" > /tmp/tmpwlan.conf
+		grep -v '^[ \t]*Country[ \t]*=' "$WLAN_TMP" | grep -v '^[ \t]*EEPROMCountryValid[ \t]*=' > /tmp/tmpwlan.conf
 		echo "Country = $COUNTRY_CODE" >> /tmp/tmpwlan.conf
 		echo "EEPROMCountryValid = 1" >> /tmp/tmpwlan.conf
-		mv /tmp/tmpwlan.conf "$WLAN_MAIN"
-		cp "$WLAN_MAIN" "$WLAN_TMP"
 	else
-		grep -v "EEPROMCountryValid" "$WLAN_TMP" > /tmp/tmpwlan.conf
+		grep -v '^[ \t]*EEPROMCountryValid[ \t]*=' "$WLAN_TMP" > /tmp/tmpwlan.conf
 		echo "EEPROMCountryValid = 0" >> /tmp/tmpwlan.conf
-		mv /tmp/tmpwlan.conf "$WLAN_MAIN"
-		cp "$WLAN_MAIN" "$WLAN_TMP"
 	fi
+	if [ -s /tmp/tmpwlan.conf ]; then
+		[ -x /bin/config_lock.sh ] && /bin/config_lock.sh >/dev/null 2>&1 || true
+		cp -f /tmp/tmpwlan.conf "$WLAN_MAIN" 2>/dev/null && mv -f /tmp/tmpwlan.conf "$WLAN_TMP" 2>/dev/null
+		[ -x /bin/config_unlock.sh ] && /bin/config_unlock.sh >/dev/null 2>&1 || true
+	fi
+	rm -f /tmp/tmpwlan.conf 2>/dev/null || true
 	
 	# Files will be saved only once in init process, Flag will down by the mtlk_init.sh
 	if [ ! -e /tmp/NeedSave.txt ]

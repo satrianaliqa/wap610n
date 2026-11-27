@@ -64,11 +64,14 @@ then
 						v = substr($0, idx + 1)
 						sub(/^[ \t]+/, "", v)
 						sub(/[ \t\r]+$/, "", v)
-						print v
+						last = v
 						f = 1
 					}
-					END { if (!f) exit 1 }
-				' /tmp/sys.conf 2>/dev/null | tail -n 1) && found=1
+					END {
+						if (!f) exit 1
+						print last
+					}
+				' /tmp/sys.conf 2>/dev/null) && found=1
 			fi
 			if [ "$found" = "0" ]; then
 				case "$key" in

@@ -1,8 +1,21 @@
 #!/bin/sh
 # Unified Idempotent Runtime & Boot Configuration Applier for WAP610N
+set -f
 
 JFFS="/mnt/jffs2"
 MOD_8021Q="/lib/modules/2.6.16-star/net/8021q.ko"
+
+is_valid_iface() {
+    case "$1" in
+        br0|eth0|wlan0) return 0 ;;
+        eth0.*)
+            v="${1#eth0.}"
+            case "$v" in ''|*[!0-9]*) return 1 ;; esac
+            [ "$v" -ge 2 ] 2>/dev/null && [ "$v" -le 4094 ] 2>/dev/null
+            ;;
+        *) return 1 ;;
+    esac
+}
 
 is_ipv4() {
     case "$1" in
@@ -65,12 +78,10 @@ apply_routes() {
         while IFS='|' read -r dest mask gw iface metric; do
             [ -z "$dest" ] && continue
             is_ipv4 "$dest" && is_ipv4 "$mask" || continue
-            cmd="route del -net $dest netmask $mask"
-            [ -n "$gw" ] && [ "$gw" != "0.0.0.0" ] && is_ipv4 "$gw" && cmd="$cmd gw $gw"
-            case "$iface" in
-                br0|eth0|wlan0|eth0.[0-9]*) cmd="$cmd dev $iface" ;;
-            esac
-            $cmd 2>/dev/null || true
+            set -- -net "$dest" netmask "$mask"
+            [ -n "$gw" ] && [ "$gw" != "0.0.0.0" ] && is_ipv4 "$gw" && set -- "$@" gw "$gw"
+            is_valid_iface "$iface" && set -- "$@" dev "$iface"
+            route del "$@" 2>/dev/null || true
         done < "$state"
         rm -f "$state" 2>/dev/null || true
     fi
@@ -81,17 +92,14 @@ apply_routes() {
         case "$dest" in ''|\#*) continue ;; esac
         is_ipv4 "$dest" && is_ipv4 "$mask" || continue
         [ -n "$gw" ] && [ "$gw" != "0.0.0.0" ] && { is_ipv4 "$gw" || continue; }
-        cmd="route add -net $dest netmask $mask"
-        [ -n "$gw" ] && [ "$gw" != "0.0.0.0" ] && cmd="$cmd gw $gw"
+        set -- -net "$dest" netmask "$mask"
+        [ -n "$gw" ] && [ "$gw" != "0.0.0.0" ] && set -- "$@" gw "$gw"
         case "$metric" in
-            ''|*[!0-9]*) ;;
-            0) ;;
-            *) cmd="$cmd metric $metric" ;;
+            ''|*[!0-9]*|0) ;;
+            *) set -- "$@" metric "$metric" ;;
         esac
-        case "$iface" in
-            br0|eth0|wlan0|eth0.[0-9]*) cmd="$cmd dev $iface" ;;
-        esac
-        if $cmd 2>/dev/null; then
+        is_valid_iface "$iface" && set -- "$@" dev "$iface"
+        if route add "$@" 2>/dev/null; then
             printf '%s|%s|%s|%s|%s\n' "$dest" "$mask" "$gw" "$iface" "$metric" >> "$state"
             applied=1
         fi
@@ -141,6 +149,13 @@ apply_vlan() {
 }
 
 apply_qos() {
+    read_router_conf
+    down_if="wlan0"
+    up_if="eth0"
+    if [ "$R_MODE" = "wisp" ]; then
+        down_if="eth0"
+        up_if="wlan0"
+    fi
     enabled="0"
     down_kbps="0"
     up_kbps="0"
@@ -168,17 +183,17 @@ apply_qos() {
     fi
 
     if [ "$down_kbps" -gt 0 ] 2>/dev/null; then
-        tc qdisc add dev wlan0 root handle 1: cbq avpkt 1000 bandwidth 100Mbit 2>/dev/null || true
-        tc class add dev wlan0 parent 1: classid 1:1 cbq rate "${down_kbps}kbit" allot 1514 prio 5 bounded isolated 2>/dev/null || true
-        tc filter add dev wlan0 parent 1: protocol ip prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:1 2>/dev/null || true
-    elif [ -f /root/mtlk/etc/qos_d.sh ]; then
+        tc qdisc add dev "$down_if" root handle 1: cbq avpkt 1000 bandwidth 100Mbit 2>/dev/null || true
+        tc class add dev "$down_if" parent 1: classid 1:1 cbq rate "${down_kbps}kbit" allot 1514 prio 5 bounded isolated 2>/dev/null || true
+        tc filter add dev "$down_if" parent 1: protocol ip prio 1 u32 match ip dst 0.0.0.0/0 flowid 1:1 2>/dev/null || true
+    elif [ "$down_if" = "wlan0" ] && [ -f /root/mtlk/etc/qos_d.sh ]; then
         ( cd /root/mtlk/etc && . ./qos_d.sh ) >/dev/null 2>&1 || true
     fi
 
     if [ "$up_kbps" -gt 0 ] 2>/dev/null; then
-        tc qdisc add dev eth0 root handle 1: cbq avpkt 1000 bandwidth 100Mbit 2>/dev/null || true
-        tc class add dev eth0 parent 1: classid 1:1 cbq rate "${up_kbps}kbit" allot 1514 prio 5 bounded isolated 2>/dev/null || true
-        tc filter add dev eth0 parent 1: protocol ip prio 1 u32 match ip src 0.0.0.0/0 flowid 1:1 2>/dev/null || true
+        tc qdisc add dev "$up_if" root handle 1: cbq avpkt 1000 bandwidth 100Mbit 2>/dev/null || true
+        tc class add dev "$up_if" parent 1: classid 1:1 cbq rate "${up_kbps}kbit" allot 1514 prio 5 bounded isolated 2>/dev/null || true
+        tc filter add dev "$up_if" parent 1: protocol ip prio 1 u32 match ip src 0.0.0.0/0 flowid 1:1 2>/dev/null || true
     fi
 }
 
@@ -202,8 +217,8 @@ apply_watchdog() {
 
 apply_dhcp() {
     killall udhcpd 2>/dev/null || true
-    sysf="/tmp/sys.conf"
-    [ -f "$JFFS/sys.conf" ] && sysf="$JFFS/sys.conf"
+    sysf="$JFFS/sys.conf"
+    [ -f /tmp/sys.conf ] && { [ ! -f "$sysf" ] || [ /tmp/sys.conf -nt "$sysf" ]; } && sysf="/tmp/sys.conf"
     ip_cfg=$(awk -F '=' '/^[ \t]*ip_config_method[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
     dhcp_en=$(awk -F '=' '/^[ \t]*DHCPDEnabled[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
     if [ "$dhcp_en" = "1" ] && [ "$ip_cfg" != "0" ]; then
@@ -267,6 +282,7 @@ apply_firewall() {
         wan_if="eth0"
     fi
     tmp_nat="/tmp/mini_nat.conf"
+    tmp_nat_stage="/tmp/mini_nat.conf.$$"
     {
         printf 'MODE=%s\n' "$R_MODE"
         printf 'WAN_IF=%s\n' "$wan_if"
@@ -284,7 +300,7 @@ apply_firewall() {
                 printf 'FWD=%s|%s|%s|%s|%s\n' "$f_proto" "$f_s" "$f_e" "$f_ip" "$f_int"
             done < "$JFFS/portfwd.conf"
         fi
-    } > "$tmp_nat" 2>/dev/null || true
+    } > "$tmp_nat_stage" 2>/dev/null && mv -f "$tmp_nat_stage" "$tmp_nat" 2>/dev/null || rm -f "$tmp_nat_stage" 2>/dev/null
     /sbin/mini-nat --apply "$tmp_nat" 2>/dev/null || true
 }
 
@@ -294,11 +310,37 @@ apply_router() {
 
     if [ "$R_MODE" = "bridge" ]; then
         rm -f /tmp/wan_status.conf 2>/dev/null || true
+        echo 0 > /proc/sys/net/ipv4/ip_forward 2>/dev/null || true
         ifconfig eth0 0.0.0.0 up 2>/dev/null || true
         ifconfig wlan0 0.0.0.0 up 2>/dev/null || true
         brctl addif br0 eth0 2>/dev/null || true
         brctl addif br0 wlan0 2>/dev/null || true
         apply_firewall
+        sysf="$JFFS/sys.conf"
+        [ -f /tmp/sys.conf ] && { [ ! -f "$sysf" ] || [ /tmp/sys.conf -nt "$sysf" ]; } && sysf="/tmp/sys.conf"
+        ip_cfg=$(awk -F '=' '/^[ \t]*ip_config_method[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+        if [ "$ip_cfg" = "0" ]; then
+            killall udhcpd 2>/dev/null || true
+            if ! pidof udhcpc >/dev/null 2>&1 && [ -x /etc/udhcpc/dhcp.tcl ]; then
+                /etc/udhcpc/dhcp.tcl startup </dev/null >/dev/null 2>&1 &
+            fi
+        else
+            br_ip=$(awk -F '=' '/^[ \t]*ip_lan[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+            br_mask=$(awk -F '=' '/^[ \t]*subnet_lan[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+            br_gw=$(awk -F '=' '/^[ \t]*default_gw[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+            br_d1=$(awk -F '=' '/^[ \t]*DHCPDDNS1[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+            br_d2=$(awk -F '=' '/^[ \t]*DHCPDDNS2[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
+            [ -n "$br_ip" ] && [ -n "$br_mask" ] && is_ipv4 "$br_ip" && is_ipv4 "$br_mask" && ifconfig br0 "$br_ip" netmask "$br_mask" up 2>/dev/null || true
+            while route del default >/dev/null 2>&1; do :; done
+            if [ -n "$br_gw" ] && [ "$br_gw" != "0.0.0.0" ] && [ "$br_gw" != "$br_ip" ] && is_ipv4 "$br_gw"; then
+                route add default gw "$br_gw" dev br0 2>/dev/null || true
+            fi
+            : > /tmp/resolv.conf.tmp.$$
+            is_ipv4 "$br_d1" && printf 'nameserver %s\n' "$br_d1" >> /tmp/resolv.conf.tmp.$$
+            is_ipv4 "$br_d2" && [ "$br_d2" != "$br_d1" ] && printf 'nameserver %s\n' "$br_d2" >> /tmp/resolv.conf.tmp.$$
+            [ -s /tmp/resolv.conf.tmp.$$ ] && mv -f /tmp/resolv.conf.tmp.$$ /tmp/resolv.conf 2>/dev/null || rm -f /tmp/resolv.conf.tmp.$$ 2>/dev/null
+            apply_dhcp
+        fi
         return 0
     fi
 
@@ -315,8 +357,8 @@ apply_router() {
     ifconfig "$lan_port" 0.0.0.0 up 2>/dev/null || true
     brctl addif br0 "$lan_port" 2>/dev/null || true
 
-    sysf="/tmp/sys.conf"
-    [ -f "$JFFS/sys.conf" ] && sysf="$JFFS/sys.conf"
+    sysf="$JFFS/sys.conf"
+    [ -f /tmp/sys.conf ] && { [ ! -f "$sysf" ] || [ /tmp/sys.conf -nt "$sysf" ]; } && sysf="/tmp/sys.conf"
     lan_ip=$(awk -F '=' '/^[ \t]*ip_lan[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
     lan_mask=$(awk -F '=' '/^[ \t]*subnet_lan[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
     host_name=$(awk -F '=' '/^[ \t]*HostName[ \t]*=/ {s=$2; gsub(/[ \t\r]/,"",s); print s}' "$sysf" 2>/dev/null | tail -n 1)
@@ -380,8 +422,8 @@ case "$1" in
     all)
         apply_tz
         apply_router
-        apply_routes
         apply_vlan
+        apply_routes
         apply_qos
         apply_led
         apply_ddns

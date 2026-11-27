@@ -58,7 +58,7 @@ json_error() {
 }
 
 json_esc() {
-    awk '{
+    tr -d '\001-\010\013\014\016-\037\177' | awk '{
         gsub(/\\/, "\\\\")
         gsub(/"/, "\\\"")
         gsub(/\r/, "")
@@ -145,9 +145,21 @@ is_uint_range() {
 
 is_host() {
     case "$1" in
-        ''|*[!A-Za-z0-9._-]*) return 1 ;;
+        [A-Za-z0-9]*) ;;
+        *) return 1 ;;
+    esac
+    case "$1" in
+        *[!A-Za-z0-9._-]*) return 1 ;;
     esac
     [ ${#1} -le 64 ]
+}
+
+is_valid_iface() {
+    case "$1" in
+        br0|eth0|wlan0) return 0 ;;
+        eth0.*) is_uint_range "${1#eth0.}" 2 4094 ;;
+        *) return 1 ;;
+    esac
 }
 
 is_tz() {
@@ -282,7 +294,7 @@ lines_to_json_array() {
         printf '[]'
         return 0
     fi
-    awk '
+    tr -d '\001-\010\013\014\016-\037\177' < "$f" 2>/dev/null | awk '
     BEGIN { printf "["; first = 1 }
     /^[ \t]*($|#)/ { next }
     {
@@ -293,7 +305,7 @@ lines_to_json_array() {
         first = 0
         printf "\"%s\"", $0
     }
-    END { printf "]" }' "$f" 2>/dev/null || printf '[]'
+    END { printf "]" }' 2>/dev/null || printf '[]'
 }
 
 active_leases_json() {
@@ -712,6 +724,9 @@ case "$P_ACTION" in
 
         [ -n "$P_RMODE" ] || P_RMODE="bridge"
         case "$P_RMODE" in bridge|router|wisp) ;; *) json_error "Invalid router_mode" ;; esac
+        if [ "$P_RMODE" = "bridge" ] && [ "$P_NET_TYPE" = "0" ]; then
+            P_ENABLED="0"
+        fi
         if [ "$P_RMODE" != "bridge" ]; then
             P_IPCFG="1"
             P_BR_MODE="4"
@@ -737,9 +752,9 @@ case "$P_ACTION" in
         cur_ssh=$(get_kv_file "$JFFS/router.conf" WAN_SSH 0)
         cur_mss=$(get_kv_file "$JFFS/router.conf" TCPMSS 1)
         cur_dmz=$(get_kv_file "$JFFS/router.conf" DMZ_IP "")
-        write_router_conf "$P_RMODE" "${P_WPROTO:-dhcp}" "$P_WIP" "${P_WMASK:-255.255.255.0}" "$P_WGW" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz"
 
         lock_cfg
+        write_router_conf "$P_RMODE" "${P_WPROTO:-dhcp}" "$P_WIP" "${P_WMASK:-255.255.255.0}" "$P_WGW" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz" || { unlock_cfg; json_error "Failed saving router configuration"; }
         ensure_jffs_conf sys.conf
         ensure_jffs_conf wlan0.conf
         set_conf_kv "$JFFS/sys.conf" BridgeMode "$P_BR_MODE"
@@ -768,6 +783,9 @@ case "$P_ACTION" in
             if [ -n "$P_GW" ]; then
                 set_conf_kv "$JFFS/sys.conf" default_gw "$P_GW"
                 set_conf_kv "$JFFS/wlan0.conf" default_gw "$P_GW"
+            elif [ "$P_RMODE" != "bridge" ]; then
+                set_conf_kv "$JFFS/sys.conf" default_gw "$P_IP"
+                set_conf_kv "$JFFS/wlan0.conf" default_gw "$P_IP"
             fi
         fi
         sync_sys_and_wlan
@@ -825,26 +843,29 @@ case "$P_ACTION" in
         cur_ssh=$(get_kv_file "$JFFS/router.conf" WAN_SSH 0)
         cur_mss=$(get_kv_file "$JFFS/router.conf" TCPMSS 1)
         cur_dmz=$(get_kv_file "$JFFS/router.conf" DMZ_IP "")
-        write_router_conf "$P_MODE" "$P_WPROTO" "$P_WIP" "$P_WMASK" "$P_WGW" "${P_WD1:-1.1.1.1}" "${P_WD2:-8.8.8.8}" "$P_WMTU" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz"
 
         need_reboot=0
+        lock_cfg
+        write_router_conf "$P_MODE" "$P_WPROTO" "$P_WIP" "$P_WMASK" "$P_WGW" "${P_WD1:-1.1.1.1}" "${P_WD2:-8.8.8.8}" "$P_WMTU" "$cur_spi" "$cur_ping" "$cur_mgmt" "$cur_ssh" "$cur_mss" "$cur_dmz" || { unlock_cfg; json_error "Failed saving router configuration"; }
         if [ "$P_MODE" != "bridge" ]; then
             cur_nt=$(get_conf wlan0.conf network_type 2)
+            cur_lan_ip=$(get_conf sys.conf ip_lan 192.168.1.1)
             [ "$P_MODE" = "wisp" ] && target_nt="0" || target_nt="2"
-            lock_cfg
             ensure_jffs_conf sys.conf
             ensure_jffs_conf wlan0.conf
             set_conf_kv "$JFFS/sys.conf" BridgeMode 4
             set_conf_kv "$JFFS/sys.conf" ip_config_method 1
             set_conf_kv "$JFFS/sys.conf" DHCPDEnabled 1
+            set_conf_kv "$JFFS/sys.conf" default_gw "$cur_lan_ip"
             set_conf_kv "$JFFS/wlan0.conf" network_type "$target_nt"
             set_conf_kv "$JFFS/wlan0.conf" BridgeMode 4
             set_conf_kv "$JFFS/wlan0.conf" ip_config_method 1
             set_conf_kv "$JFFS/wlan0.conf" DHCPDEnabled 1
+            set_conf_kv "$JFFS/wlan0.conf" default_gw "$cur_lan_ip"
             sync_sys_and_wlan
-            unlock_cfg
             [ "$target_nt" != "$cur_nt" ] && need_reboot=1
         fi
+        unlock_cfg
         if [ "$need_reboot" = "1" ]; then
             [ -x /bin/config_save.sh ] && /bin/config_save.sh >/dev/null 2>&1 || true
             ( sleep 2; sync; /sbin/reboot ) </dev/null >/dev/null 2>&1 &
@@ -915,10 +936,15 @@ EOF
         cur_wd1=$(get_kv_file "$JFFS/router.conf" WAN_DNS1 1.1.1.1)
         cur_wd2=$(get_kv_file "$JFFS/router.conf" WAN_DNS2 8.8.8.8)
         cur_mtu=$(get_kv_file "$JFFS/router.conf" WAN_MTU 1500)
-        write_router_conf "$cur_rm" "$cur_wp" "$cur_wip" "$cur_wmk" "$cur_wgw" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$P_SPI" "$P_WPING" "$P_WMGMT" "$P_WSSH" "$P_TCPMSS" "$P_DMZ"
-
+        lock_cfg
+        write_router_conf "$cur_rm" "$cur_wp" "$cur_wip" "$cur_wmk" "$cur_wgw" "$cur_wd1" "$cur_wd2" "$cur_mtu" "$P_SPI" "$P_WPING" "$P_WMGMT" "$P_WSSH" "$P_TCPMSS" "$P_DMZ" || { rm -f "$tmp_fw"; unlock_cfg; json_error "Failed saving firewall configuration"; }
         chmod 600 "$tmp_fw" 2>/dev/null || true
-        mv -f "$tmp_fw" "$JFFS/portfwd.conf" 2>/dev/null || rm -f "$tmp_fw"
+        if ! mv -f "$tmp_fw" "$JFFS/portfwd.conf" 2>/dev/null; then
+            rm -f "$tmp_fw"
+            unlock_cfg
+            json_error "Failed saving port forwarding rules"
+        fi
+        unlock_cfg
         /bin/router_apply.sh firewall >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -980,7 +1006,11 @@ EOF
         set_conf_kv "$JFFS/sys.conf" DHCPDDNS1 "${P_DNS1:-1.1.1.1}"
         set_conf_kv "$JFFS/sys.conf" DHCPDDNS2 "${P_DNS2:-8.8.8.8}"
         chmod 600 "$tmp_sl" 2>/dev/null || true
-        mv -f "$tmp_sl" "$JFFS/dhcp_static.conf" 2>/dev/null || rm -f "$tmp_sl"
+        if ! mv -f "$tmp_sl" "$JFFS/dhcp_static.conf" 2>/dev/null; then
+            rm -f "$tmp_sl"
+            unlock_cfg
+            json_error "Failed saving static DHCP leases"
+        fi
         sync_sys_and_wlan
         unlock_cfg
 
@@ -1076,16 +1106,22 @@ EOF
             is_ipv4 "$r_dest" || { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid destination IPv4: $r_dest"; }
             is_netmask "$r_mask" || { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid netmask: $r_mask"; }
             [ -n "$r_gw" ] && [ "$r_gw" != "0.0.0.0" ] && { is_ipv4 "$r_gw" || { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid gateway IPv4: $r_gw"; }; }
-            case "$r_if" in ""|br0|eth0|wlan0|eth0.[0-9]*) ;; *) rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid interface: $r_if" ;; esac
+            [ -n "$r_if" ] && { is_valid_iface "$r_if" || { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid interface: $r_if"; }; }
             [ -n "$r_met" ] && ! is_uint_range "$r_met" 0 9999 && { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Invalid metric: $r_met"; }
             rt_cnt=$((rt_cnt + 1))
             [ "$rt_cnt" -gt 16 ] && { rm -f "$tmp_rt"; IFS="$old_ifs"; json_error "Maximum 16 static routes supported"; }
             printf '%s|%s|%s|%s|%s\n' "$r_dest" "$r_mask" "${r_gw:-0.0.0.0}" "${r_if:-br0}" "${r_met:-0}" >> "$tmp_rt"
         done
         IFS="$old_ifs"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
         chmod 600 "$tmp_rt" 2>/dev/null || true
-        mv -f "$tmp_rt" "$JFFS/routes.conf" 2>/dev/null || rm -f "$tmp_rt"
+        if ! mv -f "$tmp_rt" "$JFFS/routes.conf" 2>/dev/null; then
+            rm -f "$tmp_rt"
+            unlock_cfg
+            json_error "Failed saving static routes"
+        fi
+        unlock_cfg
         /bin/router_apply.sh routes >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -1118,9 +1154,15 @@ EOF
             printf '%s|%s|%s|%s|%s\n' "$v_id" "$v_if" "$v_mode" "$v_ip" "$v_mask" >> "$tmp_vl"
         done
         IFS="$old_ifs"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
         chmod 600 "$tmp_vl" 2>/dev/null || true
-        mv -f "$tmp_vl" "$JFFS/vlan.conf" 2>/dev/null || rm -f "$tmp_vl"
+        if ! mv -f "$tmp_vl" "$JFFS/vlan.conf" 2>/dev/null; then
+            rm -f "$tmp_vl"
+            unlock_cfg
+            json_error "Failed saving VLAN configuration"
+        fi
+        unlock_cfg
         /bin/router_apply.sh vlan >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -1133,8 +1175,10 @@ EOF
         [ -z "$P_UP" ] && P_UP="0"
         is_uint_range "$P_DOWN" 0 100000 || json_error "Download limit must be 0..100000 kbps"
         is_uint_range "$P_UP" 0 100000 || json_error "Upload limit must be 0..100000 kbps"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
-        printf 'ENABLED=%s\nDOWN_KBPS=%s\nUP_KBPS=%s\n' "$P_ENABLED" "$P_DOWN" "$P_UP" | atomic_write "$JFFS/qos.conf" 600
+        printf 'ENABLED=%s\nDOWN_KBPS=%s\nUP_KBPS=%s\n' "$P_ENABLED" "$P_DOWN" "$P_UP" | atomic_write "$JFFS/qos.conf" 600 || { unlock_cfg; json_error "Failed saving QoS configuration"; }
+        unlock_cfg
         /bin/router_apply.sh qos >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -1165,6 +1209,7 @@ EOF
         [ -z "$P_TOKEN" ] && P_TOKEN=$(get_kv_file "$JFFS/ddns.conf" TOKEN "")
         case "$P_TOKEN" in *[!A-Za-z0-9._:-]*) [ -n "$P_TOKEN" ] && json_error "Invalid characters in DDNS token" ;; esac
 
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
         {
             printf 'ENABLED=%s\n' "$P_ENABLED"
@@ -1175,7 +1220,8 @@ EOF
             printf 'TOKEN=%s\n' "$P_TOKEN"
             printf 'CUSTOM_URL=%s\n' "$P_CUSTOM_URL"
             printf 'INTERVAL=%s\n' "$P_INTERVAL"
-        } | atomic_write "$JFFS/ddns.conf" 600
+        } | atomic_write "$JFFS/ddns.conf" 600 || { unlock_cfg; json_error "Failed saving DDNS configuration"; }
+        unlock_cfg
         /bin/router_apply.sh ddns >/dev/null 2>&1 || true
         if [ "$P_TEST_NOW" = "1" ] && [ -x /bin/ddns_updater.sh ]; then
             /bin/ddns_updater.sh --once >/dev/null 2>&1 || true
@@ -1193,9 +1239,11 @@ EOF
         is_uint_range "$P_INTERVAL" 30 3600 || json_error "Interval must be 30..3600s"
         is_uint_range "$P_MAX_FAIL" 2 20 || json_error "Max failures must be 2..20"
         [ "$P_ACT_MODE" = "reboot" ] || P_ACT_MODE="recover"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
         printf 'ENABLED=%s\nTARGET=%s\nINTERVAL=%s\nMAX_FAIL=%s\nACTION=%s\n' \
-            "$P_ENABLED" "$P_TARGET" "$P_INTERVAL" "$P_MAX_FAIL" "$P_ACT_MODE" | atomic_write "$JFFS/watchdog.conf" 600
+            "$P_ENABLED" "$P_TARGET" "$P_INTERVAL" "$P_MAX_FAIL" "$P_ACT_MODE" | atomic_write "$JFFS/watchdog.conf" 600 || { unlock_cfg; json_error "Failed saving watchdog configuration"; }
+        unlock_cfg
         /bin/router_apply.sh watchdog >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -1204,8 +1252,10 @@ EOF
 
     tz)
         is_tz "$P_TZ" || json_error "Invalid POSIX TZ string"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
-        printf '%s\n' "$P_TZ" | atomic_write "$JFFS/tz.conf" 644
+        printf '%s\n' "$P_TZ" | atomic_write "$JFFS/tz.conf" 644 || { unlock_cfg; json_error "Failed saving timezone configuration"; }
+        unlock_cfg
         /bin/router_apply.sh tz >/dev/null 2>&1 || true
         trigger_save
         now_str=$(date '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || date 2>/dev/null || echo "")
@@ -1227,8 +1277,10 @@ EOF
 
     led)
         [ "$P_NIGHT" = "1" ] || P_NIGHT="0"
+        lock_cfg
         mkdir -p "$JFFS" 2>/dev/null || true
-        printf 'NIGHT_MODE=%s\n' "$P_NIGHT" | atomic_write "$JFFS/led.conf" 600
+        printf 'NIGHT_MODE=%s\n' "$P_NIGHT" | atomic_write "$JFFS/led.conf" 600 || { unlock_cfg; json_error "Failed saving LED configuration"; }
+        unlock_cfg
         /bin/router_apply.sh led >/dev/null 2>&1 || true
         trigger_save
         json_header
@@ -1252,12 +1304,18 @@ EOF
             esac
         done
         IFS="$old_ifs"
+        lock_cfg
         mkdir -p "$JFFS/dropbear" /root/.ssh 2>/dev/null || true
         chmod 700 "$JFFS/dropbear" /root /root/.ssh 2>/dev/null || true
         cp -f "$tmp_ak" /root/.ssh/authorized_keys 2>/dev/null || true
         chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
         chmod 600 "$tmp_ak" 2>/dev/null || true
-        mv -f "$tmp_ak" "$JFFS/dropbear/authorized_keys" 2>/dev/null || rm -f "$tmp_ak"
+        if ! mv -f "$tmp_ak" "$JFFS/dropbear/authorized_keys" 2>/dev/null; then
+            rm -f "$tmp_ak"
+            unlock_cfg
+            json_error "Failed saving SSH authorized keys"
+        fi
+        unlock_cfg
         trigger_save
         json_header
         echo '{"status":"success"}'
@@ -1265,17 +1323,19 @@ EOF
 
     rc_local)
         [ ${#P_RC_LOCAL} -le 4096 ] || json_error "Startup script exceeds 4096 bytes"
-        mkdir -p "$JFFS" 2>/dev/null || true
         trimmed=$(printf '%s' "$P_RC_LOCAL" | sed '/^[ \t]*$/d')
+        lock_cfg
+        mkdir -p "$JFFS" 2>/dev/null || true
         if [ -z "$trimmed" ]; then
             rm -f "$JFFS/rc.local" 2>/dev/null || true
         else
             first_line=$(printf '%s\n' "$P_RC_LOCAL" | head -n 1)
             case "$first_line" in
-                \#!*) printf '%s\n' "$P_RC_LOCAL" | atomic_write "$JFFS/rc.local" 755 ;;
-                *) { echo "#!/bin/sh"; printf '%s\n' "$P_RC_LOCAL"; } | atomic_write "$JFFS/rc.local" 755 ;;
+                \#!*) printf '%s\n' "$P_RC_LOCAL" | atomic_write "$JFFS/rc.local" 755 || { unlock_cfg; json_error "Failed saving startup script"; } ;;
+                *) { echo "#!/bin/sh"; printf '%s\n' "$P_RC_LOCAL"; } | atomic_write "$JFFS/rc.local" 755 || { unlock_cfg; json_error "Failed saving startup script"; } ;;
             esac
         fi
+        unlock_cfg
         trigger_save
         json_header
         echo '{"status":"success"}'

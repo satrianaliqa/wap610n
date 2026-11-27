@@ -105,14 +105,16 @@ run_once() {
     resp=""
     if [ -x /bin/curl ]; then
         if [ -n "$auth" ]; then
-            resp=$(/bin/curl -s -L -u "$auth" "$url" 2>/dev/null)
+            resp=$(/bin/curl -s -L -m 10 -u "$auth" "$url" 2>/dev/null)
         else
-            resp=$(/bin/curl -s -L "$url" 2>/dev/null)
+            resp=$(/bin/curl -s -L -m 10 "$url" 2>/dev/null)
         fi
     fi
     if [ -z "$resp" ] && command -v wget >/dev/null 2>&1; then
         if [ "$PROVIDER" = "duckdns" ]; then
             resp=$(wget -q -O - "http://www.duckdns.org/update?domains=${HOSTNAME}&token=${TOKEN}&ip=" 2>/dev/null)
+        elif [ -n "$auth" ] && [ "${url#http://}" != "$url" ]; then
+            resp=$(wget -q -O - "http://${USERNAME}:${PASSWORD}@${url#http://}" 2>/dev/null)
         else
             resp=$(wget -q -O - "$url" 2>/dev/null)
         fi
@@ -129,8 +131,9 @@ if [ "$1" = "--once" ]; then
     exit $?
 fi
 
+SLEEP_PID=""
 echo $$ > "$PID_FILE"
-trap 'rm -f "$PID_FILE" 2>/dev/null || true; exit 0' 0 1 2 15
+trap '[ -n "$SLEEP_PID" ] && kill "$SLEEP_PID" 2>/dev/null || true; rm -f "$PID_FILE" 2>/dev/null || true; exit 0' 0 1 2 15
 
 # Wait briefly after boot for bridge/DHCP readiness
 up_sec=$(awk '{printf "%d", $1}' /proc/uptime 2>/dev/null || echo 100)
@@ -143,7 +146,9 @@ while :; do
     [ "$ENABLED" = "1" ] || break
     run_once
     sleep "$INTERVAL" &
-    wait $! 2>/dev/null || sleep "$INTERVAL"
+    SLEEP_PID=$!
+    wait "$SLEEP_PID" 2>/dev/null || true
+    SLEEP_PID=""
 done
 
 rm -f "$PID_FILE" 2>/dev/null || true

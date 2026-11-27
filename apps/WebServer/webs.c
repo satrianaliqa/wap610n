@@ -2196,17 +2196,19 @@ int websWriteDataNonBlock(webs_t wp, char *buf, int nChars)
 
 void websDecodeUrl(char_t *decoded, char_t *token, int len)
 {
-	char_t	*ip,  *op;
+	char_t		*ip, *op;
+	const char_t	*end;
 	int		num, i, c;
 	
 	a_assert(decoded);
 	a_assert(token);
 
 	op = decoded;
-	for (ip = token; *ip && len > 0; ip++, op++) {
+	end = token + (len > 0 ? len : 0);
+	for (ip = token; ip < end && *ip; ip++, op++) {
 		if (*ip == '+') {
 			*op = ' ';
-		} else if (*ip == '%' && gisxdigit(ip[1]) && gisxdigit(ip[2])) {
+		} else if (*ip == '%' && (ip + 2) < end && gisxdigit(ip[1]) && gisxdigit(ip[2])) {
 
 /*
  *			Convert %nn to a single character
@@ -2232,7 +2234,6 @@ void websDecodeUrl(char_t *decoded, char_t *token, int len)
 		} else {
 			*op = *ip;
 		}
-		len--;
 	}
 	*op = '\0';
 }

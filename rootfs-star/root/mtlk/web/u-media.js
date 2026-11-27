@@ -674,9 +674,9 @@ function reWirteList(fieldID, disableFieldID, str)
 
 function fwUpgraceStatus(status, IPandMask)
 {
-	docTemp = IPandMask;
-	index = docTemp.indexOf(','); //IP
-	currentIP = docTemp.substr(0, index);
+	var docTemp = IPandMask || "";
+	var index = docTemp.indexOf(','); //IP
+	var currentIP = (index > 0) ? docTemp.substr(0, index) : location.hostname;
 	
 	if (status*1 == 1)
 		top.location.href = "http://" + currentIP + "/admin/upgrade.asp";
