@@ -222,6 +222,9 @@ int websDefaultHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 			websWrite(wp, T("Last-modified: %s\r\n"), date);
 			bfree(B_L, date);
 		}
+		if (ext != NULL && (gstrcmp(ext, T(".html")) == 0 || gstrcmp(ext, T(".htm")) == 0)) {
+			websWrite(wp, T("Pragma: no-cache\r\nCache-Control: no-cache\r\n"));
+		}
 		bytes = sbuf.size;
 	}
 

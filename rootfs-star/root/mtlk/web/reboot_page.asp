@@ -71,13 +71,10 @@ function page_load() {
 	if (isRestore) {
 		currentIP = "192.168.1.1";
 		totalWaitTime = 45;
-		redirectURL = "http://192.168.1.1/";
-	} else if (mode == 0) { //STA mode
+		redirectURL = "http://192.168.1.1/index.html";
+	} else {
 		totalWaitTime = 45; //second
-		redirectURL = "http://" + currentIP + "/station/wireless_basic.asp";
-	} else { //AP mode
-		totalWaitTime = 45; //second
-		redirectURL = "http://" + currentIP + "/wireless/security.asp";
+		redirectURL = "http://" + currentIP + "/index.html";
 	}
 		
 	document.getElementById("waitPad").style.display="block";

@@ -1278,7 +1278,7 @@ static int initWebs()
 	//Jacky.Yang 5-Jun-2008, Modify default page
 	//websSetDefaultPage(T("default.asp"));
 	//websSetDefaultPage(T("/station/wireless_basic.asp"));
-	websSetDefaultPage(T("/index.html"));
+	websSetDefaultPage(T("index.html"));
 	websSetPassword(password);
 
 /* 
@@ -1354,12 +1354,54 @@ static int initWebs()
 static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	int arg, char_t *url, char_t *path, char_t *query)
 {
+	static const struct {
+		const char *aspPath;
+		const char *target;
+	} legacyMap[] = {
+		{ "/default.asp", "/index.html" },
+		{ "/index.asp", "/index.html" },
+		{ "/network/ap_network.asp", "/index.html#network" },
+		{ "/network/sta_network.asp", "/index.html#network" },
+		{ "/wireless/security.asp", "/index.html#wireless" },
+		{ "/wireless/wireless_basic.asp", "/index.html#wireless" },
+		{ "/wireless/wireless_advanced.asp", "/index.html#wireless" },
+		{ "/wireless/wmm.asp", "/index.html#wireless" },
+		{ "/wireless/wps_status.asp", "/index.html#wireless" },
+		{ "/station/wireless_basic.asp", "/index.html#wireless" },
+		{ "/station/wireless_advanced.asp", "/index.html#wireless" },
+		{ "/station/wmm.asp", "/index.html#wireless" },
+		{ "/station/wps_status.asp", "/index.html#wireless" },
+		{ "/wireless/site_survey.asp", "/index.html#survey" },
+		{ "/station/site_survey.asp", "/index.html#survey" },
+		{ "/admin/management.asp", "/index.html#system" },
+		{ "/admin/upgrade.asp", "/index.html#system" },
+		{ "/admin/factory_defaults.asp", "/index.html#system" },
+		{ "/status/device_status.asp", "/index.html#status" },
+		{ "/status/sta_link_status.asp", "/index.html#status" },
+		{ "/status/about.asp", "/index.html#status" }
+	};
+	size_t i;
+
+	(void)urlPrefix;
+	(void)webDir;
+	(void)arg;
+	(void)url;
+
 /*
- *	If the empty or "/" URL is invoked, redirect default URLs to the home page
+ *	Redirect root and legacy Linksys ASP pages to the modern SPA UI unless ?classic=1
  */
-	if (*url == '\0' || gstrcmp(url, T("/")) == 0) {
+	if (path == NULL || *path == '\0' || strcmp(path, "/") == 0) {
 		websRedirect(wp, T("/index.html"));
 		return 1;
+	}
+	if (query != NULL && strstr(query, "classic=1") != NULL) {
+		return 0;
+	}
+	for (i = 0; i < sizeof(legacyMap) / sizeof(legacyMap[0]); i++) {
+		if (strcmp(path, legacyMap[i].aspPath) == 0) {
+			websRedirect(wp, (char_t *)legacyMap[i].target);
+			return 1;
+		}
 	}
 	return 0;
 }

@@ -535,7 +535,7 @@ function pSystem(){
     <label>Config Backup</label><div class="r"><button type="button" class="t" onclick="dlConfig()">Download .conf</button><input type="file" id="cfgf" accept=".conf,.cfg,.bin,.tar.gz,.tgz"><button type="button" class="t" onclick="restoreCfg()">Restore</button></div>
     <label>NOR Flash Dump</label><div class="r"><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=full'">Full 4MB</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=kernel'">Kernel+RootFS (3.6M)</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=config'">Cfg (128K)</button></div>
     <label>Firmware Upgrade</label><div class="r"><input type="file" id="fwf"><button type="button" class="t p" onclick="flashFw()">Flash</button></div>
-    <label>Maintenance</label><div class="r"><button type="button" class="t d" onclick="doFactory()">Factory Defaults</button><a class="t" href="/network/ap_network.asp">Classic UI</a></div>
+    <label>Maintenance</label><div class="r"><button type="button" class="t d" onclick="doFactory()">Factory Defaults</button><a class="t" href="/network/ap_network.asp?classic=1">Classic UI</a></div>
   </div></div>`;
 }
 function updSjCmd(){
@@ -627,23 +627,36 @@ function doReboot(){
 }
 
 const P=[
-  ['Status',pStatus],['Network',pNetwork],['Wireless',pWireless],
-  ['Site Survey',pSurvey],['Diagnostics',pDiag],['System',pSystem]
+  ['Status',pStatus,'status'],['Network',pNetwork,'network'],['Wireless',pWireless,'wireless'],
+  ['Site Survey',pSurvey,'survey'],['Diagnostics',pDiag,'diagnostics'],['System',pSystem,'system']
 ];
-$('nv').innerHTML=P.map((m,i)=>`<a data-i="${i}"${i===T?' class="on"':''}>${m[0]}</a>`).join('');
+function tabFromHash(){
+  const h=(location.hash||'').replace(/^#/,'').toLowerCase();
+  const idx=P.findIndex(x=>x[2]===h);
+  return idx>=0?idx:0;
+}
+T=tabFromHash();
+$('nv').innerHTML=P.map((m,i)=>`<a href="#${m[2]}" data-i="${i}"${i===T?' class="on"':''}>${m[0]}</a>`).join('');
 $('nv').onclick=e=>{
   const a=e.target.closest('a');if(!a)return;
-  T=+a.dataset.i;[...$('nv').children].forEach(x=>x.classList.toggle('on',x===a));
+  e.preventDefault();
+  setTab(+a.dataset.i);
+};
+function setTab(idx){
+  T=(idx>=0&&idx<P.length)?idx:0;
+  if(location.hash!=='#'+P[T][2])history.replaceState(null,'','#'+P[T][2]);
+  [...$('nv').children].forEach((x,i)=>x.classList.toggle('on',i===T));
   ren();
   if(T===4&&S.dmOut.indexOf('Click Refresh')===0)loadDmesg();
-};
+}
+window.addEventListener('hashchange',()=>setTab(tabFromHash()));
 function ren(){
   updateHeader();
   $('mn').innerHTML=P[T][1]();
   if(T===1)togNet(S.cf.ip_config_method||'1');
   if(T===2){fillChannels();togSec();}
 }
-refreshAll().then(ren);
+refreshAll().then(()=>{ren();if(T===4&&S.dmOut.indexOf('Click Refresh')===0)loadDmesg();});
 setInterval(()=>{
   S.upSec++;const e=$('ut');if(e)e.textContent=ut(S.upSec);
 },1000);
