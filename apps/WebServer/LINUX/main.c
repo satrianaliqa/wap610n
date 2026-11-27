@@ -1689,7 +1689,7 @@ struct api_iw_freq {
 };
 
 struct api_iwreq {
-	char ifr_name[IFNAMSIZ];
+	char if_name[IFNAMSIZ];
 	union {
 		struct api_iw_point essid;
 		struct api_iw_freq freq;
@@ -1816,7 +1816,7 @@ static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
 	if (essidOut != NULL && essidSz > 0) {
 		memset(&wrq, 0, sizeof(wrq));
 		memset(essidBuf, 0, sizeof(essidBuf));
-		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		strncpy(wrq.if_name, "wlan0", IFNAMSIZ - 1);
 		wrq.u.essid.pointer = essidBuf;
 		wrq.u.essid.length = (unsigned short)(sizeof(essidBuf) - 1);
 		if (ioctl(fd, API_SIOCGIWESSID, &wrq) == 0 && essidBuf[0] != '\0') {
@@ -1829,7 +1829,7 @@ static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
 
 	if ((chOut != NULL && chSz > 0) || (bandOut != NULL && bandSz > 0)) {
 		memset(&wrq, 0, sizeof(wrq));
-		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		strncpy(wrq.if_name, "wlan0", IFNAMSIZ - 1);
 		if (ioctl(fd, API_SIOCGIWFREQ, &wrq) == 0 && wrq.u.freq.m > 0) {
 			long val = (long)wrq.u.freq.m;
 			int exp = (int)wrq.u.freq.e;
@@ -1863,7 +1863,7 @@ static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
 
 	if (bssidOut != NULL && bssidSz > 0) {
 		memset(&wrq, 0, sizeof(wrq));
-		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		strncpy(wrq.if_name, "wlan0", IFNAMSIZ - 1);
 		if (ioctl(fd, API_SIOCGIWAP, &wrq) == 0) {
 			const unsigned char *m = (const unsigned char *)wrq.u.ap_addr.sa_data;
 			if ((m[0] | m[1] | m[2] | m[3] | m[4] | m[5]) != 0) {
@@ -1875,22 +1875,6 @@ static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
 	}
 
 	close(fd);
-}
-
-static void readLiveWlanInfo(char *chOut, size_t chSize, char *bssidOut, size_t bssidSize)
-{
-	readLiveWlanIoctl(NULL, 0, chOut, chSize, NULL, 0, bssidOut, bssidSize);
-	if (chOut != NULL && chSize > 0 && chOut[0] == '\0') {
-		MT_Get_Param("Channel", chOut, (int)(chSize - 1));
-		chOut[chSize - 1] = '\0';
-	}
-	if (bssidOut != NULL && bssidSize > 0 && bssidOut[0] == '\0') {
-		getIfaceMac("wlan0", bssidOut, bssidSize);
-		if (bssidOut[0] == '\0') {
-			MT_Get_Param("BSSID", bssidOut, (int)(bssidSize - 1));
-			bssidOut[bssidSize - 1] = '\0';
-		}
-	}
 }
 
 static void readFwDate(char *out, size_t outSize)
