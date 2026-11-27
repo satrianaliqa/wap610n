@@ -164,7 +164,7 @@ is_valid_iface() {
 
 is_tz() {
     case "$1" in
-        ''|*[!A-Za-z0-9+:,-]*) return 1 ;;
+        ''|/*|*..*|*[!A-Za-z0-9+:,./-]*) return 1 ;;
     esac
     [ ${#1} -le 32 ]
 }
@@ -709,7 +709,7 @@ case "$P_ACTION" in
         [ "$P_BAND" = "0" ] || [ "$P_BAND" = "1" ] || json_error "Invalid frequency band"
         [ -n "$P_ESSID" ] && [ ${#P_ESSID} -le 32 ] || json_error "SSID must be 1-32 characters"
         case "$P_ESSID" in *\"*|*\`*|*\$*|*\\*) json_error "SSID contains unsupported shell quote characters" ;; esac
-        [ "$P_SEC" = "1" ] || [ "$P_SEC" = "3" ] || json_error "Quick Setup supports Open (1) or WPA2-AES (3)"
+        [ "$P_SEC" = "1" ] || [ "$P_SEC" = "3" ] || [ "$P_SEC" = "keep" ] || json_error "Quick Setup supports Open (1), WPA2-AES (3), or keep"
         if [ "$P_SEC" = "3" ]; then
             [ ${#P_PSK} -ge 8 ] && [ ${#P_PSK} -le 64 ] || json_error "Passphrase must be 8-64 characters"
         fi
@@ -768,11 +768,13 @@ case "$P_ACTION" in
         set_conf_kv "$JFFS/wlan0.conf" NetworkMode "$net_mode"
         set_conf_kv "$JFFS/wlan0.conf" NonProc_ESSID "$P_ESSID"
         set_conf_kv "$JFFS/wlan0.conf" Wildcard_ESSID "$P_ESSID"
-        set_conf_kv "$JFFS/wlan0.conf" NonProcSecurityMode "$P_SEC"
-        if [ "$P_SEC" = "3" ]; then
-            set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_Mode "2"
-            set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_Encapsulation "1"
-            set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_PSK "$P_PSK"
+        if [ "$P_SEC" != "keep" ]; then
+            set_conf_kv "$JFFS/wlan0.conf" NonProcSecurityMode "$P_SEC"
+            if [ "$P_SEC" = "3" ]; then
+                set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_Mode "2"
+                set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_Encapsulation "1"
+                set_conf_kv "$JFFS/wlan0.conf" NonProc_WPA_Personal_PSK "$P_PSK"
+            fi
         fi
         set_conf_kv "$JFFS/wlan0.conf" unconfigured "0"
         if [ "$P_IPCFG" = "1" ]; then
@@ -837,6 +839,7 @@ case "$P_ACTION" in
         [ -n "$P_WD1" ] && { is_ipv4 "$P_WD1" || json_error "Invalid WAN DNS 1"; }
         [ -n "$P_WD2" ] && { is_ipv4 "$P_WD2" || json_error "Invalid WAN DNS 2"; }
 
+        prev_mode=$(get_kv_file "$JFFS/router.conf" ROUTER_MODE bridge)
         cur_spi=$(get_kv_file "$JFFS/router.conf" SPI 1)
         cur_ping=$(get_kv_file "$JFFS/router.conf" WAN_PING 0)
         cur_mgmt=$(get_kv_file "$JFFS/router.conf" WAN_MGMT 0)
@@ -864,6 +867,18 @@ case "$P_ACTION" in
             set_conf_kv "$JFFS/wlan0.conf" default_gw "$cur_lan_ip"
             sync_sys_and_wlan
             [ "$target_nt" != "$cur_nt" ] && need_reboot=1
+        elif [ "$prev_mode" != "bridge" ]; then
+            cur_lan_ip=$(get_conf sys.conf ip_lan 192.168.1.1)
+            cur_gw=$(get_conf sys.conf default_gw "")
+            ensure_jffs_conf sys.conf
+            ensure_jffs_conf wlan0.conf
+            set_conf_kv "$JFFS/sys.conf" DHCPDEnabled 0
+            set_conf_kv "$JFFS/wlan0.conf" DHCPDEnabled 0
+            if [ "$cur_gw" = "$cur_lan_ip" ]; then
+                set_conf_kv "$JFFS/sys.conf" default_gw "0.0.0.0"
+                set_conf_kv "$JFFS/wlan0.conf" default_gw "0.0.0.0"
+            fi
+            sync_sys_and_wlan
         fi
         unlock_cfg
         if [ "$need_reboot" = "1" ]; then

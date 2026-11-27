@@ -29,6 +29,8 @@
 #include	<fcntl.h>
 #include	<sys/stat.h>
 #include	<time.h>
+#include	<dirent.h>
+#include	<ctype.h>
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
 #include	"../wireless.h"
@@ -69,6 +71,9 @@ static int  websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 				int arg, char_t *url, char_t *path, char_t *query);
 static int  websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 				int arg, char_t *url, char_t *path, char_t *query);
+static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
+				char *chOut, size_t chSz, char *bandOut, size_t bandSz,
+				char *bssidOut, size_t bssidSz);
 extern void defaultErrorHandler(int etype, char_t *msg);
 extern void defaultTraceHandler(int level, char_t *buf);
 extern void upldForm(webs_t wp, char_t *path, char_t *query);
@@ -251,34 +256,13 @@ static int safeAspWaitToRedirect(int eid, webs_t wp, int argc, char_t **argv)
 
 static int safeAspGetWirelessChannel(int eid, webs_t wp, int argc, char_t **argv)
 {
-	FILE *fp;
-	char buf[512];
-	char chStr[16];
-	int nread;
-	char *p;
-	size_t i;
+	char chStr[24];
 
 	(void)eid;
 	(void)argc;
 	(void)argv;
 	chStr[0] = '\0';
-	fp = popen("/sbin/iwconfig wlan0 2>/dev/null", "r");
-	if (fp != NULL) {
-		nread = (int)fread(buf, 1, sizeof(buf) - 1, fp);
-		pclose(fp);
-		if (nread > 0) {
-			buf[nread] = '\0';
-			p = strstr(buf, "Channel=");
-			if (p != NULL) {
-				p += 8;
-				i = 0;
-				while (*p >= '0' && *p <= '9' && i < sizeof(chStr) - 1) {
-					chStr[i++] = *p++;
-				}
-				chStr[i] = '\0';
-			}
-		}
-	}
+	readLiveWlanIoctl(NULL, 0, chStr, sizeof(chStr), NULL, 0, NULL, 0);
 	if (chStr[0] == '\0') {
 		MT_Get_Param("Channel", chStr, sizeof(chStr) - 1);
 		chStr[sizeof(chStr) - 1] = '\0';
@@ -959,7 +943,9 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	}
 
 	MT_WriteConfFiles(paramCount, paramNames);
+	preserveCustomSysConfKeys();
 	doSystem("cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1");
+	submitToFlash();
 
 	if (isApMode) {
 		int needBounce = (country[0] != '\0' || freqBand[0] != '\0' ||
@@ -1077,6 +1063,7 @@ int isWaitOtherProcessBusy(void)
 	    (time(NULL) - waitOtherProcessSince) > 120) {
 		waitOtherProcess = 0;
 		waitOtherProcessSince = 0;
+		unlink("/var/old_web_pid");
 	}
 	return waitOtherProcess;
 }
@@ -1753,10 +1740,18 @@ static size_t jsonAppend(char *buf, size_t bufSize, size_t pos, const char *fmt,
 #define API_SIOCGIWFREQ  0x8B05
 #define API_SIOCGIWAP    0x8B15
 #define API_SIOCGIWESSID 0x8B1B
+#define API_SIOCGIWRTS   0x8B23
 
 struct api_iw_point {
 	void *pointer;
 	unsigned short length;
+	unsigned short flags;
+};
+
+struct api_iw_param {
+	int value;
+	unsigned char fixed;
+	unsigned char disabled;
 	unsigned short flags;
 };
 
@@ -1771,11 +1766,493 @@ struct api_iwreq {
 	char if_name[IFNAMSIZ];
 	union {
 		struct api_iw_point essid;
+		struct api_iw_param rts;
 		struct api_iw_freq freq;
 		struct sockaddr ap_addr;
 		char pad[16];
 	} u;
 };
+
+typedef struct {
+	unsigned char chaddr[16];
+	unsigned int yiaddr;
+	unsigned int expires;
+} api_dhcp_lease_t;
+
+typedef struct {
+	char *data;
+	size_t len;
+	size_t cap;
+	int oom;
+} api_dynbuf_t;
+
+static void dynInit(api_dynbuf_t *db, size_t initCap)
+{
+	db->data = (char *)malloc(initCap);
+	db->len = 0;
+	db->cap = (db->data != NULL) ? initCap : 0;
+	db->oom = (db->data == NULL) ? 1 : 0;
+	if (db->data != NULL) {
+		db->data[0] = '\0';
+	}
+}
+
+static int dynEnsure(api_dynbuf_t *db, size_t extra)
+{
+	size_t need;
+	size_t newCap;
+	char *nb;
+
+	if (db->oom) {
+		return 0;
+	}
+	if (extra > ((size_t)-1) - db->len - 1) {
+		db->oom = 1;
+		return 0;
+	}
+	need = db->len + extra + 1;
+	if (need <= db->cap) {
+		return 1;
+	}
+	newCap = db->cap ? db->cap : 4096;
+	while (newCap < need) {
+		if (newCap > 262144) {
+			db->oom = 1;
+			return 0;
+		}
+		newCap *= 2;
+	}
+	nb = (char *)realloc(db->data, newCap);
+	if (nb == NULL) {
+		db->oom = 1;
+		return 0;
+	}
+	db->data = nb;
+	db->cap = newCap;
+	return 1;
+}
+
+static void dynAppendRaw(api_dynbuf_t *db, const char *s, size_t n)
+{
+	if (n == 0 || !dynEnsure(db, n)) {
+		return;
+	}
+	memcpy(db->data + db->len, s, n);
+	db->len += n;
+	db->data[db->len] = '\0';
+}
+
+static void dynAppendFmt(api_dynbuf_t *db, const char *fmt, ...)
+{
+	va_list ap;
+	int n;
+	size_t avail;
+
+	if (db->oom) {
+		return;
+	}
+	avail = db->cap - db->len;
+	va_start(ap, fmt);
+	n = vsnprintf(db->data + db->len, avail, fmt, ap);
+	va_end(ap);
+	if (n < 0) {
+		return;
+	}
+	if ((size_t)n >= avail) {
+		if (!dynEnsure(db, (size_t)n + 1)) {
+			return;
+		}
+		avail = db->cap - db->len;
+		va_start(ap, fmt);
+		n = vsnprintf(db->data + db->len, avail, fmt, ap);
+		va_end(ap);
+		if (n < 0 || (size_t)n >= avail) {
+			return;
+		}
+	}
+	db->len += (size_t)n;
+}
+
+static void dynAppendJsonStr(api_dynbuf_t *db, const char *s)
+{
+	const unsigned char *p;
+
+	dynAppendRaw(db, "\"", 1);
+	if (s != NULL) {
+		p = (const unsigned char *)s;
+		while (*p != '\0' && !db->oom) {
+			unsigned char c = *p++;
+			if (c == '\"') {
+				dynAppendRaw(db, "\\\"", 2);
+			} else if (c == '\\') {
+				dynAppendRaw(db, "\\\\", 2);
+			} else if (c == '\t') {
+				dynAppendRaw(db, "\\t", 2);
+			} else if (c == '\r') {
+				/* skip CR */
+			} else if (c == '\n') {
+				dynAppendRaw(db, "\\n", 2);
+			} else if (c >= 0x20 && c != 0x7f) {
+				char ch = (char)c;
+				dynAppendRaw(db, &ch, 1);
+			}
+		}
+	}
+	dynAppendRaw(db, "\"", 1);
+}
+
+static void getParamOrDef(const char *key, const char *def, char *out, size_t outSize)
+{
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	memset(out, 0, outSize);
+	if (key != NULL) {
+		MT_Get_Param((char *)key, out, outSize - 1);
+		out[outSize - 1] = '\0';
+	}
+	if (out[0] == '\0' && def != NULL) {
+		snprintf(out, outSize, "%s", def);
+		out[outSize - 1] = '\0';
+	}
+}
+
+static void readKvFromFile(const char *path, const char *key, const char *def,
+	char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[512];
+	size_t keyLen;
+	int found = 0;
+
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	out[0] = '\0';
+	if (path != NULL && key != NULL) {
+		keyLen = strlen(key);
+		fp = fopen(path, "r");
+		if (fp != NULL) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				char *p = line;
+				char *eq;
+				while (*p == ' ' || *p == '\t') {
+					p++;
+				}
+				if (strncmp(p, key, keyLen) == 0) {
+					eq = p + keyLen;
+					while (*eq == ' ' || *eq == '\t') {
+						eq++;
+					}
+					if (*eq == '=') {
+						char *val = eq + 1;
+						size_t len;
+						while (*val == ' ' || *val == '\t') {
+							val++;
+						}
+						snprintf(out, outSize, "%s", val);
+						out[outSize - 1] = '\0';
+						len = strlen(out);
+						while (len > 0 && (out[len - 1] == '\r' || out[len - 1] == '\n' ||
+						                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
+							out[--len] = '\0';
+						}
+						found = 1;
+					}
+				}
+			}
+			fclose(fp);
+		}
+	}
+	if ((!found || out[0] == '\0') && def != NULL) {
+		snprintf(out, outSize, "%s", def);
+		out[outSize - 1] = '\0';
+	}
+}
+
+static int readFileTrimmed(const char *path, char *out, size_t outSize, int trimAllSpaces)
+{
+	FILE *fp;
+	size_t n;
+
+	if (out == NULL || outSize == 0) {
+		return 0;
+	}
+	out[0] = '\0';
+	if (path == NULL) {
+		return 0;
+	}
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	n = fread(out, 1, outSize - 1, fp);
+	fclose(fp);
+	out[n] = '\0';
+	while (n > 0 && (out[n - 1] == '\n' || out[n - 1] == '\r' ||
+	                 (trimAllSpaces && (out[n - 1] == ' ' || out[n - 1] == '\t')))) {
+		out[--n] = '\0';
+	}
+	if (trimAllSpaces && out[0] != '\0') {
+		char *p = out;
+		while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') {
+			p++;
+		}
+		if (p != out) {
+			memmove(out, p, strlen(p) + 1);
+		}
+	}
+	return (out[0] != '\0');
+}
+
+static void appendJsonLinesFile(api_dynbuf_t *db, const char *path)
+{
+	FILE *fp;
+	char line[512];
+	int first = 1;
+
+	dynAppendRaw(db, "[", 1);
+	fp = fopen(path, "r");
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL && !db->oom) {
+			char *p = line;
+			size_t len;
+			while (*p == ' ' || *p == '\t') {
+				p++;
+			}
+			if (*p == '\0' || *p == '\n' || *p == '\r' || *p == '#') {
+				continue;
+			}
+			len = strlen(p);
+			while (len > 0 && (p[len - 1] == '\n' || p[len - 1] == '\r')) {
+				p[--len] = '\0';
+			}
+			if (len == 0) {
+				continue;
+			}
+			if (!first) {
+				dynAppendRaw(db, ",", 1);
+			}
+			first = 0;
+			dynAppendJsonStr(db, p);
+		}
+		fclose(fp);
+	}
+	dynAppendRaw(db, "]", 1);
+}
+
+static void appendActiveLeasesJson(api_dynbuf_t *db)
+{
+	FILE *fp;
+	api_dhcp_lease_t lease;
+	int first = 1;
+
+	dynAppendRaw(db, "[", 1);
+	fp = fopen("/tmp/udhcpd.leases", "rb");
+	if (fp != NULL) {
+		while (fread(&lease, sizeof(lease), 1, fp) == 1 && !db->oom) {
+			char macStr[24];
+			char ipStr[24];
+			char expStr[48];
+			struct in_addr ina;
+			unsigned long expSec;
+
+			snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
+				lease.chaddr[0], lease.chaddr[1], lease.chaddr[2],
+				lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
+			ina.s_addr = (in_addr_t)lease.yiaddr;
+			snprintf(ipStr, sizeof(ipStr), "%s", inet_ntoa(ina));
+			ipStr[sizeof(ipStr) - 1] = '\0';
+			expSec = (unsigned long)ntohl(lease.expires);
+			if (expSec == 0UL) {
+				snprintf(expStr, sizeof(expStr), "expired");
+			} else {
+				unsigned long d = expSec / 86400UL;
+				unsigned long rem = expSec % 86400UL;
+				unsigned long h = rem / 3600UL;
+				unsigned long m = (rem % 3600UL) / 60UL;
+				unsigned long s = rem % 60UL;
+				if (d > 0UL) {
+					snprintf(expStr, sizeof(expStr), "%lu days %02lu:%02lu:%02lu", d, h, m, s);
+				} else {
+					snprintf(expStr, sizeof(expStr), "%02lu:%02lu:%02lu", h, m, s);
+				}
+			}
+			if (!first) {
+				dynAppendRaw(db, ",", 1);
+			}
+			first = 0;
+			dynAppendFmt(db, "{\"mac\":\"%s\",\"ip\":\"%s\",\"expires\":\"%s\"}",
+				macStr, ipStr, expStr);
+		}
+		fclose(fp);
+	}
+	dynAppendRaw(db, "]", 1);
+}
+
+static int isPidFileAlive(const char *path)
+{
+	FILE *fp;
+	char buf[32];
+	long pid = 0;
+
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	memset(buf, 0, sizeof(buf));
+	if (fgets(buf, sizeof(buf) - 1, fp) != NULL) {
+		char *p = buf;
+		while (*p >= '0' && *p <= '9') {
+			pid = pid * 10L + (*p - '0');
+			p++;
+		}
+		if (*p != '\0' && *p != '\n' && *p != '\r' && *p != ' ' && *p != '\t') {
+			pid = 0;
+		}
+	}
+	fclose(fp);
+	if (pid <= 1L) {
+		return 0;
+	}
+	return (kill((pid_t)pid, 0) == 0) ? 1 : 0;
+}
+
+static void scanLiveProcAndTcp(int *hasUdhcpd, int *hasDropbear, int *hasTelnetd,
+	int *hasUpnpd, int *hasDdns, int *hasWatchdog,
+	int *hasSshjWatchdog, int *hasSshjClient,
+	int *listenSsh, int *listenTelnet, int *estabRemoteSsh)
+{
+	DIR *dir;
+	struct dirent *ent;
+	FILE *fp;
+	char line[256];
+
+	*hasUdhcpd = 0;
+	*hasDropbear = 0;
+	*hasTelnetd = 0;
+	*hasUpnpd = 0;
+	*hasDdns = 0;
+	*hasWatchdog = 0;
+	*hasSshjWatchdog = 0;
+	*hasSshjClient = 0;
+	*listenSsh = 0;
+	*listenTelnet = 0;
+	*estabRemoteSsh = 0;
+
+	dir = opendir("/proc");
+	if (dir != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			const char *dn = ent->d_name;
+			char cmdPath[64];
+			char cmdBuf[256];
+			size_t i, n;
+			int allDigits = 1;
+
+			if (dn[0] == '\0') {
+				continue;
+			}
+			for (i = 0; dn[i] != '\0'; i++) {
+				if (!isdigit((unsigned char)dn[i])) {
+					allDigits = 0;
+					break;
+				}
+			}
+			if (!allDigits) {
+				continue;
+			}
+			snprintf(cmdPath, sizeof(cmdPath), "/proc/%s/cmdline", dn);
+			fp = fopen(cmdPath, "rb");
+			if (fp != NULL) {
+				n = fread(cmdBuf, 1, sizeof(cmdBuf) - 1, fp);
+				fclose(fp);
+				if (n > 0) {
+					for (i = 0; i < n; i++) {
+						if (cmdBuf[i] == '\0') {
+							cmdBuf[i] = ' ';
+						}
+					}
+					cmdBuf[n] = '\0';
+					if (strstr(cmdBuf, "udhcpd") != NULL) *hasUdhcpd = 1;
+					if (strstr(cmdBuf, "dropbear") != NULL) *hasDropbear = 1;
+					if (strstr(cmdBuf, "telnetd") != NULL) *hasTelnetd = 1;
+					if (strstr(cmdBuf, "upnpd") != NULL) *hasUpnpd = 1;
+					if (strstr(cmdBuf, "ddns_updater.sh") != NULL) *hasDdns = 1;
+					if (strstr(cmdBuf, "net_watchdog.sh") != NULL) *hasWatchdog = 1;
+					if (strstr(cmdBuf, "sshj_tunnel.sh") != NULL) *hasSshjWatchdog = 1;
+					if ((strstr(cmdBuf, "ssh") != NULL || strstr(cmdBuf, "dbclient") != NULL) &&
+					    strstr(cmdBuf, "ssh-j.com") != NULL) {
+						*hasSshjClient = 1;
+					}
+				}
+			}
+		}
+		closedir(dir);
+	}
+
+	fp = fopen("/proc/net/tcp", "r");
+	if (fp != NULL) {
+		if (fgets(line, sizeof(line), fp) != NULL) {
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				unsigned int locPort = 0, remPort = 0, st = 0;
+				if (sscanf(line, "%*d: %*x:%x %*x:%x %x", &locPort, &remPort, &st) == 3) {
+					if (st == 0x0AU && locPort == 0x0016U) {
+						*listenSsh = 1;
+					} else if (st == 0x0AU && locPort == 0x0017U) {
+						*listenTelnet = 1;
+					} else if (st == 0x01U && remPort == 0x0016U) {
+						*estabRemoteSsh = 1;
+					}
+				}
+			}
+		}
+		fclose(fp);
+	}
+}
+
+static void readLiveWlanRts(char *out, size_t outSize)
+{
+	int fd;
+	struct api_iwreq wrq;
+
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	out[0] = '\0';
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd >= 0) {
+		memset(&wrq, 0, sizeof(wrq));
+		strncpy(wrq.if_name, "wlan0", IFNAMSIZ - 1);
+		if (ioctl(fd, API_SIOCGIWRTS, &wrq) == 0 && !wrq.u.rts.disabled && wrq.u.rts.value > 0) {
+			snprintf(out, outSize, "%d", wrq.u.rts.value);
+			out[outSize - 1] = '\0';
+		}
+		close(fd);
+	}
+	if (out[0] == '\0') {
+		getParamOrDef("RTSThreshold", "1600", out, outSize);
+	}
+}
+
+static int countFileLines(const char *path)
+{
+	FILE *fp;
+	char line[256];
+	int count = 0;
+
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		size_t len = strlen(line);
+		if (len > 0 && line[len - 1] == '\n') {
+			count++;
+		}
+	}
+	fclose(fp);
+	return count;
+}
 
 static int readProcFirstLine(const char *path, char *out, size_t outSize)
 {
@@ -2259,9 +2736,9 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 				jsonEscapeCopy(esc, sizeof(esc), liveMask);
 			} else if (strcmp(k, "default_gw") == 0 && liveGw[0] != '\0') {
 				jsonEscapeCopy(esc, sizeof(esc), liveGw);
-			} else if (strcmp(k, "dns1") == 0 && liveD1[0] != '\0') {
+			} else if (strcmp(k, "dns1") == 0 && esc[0] == '\0' && liveD1[0] != '\0') {
 				jsonEscapeCopy(esc, sizeof(esc), liveD1);
-			} else if (strcmp(k, "dns2") == 0 && liveD2[0] != '\0') {
+			} else if (strcmp(k, "dns2") == 0 && esc[0] == '\0' && liveD2[0] != '\0') {
 				jsonEscapeCopy(esc, sizeof(esc), liveD2);
 			} else if (strcmp(k, "channel_bonding") == 0 || strcmp(k, "upper_lower") == 0 ||
 			           strcmp(k, "hidden_ssid") == 0 || strcmp(k, "ap_forwarding") == 0 ||
@@ -2508,6 +2985,392 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			ethRxB, ethRxP, ethTxB, ethTxP);
 		body[sizeof(body) - 1] = '\0';
 		sendJsonResponse(wp, 200, body);
+		return 1;
+	}
+
+	if (strcmp(path, "/api/state.json") == 0) {
+		api_dynbuf_t db;
+		char netType[16], brMode[16], loopBr[16], macClone[32];
+		char dhEn[16], dhSt[32], dhEnd[32], dhSub[32], dhLt[24], dhDom[64], dhD1[32], dhD2[32];
+		char aclMode[16];
+		char rfMaxC[16], rfBcn[16], rfDtim[16], rfRts[16], rfSp[16], rfSs[16], rfStbc[16], rfSgi[16], rfSka[24];
+		char qosEn[16], qosDn[24], qosUp[24];
+		char ddEn[16], ddPv[32], ddHn[128], ddUn[64], ddPw[128], ddTk[128], ddCu[256], ddIv[24], ddSt[256];
+		char wdEn[16], wdTg[96], wdIv[24], wdMf[16], wdAc[24];
+		char tzVal[64], nowStr[64], tsLog[256], ledNight[16];
+		char rtMode[24], rtProto[24], rtWif[16], rtWip[32], rtWmk[32], rtWgw[32], rtWd1[32], rtWd2[32], rtWmtu[16];
+		char fwSpi[16], fwPing[16], fwMgmt[16], fwSsh[16], fwMss[16], fwDmz[32];
+		char lwIp[32], lwMk[32], lwGw[32], lwDn[96], liveDn1[32], liveDn2[32];
+		char sshConfEn[16], telConfEn[16], upnpConfEn[16], sshjConfEn[16], sshjUser[64], sshjHost[64];
+		char *aclRaw, *wdLog, *sshKeys, *rcLocal;
+		int hasUdhcpd = 0, hasDropbear = 0, hasTelnetd = 0, hasUpnpd = 0;
+		int hasDdns = 0, hasWatchdog = 0, hasSshjWd = 0, hasSshjCli = 0;
+		int listenSsh = 0, listenTel = 0, estabRemSsh = 0;
+		int ddRunning = 0, wdRunning = 0, hasVlan = 0, hasNat = 0, ctCnt = 0;
+		int curSsh = 0, curTel = 0, curUpnp = 0, sshjWd = 0, sshjProc = 0, sshjRun = 0, sshjAct = 0;
+		time_t nowT;
+		struct tm tmBuf;
+		size_t alen;
+
+		aclRaw = (char *)calloc(1, 1024);
+		wdLog = (char *)calloc(1, 2048);
+		sshKeys = (char *)calloc(1, 4200);
+		rcLocal = (char *)calloc(1, 4200);
+		dynInit(&db, 16384);
+		if (db.oom || !aclRaw || !wdLog || !sshKeys || !rcLocal) {
+			free(aclRaw);
+			free(wdLog);
+			free(sshKeys);
+			free(rcLocal);
+			free(db.data);
+			sendJsonResponse(wp, 500, "{\"status\":\"error\",\"message\":\"out_of_memory\"}\n");
+			return 1;
+		}
+
+		scanLiveProcAndTcp(&hasUdhcpd, &hasDropbear, &hasTelnetd, &hasUpnpd,
+			&hasDdns, &hasWatchdog, &hasSshjWd, &hasSshjCli,
+			&listenSsh, &listenTel, &estabRemSsh);
+
+		getParamOrDef("network_type", "2", netType, sizeof(netType));
+		getParamOrDef("BridgeMode", "4", brMode, sizeof(brMode));
+		getParamOrDef("LoopBreakingEnabled", "0", loopBr, sizeof(loopBr));
+		getParamOrDef("MacCloningAddr", "0", macClone, sizeof(macClone));
+
+		getParamOrDef("DHCPDEnabled", "1", dhEn, sizeof(dhEn));
+		getParamOrDef("DHCPDStartAddress", "192.168.1.10", dhSt, sizeof(dhSt));
+		getParamOrDef("DHCPDEndAddress", "192.168.1.20", dhEnd, sizeof(dhEnd));
+		getParamOrDef("DHCPDSubnet", "255.255.255.0", dhSub, sizeof(dhSub));
+		getParamOrDef("DHCPDLeaseTime", "864000", dhLt, sizeof(dhLt));
+		getParamOrDef("DHCPDDomain", "Local", dhDom, sizeof(dhDom));
+		getParamOrDef("DHCPDDNS1", "1.1.1.1", dhD1, sizeof(dhD1));
+		getParamOrDef("DHCPDDNS2", "8.8.8.8", dhD2, sizeof(dhD2));
+
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/AclMode", aclMode, sizeof(aclMode))) {
+			getParamOrDef("AclMode", "0", aclMode, sizeof(aclMode));
+		}
+		if (!readFileTrimmed("/proc/sys/dev/mtlk/wlan0/ACL", aclRaw, 1024, 1)) {
+			getParamOrDef("ACL", "", aclRaw, 1024);
+		} else {
+			for (alen = 0; aclRaw[alen] != '\0'; alen++) {
+				if (aclRaw[alen] == '\r' || aclRaw[alen] == '\n') {
+					aclRaw[alen] = ' ';
+				}
+			}
+		}
+
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/MaxConnections", rfMaxC, sizeof(rfMaxC))) {
+			getParamOrDef("MaxConnections", "16", rfMaxC, sizeof(rfMaxC));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/BeaconPeriod", rfBcn, sizeof(rfBcn))) {
+			getParamOrDef("BeaconPeriod", "100", rfBcn, sizeof(rfBcn));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/DTIMPeriod", rfDtim, sizeof(rfDtim))) {
+			getParamOrDef("DTIMPeriod", "5", rfDtim, sizeof(rfDtim));
+		}
+		readLiveWlanRts(rfRts, sizeof(rfRts));
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/ShortPreamble", rfSp, sizeof(rfSp))) {
+			getParamOrDef("ShortPreamble", "1", rfSp, sizeof(rfSp));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/ShortSlotTimeOptionEnabled", rfSs, sizeof(rfSs))) {
+			getParamOrDef("ShortSlotTimeOptionEnabled", "1", rfSs, sizeof(rfSs));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/STBC", rfStbc, sizeof(rfStbc))) {
+			getParamOrDef("STBC", "0", rfStbc, sizeof(rfStbc));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/ShortCyclicPrefix", rfSgi, sizeof(rfSgi))) {
+			getParamOrDef("ShortCyclicPrefix", "0", rfSgi, sizeof(rfSgi));
+		}
+		if (!readProcFirstLine("/proc/sys/dev/mtlk/wlan0/StaKeepaliveTimeout", rfSka, sizeof(rfSka))) {
+			getParamOrDef("StaKeepaliveTimeout", "60000", rfSka, sizeof(rfSka));
+		}
+
+		readKvFromFile("/mnt/jffs2/qos.conf", "ENABLED", "0", qosEn, sizeof(qosEn));
+		readKvFromFile("/mnt/jffs2/qos.conf", "DOWN_KBPS", "0", qosDn, sizeof(qosDn));
+		readKvFromFile("/mnt/jffs2/qos.conf", "UP_KBPS", "0", qosUp, sizeof(qosUp));
+
+		readKvFromFile("/mnt/jffs2/ddns.conf", "ENABLED", "0", ddEn, sizeof(ddEn));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "PROVIDER", "duckdns", ddPv, sizeof(ddPv));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "HOSTNAME", "", ddHn, sizeof(ddHn));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "USERNAME", "", ddUn, sizeof(ddUn));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "PASSWORD", "", ddPw, sizeof(ddPw));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "TOKEN", "", ddTk, sizeof(ddTk));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "CUSTOM_URL", "", ddCu, sizeof(ddCu));
+		readKvFromFile("/mnt/jffs2/ddns.conf", "INTERVAL", "600", ddIv, sizeof(ddIv));
+		readFileTrimmed("/tmp/ddns.status", ddSt, sizeof(ddSt), 0);
+		ddRunning = (isPidFileAlive("/tmp/ddns_updater.pid") || hasDdns) ? 1 : 0;
+
+		readKvFromFile("/mnt/jffs2/watchdog.conf", "ENABLED", "0", wdEn, sizeof(wdEn));
+		readKvFromFile("/mnt/jffs2/watchdog.conf", "TARGET", "1.1.1.1", wdTg, sizeof(wdTg));
+		readKvFromFile("/mnt/jffs2/watchdog.conf", "INTERVAL", "60", wdIv, sizeof(wdIv));
+		readKvFromFile("/mnt/jffs2/watchdog.conf", "MAX_FAIL", "5", wdMf, sizeof(wdMf));
+		readKvFromFile("/mnt/jffs2/watchdog.conf", "ACTION", "recover", wdAc, sizeof(wdAc));
+		readFileTrimmed("/tmp/watchdog.log", wdLog, 2048, 0);
+		wdRunning = (isPidFileAlive("/tmp/net_watchdog.pid") || hasWatchdog) ? 1 : 0;
+
+		if (!readFileTrimmed("/etc/TZ", tzVal, sizeof(tzVal), 1)) {
+			readFileTrimmed("/mnt/jffs2/tz.conf", tzVal, sizeof(tzVal), 1);
+		}
+		if (tzVal[0] != '\0') {
+			setenv("TZ", tzVal, 1);
+			tzset();
+		}
+		nowStr[0] = '\0';
+		nowT = time(NULL);
+		if (localtime_r(&nowT, &tmBuf) != NULL) {
+			strftime(nowStr, sizeof(nowStr), "%Y-%m-%d %H:%M:%S %Z", &tmBuf);
+		}
+		readFileTrimmed("/tmp/timesync.log", tsLog, sizeof(tsLog), 0);
+		readKvFromFile("/mnt/jffs2/led.conf", "NIGHT_MODE", "0", ledNight, sizeof(ledNight));
+		hasVlan = (access("/lib/modules/2.6.16-star/net/8021q.ko", F_OK) == 0) ? 1 : 0;
+		if (!readFileTrimmed("/mnt/jffs2/dropbear/authorized_keys", sshKeys, 4200, 0)) {
+			readFileTrimmed("/root/.ssh/authorized_keys", sshKeys, 4200, 0);
+		}
+		readFileTrimmed("/mnt/jffs2/rc.local", rcLocal, 4200, 0);
+
+		readKvFromFile("/mnt/jffs2/router.conf", "ROUTER_MODE", "bridge", rtMode, sizeof(rtMode));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_PROTO", "dhcp", rtProto, sizeof(rtProto));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_IP", "", rtWip, sizeof(rtWip));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_MASK", "255.255.255.0", rtWmk, sizeof(rtWmk));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_GW", "", rtWgw, sizeof(rtWgw));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_DNS1", "1.1.1.1", rtWd1, sizeof(rtWd1));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_DNS2", "8.8.8.8", rtWd2, sizeof(rtWd2));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_MTU", "1500", rtWmtu, sizeof(rtWmtu));
+		readKvFromFile("/mnt/jffs2/router.conf", "SPI", "1", fwSpi, sizeof(fwSpi));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_PING", "0", fwPing, sizeof(fwPing));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_MGMT", "0", fwMgmt, sizeof(fwMgmt));
+		readKvFromFile("/mnt/jffs2/router.conf", "WAN_SSH", "0", fwSsh, sizeof(fwSsh));
+		readKvFromFile("/mnt/jffs2/router.conf", "TCPMSS", "1", fwMss, sizeof(fwMss));
+		readKvFromFile("/mnt/jffs2/router.conf", "DMZ_IP", "", fwDmz, sizeof(fwDmz));
+
+		if (strcmp(rtMode, "wisp") == 0) {
+			snprintf(rtWif, sizeof(rtWif), "wlan0");
+		} else if (strcmp(rtMode, "router") == 0) {
+			snprintf(rtWif, sizeof(rtWif), "eth0");
+		} else {
+			rtWif[0] = '\0';
+		}
+
+		readKvFromFile("/tmp/wan_status.conf", "WAN_IP", "", lwIp, sizeof(lwIp));
+		readKvFromFile("/tmp/wan_status.conf", "WAN_MASK", "", lwMk, sizeof(lwMk));
+		readKvFromFile("/tmp/wan_status.conf", "WAN_GW", "", lwGw, sizeof(lwGw));
+		readKvFromFile("/tmp/wan_status.conf", "WAN_DNS", "", lwDn, sizeof(lwDn));
+		if (rtWif[0] != '\0') {
+			char ifIp[32], ifMk[32];
+			getIfaceIpv4AndMask(rtWif, ifIp, sizeof(ifIp), ifMk, sizeof(ifMk));
+			if (ifIp[0] != '\0') {
+				snprintf(lwIp, sizeof(lwIp), "%s", ifIp);
+			}
+			if (ifMk[0] != '\0') {
+				snprintf(lwMk, sizeof(lwMk), "%s", ifMk);
+			}
+		}
+		{
+			char ifGw[32];
+			readLiveDefaultGw(ifGw, sizeof(ifGw));
+			if (ifGw[0] != '\0') {
+				snprintf(lwGw, sizeof(lwGw), "%s", ifGw);
+			}
+		}
+		readLiveResolvDns(liveDn1, sizeof(liveDn1), liveDn2, sizeof(liveDn2));
+		if (liveDn1[0] != '\0') {
+			if (liveDn2[0] != '\0') {
+				snprintf(lwDn, sizeof(lwDn), "%s, %s", liveDn1, liveDn2);
+			} else {
+				snprintf(lwDn, sizeof(lwDn), "%s", liveDn1);
+			}
+		}
+
+		hasNat = (access("/sbin/mini-nat", X_OK) == 0 && access("/proc/net/ip_conntrack", R_OK) == 0) ? 1 : 0;
+		ctCnt = (access("/proc/net/ip_conntrack", R_OK) == 0) ? countFileLines("/proc/net/ip_conntrack") : 0;
+
+		getParamOrDef("SSH_Enabled", "1", sshConfEn, sizeof(sshConfEn));
+		getParamOrDef("Telnet_Enabled", "1", telConfEn, sizeof(telConfEn));
+		getParamOrDef("UPnP_Enabled", "0", upnpConfEn, sizeof(upnpConfEn));
+		getParamOrDef("SSHJ_Enabled", "0", sshjConfEn, sizeof(sshjConfEn));
+		getParamOrDef("SSHJ_User", "", sshjUser, sizeof(sshjUser));
+		if (!isValidIdentStr(sshjUser, 1, 48)) {
+			sshjUser[0] = '\0';
+		}
+		getParamOrDef("SSHJ_Host", "wap610n", sshjHost, sizeof(sshjHost));
+		if (!isValidIdentStr(sshjHost, 1, 32)) {
+			snprintf(sshjHost, sizeof(sshjHost), "wap610n");
+		}
+		curSsh = (listenSsh || hasDropbear) ? 1 : 0;
+		curTel = (listenTel || hasTelnetd) ? 1 : 0;
+		curUpnp = hasUpnpd ? 1 : 0;
+		sshjWd = (isPidFileAlive("/tmp/sshj_tunnel.pid") || hasSshjWd) ? 1 : 0;
+		sshjProc = (isPidFileAlive("/tmp/sshj_ssh.pid") || hasSshjCli) ? 1 : 0;
+		sshjRun = (sshjProc && estabRemSsh) ? 1 : 0;
+		sshjAct = (strcmp(sshjConfEn, "1") == 0 || sshjRun || sshjWd || sshjProc) ? 1 : 0;
+
+		dynAppendRaw(&db, "{\"status\":\"success\",\"opmode\":{\"network_type\":", 44);
+		dynAppendJsonStr(&db, netType);
+		dynAppendRaw(&db, ",\"bridge_mode\":", 15);
+		dynAppendJsonStr(&db, brMode);
+		dynAppendRaw(&db, ",\"loop_breaking\":", 17);
+		dynAppendJsonStr(&db, loopBr);
+		dynAppendRaw(&db, ",\"mac_cloning_addr\":", 20);
+		dynAppendJsonStr(&db, macClone);
+
+		dynAppendRaw(&db, "},\"dhcp\":{\"enabled\":", 20);
+		dynAppendJsonStr(&db, dhEn);
+		dynAppendRaw(&db, ",\"start\":", 9);
+		dynAppendJsonStr(&db, dhSt);
+		dynAppendRaw(&db, ",\"end\":", 7);
+		dynAppendJsonStr(&db, dhEnd);
+		dynAppendRaw(&db, ",\"subnet\":", 10);
+		dynAppendJsonStr(&db, dhSub);
+		dynAppendRaw(&db, ",\"lease_time\":", 14);
+		dynAppendJsonStr(&db, dhLt);
+		dynAppendRaw(&db, ",\"domain\":", 10);
+		dynAppendJsonStr(&db, dhDom);
+		dynAppendRaw(&db, ",\"dns1\":", 8);
+		dynAppendJsonStr(&db, dhD1);
+		dynAppendRaw(&db, ",\"dns2\":", 8);
+		dynAppendJsonStr(&db, dhD2);
+		dynAppendFmt(&db, ",\"running\":%d,\"static_leases\":", hasUdhcpd);
+		appendJsonLinesFile(&db, "/mnt/jffs2/dhcp_static.conf");
+		dynAppendRaw(&db, ",\"active_leases\":", 17);
+		appendActiveLeasesJson(&db);
+
+		dynAppendRaw(&db, "},\"acl\":{\"mode\":", 16);
+		dynAppendJsonStr(&db, aclMode);
+		dynAppendRaw(&db, ",\"raw\":", 7);
+		dynAppendJsonStr(&db, aclRaw);
+
+		dynAppendRaw(&db, "},\"rf\":{\"max_conn\":", 19);
+		dynAppendJsonStr(&db, rfMaxC);
+		dynAppendRaw(&db, ",\"beacon\":", 10);
+		dynAppendJsonStr(&db, rfBcn);
+		dynAppendRaw(&db, ",\"dtim\":", 8);
+		dynAppendJsonStr(&db, rfDtim);
+		dynAppendRaw(&db, ",\"rts\":", 7);
+		dynAppendJsonStr(&db, rfRts);
+		dynAppendRaw(&db, ",\"short_preamble\":", 18);
+		dynAppendJsonStr(&db, rfSp);
+		dynAppendRaw(&db, ",\"short_slot\":", 14);
+		dynAppendJsonStr(&db, rfSs);
+		dynAppendRaw(&db, ",\"stbc\":", 8);
+		dynAppendJsonStr(&db, rfStbc);
+		dynAppendRaw(&db, ",\"short_gi\":", 12);
+		dynAppendJsonStr(&db, rfSgi);
+		dynAppendRaw(&db, ",\"sta_ka_to\":", 13);
+		dynAppendJsonStr(&db, rfSka);
+
+		dynAppendRaw(&db, "},\"routes\":", 11);
+		appendJsonLinesFile(&db, "/mnt/jffs2/routes.conf");
+		dynAppendRaw(&db, ",\"vlans\":", 9);
+		appendJsonLinesFile(&db, "/mnt/jffs2/vlan.conf");
+
+		dynAppendRaw(&db, ",\"router\":{\"mode\":", 18);
+		dynAppendJsonStr(&db, rtMode);
+		dynAppendRaw(&db, ",\"wan_proto\":", 13);
+		dynAppendJsonStr(&db, rtProto);
+		dynAppendRaw(&db, ",\"wan_if\":", 10);
+		dynAppendJsonStr(&db, rtWif);
+		dynAppendRaw(&db, ",\"wan_ip\":", 10);
+		dynAppendJsonStr(&db, rtWip);
+		dynAppendRaw(&db, ",\"wan_mask\":", 12);
+		dynAppendJsonStr(&db, rtWmk);
+		dynAppendRaw(&db, ",\"wan_gw\":", 10);
+		dynAppendJsonStr(&db, rtWgw);
+		dynAppendRaw(&db, ",\"wan_dns1\":", 12);
+		dynAppendJsonStr(&db, rtWd1);
+		dynAppendRaw(&db, ",\"wan_dns2\":", 12);
+		dynAppendJsonStr(&db, rtWd2);
+		dynAppendRaw(&db, ",\"wan_mtu\":", 11);
+		dynAppendJsonStr(&db, rtWmtu);
+		dynAppendRaw(&db, ",\"spi\":", 7);
+		dynAppendJsonStr(&db, fwSpi);
+		dynAppendRaw(&db, ",\"wan_ping\":", 12);
+		dynAppendJsonStr(&db, fwPing);
+		dynAppendRaw(&db, ",\"wan_mgmt\":", 12);
+		dynAppendJsonStr(&db, fwMgmt);
+		dynAppendRaw(&db, ",\"wan_ssh\":", 11);
+		dynAppendJsonStr(&db, fwSsh);
+		dynAppendRaw(&db, ",\"tcpmss\":", 10);
+		dynAppendJsonStr(&db, fwMss);
+		dynAppendRaw(&db, ",\"dmz_ip\":", 10);
+		dynAppendJsonStr(&db, fwDmz);
+		dynAppendRaw(&db, ",\"live_wan_ip\":", 15);
+		dynAppendJsonStr(&db, lwIp);
+		dynAppendRaw(&db, ",\"live_wan_mask\":", 17);
+		dynAppendJsonStr(&db, lwMk);
+		dynAppendRaw(&db, ",\"live_wan_gw\":", 15);
+		dynAppendJsonStr(&db, lwGw);
+		dynAppendRaw(&db, ",\"live_wan_dns\":", 16);
+		dynAppendJsonStr(&db, lwDn);
+		dynAppendFmt(&db, ",\"has_nat\":%d,\"conntrack_count\":%d,\"portfwd\":", hasNat, ctCnt);
+		appendJsonLinesFile(&db, "/mnt/jffs2/portfwd.conf");
+
+		dynAppendRaw(&db, "},\"qos\":{\"enabled\":", 19);
+		dynAppendJsonStr(&db, qosEn);
+		dynAppendRaw(&db, ",\"down_kbps\":", 13);
+		dynAppendJsonStr(&db, qosDn);
+		dynAppendRaw(&db, ",\"up_kbps\":", 11);
+		dynAppendJsonStr(&db, qosUp);
+
+		dynAppendRaw(&db, "},\"ddns\":{\"enabled\":", 20);
+		dynAppendJsonStr(&db, ddEn);
+		dynAppendRaw(&db, ",\"provider\":", 12);
+		dynAppendJsonStr(&db, ddPv);
+		dynAppendRaw(&db, ",\"hostname\":", 12);
+		dynAppendJsonStr(&db, ddHn);
+		dynAppendRaw(&db, ",\"username\":", 12);
+		dynAppendJsonStr(&db, ddUn);
+		dynAppendFmt(&db, ",\"has_pass\":%d,\"has_token\":%d,\"custom_url\":",
+			(ddPw[0] != '\0') ? 1 : 0, (ddTk[0] != '\0') ? 1 : 0);
+		dynAppendJsonStr(&db, ddCu);
+		dynAppendRaw(&db, ",\"interval\":", 12);
+		dynAppendJsonStr(&db, ddIv);
+		dynAppendFmt(&db, ",\"running\":%d,\"status\":", ddRunning);
+		dynAppendJsonStr(&db, ddSt);
+
+		dynAppendRaw(&db, "},\"watchdog\":{\"enabled\":", 24);
+		dynAppendJsonStr(&db, wdEn);
+		dynAppendRaw(&db, ",\"target\":", 10);
+		dynAppendJsonStr(&db, wdTg);
+		dynAppendRaw(&db, ",\"interval\":", 12);
+		dynAppendJsonStr(&db, wdIv);
+		dynAppendRaw(&db, ",\"max_fail\":", 12);
+		dynAppendJsonStr(&db, wdMf);
+		dynAppendRaw(&db, ",\"action\":", 10);
+		dynAppendJsonStr(&db, wdAc);
+		dynAppendFmt(&db, ",\"running\":%d,\"log\":", wdRunning);
+		dynAppendJsonStr(&db, wdLog);
+
+		dynAppendRaw(&db, "},\"system\":{\"tz\":", 17);
+		dynAppendJsonStr(&db, tzVal);
+		dynAppendRaw(&db, ",\"now\":", 7);
+		dynAppendJsonStr(&db, nowStr);
+		dynAppendRaw(&db, ",\"timesync_log\":", 16);
+		dynAppendJsonStr(&db, tsLog);
+		dynAppendRaw(&db, ",\"led_night\":", 13);
+		dynAppendJsonStr(&db, ledNight);
+		dynAppendFmt(&db, ",\"has_vlan_mod\":%d,\"ssh_keys\":", hasVlan);
+		dynAppendJsonStr(&db, sshKeys);
+		dynAppendRaw(&db, ",\"rc_local\":", 12);
+		dynAppendJsonStr(&db, rcLocal);
+
+		dynAppendFmt(&db, "},\"remote\":{\"ssh\":%d,\"telnet\":%d,\"upnp\":%d,"
+			"\"sshj\":%d,\"sshj_running\":%d,\"sshj_watchdog\":%d,\"sshj_user\":",
+			curSsh, curTel, curUpnp, sshjAct, sshjRun, sshjWd);
+		dynAppendJsonStr(&db, sshjUser);
+		dynAppendRaw(&db, ",\"sshj_host\":", 13);
+		dynAppendJsonStr(&db, sshjHost);
+		dynAppendRaw(&db, "}}\n", 3);
+
+		free(aclRaw);
+		free(wdLog);
+		free(sshKeys);
+		free(rcLocal);
+		if (db.oom || db.data == NULL) {
+			free(db.data);
+			sendJsonResponse(wp, 500, "{\"status\":\"error\",\"message\":\"out_of_memory\"}\n");
+			return 1;
+		}
+		sendJsonResponse(wp, 200, db.data);
+		free(db.data);
 		return 1;
 	}
 

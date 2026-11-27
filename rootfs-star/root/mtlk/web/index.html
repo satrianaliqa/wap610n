@@ -38,8 +38,8 @@ details summary{cursor:pointer;font-weight:600;color:#0369a1;padding:2px 0;user-
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const S={st:{},wf:{},cf:{},wm:{current_wmm:'0',ac:{}},cl:[],rm:{},ex:{},slList:[],aclList:[],rtList:[],vlList:[],pfList:[],aps:[],selAp:-1,conAp:null,upSec:0,ioPrev:null,ioRate:{erx:0,etx:0,wrx:0,wtx:0},dgTool:'ping',dgHost:'1.1.1.1',dgOut:'Ready.',logType:'dmesg',logOut:'Click Refresh to load system log.'};
-let T=0,tmToast=null,modalTimer=null,wpsAbort=null;
+const S={st:{},wf:{},cf:{},wm:{current_wmm:'0',ac:{}},cl:[],rm:{},ex:{},slList:[],aclList:[],rtList:[],vlList:[],pfList:[],aps:[],selAp:-1,conAp:null,upSec:0,ioPrev:null,ioRate:{erx:0,etx:0,wrx:0,wtx:0},dgTool:'ping',dgHost:'1.1.1.1',dgOut:'Ready.',logType:'dmesg',logOut:'Click Refresh to load system log.',dirty:false};
+let T=0,tmToast=null,modalTimer=null,wpsAbort=null,lastAct=Date.now(),authPaused=false,pollTick=0;
 
 function msg(t){const e=$('ts');e.textContent=t;e.classList.add('on');clearTimeout(tmToast);tmToast=setTimeout(()=>e.classList.remove('on'),2800);}
 const ut=s=>{const p=n=>String(n|0).padStart(2,'0');return`${s/86400|0}d ${p(s%86400/3600)}:${p(s%3600/60)}:${p(s%60)}`;};
@@ -143,9 +143,8 @@ function syncExtArrays(){
 }
 
 async function refreshAll(syncLists){
-  const tNow=Date.now();
-  await Promise.all([
-    getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||0;}).catch(()=>{}),
+  const tNow=Date.now(),reqs=[
+    getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||0;}).catch(e=>{if(String(e.message)==='HTTP 401')authPaused=true;}),
     getJ('/api/wifi.json').then(d=>{
       S.wf=d;
       const e=d.eth0||{},w=d.wlan0||{};
@@ -164,13 +163,15 @@ async function refreshAll(syncLists){
     }).catch(()=>{}),
     getJ('/api/config.json').then(d=>{S.cf=d;}).catch(()=>{}),
     getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];}).catch(()=>{}),
-    getJ('/cgi-bin/remote_access.cgi?action=status&_t='+tNow).then(d=>{if(d&&d.status==='success')S.rm=d;}).catch(()=>{}),
-    getJ('/cgi-bin/router_ctl.cgi?action=state&_t='+tNow).then(d=>{if(d.status==='success'){S.ex=d;if(syncLists!==false)syncExtArrays();}}).catch(()=>{})
-  ]);
+    getJ('/api/state.json').then(d=>{if(d&&d.status==='success'){S.ex=d;if(d.remote)S.rm=d.remote;if(syncLists!==false){syncExtArrays();S.dirty=false;}}}).catch(()=>{})
+  ];
+  if(P[T]&&P[T][2]==='wireless')reqs.push(getJ('/api/wmm.json').then(d=>{if(d&&d.ac)S.wm=d;}).catch(()=>{}));
+  await Promise.all(reqs);
   updateHeader();
 }
 
 async function syncNow(){
+  S.dirty=false;authPaused=false;lastAct=Date.now();
   await refreshAll(true);
   ren();
   msg('Synced live router state');
@@ -190,8 +191,8 @@ function updateHeader(){
 
 const secName=m=>({'1':'Open','2':'WEP','3':'WPA/WPA2-Personal','4':'WPA/WPA2-Enterprise'}[String(m)]||('Mode '+m));
 const chName=c=>(!c||String(c)==='0')?'Auto':'Ch '+c;
-const CH2=[['0','Auto'],...[1,2,3,4,5,6,7,8,9,10,11].map(x=>[String(x),'Ch '+x])];
-const CH5=[['0','Auto'],...[36,40,44,48,149,153,157,161,165].map(x=>[String(x),'Ch '+x])];
+const CH2=[['0','Auto'],...[1,2,3,4,5,6,7,8,9,10,11,12,13,14].map(x=>[String(x),'Ch '+x])];
+const CH5=[['0','Auto'],...[36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165].map(x=>[String(x),'Ch '+x])];
 const opt=(vals,cur)=>vals.map(([v,l])=>`<option value="${esc(v)}"${String(cur)===String(v)?' selected':''}>${esc(l)}</option>`).join('');
 const kv=(t,rows,extra='')=>`<div class="p"><h2>${esc(t)}${extra}</h2><div class="k">${rows.map(([k,v,cls])=>`<span>${esc(k)}</span><span class="${cls||''}">${v}</span>`).join('')}</div></div>`;
 
@@ -265,6 +266,8 @@ function pQuick(){
   const cf=S.cf,ex=S.ex||{},op=ex.opmode||{},rt=ex.router||{};
   const curMode=(rt.mode==='router'?'router':(rt.mode==='wisp'?'wisp':(cf.network_type==='0'?'sta_'+((op.bridge_mode==='2'||op.bridge_mode==='3')?op.bridge_mode:'4'):'ap')));
   const band=(cf.frequency_band==='0'?'0':'1');
+  const qSecOpts=(cf.security_mode==='2'||cf.security_mode==='4')?[['keep','Keep Current ('+secName(cf.security_mode)+')'],['3','WPA2-Personal (AES)'],['1','Open (No Password)']]:[['3','WPA2-Personal (AES)'],['1','Open (No Password)']];
+  const qSecCur=(cf.security_mode==='2'||cf.security_mode==='4')?'keep':(cf.security_mode==='1'?'1':'3');
   return `<div class="p"><h2>Quick Setup Wizard<span class="sub">Switching AP &harr; Station reboots mtlk.ko (~40s)</span></h2><form id="fqs" onsubmit="saveQuick(event)">
     <div class="mc">
       <label><input type="radio" name="qmode" value="router"${curMode==='router'?' checked':''} onchange="togQuick()"><div><b>Wireless Router (NAT)</b><div class="sub">eth0 WAN (NAT+SPI) &rarr; wlan0 Wi-Fi LAN</div></div></label>
@@ -277,7 +280,7 @@ function pQuick(){
     <div class="f">
       <label>Frequency Band</label><select name="band">${opt([['1','2.4 GHz (802.11b/g/n)'],['0','5 GHz (802.11a/n)']],band)}</select>
       <label>Network Name (SSID)</label><input name="essid" maxlength="32" value="${esc(cf.essid||'linksys')}" required>
-      <label>Security</label><select name="sec_mode" id="qsec" onchange="togQuick()">${opt([['3','WPA2-Personal (AES)'],['1','Open (No Password)']],cf.security_mode==='1'?'1':'3')}</select>
+      <label>Security</label><select name="sec_mode" id="qsec" onchange="togQuick()">${opt(qSecOpts,qSecCur)}</select>
       <label class="q-psk">Passphrase</label><input class="q-psk" type="password" name="psk" maxlength="64" value="${esc(cf.wpa_psk||'')}" placeholder="8-63 characters">
       <label class="q-wan">WAN Uplink Type</label><select class="q-wan" name="wan_proto" id="qwp" onchange="togQuick()">${opt([['dhcp','Automatic - DHCP Client'],['static','Static WAN IP']],rt.wan_proto||'dhcp')}</select>
       <label class="q-ws">WAN IPv4</label><input class="q-ws" name="wan_ip" value="${esc(rt.wan_ip||'')}">
@@ -312,6 +315,7 @@ async function saveQuick(e){
   const wp=isNat?f.wan_proto.value:'dhcp',wip=f.wan_ip.value.trim(),wmk=f.wan_mask.value.trim(),wgw=f.wan_gw.value.trim();
   const ssid=f.essid.value.trim(),sec=f.sec_mode.value,psk=f.psk.value;
   if(!ssid||ssid.length>32)return msg('SSID must be 1-32 chars');
+  if(/["`$\\]/.test(ssid))return msg('SSID cannot contain ", `, $, or \\ in Quick Setup');
   if(sec==='3'&&(psk.length<8||psk.length>64))return msg('Passphrase must be 8-64 chars');
   if(ipm==='1'&&(!isIp(ip)||!isMask(sub)||(!isNat&&gw&&!isIp(gw))))return msg('Invalid LAN IP, Mask, or Gateway');
   if(isNat&&wp==='static'&&(!isIp(wip)||!isMask(wmk)||(wgw&&!isIp(wgw))))return msg('Invalid WAN Static IP/Mask/Gateway');
@@ -331,12 +335,15 @@ async function saveQuick(e){
   }catch(err){hideModal();msg('Quick Setup failed: '+err.message);}
 }
 
+function slRowsHtml(){return S.slList.length?S.slList.map((x,i)=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td>${esc(x.host||'-')}</td><td><button type="button" class="t d s" onclick="delSl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No static DHCP reservations.</td></tr>';}
+function updSlTable(){if($('sl_tb'))$('sl_tb').innerHTML=slRowsHtml();if($('sl_cnt'))$('sl_cnt').textContent=S.slList.length;}
 function pNetwork(){
-  const cf=S.cf,dh=(S.ex&&S.ex.dhcp)||{},al=dh.active_leases||[];
-  const slRows=S.slList.length?S.slList.map((x,i)=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td>${esc(x.host||'-')}</td><td><button type="button" class="t d s" onclick="S.slList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No static DHCP reservations.</td></tr>';
+  const cf=S.cf,ex=S.ex||{},rt=ex.router||{},dh=ex.dhcp||{},al=dh.active_leases||[];
+  const isNat=(rt.mode==='router'||rt.mode==='wisp'),ipm=isNat?'1':(cf.ip_config_method||'1'),isDhcpCli=(ipm==='0');
+  const slRows=slRowsHtml();
   const alRows=al.length?al.map(x=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td class="m">${esc(x.expires)}</td><td><button type="button" class="t s" onclick="addSlPreset('${esc(x.mac)}','${esc(x.ip)}')">+ Static</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No dynamic leases issued.</td></tr>';
-  return `<div class="p"><h2>Bridge &amp; IP Setup (br0)</h2><form id="fnet" onsubmit="saveNet(event)"><div class="f">
-    <label>IP Configuration</label><select name="ipConfigMethod" id="nipcfg" onchange="togNet(this.value)">${opt([['1','Static IP'],['0','Automatic - DHCP Client']],cf.ip_config_method||'1')}</select>
+  return `<div class="p"><h2>Bridge &amp; IP Setup (br0)${isNat?'<span class="sub">Router/WISP LAN requires Static IP</span>':''}</h2><form id="fnet" onsubmit="saveNet(event)"><div class="f">
+    <label>IP Configuration</label><select name="ipConfigMethod" id="nipcfg"${isNat?' disabled':''} onchange="togNet(this.value)">${opt([['1','Static IP'],['0','Automatic - DHCP Client']],ipm)}</select>
     <label>Hostname</label><input name="hostName" id="nhost" maxlength="32" value="${esc(cf.hostname||'WAP610N')}" required>
     <label class="nst">Bridge IPv4</label><input class="nst" name="lanIP" id="nip" value="${esc(cf.ip_lan||'192.168.1.1')}">
     <label class="nst">Subnet Mask</label><input class="nst" name="lanSubnet" id="nmask" value="${esc(cf.subnet_lan||'255.255.255.0')}">
@@ -347,13 +354,13 @@ function pNetwork(){
   </div><div class="z"><button class="t p">Save Network</button></div></form></div>
 
   <div class="p"><h2>DHCP Server (udhcpd) &amp; Static Leases<span class="u${dh.running?'':' w'}">${dh.running?'Running':'Stopped'}</span></h2><form id="fdhcp" onsubmit="saveDhcp(event)"><div class="f">
-    <label>DHCP Server</label><label class="c"><input type="checkbox" name="enabled"${dh.enabled==='1'?' checked':''}>Enable udhcpd on br0 (Static IP mode)</label>
-    <label>IP Pool Range</label><div class="r"><input name="start" value="${esc(dh.start||'192.168.1.10')}" placeholder="Start IP"><input name="end" value="${esc(dh.end||'192.168.1.100')}" placeholder="End IP"></div>
+    <label>DHCP Server</label><label class="c"><input type="checkbox" name="enabled"${dh.enabled==='1'&&!isDhcpCli?' checked':''}${isDhcpCli?' disabled':''}>Enable udhcpd on br0${isDhcpCli?' (Static IP mode required)':''}</label>
+    <label>IP Pool Range</label><div class="r"><input name="start" value="${esc(dh.start||'192.168.1.10')}" placeholder="Start IP"><input name="end" value="${esc(dh.end||'192.168.1.20')}" placeholder="End IP"></div>
     <label>Subnet / Lease (s)</label><div class="r"><input name="subnet" value="${esc(dh.subnet||'255.255.255.0')}"><input name="lease_time" type="number" min="60" max="2592000" value="${esc(dh.lease_time||'864000')}"></div>
     <label>Domain / DNS 1,2</label><div class="r"><input name="domain" value="${esc(dh.domain||'Local')}" placeholder="Domain"><input name="dns1" value="${esc(dh.dns1||'1.1.1.1')}"><input name="dns2" value="${esc(dh.dns2||'8.8.8.8')}"></div>
   </div>
-  <h2 style="margin-top:8px">Static DHCP Reservations (${S.slList.length}/32)</h2>
-  <table><thead><tr><th>MAC Address</th><th>Reserved IPv4</th><th>Note</th><th></th></tr></thead><tbody>${slRows}</tbody></table>
+  <h2 style="margin-top:8px">Static DHCP Reservations (<span id="sl_cnt">${S.slList.length}</span>/32)</h2>
+  <table><thead><tr><th>MAC Address</th><th>Reserved IPv4</th><th>Note</th><th></th></tr></thead><tbody id="sl_tb">${slRows}</tbody></table>
   <div class="r" style="margin-top:6px"><input id="sl_mac" placeholder="aa:bb:cc:dd:ee:ff"><input id="sl_ip" placeholder="192.168.1.50"><input id="sl_host" placeholder="device-name"><button type="button" class="t" onclick="addSl()">+ Add</button></div>
   <div class="z"><button class="t p">Save DHCP &amp; Static Leases</button></div></form></div>
 
@@ -362,7 +369,7 @@ function pNetwork(){
 function togNet(v){document.querySelectorAll('#fnet .nst').forEach(el=>{el.style.display=(v==='1')?'':'none';});}
 function saveNet(e){
   e.preventDefault();
-  const f=e.target,m=f.ipConfigMethod.value,hn=f.hostName.value.trim(),ip=f.lanIP.value.trim(),mk=f.lanSubnet.value.trim(),gw=f.gateway.value.trim(),d1=f.priDns.value.trim(),d2=f.secDns.value.trim();
+  const f=e.target,rt=(S.ex&&S.ex.router)||{},isNat=(rt.mode==='router'||rt.mode==='wisp'),m=isNat?'1':f.ipConfigMethod.value,hn=f.hostName.value.trim(),ip=f.lanIP.value.trim(),mk=f.lanSubnet.value.trim(),gw=f.gateway.value.trim(),d1=f.priDns.value.trim(),d2=f.secDns.value.trim();
   if(!/^[A-Za-z0-9-]{1,32}$/.test(hn))return msg('Hostname must be 1-32 letters, numbers, or hyphens');
   if(m==='1'){if(!isIp(ip)||!isMask(mk))return msg('Invalid Bridge IPv4 or Mask');if(gw&&(!isIp(gw)||!sameSub(ip,gw,mk)))return msg('Gateway must match subnet');}
   if((d1&&!isIp(d1))||(d2&&!isIp(d2)))return msg('Invalid DNS IP');
@@ -371,18 +378,24 @@ function saveNet(e){
   if(m==='1'){params.lanIP=ip;params.lanSubnet=mk;params.gateway=gw;}
   applyGoForm('/goform/networkBasic',params,'Applying Network Settings',15,newUrl);
 }
+function delSl(i){S.slList.splice(i,1);S.dirty=true;updSlTable();}
 function addSl(){
   const mac=$('sl_mac').value.trim().toLowerCase(),ip=$('sl_ip').value.trim(),host=$('sl_host').value.trim();
   if(!isMac(mac))return msg('Invalid MAC format');
   if(!isIp(ip))return msg('Invalid IPv4');
   if(host&&!isHost(host))return msg('Invalid hostname');
+  if(S.slList.some(x=>x.mac===mac))return msg('MAC already reserved');
   if(S.slList.length>=32)return msg('Max 32 static leases');
-  S.slList.push({mac,ip,host});ren();
+  S.slList.push({mac,ip,host});S.dirty=true;
+  $('sl_mac').value='';$('sl_ip').value='';$('sl_host').value='';
+  updSlTable();
 }
-function addSlPreset(mac,ip){if(!S.slList.some(x=>x.mac===mac.toLowerCase()))S.slList.push({mac:mac.toLowerCase(),ip,host:''});ren();}
+function addSlPreset(mac,ip){const lm=mac.toLowerCase();if(!S.slList.some(x=>x.mac===lm)){S.slList.push({mac:lm,ip,host:''});S.dirty=true;updSlTable();}}
 async function saveDhcp(e){
   e.preventDefault();
-  const f=e.target,start=f.start.value.trim(),end=f.end.value.trim(),subnet=f.subnet.value.trim(),dns1=f.dns1.value.trim(),dns2=f.dns2.value.trim();
+  const f=e.target,rt=(S.ex&&S.ex.router)||{},isNat=(rt.mode==='router'||rt.mode==='wisp');
+  if(!isNat&&S.cf.ip_config_method==='0'&&f.enabled.checked)return msg('Switch Bridge IP to Static IP before enabling DHCP server');
+  const start=f.start.value.trim(),end=f.end.value.trim(),subnet=f.subnet.value.trim(),dns1=f.dns1.value.trim(),dns2=f.dns2.value.trim();
   if(!isIp(start)||!isIp(end)||!isMask(subnet))return msg('Invalid DHCP pool IP/subnet');
   if((dns1&&!isIp(dns1))||(dns2&&!isIp(dns2)))return msg('Invalid DNS IP');
   try{
@@ -392,7 +405,7 @@ async function saveDhcp(e){
       lease_time:f.lease_time.value,domain:f.domain.value.trim()||'Local',dns1,dns2,
       static_leases:S.slList.map(x=>`${x.mac}|${x.ip}|${x.host}`).join('\n')
     });
-    await refreshAll(true);ren();msg('DHCP server updated');
+    S.dirty=false;await refreshAll(true);ren();msg('DHCP server updated');
   }catch(err){msg(err.message);}
 }
 
@@ -400,9 +413,10 @@ function cwOpts(maxE){const r=[];for(let i=2;i<=maxE;i++)r.push([String(i),Strin
 function fillChannels(){
   const b=$('wband'),ch=$('wch'),ul=$('wul'),bw=$('wbw');
   if(!b||!ch)return;
-  const list=(b.value==='0')?CH5:CH2,cur=ch.value||ch.dataset.cur||'0';
+  const base=(b.value==='0')?CH5:CH2,cur=ch.value||ch.dataset.cur||'0';
   delete ch.dataset.cur;
-  ch.innerHTML=opt(list,list.some(x=>x[0]===cur)?cur:'0');
+  const list=(cur&&cur!=='0'&&!base.some(x=>x[0]===cur))?[...base,[cur,'Ch '+cur]]:base;
+  ch.innerHTML=opt(list,cur);
   if(ul&&bw)ul.disabled=(bw.value!=='1');
 }
 function togSec(){
@@ -411,13 +425,15 @@ function togSec(){
   document.querySelectorAll('.s-wpa').forEach(x=>x.style.display=(sm==='3')?'':'none');
   document.querySelectorAll('.s-ent').forEach(x=>x.style.display=(sm==='4')?'':'none');
 }
+function aclRowsHtml(){return S.aclList.length?S.aclList.map((m,i)=>`<tr><td class="m">${esc(m)}</td><td><button type="button" class="t d s" onclick="delAcl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="2" class="sub">No MAC filter entries.</td></tr>';}
+function updAclTable(){if($('acl_tb'))$('acl_tb').innerHTML=aclRowsHtml();if($('acl_cnt'))$('acl_cnt').textContent=S.aclList.length;}
 function pWireless(){
   const cf=S.cf,ex=S.ex,acl=ex.acl||{},rf=ex.rf||{},isSta=(cf.network_type==='0'),band=(cf.frequency_band==='0'?'0':'1');
   const liveCtry=cf.live_country||cf.country||'US';
-  const countries=[['US','US'],['SG','SG'],['ID','ID'],['EU','EU'],['GB','GB'],['JP','JP'],['CA','CA'],['AU','AU'],['CN','CN'],['TW','TW']];
+  const countries=[['US','US'],['SG','SG'],['ID','ID'],['DE','DE (Europe)'],['GB','GB'],['IT','IT'],['NL','NL'],['JP','JP'],['CA','CA'],['AU','AU'],['CN','CN'],['TW','TW']];
   if(liveCtry&&!countries.some(x=>x[0]===liveCtry))countries.push([liveCtry,liveCtry]);
   const chList=(band==='0')?CH5:CH2,ac=(S.wm&&S.wm.ac&&S.wm.ac.AC_BK)||{},wmmCur=(S.wm&&S.wm.current_wmm)?S.wm.current_wmm:'0',cws=cwOpts(10);
-  const aclRows=S.aclList.length?S.aclList.map((m,i)=>`<tr><td class="m">${esc(m)}</td><td><button type="button" class="t d s" onclick="delAcl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="2" class="sub">No MAC filter entries.</td></tr>';
+  const aclRows=aclRowsHtml();
   const clOpts=S.cl.map(c=>`<option value="${esc(c.mac)}">${esc(c.mac)} (${esc(c.ip||c.iface)})</option>`).join('');
   return `<div class="p"><h2>Radio &amp; Wireless Security</h2><form id="fwl" onsubmit="saveWireless(event)"><div class="f">
     <label>Frequency Band</label><select name="frequencyBand" id="wband" onchange="fillChannels()">${opt([['1','2.4 GHz (802.11b/g/n)'],['0','5 GHz (802.11a/n)']],band)}</select>
@@ -455,9 +471,9 @@ function pWireless(){
     <label>PHY Capabilities</label><div class="r"><label class="c"><input type="checkbox" name="short_preamble"${rf.short_preamble==='1'?' checked':''}>Short Preamble</label><label class="c"><input type="checkbox" name="short_slot"${rf.short_slot==='1'?' checked':''}>Short Slot</label><label class="c"><input type="checkbox" name="stbc"${rf.stbc==='1'?' checked':''}>STBC</label><label class="c"><input type="checkbox" name="short_gi"${rf.short_gi==='1'?' checked':''}>Short GI (400ns)</label></div>
   </div><div class="z"><button class="t p">Apply RF Tuning</button></div></form></div>
 
-  <div class="p"><h2>Wireless MAC Filter (Hardware ACL)<span class="sub">${S.aclList.length}/32 MACs</span></h2><form onsubmit="saveAcl(event)"><div class="f">
+  <div class="p"><h2>Wireless MAC Filter (Hardware ACL)<span class="sub"><span id="acl_cnt">${S.aclList.length}</span>/32 MACs</span></h2><form onsubmit="saveAcl(event)"><div class="f">
     <label>Filter Policy</label><select id="acl_mode">${opt([['0','Disabled (Allow All)'],['1','Allow List (Whitelist Only)'],['2','Block List (Blacklist)']],acl.mode||'0')}</select>
-  </div><table style="margin-top:6px"><thead><tr><th>MAC Address</th><th></th></tr></thead><tbody>${aclRows}</tbody></table>
+  </div><table style="margin-top:6px"><thead><tr><th>MAC Address</th><th></th></tr></thead><tbody id="acl_tb">${aclRows}</tbody></table>
   <div class="r" style="margin-top:6px"><input id="acl_new" placeholder="AA:BB:CC:DD:EE:FF">${clOpts?`<select id="acl_pick" onchange="if(this.value)$('acl_new').value=this.value"><option value="">Pick client...</option>${clOpts}</select>`:''}<button type="button" class="t" onclick="addAcl()">+ Add</button></div>
   <div class="z"><button class="t p">Apply MAC Filter</button></div></form></div>
 
@@ -497,8 +513,8 @@ function saveWireless(e){
 }
 function saveAdv(e){
   e.preventDefault();
-  const f=e.target,isSta=(S.cf.network_type==='0');
-  const params={nowMode:isSta?'stationMode':'apMode',PowerSelection:f.PowerSelection.value,AdvancedCoding:f.AdvancedCoding.value,ERPProtectionType:f.ERPProtectionType.value,ProtectionType:f.ProtectionType.value,Use11QMap:f.Use11QMap.value};
+  const f=e.target,isSta=(S.cf.network_type==='0'),stbc=(S.ex&&S.ex.rf&&S.ex.rf.stbc)==='1'?'1':'0';
+  const params={nowMode:isSta?'stationMode':'apMode',PowerSelection:f.PowerSelection.value,AdvancedCoding:f.AdvancedCoding.value,ERPProtectionType:f.ERPProtectionType.value,ProtectionType:f.ProtectionType.value,STBC:stbc,Use11QMap:f.Use11QMap.value};
   if(isSta){params.EthDownUp=f.EthDownUp.value;}
   else{params.HiddenSSID=f.HiddenSSID.checked?'1':'0';params.APforwarding=f.APforwarding.checked?'1':'0';params.OverlappingBSSProtection=f.OverlappingBSSProtection.checked?'1':'0';params.ReliableMulticast=f.ReliableMulticast.checked?'1':'0';params.RadarDetect=f.RadarDetect.checked?'1':'0';params.AocsRestrictCh=f.AocsRestrictCh.value.trim()||'None';}
   applyGoForm('/goform/advancedWireless',params,'Applying Advanced Wireless',12);
@@ -511,21 +527,18 @@ async function saveRf(e){
     await refreshAll(false);msg('RF parameters applied live');
   }catch(err){msg(err.message);}
 }
-function delAcl(i){
-  S.ex=S.ex||{};S.ex.acl=S.ex.acl||{};if($('acl_mode'))S.ex.acl.mode=$('acl_mode').value;
-  S.aclList.splice(i,1);ren();
-}
+function delAcl(i){S.aclList.splice(i,1);S.dirty=true;updAclTable();}
 function addAcl(){
   const m=$('acl_new').value.trim().toUpperCase();
   if(!isMac(m))return msg('Invalid MAC format');
   if(S.aclList.length>=32)return msg('Max 32 MAC entries');
-  S.ex=S.ex||{};S.ex.acl=S.ex.acl||{};if($('acl_mode'))S.ex.acl.mode=$('acl_mode').value;
-  if(!S.aclList.includes(m))S.aclList.push(m);
-  ren();
+  if(!S.aclList.includes(m)){S.aclList.push(m);S.dirty=true;}
+  $('acl_new').value='';
+  updAclTable();
 }
 async function saveAcl(e){
   e.preventDefault();
-  try{msg('Updating wireless ACL...');await postCtl({action:'wlan_acl',mode:$('acl_mode').value,macs:S.aclList.join('\n')});await refreshAll(true);ren();msg('Wireless MAC filter applied');}
+  try{msg('Updating wireless ACL...');await postCtl({action:'wlan_acl',mode:$('acl_mode').value,macs:S.aclList.join('\n')});S.dirty=false;await refreshAll(true);ren();msg('Wireless MAC filter applied');}
   catch(err){msg(err.message);}
 }
 
@@ -613,17 +626,22 @@ function connectAp(e){
   S.conAp=null;applyGoForm('/goform/stationScan',params,'Connecting to '+params.ESSID,25);
 }
 
+function rtRowsHtml(){return S.rtList.length?S.rtList.map((r,i)=>`<tr><td class="m">${esc(r.dest)}</td><td class="m">${esc(r.mask)}</td><td class="m">${esc(r.gw)}</td><td>${esc(r.iface)}</td><td class="m">${esc(r.metric)}</td><td><button type="button" class="t d s" onclick="delRoute(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="6" class="sub">No custom static routes defined.</td></tr>';}
+function vlRowsHtml(){return S.vlList.length?S.vlList.map((v,i)=>`<tr><td class="m">${esc(v.iface+'.'+v.vid)}</td><td>${esc(v.mode)}</td><td class="m">${esc(v.mode==='routed'?(v.ip+'/'+v.mask):'Bridged to br0')}</td><td><button type="button" class="t d s" onclick="delVlan(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No 802.1Q VLAN tags configured.</td></tr>';}
+function updRtTable(){if($('rt_tb'))$('rt_tb').innerHTML=rtRowsHtml();if($('rt_cnt'))$('rt_cnt').textContent=S.rtList.length;}
+function updVlTable(){if($('vl_tb'))$('vl_tb').innerHTML=vlRowsHtml();}
 function pRouting(){
   const ex=S.ex,qos=ex.qos||{},dd=ex.ddns||{},sys=ex.system||{};
-  const rtRows=S.rtList.length?S.rtList.map((r,i)=>`<tr><td class="m">${esc(r.dest)}</td><td class="m">${esc(r.mask)}</td><td class="m">${esc(r.gw)}</td><td>${esc(r.iface)}</td><td class="m">${esc(r.metric)}</td><td><button type="button" class="t d s" onclick="S.rtList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="6" class="sub">No custom static routes defined.</td></tr>';
-  const vlRows=S.vlList.length?S.vlList.map((v,i)=>`<tr><td class="m">${esc(v.iface+'.'+v.vid)}</td><td>${esc(v.mode)}</td><td class="m">${esc(v.mode==='routed'?(v.ip+'/'+v.mask):'Bridged to br0')}</td><td><button type="button" class="t d s" onclick="S.vlList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No 802.1Q VLAN tags configured.</td></tr>';
-  return `<div class="p"><h2>Static Routes (${S.rtList.length}/16)<span class="sub">Auto-enables ip_forward when active</span></h2><form onsubmit="saveRoutes(event)">
-    <table><thead><tr><th>Destination</th><th>Netmask</th><th>Gateway</th><th>Iface</th><th>Metric</th><th></th></tr></thead><tbody>${rtRows}</tbody></table>
+  const rtRows=rtRowsHtml();
+  const vlRows=vlRowsHtml();
+  const ddProv=dd.provider||'noip';
+  return `<div class="p"><h2>Static Routes (<span id="rt_cnt">${S.rtList.length}</span>/16)<span class="sub">Auto-enables ip_forward when active</span></h2><form onsubmit="saveRoutes(event)">
+    <table><thead><tr><th>Destination</th><th>Netmask</th><th>Gateway</th><th>Iface</th><th>Metric</th><th></th></tr></thead><tbody id="rt_tb">${rtRows}</tbody></table>
     <div class="r" style="margin-top:6px"><input id="rt_dst" placeholder="10.0.0.0"><input id="rt_msk" placeholder="255.255.255.0"><input id="rt_gw" placeholder="192.168.1.254"><select id="rt_if">${opt([['br0','br0'],['eth0','eth0'],['wlan0','wlan0']],'br0')}</select><input id="rt_met" type="number" min="0" max="9999" value="0" style="max-width:65px"><button type="button" class="t" onclick="addRoute()">+ Add</button></div>
     <div class="z"><button class="t p">Save &amp; Apply Routes</button></div></form></div>
 
   <div class="p"><h2>802.1Q VLAN Tagging (eth0)<span class="u${sys.has_vlan_mod?'':' w'}">${sys.has_vlan_mod?'8021q.ko Ready':'Module Missing'}</span></h2><form onsubmit="saveVlans(event)">
-    <table><thead><tr><th>Sub-Iface</th><th>Mode</th><th>Assignment</th><th></th></tr></thead><tbody>${vlRows}</tbody></table>
+    <table><thead><tr><th>Sub-Iface</th><th>Mode</th><th>Assignment</th><th></th></tr></thead><tbody id="vl_tb">${vlRows}</tbody></table>
     <div class="r" style="margin-top:6px"><input id="vl_id" type="number" min="2" max="4094" placeholder="VID (2-4094)"><select id="vl_md" onchange="$('vl_ipb').style.display=this.value==='routed'?'':'none'">${opt([['bridge','Bridge to br0'],['routed','Routed L3']],'bridge')}</select><span id="vl_ipb" class="r" style="display:none"><input id="vl_ip" placeholder="192.168.10.1"><input id="vl_msk" value="255.255.255.0"></span><button type="button" class="t" onclick="addVlan()">+ Add</button></div>
     <div class="z"><button class="t p">Save &amp; Apply VLANs</button></div></form></div>
 
@@ -635,43 +653,50 @@ function pRouting(){
 
   <div class="p"><h2>Dynamic DNS Updater<span class="u${dd.running?'':' w'}">${dd.running?'Active':'Stopped'}</span></h2><form onsubmit="saveDdns(event,0)"><div class="f">
     <label>Service</label><label class="c"><input type="checkbox" id="dd_en"${dd.enabled==='1'?' checked':''}>Enable periodic DDNS updater</label>
-    <label>Provider</label><select id="dd_pv" onchange="togDdns()">${opt([['duckdns','DuckDNS'],['noip','No-IP'],['dyndns','DynDNS'],['custom','Custom HTTP URL']],dd.provider||'duckdns')}</select>
+    <label>Provider</label><select id="dd_pv" onchange="togDdns()">${opt([['noip','No-IP (HTTP)'],['dyndns','DynDNS (HTTP)'],['custom','Custom HTTP URL'],['duckdns','DuckDNS (HTTP only - no TLS)']],ddProv)}</select>
     <label class="dd-h">Hostname / Domain</label><input class="dd-h" id="dd_hn" value="${esc(dd.hostname||'')}" placeholder="myrouter or myhost.ddns.net">
     <label class="dd-tk">Token</label><input class="dd-tk" type="password" id="dd_tk" placeholder="${dd.has_token?'(stored - leave blank to keep)':'DuckDNS token'}">
     <label class="dd-up">Username / Pass</label><div class="r dd-up"><input id="dd_un" value="${esc(dd.username||'')}" placeholder="Username"><input type="password" id="dd_pw" placeholder="${dd.has_pass?'(stored - leave blank to keep)':'Password'}"></div>
-    <label class="dd-cu">Custom URL</label><input class="dd-cu" id="dd_cu" value="${esc(dd.custom_url||'')}" placeholder="https://example.com/update?token=...">
+    <label class="dd-cu">Custom URL</label><input class="dd-cu" id="dd_cu" value="${esc(dd.custom_url||'')}" oninput="togDdns()" placeholder="http://example.com/update?token=... (HTTP only)">
     <label>Interval / Status</label><div class="r"><input id="dd_iv" type="number" min="300" max="86400" value="${esc(dd.interval||'600')}" style="max-width:100px"><code id="dd_st">${esc(dd.status||'No update run yet')}</code></div>
-  </div><div class="z"><button type="button" class="t" onclick="saveDdns(null,1)">Save &amp; Update Now</button><button class="t p">Save DDNS</button></div></form></div>`;
+  </div><div id="dd_tls_warn" class="sub" style="display:none;color:#b45309;margin-top:4px">Note: Device firmware has no TLS/HTTPS client; HTTPS endpoints will fail unless routed via an HTTP proxy.</div><div class="z"><button type="button" class="t" onclick="saveDdns(null,1)">Save &amp; Update Now</button><button class="t p">Save DDNS</button></div></form></div>`;
 }
 function togDdns(){
-  const p=$('dd_pv')?.value||'duckdns';
+  const p=$('dd_pv')?.value||'noip';
   document.querySelectorAll('.dd-h').forEach(x=>x.style.display=p!=='custom'?'':'none');
   document.querySelectorAll('.dd-tk').forEach(x=>x.style.display=p==='duckdns'?'':'none');
   document.querySelectorAll('.dd-up').forEach(x=>x.style.display=(p==='noip'||p==='dyndns')?'':'none');
   document.querySelectorAll('.dd-cu').forEach(x=>x.style.display=p==='custom'?'':'none');
+  if($('dd_tls_warn'))$('dd_tls_warn').style.display=(p==='duckdns'||(p==='custom'&&/^https:/i.test($('dd_cu')?.value||'')))?'':'none';
 }
+function delRoute(i){S.rtList.splice(i,1);S.dirty=true;updRtTable();}
 function addRoute(){
   const dest=$('rt_dst').value.trim(),mask=$('rt_msk').value.trim(),gw=$('rt_gw').value.trim()||'0.0.0.0',iface=$('rt_if').value,metric=$('rt_met').value||'0';
   if(!isIp(dest)||!isMask(mask)||(gw!=='0.0.0.0'&&!isIp(gw)))return msg('Invalid route IP/mask/gateway');
   if(S.rtList.length>=16)return msg('Max 16 routes');
-  S.rtList.push({dest,mask,gw,iface,metric});ren();
+  S.rtList.push({dest,mask,gw,iface,metric});S.dirty=true;
+  $('rt_dst').value='';$('rt_msk').value='';$('rt_gw').value='';$('rt_met').value='0';
+  updRtTable();
 }
 async function saveRoutes(e){
   e.preventDefault();
-  try{msg('Applying static routes...');await postCtl({action:'routes',routes:S.rtList.map(r=>`${r.dest}|${r.mask}|${r.gw}|${r.iface}|${r.metric}`).join('\n')});await refreshAll(true);ren();msg('Static routes updated');}
+  try{msg('Applying static routes...');await postCtl({action:'routes',routes:S.rtList.map(r=>`${r.dest}|${r.mask}|${r.gw}|${r.iface}|${r.metric}`).join('\n')});S.dirty=false;await refreshAll(true);ren();msg('Static routes updated');}
   catch(err){msg(err.message);}
 }
+function delVlan(i){S.vlList.splice(i,1);S.dirty=true;updVlTable();}
 function addVlan(){
   const vid=Number($('vl_id').value),mode=$('vl_md').value,ip=$('vl_ip').value.trim(),mask=$('vl_msk').value.trim();
   if(isNaN(vid)||vid<2||vid>4094)return msg('VLAN ID must be 2-4094');
   if(mode==='routed'&&(!isIp(ip)||!isMask(mask)))return msg('Routed VLAN needs valid IP & mask');
   if(S.vlList.some(x=>Number(x.vid)===vid))return msg('Duplicate VLAN ID');
   if(S.vlList.length>=8)return msg('Max 8 VLANs');
-  S.vlList.push({vid:String(vid),iface:'eth0',mode,ip,mask});ren();
+  S.vlList.push({vid:String(vid),iface:'eth0',mode,ip,mask});S.dirty=true;
+  $('vl_id').value='';$('vl_ip').value='';
+  updVlTable();
 }
 async function saveVlans(e){
   e.preventDefault();
-  try{msg('Applying 802.1Q VLANs...');await postCtl({action:'vlan',vlans:S.vlList.map(v=>`${v.vid}|eth0|${v.mode}|${v.ip}|${v.mask}`).join('\n')});await refreshAll(true);ren();msg('VLANs updated');}
+  try{msg('Applying 802.1Q VLANs...');await postCtl({action:'vlan',vlans:S.vlList.map(v=>`${v.vid}|eth0|${v.mode}|${v.ip}|${v.mask}`).join('\n')});S.dirty=false;await refreshAll(true);ren();msg('VLANs updated');}
   catch(err){msg(err.message);}
 }
 async function saveQos(e){
@@ -688,9 +713,11 @@ async function saveDdns(e,now){
   }catch(err){msg(err.message);}
 }
 
+function pfRowsHtml(){return S.pfList.length?S.pfList.map((r,i)=>`<tr><td>${esc(r.name)}</td><td class="m">${esc(r.proto)}</td><td class="m">${esc(r.s+(r.e!==r.s?'-'+r.e:''))}</td><td class="m">${esc(r.ip+(Number(r.intp)>0?':'+r.intp:''))}</td><td><input class="w0" type="checkbox"${r.en?' checked':''} onchange="S.pfList[${i}].en=this.checked;S.dirty=true"></td><td><button type="button" class="t d s" onclick="delPf(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="6" class="sub">No port forwarding rules configured.</td></tr>';}
+function updPfTable(){if($('pf_tb'))$('pf_tb').innerHTML=pfRowsHtml();if($('pf_cnt'))$('pf_cnt').textContent=S.pfList.length;}
 function pFirewall(){
   const rt=(S.ex&&S.ex.router)||{};
-  const pfRows=S.pfList.length?S.pfList.map((r,i)=>`<tr><td>${esc(r.name)}</td><td class="m">${esc(r.proto)}</td><td class="m">${esc(r.s+(r.e!==r.s?'-'+r.e:''))}</td><td class="m">${esc(r.ip+(Number(r.intp)>0?':'+r.intp:''))}</td><td><input class="w0" type="checkbox"${r.en?' checked':''} onchange="S.pfList[${i}].en=this.checked"></td><td><button type="button" class="t d s" onclick="S.pfList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="6" class="sub">No port forwarding rules configured.</td></tr>';
+  const pfRows=pfRowsHtml();
   return `<div class="p"><h2>Router Mode &amp; WAN Uplink<span class="u${rt.has_nat?'':' w'}">${rt.has_nat?('NAT Active ('+(rt.conntrack_count||0)+' ct)'):(rt.mode==='bridge'||!rt.mode?'Bridge Mode':'Kernel NAT Inactive')}</span></h2><form onsubmit="saveRouterMode(event)"><div class="f">
     <label>Router Architecture</label><select name="mode" id="frmode" onchange="togFw()">${opt([['bridge','Bridge / AP-STA (Stock L2)'],['router','Wireless Router (eth0 WAN -> wlan0 LAN NAT)'],['wisp','WISP Client Router (wlan0 WAN -> eth0 LAN NAT)']],rt.mode||'bridge')}</select>
     <label class="fw-w">WAN Protocol</label><select class="fw-w" name="wan_proto" id="fwproto" onchange="togFw()">${opt([['dhcp','Automatic - DHCP Client'],['static','Static IPv4']],rt.wan_proto||'dhcp')}</select>
@@ -702,13 +729,13 @@ function pFirewall(){
     ${rt.mode&&rt.mode!=='bridge'?`<label>Live WAN Status</label><div class="r"><code class="m">${esc((rt.live_wan_ip||'Pending')+' GW:'+(rt.live_wan_gw||'-'))}</code>${rt.wan_proto!=='static'?`<button type="button" class="t s" onclick="wanAct('renew')">Renew</button><button type="button" class="t s" onclick="wanAct('release')">Release</button>`:''}</div>`:''}
   </div><div class="z"><button class="t p">Apply Router &amp; WAN Mode</button></div></form></div>
 
-  <div class="p"><h2>SPI Firewall, DMZ &amp; Port Forwarding (${S.pfList.length}/32)<span class="sub">${rt.mode==='bridge'||!rt.mode?'Rules activate in Router or WISP mode':'Active on '+(rt.wan_if||'WAN')}</span></h2><form onsubmit="saveFirewall(event)"><div class="f">
+  <div class="p"><h2>SPI Firewall, DMZ &amp; Port Forwarding (<span id="pf_cnt">${S.pfList.length}</span>/32)<span class="sub">${rt.mode==='bridge'||!rt.mode?'Rules activate in Router or WISP mode':'Active on '+(rt.wan_if||'WAN')}</span></h2><form onsubmit="saveFirewall(event)"><div class="f">
     <label>SPI &amp; TCPMSS</label><div class="r"><label class="c"><input type="checkbox" name="spi"${rt.spi!=='0'?' checked':''}>Enable SPI Firewall</label><label class="c"><input type="checkbox" name="tcpmss"${rt.tcpmss!=='0'?' checked':''}>TCPMSS PMTU Clamp</label></div>
     <label>WAN Inbound Access</label><div class="r"><label class="c"><input type="checkbox" name="wan_ping"${rt.wan_ping==='1'?' checked':''}>Allow WAN Ping</label><label class="c"><input type="checkbox" name="wan_mgmt"${rt.wan_mgmt==='1'?' checked':''}>Allow WAN WebUI (80)</label><label class="c"><input type="checkbox" name="wan_ssh"${rt.wan_ssh==='1'?' checked':''}>Allow WAN SSH (22)</label></div>
     <label>DMZ Host IPv4</label><input name="dmz_ip" value="${esc(rt.dmz_ip||'')}" placeholder="Optional LAN IPv4 (blank = off)">
   </div>
   <h2 style="margin-top:8px">Port Forwarding Rules (DNAT)</h2>
-  <table><thead><tr><th>Name</th><th>Proto</th><th>Ext Port(s)</th><th>LAN Target</th><th>On</th><th></th></tr></thead><tbody>${pfRows}</tbody></table>
+  <table><thead><tr><th>Name</th><th>Proto</th><th>Ext Port(s)</th><th>LAN Target</th><th>On</th><th></th></tr></thead><tbody id="pf_tb">${pfRows}</tbody></table>
   <div class="r" style="margin-top:6px"><input id="pf_nm" placeholder="Name (e.g. web)" maxlength="24"><select id="pf_pr" style="max-width:85px">${opt([['tcp','TCP'],['udp','UDP'],['both','TCP+UDP']],'tcp')}</select><input id="pf_s" type="number" min="1" max="65535" placeholder="Ext Start"><input id="pf_e" type="number" min="1" max="65535" placeholder="Ext End"><input id="pf_ip" placeholder="LAN IPv4"><input id="pf_in" type="number" min="0" max="65535" placeholder="Int Port (0=same)"><button type="button" class="t" onclick="addPf()">+ Add</button></div>
   <div class="z"><button class="t p">Save &amp; Apply Firewall + NAT Rules</button></div></form></div>`;
 }
@@ -729,9 +756,13 @@ async function saveRouterMode(e){
     showModal('Router & WAN Mode','Applying network topology...',20,'Please wait...');
     const j=await postCtl({action:'router_mode',mode:m,wan_proto:wp,wan_ip:wip,wan_mask:wmk,wan_gw:wgw,wan_dns1:wd1,wan_dns2:wd2,wan_mtu:mtu});
     if(j.reboot){waitBusy('Rebooting into '+m.toUpperCase()+' Mode',42);}
-    else{hideModal();await refreshAll(true);ren();msg('Router mode applied');}
+    else{
+      hideModal();await refreshAll(true);ren();msg('Router mode applied');
+      if(m!=='bridge'&&wp==='dhcp'){setTimeout(()=>{if(P[T][2]==='firewall'&&!isBusyEdit())refreshAll(true).then(()=>{if(P[T][2]==='firewall'&&!isBusyEdit())ren();});},3500);}
+    }
   }catch(err){hideModal();msg(err.message);}
 }
+function delPf(i){S.pfList.splice(i,1);S.dirty=true;updPfTable();}
 function addPf(){
   const name=$('pf_nm').value.trim()||'rule',proto=$('pf_pr').value,s=Number($('pf_s').value),eVal=$('pf_e').value.trim(),e=eVal?Number(eVal):s,ip=$('pf_ip').value.trim(),intp=Number($('pf_in').value||'0');
   if(!isHost(name))return msg('Invalid rule name');
@@ -739,7 +770,9 @@ function addPf(){
   if(!isIp(ip))return msg('Invalid LAN IPv4');
   if(isNaN(intp)||intp<0||intp>65535)return msg('Invalid internal port');
   if(S.pfList.length>=32)return msg('Max 32 port forward rules');
-  S.pfList.push({name,proto,s:String(s),e:String(e),ip,intp:String(intp),en:true});ren();
+  S.pfList.push({name,proto,s:String(s),e:String(e),ip,intp:String(intp),en:true});S.dirty=true;
+  $('pf_nm').value='';$('pf_s').value='';$('pf_e').value='';$('pf_ip').value='';$('pf_in').value='';
+  updPfTable();
 }
 async function saveFirewall(e){
   e.preventDefault();const f=e.target,dmz=f.dmz_ip.value.trim();
@@ -751,7 +784,7 @@ async function saveFirewall(e){
       wan_ping:f.wan_ping.checked?'1':'0',wan_mgmt:f.wan_mgmt.checked?'1':'0',wan_ssh:f.wan_ssh.checked?'1':'0',
       dmz_ip:dmz,portfwd:S.pfList.map(r=>`${r.name}|${r.proto}|${r.s}|${r.e}|${r.ip}|${r.intp}|${r.en?1:0}`).join('\n')
     });
-    await refreshAll(true);ren();msg('Firewall & port forwarding applied');
+    S.dirty=false;await refreshAll(true);ren();msg('Firewall & port forwarding applied');
   }catch(err){msg(err.message);}
 }
 
@@ -847,7 +880,7 @@ async function saveRemote(e){
   try{
     msg('Applying remote services...');
     const j=JSON.parse(await postForm('/cgi-bin/remote_access.cgi',{ssh,telnet:tel,upnp,sshj,sshj_user:sju,sshj_host:sjd}));
-    if(j.status==='success'){S.rm=j;ren();msg('Remote services updated');setTimeout(()=>getJ('/cgi-bin/remote_access.cgi?action=status&_t='+Date.now()).then(d=>{if(d&&d.status==='success'){S.rm=d;const ae=document.activeElement;const busyEdit=ae&&$('mn')?.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName);if(P[T][2]==='system'&&!busyEdit)ren();}}).catch(()=>{}),2500);}
+    if(j.status==='success'){S.rm=j;ren();msg('Remote services updated');setTimeout(()=>getJ('/api/state.json').then(d=>{if(d&&d.remote){S.rm=d.remote;const ae=document.activeElement;const busyEdit=ae&&$('mn')?.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName);if(P[T][2]==='system'&&!busyEdit)ren();}}).catch(()=>{}),2500);}
     else{msg(j.message||'Failed');}
   }catch(err){msg('Remote access error: '+err.message);}
 }
@@ -905,7 +938,7 @@ function restoreCfg(){
         msg('Restore failed: '+errMsg);
         return;
       }
-      waitBusy('Restoring Configuration',30,null);
+      waitBusy('Restoring Configuration',42,null);
     }else{hideModal();msg('Restore upload failed (HTTP '+xhr.status+')');}
   };
   xhr.onerror=()=>{hideModal();msg('Upload connection lost');};
@@ -962,8 +995,10 @@ function tabFromHash(){const h=(location.hash||'').replace(/^#/,'').toLowerCase(
 T=tabFromHash();
 $('nv').innerHTML=P.map((m,i)=>`<a href="#${m[2]}" data-i="${i}"${i===T?' class="on"':''}>${m[0]}</a>`).join('');
 $('nv').onclick=e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();setTab(+a.dataset.i);};
+function isBusyEdit(){const ae=document.activeElement;if(ae&&$('mn')?.contains(ae)&&/INPUT|TEXTAREA|SELECT/.test(ae.tagName))return true;const det=$('mn')?.querySelector('details');return Boolean(det&&det.open);}
 function setTab(idx){
   T=(idx>=0&&idx<P.length)?idx:0;
+  S.dirty=false;
   const tab=P[T][2];
   if(location.hash!=='#'+tab)history.replaceState(null,'','#'+tab);
   [...$('nv').children].forEach((x,i)=>x.classList.toggle('on',i===T));
@@ -976,10 +1011,11 @@ function setTab(idx){
   });
 }
 window.addEventListener('hashchange',()=>setTab(tabFromHash()));
+['mousemove','keydown','click','touchstart'].forEach(ev=>document.addEventListener(ev,()=>{lastAct=Date.now();authPaused=false;},{passive:true}));
 function ren(){
   updateHeader();$('mn').innerHTML=P[T][1]();const tab=P[T][2];
   if(tab==='quick')togQuick();
-  if(tab==='network')togNet(S.cf.ip_config_method||'1');
+  if(tab==='network'){const rt=(S.ex&&S.ex.router)||{},isNat=(rt.mode==='router'||rt.mode==='wisp');togNet(isNat?'1':(S.cf.ip_config_method||'1'));}
   if(tab==='firewall')togFw();
   if(tab==='wireless'){fillChannels();togSec();}
   if(tab==='routing')togDdns();
@@ -988,8 +1024,17 @@ document.cookie='ui=modern; path=/';
 refreshAll(true).then(()=>{ren();if(P[T][2]==='diagnostics'&&S.logOut.indexOf('Click Refresh')===0)loadSysLog();});
 setInterval(()=>{S.upSec++;const e=$('ut');if(e)e.textContent=ut(S.upSec);},1000);
 setInterval(async()=>{
-  if(!$('md').hidden)return;
-  if(P[T][2]==='status'){await refreshAll(true);ren();}
-  else{getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||S.upSec;updateHeader();}).catch(()=>{});}
+  if(!$('md').hidden||authPaused)return;
+  const toSec=Number(S.cf.auth_timeout)||0;
+  if(toSec>0&&(Date.now()-lastAct)>=toSec*1000)return;
+  pollTick++;
+  const tab=P[T][2];
+  if(tab==='status'){await refreshAll(true);ren();}
+  else if(pollTick%2===0&&!isBusyEdit()&&!S.dirty&&['system','firewall','routing','network','wireless'].includes(tab)){
+    await refreshAll(true);
+    if(P[T][2]===tab&&!isBusyEdit()&&!S.dirty)ren();
+  }else{
+    getJ('/api/status.json').then(d=>{S.st=d;S.upSec=Number(d.uptime_sec)||S.upSec;updateHeader();}).catch(e=>{if(String(e.message)==='HTTP 401')authPaused=true;});
+  }
 },6000);
 </script></body></html>

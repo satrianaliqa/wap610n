@@ -47,7 +47,7 @@ apply_tz() {
     if [ -s "$JFFS/tz.conf" ]; then
         tz=$(head -n 1 "$JFFS/tz.conf" 2>/dev/null | tr -d ' \t\r\n')
         case "$tz" in
-            ''|*[!A-Za-z0-9+:,-]*) ;;
+            ''|/*|*..*|*[!A-Za-z0-9+:,./-]*) ;;
             *)
                 printf '%s\n' "$tz" > /etc/TZ 2>/dev/null || true
                 chmod 644 /etc/TZ 2>/dev/null || true
