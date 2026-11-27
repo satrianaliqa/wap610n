@@ -580,6 +580,8 @@ void websReadEvent(webs_t wp)
 					{
 						if (gMTBurnParams.burnState <= error_e) {
 							unlink("/var/firmware_upgrading");
+							gMTBurnParams.burnState = error_e;
+							gMTBurnParams.precentComplete = -1;
 						}
 						if (gMTBurnParams.burnState > error_e) {
 							websError(wp, 503, T("Firmware upgrade already in progress"));
@@ -640,6 +642,10 @@ void websReadEvent(webs_t wp)
 						} else {
 							/* Incomplete upload / early disconnect (W-08) */
 							unlink("/var/firmware_upgrading");
+							if (gMTBurnParams.burnState <= error_e) {
+								gMTBurnParams.burnState = error_e;
+								gMTBurnParams.precentComplete = -1;
+							}
 							websError(wp, 400, T("Incomplete upload"));
 							done++;
 							break;
@@ -1533,6 +1539,7 @@ void websSetEnv(webs_t wp)
 			websDecodeUrl(keyword, keyword, gstrlen(keyword));
 			websDecodeUrl(value, value, gstrlen(value));
 		} else {
+			websDecodeUrl(keyword, keyword, gstrlen(keyword));
 			value = T("");
 		}
 

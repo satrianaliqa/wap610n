@@ -215,10 +215,10 @@ function selectMode(mode){
 		
 		var wpsEnabled = "<% getParam(1, "NonProc_WPS_ActivateWPS"); %>";
 		var securityMode = "<% getParam(1, "NonProcSecurityMode"); %>";
-		var WEPKey0 = "<% getParam(1, "WepKeys_DefaultKey0"); %>";
-		var WEPKey1 = "<% getParam(1, "WepKeys_DefaultKey1"); %>";
-		var WEPKey2 = "<% getParam(1, "WepKeys_DefaultKey2"); %>";
-		var WEPKey3 = "<% getParam(1, "WepKeys_DefaultKey3"); %>";
+		var WEPKey0 = "<% getParamJs("WepKeys_DefaultKey0"); %>";
+		var WEPKey1 = "<% getParamJs("WepKeys_DefaultKey1"); %>";
+		var WEPKey2 = "<% getParamJs("WepKeys_DefaultKey2"); %>";
+		var WEPKey3 = "<% getParamJs("WepKeys_DefaultKey3"); %>";
 		var defaultWEPKey = "<% getParam(1, "WepTxKeyIdx"); %>";
 		var WEPKeyLength = "<% getParam(1, "NonProc_WepKeyLength"); %>";
 		var WEPAuth = "<% getParam(1, "NonProc_Authentication"); %>";

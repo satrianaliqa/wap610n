@@ -32,7 +32,20 @@ UBOOT_PROMPT = "MTLK U-MEDIA VB #"
 
 START_CHAR = 0x01
 END_CHAR = ord('\r')
+import glob
+
 K_ESCAPE = ord('#')
+
+
+def _newest_glob(patterns):
+    matches = []
+    for pat in patterns:
+        matches.extend(glob.glob(pat))
+    files = [p for p in matches if os.path.isfile(p)]
+    if not files:
+        return None
+    files.sort(key=os.path.getmtime, reverse=True)
+    return files[0]
 
 
 def find_firmware_file(explicit_path=None):
@@ -52,13 +65,21 @@ def find_firmware_file(explicit_path=None):
     candidates = [
         os.path.join(FIRMWARE_DIR, 'bootpImage'),
         os.path.join(FIRMWARE_DIR, ver_bin),
+        _newest_glob([
+            os.path.join(FIRMWARE_DIR, f"WAP610N_v{ver_clean}_*.bin"),
+            os.path.join(FIRMWARE_DIR, "WAP610N_v*.bin"),
+        ]),
         os.path.join(FIRMWARE_DIR, 'WAP610N_v1.0.05.bin'),
         os.path.join(output_dir, ver_bin),
+        _newest_glob([
+            os.path.join(output_dir, f"WAP610N_v{ver_clean}_*.bin"),
+            os.path.join(output_dir, "WAP610N_v*.bin"),
+        ]),
         os.path.join(output_dir, 'bootpImage'),
         os.path.join(output_dir, 'WAP610N_v1.0.05.bin'),
     ]
     for cand in candidates:
-        if os.path.isfile(cand):
+        if cand and os.path.isfile(cand):
             return cand
 
     print(f"[ERROR] Tidak ada file firmware di {FIRMWARE_DIR} atau {output_dir}", flush=True)

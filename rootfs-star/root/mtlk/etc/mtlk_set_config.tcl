@@ -56,6 +56,10 @@ proc read_param_db {dbFile} {
 		puts $sys_tmp "SSH_Enabled=sys"
 		puts $sys_tmp "Telnet_Enabled=sys"
 		puts $sys_tmp "WirelessMgmtEnabled=sys"
+		puts $sys_tmp "UPnP_Enabled=sys"
+		puts $sys_tmp "SSHJ_Enabled=sys"
+		puts $sys_tmp "SSHJ_User=sys"
+		puts $sys_tmp "SSHJ_Host=sys"
 		close $sys_tmp
 		close $wlan_tmp
 		exec cat /tmp/sys_tmp.ini /tmp/wlan_tmp.ini > /tmp/mt_param.ini

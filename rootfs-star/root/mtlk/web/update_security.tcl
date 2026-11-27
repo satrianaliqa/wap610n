@@ -415,16 +415,23 @@ proc Update_Hostapd_Conf { encryption_mode SSID WEP_length authentication Used_K
 # This function writes to /mnt/jffs2/etc/wpa_supplicant.conf file
 # accoding to the encryption mode.
 ##################################################################
+proc wpa_escape_str {s} {
+	regsub -all {[\r\n]} $s "" s
+	regsub -all {\\} $s {\\\\} s
+	regsub -all {"} $s {\\"} s
+	return $s
+}
+
 proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WEP_Key3 WEP_Key4 WEP_Used_Key WPA_Password username user_password certificate WPA_mode encapsulation_mode } {
 
 	global wpa_supplicant_conf_file
 	global wpa_passphrase
 	global certificate_file
 
-	regsub -all {[\r\n]} $SSID "" SSID
+	set esc_ssid [wpa_escape_str $SSID]
 	regsub -all {[\r\n]} $WPA_Password "" WPA_Password
-	regsub -all {[\r\n]} $username "" username
-	regsub -all {[\r\n]} $user_password "" user_password
+	set esc_user [wpa_escape_str $username]
+	set esc_pass [wpa_escape_str $user_password]
 
 	debug "Update_Supplicant_Conf '$encryption_mode' '$SSID' $WEP_Auth $WEP_Key1 $WEP_Key2 $WEP_Key3 $WEP_Key4 $WEP_Used_Key $WPA_Password $username $user_password $certificate $WPA_mode $encapsulation_mode"
 
@@ -432,7 +439,7 @@ proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WE
 	lappend lines "ctrl_interface=/var/run/wpa_supplicant"
 	lappend lines "ctrl_interface_group=0"
 	lappend lines "network={"
-	lappend lines "\tssid=\"$SSID\""
+	lappend lines "\tssid=\"$esc_ssid\""
 
 	if {$encryption_mode == "OPEN"} {
 		lappend lines "\tkey_mgmt=NONE"
@@ -454,7 +461,8 @@ proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WE
 				set hex_WEP_Key [string range $value_WEP_Key 2 end]
 				lappend lines "\t$Key_Conf=$hex_WEP_Key"
 			} else {
-				lappend lines "\t$Key_Conf=\"$value_WEP_Key\""
+				set esc_wep [wpa_escape_str $value_WEP_Key]
+				lappend lines "\t$Key_Conf=\"$esc_wep\""
 			}
 		}
 		lappend lines "\twep_tx_keyidx=$WEP_Used_Key"
@@ -475,8 +483,8 @@ proc Update_Supplicant_Conf { encryption_mode SSID WEP_Auth WEP_Key1 WEP_Key2 WE
 		if {$certificate == 1} {
 			lappend lines "\tclient_cert=\"$certificate_file\""
 		}
-		lappend lines "\tidentity=\"$username\""
-		lappend lines "\tpassword=\"$user_password\""
+		lappend lines "\tidentity=\"$esc_user\""
+		lappend lines "\tpassword=\"$esc_pass\""
 		lappend lines "\tauth_alg=OPEN"
 		lappend lines "\tscan_ssid=1"
 		lappend lines "}"

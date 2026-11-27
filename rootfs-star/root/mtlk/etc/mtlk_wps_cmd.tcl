@@ -94,10 +94,18 @@ proc config_load {config_file} {
 # save configuration file
 proc config_save {config_file_name config_file_contents} {
 	set config_file_contents [join $config_file_contents "\n"]
+	set locked 0
+	if {[catch {exec config_lock.sh [pid]}] == 0} {
+		set locked 1
+	}
 	if {![catch {set fp [open "$::g_web_tmp_folder/tmp_config.conf" w]}]} {
 		puts $fp $config_file_contents
 		close $fp
-		catch {exec mv $::g_web_tmp_folder/tmp_config.conf $config_file_name}
+		catch {exec chmod 600 $::g_web_tmp_folder/tmp_config.conf}
+		catch {exec mv -f $::g_web_tmp_folder/tmp_config.conf $config_file_name}
+	}
+	if {$locked == 1} {
+		catch {exec config_unlock.sh [pid]}
 	}
 }
 
@@ -652,10 +660,19 @@ if {$action =="conf_via_pin" } {
 		# use when NonProc_WPS_ApStatus = 0
 		set WPS_ApStatus [get_param NonProc_WPS_ApStatus $wlan]
 		if {$WPS_ApStatus == 0} {
+			set locked 0
+			if {[catch {exec config_lock.sh [pid]}] == 0} {
+				set locked 1
+			}
 			exec cat $::g_web_config_folder/wlan0.conf | grep -v NonProc_WPS_ApStatus > /tmp/tmpwlan
 			exec echo NonProc_WPS_ApStatus = 1 >> /tmp/tmpwlan
-			exec cp /tmp/tmpwlan $::g_web_config_folder/wlan0.conf
-			exec cp $::g_web_config_folder/wlan0.conf /tmp/wlan0.conf
+			catch {exec chmod 600 /tmp/tmpwlan}
+			exec cp -pf /tmp/tmpwlan $::g_web_config_folder/wlan0.conf
+			exec cp -pf $::g_web_config_folder/wlan0.conf /tmp/wlan0.conf
+			catch {exec rm -f /tmp/tmpwlan}
+			if {$locked == 1} {
+				catch {exec config_unlock.sh [pid]}
+			}
 			catch {exec $g_web_wpa_app_folder/mtlk_restart_wps.sh > /dev/null}		
 		}
 	}
@@ -694,10 +711,19 @@ if {$action =="conf_via_pbc" } {
 		# use when NonProc_WPS_ApStatus = 0
 		set WPS_ApStatus [get_param NonProc_WPS_ApStatus $wlan]
 		if {$WPS_ApStatus == 0} {
+			set locked 0
+			if {[catch {exec config_lock.sh [pid]}] == 0} {
+				set locked 1
+			}
 			exec cat $::g_web_config_folder/wlan0.conf | grep -v NonProc_WPS_ApStatus > /tmp/tmpwlan
 			exec echo NonProc_WPS_ApStatus = 1 >> /tmp/tmpwlan
-			exec cp /tmp/tmpwlan $::g_web_config_folder/wlan0.conf
-			exec cp $::g_web_config_folder/wlan0.conf /tmp/wlan0.conf
+			catch {exec chmod 600 /tmp/tmpwlan}
+			exec cp -pf /tmp/tmpwlan $::g_web_config_folder/wlan0.conf
+			exec cp -pf $::g_web_config_folder/wlan0.conf /tmp/wlan0.conf
+			catch {exec rm -f /tmp/tmpwlan}
+			if {$locked == 1} {
+				catch {exec config_unlock.sh [pid]}
+			}
 			catch {exec $g_web_wpa_app_folder/mtlk_restart_wps.sh > /dev/null}		
 		}
 		
@@ -1066,7 +1092,8 @@ if {$action == "save_settings"} {
 		config_save $::g_web_config_folder/wlan0.conf $wlan
 		
 		# copy the configuration to /tmp
-		catch {exec cp $::g_web_config_folder/wlan0.conf $::g_web_tmp_folder/wlan0.conf }
+		catch {exec cp -pf $::g_web_config_folder/wlan0.conf $::g_web_tmp_folder/wlan0.conf }
+		catch {exec chmod 600 $::g_web_tmp_folder/wlan0.conf }
 		
 	}
 	

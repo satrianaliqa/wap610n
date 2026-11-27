@@ -139,7 +139,7 @@ function page_load() {
 	
 	var mode = "<% getParam(1, "network_type"); %>";
 	var ipConfigMethod = "<% getParam(1, "ip_config_method"); %>";
-	var hostName = "<% getParam(1, "HostName"); %>";
+	var hostName = "<% getParamJs("HostName"); %>";
 	var LanIP = "<% getParam(1, "ip_lan"); %>";
 	var subnet = "<% getParam(1, "subnet_lan"); %>";
 	var gateway = "<% getParam(1, "default_gw"); %>";

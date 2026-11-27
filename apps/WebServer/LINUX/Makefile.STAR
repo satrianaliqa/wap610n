@@ -8,7 +8,7 @@ PLATFORM_CFLAGS = -Os -march=armv4 -msoft-float -fno-strict-aliasing
 INCLUDE =
 LIBPATH = 
 LIB =
-ADDITIONAL_LIBS = -lpthread
+ADDITIONAL_LIBS = -lpthread -lcrypt
 ADDITIONAL_OBJS = $(PLATFORM_TOOLCHAIN)/lib/libz.a
 
 include Makefile

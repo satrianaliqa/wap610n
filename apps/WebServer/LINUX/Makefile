@@ -71,7 +71,7 @@ CROSS_COMPILE ?= $(SNAPGEAR)/tools/ucfront-gcc arm-linux-
 CC = $(CROSS_COMPILE)gcc
 AR = $(CROSS_COMPILE)ar
 ARFLAGS = rvs
-ADDITIONAL_LIBS ?= -lpthread -lz
+ADDITIONAL_LIBS ?= -lpthread -lz -lcrypt
 ADDITIONAL_OBJS ?=
 ############### END Settings for Snapgear ################
 

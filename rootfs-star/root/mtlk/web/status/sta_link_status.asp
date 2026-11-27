@@ -17,9 +17,9 @@
 
 <script language="javascript" type="text/javascript">
 function template_load() {
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var HWType = "<% checkHW(); %>"
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
 	
 	if (mode == 0) //STA mode
 	{
@@ -54,6 +54,37 @@ var waitCount=0;
 var dhcpDone = false;
 var linkStatusDone = false;
 
+function escapeHTML(str) {
+	if (!str) return "";
+	return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function sanitizeLinkStatus(str) {
+	var clean;
+	if (!str) return "";
+	clean = String(str).replace(/<!--[\s\S]*?-->/g, "");
+	clean = clean.replace(/<\s*(script|style|iframe|object|embed|svg)[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
+	clean = clean.replace(/<([^>]+)>/g, function(full, inner) {
+		var trimmed = inner.replace(/^\s+|\s+$/g, "");
+		var m = trimmed.match(/^(\/?)\s*([a-zA-Z0-9]+)(?:\s+([\s\S]*))?$/);
+		var slash, tag, attrs;
+		if (!m) return escapeHTML(full);
+		slash = m[1];
+		tag = m[2].toLowerCase();
+		attrs = m[3] || "";
+		if (!/^(table|tbody|thead|tr|td|th|span|div|font|b|strong|i|br|p)$/.test(tag)) {
+			return escapeHTML(full);
+		}
+		if (slash === "/") {
+			return "</" + tag + ">";
+		}
+		attrs = attrs.replace(/\s+on[a-z]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+		attrs = attrs.replace(/\s+(href|src|style)\s*=\s*(?:"[^"]*(?:javascript|data|vbscript|expression)\s*[:(][^"]*"|'[^']*(?:javascript|data|vbscript|expression)\s*[:(][^']*'|\S*(?:javascript|data|vbscript):[^\s>]*)/gi, "");
+		return "<" + tag + (attrs ? " " + attrs.replace(/^\s+/, "") : "") + ">";
+	});
+	return clean;
+}
+
 function reWirteList(fieldID, disableFieldID, str)
 {
 	if (fieldID == "") {
@@ -67,7 +98,7 @@ function reWirteList(fieldID, disableFieldID, str)
 	if (disableFieldID != "" && str != "")
 		objectDisplay(disableFieldID, "none");
 	if (fieldID != "" && document.getElementById(fieldID)) {
-		document.getElementById(fieldID).innerHTML = str;
+		document.getElementById(fieldID).innerHTML = sanitizeLinkStatus(str);
 		updateSignalStrength();
 	}
 }

@@ -16,9 +16,9 @@
 
 <script language="javascript" type="text/javascript">
 function template_load() {
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var HWType = "<% checkHW(); %>"
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
 	
 	if (mode == 0) //STA mode
 	{
@@ -54,7 +54,8 @@ var burn_state, burn_progress;
 var firstTime=true;
 var stopProcess=false;
 var uploadStarted=false;
-var langset = "<% getParam(1, "Language"); %>";
+var uploadWaitTicks=0;
+var langset = "<% getParamJs("Language"); %>";
 
 function blinkingWarningMSG(displayMsg)
 {
@@ -121,18 +122,25 @@ function reWirteList(str)
 	burn_state = docTemp.substr(0, index) * 1;
 	burn_progress = docTemp.substr(index+1) * 1;
 
-	if (uploadStarted && burn_state == 0 && (burn_progress == 0 || burn_progress == -1)) {
-		document.getElementById("waitPad").style.display = "block";
-		displayAllField("block");
-		document.getElementById("progressValue").innerHTML = "Uploading image...";
-		return;
+	if (uploadStarted && (burn_state == 0 || burn_state == 3) && burn_progress >= 0 && burn_state != 2) {
+		uploadWaitTicks++;
+		if (uploadWaitTicks < 90) {
+			document.getElementById("waitPad").style.display = "block";
+			displayAllField("block");
+			document.getElementById("progressValue").innerHTML = "Uploading image...";
+			return;
+		}
+		burn_state = 2;
+		burn_progress = -1;
 	}
 	uploadStarted = false;
-	
+	uploadWaitTicks = 0;
+
 	if ((burn_progress == -1) || (burn_state == 2)) {
 		alert("<!--#tr id=\"adm.fu.alert.3\" -->This image file is incorrect or flash write failed.<!--#endtr-->");
 		stopProcess = true;
 		document.getElementById("waitPad").style.display = "none";
+		displayAllField("none");
 	}
 	else if (burn_state == 4) {
 		document.getElementById("waitPad").style.display="block";
@@ -148,7 +156,7 @@ function reWirteList(str)
 		document.getElementById("progress").style.width = percent + "%";
 		document.getElementById("progressValue").innerHTML = (burn_state == 6 ? "Verifying: " : "Flashing: ") + percent + "%";
 	}
-	else if (((burn_state == 1) || (burn_state == 3)) && (burn_progress == 100)) {
+	else if ((burn_state == 1) && (burn_progress == 100)) {
 		stopProcess = true;
 		document.getElementById("progress").style.width = "100%";
 		document.getElementById("progressValue").innerHTML = "Complete! Rebooting...";
@@ -175,7 +183,7 @@ function reloadMe(){
 
 function displayAllField(value)
 {
-	objectDisplay("mainform", value);
+	objectDisplay("mainform", value == "block" ? "none" : "block");
 	objectDisplay("upgradeProgress", value);
 	objectDisplay("warningMsg", value);
 }
@@ -189,6 +197,7 @@ function checkFW()
 	}
 
 	uploadStarted = true;
+	uploadWaitTicks = 0;
 	stopToWait = true;
 	stopProcess = false;
 	document.getElementById("waitPad").style.display = "block";

@@ -146,9 +146,14 @@ function updateSshjPreview() {
 	if (!host) host = "wap610n";
 	var preview = document.getElementById("sshj_cmd_preview");
 	if (preview) {
-		preview.innerHTML = user
+		var cmdText = user
 			? ("ssh -J " + user + "@ssh-j.com root@" + host)
-			: ("ssh -J &lt;username&gt;@ssh-j.com root@" + host);
+			: ("ssh -J <username>@ssh-j.com root@" + host);
+		if ("textContent" in preview) {
+			preview.textContent = cmdText;
+		} else {
+			preview.innerText = cmdText;
+		}
 	}
 }
 
@@ -243,7 +248,16 @@ function applyRemote() {
 				setTimeout(loadRemoteStatus, 2500);
 			} else {
 				var msgMatch = xhr.responseText ? xhr.responseText.match(/"message"\s*:\s*"([^"]*)"/) : null;
-				statusDiv.innerHTML = "<span style='color: #ff0000;'>" + (msgMatch ? msgMatch[1] : "Failed to apply settings.") + "</span>";
+				var errSpan = document.createElement("span");
+				var errTxt = msgMatch ? msgMatch[1] : "Failed to apply settings.";
+				errSpan.style.color = "#ff0000";
+				if ("textContent" in errSpan) {
+					errSpan.textContent = errTxt;
+				} else {
+					errSpan.innerText = errTxt;
+				}
+				statusDiv.innerHTML = "";
+				statusDiv.appendChild(errSpan);
 			}
 			setTimeout(function() { statusDiv.innerHTML = ""; }, 4000);
 		}

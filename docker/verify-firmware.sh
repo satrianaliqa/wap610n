@@ -7,7 +7,11 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$DIR/.." && pwd)"
 
 # Check if BIN_PATH argument provided, else auto-discover
-if [ -n "$1" ] && [ -f "$1" ]; then
+if [ -n "$1" ]; then
+    if [ ! -f "$1" ]; then
+        echo "❌ ERROR: Specified firmware file not found: $1"
+        exit 1
+    fi
     BIN_PATH="$1"
 elif [ -f "$ROOT_DIR/output/bootpImage" ]; then
     BIN_PATH="$ROOT_DIR/output/bootpImage"
@@ -16,11 +20,15 @@ else
     BIN_PATH=$(find "$ROOT_DIR/output" -maxdepth 1 -type f \( -name "*WAP610N*" -o -name "bootpImage*" \) 2>/dev/null | grep -v "\.map\|\.lzma\|\.gz\|\.o" | head -n 1 || true)
 fi
 
-# Detect ramdisk relative to BIN_PATH or repo output
-if [ -f "$(dirname "$BIN_PATH")/ramdisk_2.6.16.img.lzma" ]; then
-    RAMDISK_LZMA="$(cd "$(dirname "$BIN_PATH")" && pwd)/ramdisk_2.6.16.img.lzma"
-else
+# Detect ramdisk relative to BIN_PATH (only fall back to repo output if BIN_PATH is inside repo output)
+BIN_DIR_ABS="$(cd "$(dirname "$BIN_PATH")" 2>/dev/null && pwd || true)"
+OUT_DIR_ABS="$(cd "$ROOT_DIR/output" 2>/dev/null && pwd || true)"
+if [ -n "$BIN_DIR_ABS" ] && [ -f "$BIN_DIR_ABS/ramdisk_2.6.16.img.lzma" ]; then
+    RAMDISK_LZMA="$BIN_DIR_ABS/ramdisk_2.6.16.img.lzma"
+elif [ -n "$BIN_DIR_ABS" ] && [ "$BIN_DIR_ABS" = "$OUT_DIR_ABS" ] && [ -f "$ROOT_DIR/output/ramdisk_2.6.16.img.lzma" ]; then
     RAMDISK_LZMA="$ROOT_DIR/output/ramdisk_2.6.16.img.lzma"
+else
+    RAMDISK_LZMA=""
 fi
 
 # Detect container runtime
@@ -93,12 +101,38 @@ else
     exit 1
 fi
 
-# 3. Check CRC32 Checksum in Header and Footer
+# 3. Check CRC32 Checksum in Header, Payload, and Footer
 HEADER_CRC=$(hexdump -s 28 -n 4 -e '1/4 "%08x"' "$BIN_PATH" 2>/dev/null || od -j 28 -N 4 -t x4 -An "$BIN_PATH" | tr -d ' ')
 FOOTER_CRC=$(tail -c 4 "$BIN_PATH" | (hexdump -e '1/4 "%08x"' 2>/dev/null || od -t x4 -An | tr -d ' '))
 echo -n "3. Pengecekan Validasi CRC32 (Anti Image-Corrupt): "
 if [ -n "$HEADER_CRC" ] && [ "$HEADER_CRC" != "00000000" ] && [ "$HEADER_CRC" = "$FOOTER_CRC" ]; then
-    echo "✅ VALID (CRC32: 0x$HEADER_CRC cocok di header dan footer)"
+    if command -v python3 >/dev/null 2>&1; then
+        PAYLOAD_CRC_OK=$(python3 -c '
+import struct, sys, zlib
+with open(sys.argv[1], "rb") as f:
+    d = f.read()
+if len(d) < 48:
+    sys.exit(1)
+w0, pcksum2, _, _, _, _, _, hdr_crc = struct.unpack("<8I", d[:32])
+if pcksum2 < 32 or pcksum2 + 16 > len(d):
+    sys.exit(1)
+calc = zlib.crc32(d[32:pcksum2]) & 0xFFFFFFFF
+ftr = struct.unpack("<I", d[pcksum2 + 12:pcksum2 + 16])[0]
+if calc == hdr_crc == ftr:
+    print("ok")
+else:
+    print(f"mismatch: calc=0x{calc:08x} hdr=0x{hdr_crc:08x} ftr=0x{ftr:08x}")
+    sys.exit(2)
+' "$BIN_PATH" 2>&1)
+        if [ "$PAYLOAD_CRC_OK" = "ok" ]; then
+            echo "✅ VALID (Payload, Header & Footer CRC32: 0x$HEADER_CRC)"
+        else
+            echo "❌ INVALID ($PAYLOAD_CRC_OK)"
+            exit 1
+        fi
+    else
+        echo "✅ VALID (Header & Footer CRC32: 0x$HEADER_CRC)"
+    fi
 else
     echo "❌ INVALID (Header CRC: 0x$HEADER_CRC != Footer CRC: 0x$FOOTER_CRC - mkcsum tidak berjalan!)"
     exit 1
@@ -106,6 +140,9 @@ fi
 
 # 4. Check Ramdisk Contents
 echo "4. Pengecekan Integritas Isi RootFS (Ramdisk): "
+if [ -z "$RAMDISK_LZMA" ] || [ ! -f "$RAMDISK_LZMA" ]; then
+    echo "   - Ramdisk LZMA sibling tidak tersedia untuk $BIN_PATH — melewati audit loop mount."
+else
 sudo $CONTAINER_CMD run --rm --privileged \
     -v "$(dirname "$RAMDISK_LZMA"):/output:z" \
     wap610n-builder /bin/bash -c "
@@ -232,6 +269,7 @@ sudo $CONTAINER_CMD run --rm --privileged \
         umount /tmp/mnt_chk
         rm -rf /tmp/chk_rd /tmp/mnt_chk
     "
+fi
 
 # 5. Check Critical Shell Scripts Syntax
 echo -n "5. Pengecekan Sintaks Seluruh Skrip Shell Kritis: "

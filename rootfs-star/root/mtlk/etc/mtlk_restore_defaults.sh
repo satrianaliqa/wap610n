@@ -110,6 +110,7 @@ fi
 rm -f /tmp/sys.conf /tmp/wlan0.conf
 cp "$CONFIGS_PATH/sys.conf" /tmp/sys.conf || exit 1
 cp "$CONFIGS_PATH/wlan0.conf" /tmp/wlan0.conf || exit 1
+rm -f "$CONFIGS_PATH/sys.old.conf" "$CONFIGS_PATH/wlan0.old.conf"
 
 # Persist restored configuration to physical flash partition (/dev/mtdblock4)
 if [ ! -x /bin/config_save.sh ]; then

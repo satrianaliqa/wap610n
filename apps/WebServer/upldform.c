@@ -17,11 +17,13 @@ SEE ALSO:
 #include "webs.h"
 #include "mt_api.h"
 #include "utils.h"
+#include "management.h"
 
 #ifndef WIN
 #include "zlib.h"
 #include "pthread.h"
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -30,6 +32,7 @@ SEE ALSO:
 #include <errno.h>
 pthread_t gBurnThread;
 static int gBurnPostIsSysMalloc = 0;
+extern int waitOtherProcess;
 #endif
 
 /* forward declarations */
@@ -410,6 +413,14 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 	mw = websGetVar(wp, T("uploadSizeLimit"), T("0"));
 	cf = websGetVar(wp, T("configurationfile"), T("0"));
 	configurationfile = atoi(cf);
+	if (configurationfile && (gMTBurnParams.burnState > error_e || waitOtherProcess != 0)) {
+		wp->flags &= ~WEBS_KEEP_ALIVE;
+		sprintf(redirectPage, T("admin/management.asp?error=Another+operation+is+in+progress"));
+		MT_WriteRedirectScript(wp, redirectPage);
+		websFooter(wp);
+		websDone(wp, 200);
+		return;
+	}
 	maxWrite = atoi(mw) * 1024;
 	if (maxWrite < 0) {
 		maxWrite = 0;
@@ -508,6 +519,7 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
     } 
 	else 
 	{
+		chmod((targetFile == NULL ? "upldForm.bin" : targetFile), 0600);
         locWrite = 0;
         numLeft = wp->FileContentLen;
 		if (configurationfile && (wp->FileContent == NULL || numLeft <= (int)MT_CONFIG_FILE_SIG_LEN || numLeft > maxWrite))
@@ -633,8 +645,12 @@ void upldForm(webs_t wp, char_t * path, char_t * query) {
 			debug_printf("upldForm: fork 2: pid is %d\n", getpid());
 			system("echo 2 > /dev/gpio2");
 			loadConfigFromFile(targetFile);
+			unlink(targetFile);
 			commitToFlash(wp, path, query);
+			websPreserveCustomSysConf(NULL);
+			system("/bin/config_save.sh >/dev/null 2>&1");
 			debug_printf("upldForm: Leave here.(2) (pid=%d)\n", getpid());
+			system("sleep 3 ; reboot &");
 			_exit(0);
 		}
 	}
@@ -679,6 +695,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 	{
 		sendFileName = "/tmp/configfile.conf";
 		MT_SaveParamsToFile(sendFileName, profileCaption, profileToolTip);
+		chmod(sendFileName, 0600);
 	}
 	else
 	{
@@ -710,6 +727,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 				fseek(fileHandle, 0, SEEK_SET) != 0)
 			{
 				fclose(fileHandle);
+				unlink(sendFileName);
 				wp->flags &= ~WEBS_KEEP_ALIVE;
 				websHeader(wp);
 				snprintf(redirectPage, sizeof(redirectPage), T("admin/management.asp?error=Internal+Failure+could+not+read+%s"), sendFileName);
@@ -738,6 +756,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 			}
 
 			fclose(fileHandle);
+			unlink(sendFileName);
 		}
 		else
 		{
@@ -765,6 +784,7 @@ void sendFileForm(webs_t wp, char_t * path, char_t * query)
 static int MT_ReturnValidationError()
 {
 	printf("%s\n",gMTBurnParams.errorMessage);
+	gMTBurnParams.burnState = error_e;
 	gMTBurnParams.precentComplete = -1;
 	return FALSE; // Bad image
 }
@@ -916,6 +936,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
         else if (wp->FileContentLen == UPLOAD_NO_MEMORY)
 		{
 			gsprintf(gMTBurnParams.errorMessage,T("Error : Insufficient memory to upload the file.<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
@@ -923,6 +944,7 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
         else if (wp->FileContentLen == UPLOAD_FILE_TO_BIG)
 		{
 			gsprintf(gMTBurnParams.errorMessage,T("Error : File length exceeded Maximum<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
@@ -936,24 +958,28 @@ void BurnImage(webs_t wp, char_t * path, char_t * query)
 		if (wp->FileContentLen > IMAGE_MAX_SIZE)
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : File length exceeded Maximum<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
 		else if (wp->FileContentLen > KERNEL_MTD_PARTITION_SIZE)
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : Firmware is larger than the kernel MTD partition<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
 		else if (wp->FileContentLen == 0 || fileNameValid == 0)
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : Invalid image file specified.<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}
 		else if (!targetFile || !gstrlen(targetFile))
 		{
 			sprintf(gMTBurnParams.errorMessage,T("Error : File could not be opened<br>"));
+			gMTBurnParams.burnState = error_e;
 			gMTBurnParams.precentComplete = -1;
 			printf("%s\n",gMTBurnParams.errorMessage);
 		}

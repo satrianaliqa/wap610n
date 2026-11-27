@@ -307,6 +307,9 @@ int websCgiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	} else {
 		cid = hAllocEntry((void***) &cgiList, &cgiMax, sizeof(cgiRec));
 		if (cid < 0) {
+			if (pHandle > 0) {
+				kill((pid_t)pHandle, SIGTERM);
+			}
 			websError(wp, 503, T("Insufficient memory"));
 			for (ep = envp; *ep != NULL; ep++) {
 				bfreeSafe(B_L, *ep);

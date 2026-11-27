@@ -3,6 +3,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <crypt.h>
 #include "uemf.h"
 #include "wsIntrn.h"
 #include "mt_api.h"
@@ -17,6 +21,139 @@ static void closeInheritedFds(void)
 
 	for (fd = 3; fd < 256; fd++) {
 		close(fd);
+	}
+}
+
+void syncRootShadowPassword(const char *plainPass)
+{
+	static const char saltChars[] = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	char line[256];
+	char existingHash[128];
+	char salt[16];
+	char *hashed;
+	const char *tailFields;
+	FILE *inFp;
+	FILE *outFp;
+	FILE *rndFp;
+	int outFd;
+	int replaced;
+	int i;
+	unsigned char rndBuf[8];
+	size_t passLen;
+
+	if (plainPass == NULL || plainPass[0] == '\0') {
+		return;
+	}
+	passLen = strlen(plainPass);
+	if (passLen > 64 || strpbrk(plainPass, ":\r\n") != NULL) {
+		return;
+	}
+
+	existingHash[0] = '\0';
+	tailFields = ":10933:0:99999:7:::";
+	inFp = fopen("/etc/shadow", "r");
+	if (inFp != NULL) {
+		while (fgets(line, sizeof(line), inFp) != NULL) {
+			if (strncmp(line, "root:", 5) == 0) {
+				char *p1 = line + 5;
+				char *p2 = strchr(p1, ':');
+				size_t hlen;
+				if (p2 != NULL) {
+					hlen = (size_t)(p2 - p1);
+					if (hlen > 0 && hlen < sizeof(existingHash)) {
+						memcpy(existingHash, p1, hlen);
+						existingHash[hlen] = '\0';
+					}
+				}
+				break;
+			}
+		}
+		fclose(inFp);
+	}
+
+	if (existingHash[0] == '$') {
+		char *check = crypt(plainPass, existingHash);
+		if (check != NULL && strcmp(check, existingHash) == 0) {
+			return;
+		}
+	}
+
+	memset(rndBuf, 0, sizeof(rndBuf));
+	rndFp = fopen("/dev/urandom", "rb");
+	if (rndFp != NULL) {
+		if (fread(rndBuf, 1, sizeof(rndBuf), rndFp) != sizeof(rndBuf)) {
+			rndBuf[0] = '\0';
+		}
+		fclose(rndFp);
+	}
+	if (rndBuf[0] == '\0') {
+		unsigned long seed = (unsigned long)time(NULL) ^ ((unsigned long)getpid() << 16);
+		for (i = 0; i < 8; i++) {
+			seed = seed * 1103515245UL + 12345UL;
+			rndBuf[i] = (unsigned char)((seed >> 16) & 0xFFU);
+		}
+	}
+
+	salt[0] = '$';
+	salt[1] = '1';
+	salt[2] = '$';
+	for (i = 0; i < 8; i++) {
+		salt[3 + i] = saltChars[rndBuf[i] % (sizeof(saltChars) - 1)];
+	}
+	salt[11] = '$';
+	salt[12] = '\0';
+
+	hashed = crypt(plainPass, salt);
+	if (hashed == NULL || hashed[0] != '$') {
+		return;
+	}
+
+	outFd = open("/etc/shadow.tmp", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (outFd < 0) {
+		return;
+	}
+	outFp = fdopen(outFd, "w");
+	if (outFp == NULL) {
+		close(outFd);
+		unlink("/etc/shadow.tmp");
+		return;
+	}
+
+	replaced = 0;
+	inFp = fopen("/etc/shadow", "r");
+	if (inFp != NULL) {
+		while (fgets(line, sizeof(line), inFp) != NULL) {
+			if (!replaced && strncmp(line, "root:", 5) == 0) {
+				char *p1 = line + 5;
+				char *p2 = strchr(p1, ':');
+				if (p2 != NULL) {
+					size_t tlen = strlen(p2);
+					while (tlen > 0 && (p2[tlen - 1] == '\n' || p2[tlen - 1] == '\r')) {
+						p2[--tlen] = '\0';
+					}
+					fprintf(outFp, "root:%s%s\n", hashed, p2);
+				} else {
+					fprintf(outFp, "root:%s%s\n", hashed, tailFields);
+				}
+				replaced = 1;
+			} else {
+				fputs(line, outFp);
+			}
+		}
+		fclose(inFp);
+	}
+	if (!replaced) {
+		fprintf(outFp, "root:%s%s\n", hashed, tailFields);
+	}
+
+	fflush(outFp);
+	fsync(fileno(outFp));
+	fclose(outFp);
+	chmod("/etc/shadow.tmp", 0600);
+	if (rename("/etc/shadow.tmp", "/etc/shadow") != 0) {
+		unlink("/etc/shadow.tmp");
+	} else {
+		chmod("/etc/shadow", 0600);
 	}
 }
 
@@ -142,7 +279,7 @@ static int readSysConfValue(const char *path, const char *key, char *out, size_t
 	return found;
 }
 
-static void preserveCustomSysConf(const char *wirelessMgmtOverride)
+void websPreserveCustomSysConf(const char *wirelessMgmtOverride)
 {
 	static const char * const keys[7] = {
 		"SSH_Enabled",
@@ -184,6 +321,11 @@ static void preserveCustomSysConf(const char *wirelessMgmtOverride)
 		}
 		fclose(fp);
 	}
+}
+
+static void preserveCustomSysConf(const char *wirelessMgmtOverride)
+{
+	websPreserveCustomSysConf(wirelessMgmtOverride);
 }
 
 void management(webs_t wp, char_t *path, char_t *query)
@@ -282,6 +424,7 @@ void management(webs_t wp, char_t *path, char_t *query)
 				snprintf(tmp, sizeof(tmp), "%s", admPass);
 				MT_Set_Param("AdminPassword", tmp, 1);
 				paramNames[paramCount++] = "AdminPassword";
+				syncRootShadowPassword(tmp);
 			}
 			if (timeOut != NULL && timeOut[0] != '\0') {
 				MT_Set_Param("AuthenticationTimeout", timeOut, 1);

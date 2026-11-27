@@ -51,6 +51,8 @@ function template_load() {
 <script language="JavaScript" type="text/javascript">
 var IPandMask = "<% getCurrectLanIP(); %>";
 var mode = "<% getParam(1, "network_type"); %>";
+var targetIP = "<% getParamJs("ip_lan"); %>";
+var ipCfgMethod = "<% getParamJs("ip_config_method"); %>";
 var currentIP;
 
 docTemp = IPandMask;
@@ -65,6 +67,12 @@ function checkValue() {
 function page_load() {
 	var HWType = "<% checkHW(); %>"
 	urlPath = "<% getUrlPath(); %>";
+	if ((urlPath.indexOf("sta_network.asp") != -1 || urlPath.indexOf("ap_network.asp") != -1) &&
+	    ipCfgMethod == "1" &&
+	    /^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(targetIP) &&
+	    targetIP != "0.0.0.0") {
+		currentIP = targetIP;
+	}
 	totalWaitTime = parseInt("<% totalWaitTime(); %>", 10);
 	if (isNaN(totalWaitTime) || totalWaitTime < 10)
 		totalWaitTime = 10;

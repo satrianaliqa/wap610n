@@ -22,6 +22,7 @@ ALT_SERVE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'output'))
 
 
 def _resolve_tftp_target(serve_dir, alt_dir, filename):
+    import glob
     req_name = os.path.basename(filename.replace('\\', '/'))
     if not req_name:
         return None
@@ -32,7 +33,9 @@ def _resolve_tftp_target(serve_dir, alt_dir, filename):
     aliases = (ver_bin, 'bootpImage', 'WAP610N_v1.0.05.bin')
 
     candidates = [req_name]
-    if req_name.lower() in {a.lower() for a in aliases}:
+    is_fw_alias = (req_name.lower() in {a.lower() for a in aliases} or
+                   (req_name.lower().startswith('wap610n_v') and req_name.lower().endswith('.bin')))
+    if is_fw_alias:
         for alias in aliases:
             if alias not in candidates:
                 candidates.append(alias)
@@ -48,6 +51,13 @@ def _resolve_tftp_target(serve_dir, alt_dir, filename):
             path = os.path.join(directory, cand)
             if os.path.isfile(path):
                 return path
+        if is_fw_alias:
+            globs = (glob.glob(os.path.join(directory, f'WAP610N_v{ver_clean}_*.bin')) +
+                     glob.glob(os.path.join(directory, 'WAP610N_v*.bin')))
+            globs = [p for p in globs if os.path.isfile(p)]
+            if globs:
+                globs.sort(key=os.path.getmtime, reverse=True)
+                return globs[0]
     return None
 
 def _send_tftp_file(target_path, client_addr):

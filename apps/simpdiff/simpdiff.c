@@ -57,12 +57,14 @@ int main(int argc, char *argv[])
 	size_t i;
 	unsigned int offset;
 	unsigned int ignoreSize;
+	unsigned int comparedAny;
 	unsigned int nameParam;
 	unsigned char buf1[CHUNK_SIZE];
 	unsigned char buf2[CHUNK_SIZE];
 
 	offset = 0;
 	ignoreSize = 0;
+	comparedAny = 0;
 	nameParam = 1;
 
 	if (argc < 3) {
@@ -115,9 +117,12 @@ int main(int argc, char *argv[])
 			}
 		}
 		offset += (unsigned int)min_read;
+		if (min_read > 0) {
+			comparedAny = 1;
+		}
 
 		if (numRead1 != numRead2) {
-			if (!ignoreSize) {
+			if (!ignoreSize || !comparedAny) {
 				printf("Files have different size.\n");
 				close(file1);
 				close(file2);

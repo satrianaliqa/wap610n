@@ -58,12 +58,21 @@ function menu() {
         # Deteksi status firmware binary
         FW_BOOTP="${OUTPUT_DIR}/bootpImage"
         FW_BIN="${OUTPUT_DIR}/WAP610N_v${FW_VER}.bin"
+        OUT_DIR="${BASE_DIR}/../output"
+        FW_GLOB_LOCAL=$(ls -1t "${OUTPUT_DIR}"/WAP610N_v${FW_VER}_*.bin "${OUTPUT_DIR}"/WAP610N_v*.bin 2>/dev/null | head -n 1)
+        FW_GLOB_OUT=$(ls -1t "${OUT_DIR}"/WAP610N_v${FW_VER}_*.bin "${OUT_DIR}"/WAP610N_v*.bin 2>/dev/null | head -n 1)
         if [ -f "${FW_BOOTP}" ]; then
             FW_FILE="${FW_BOOTP}"
         elif [ -f "${FW_BIN}" ]; then
             FW_FILE="${FW_BIN}"
-        elif [ -f "${BASE_DIR}/../output/WAP610N_v${FW_VER}.bin" ]; then
-            FW_FILE="${BASE_DIR}/../output/WAP610N_v${FW_VER}.bin"
+        elif [ -n "${FW_GLOB_LOCAL}" ] && [ -f "${FW_GLOB_LOCAL}" ]; then
+            FW_FILE="${FW_GLOB_LOCAL}"
+        elif [ -f "${OUT_DIR}/WAP610N_v${FW_VER}.bin" ]; then
+            FW_FILE="${OUT_DIR}/WAP610N_v${FW_VER}.bin"
+        elif [ -n "${FW_GLOB_OUT}" ] && [ -f "${FW_GLOB_OUT}" ]; then
+            FW_FILE="${FW_GLOB_OUT}"
+        elif [ -f "${OUT_DIR}/bootpImage" ]; then
+            FW_FILE="${OUT_DIR}/bootpImage"
         else
             FW_FILE="${FW_BOOTP}"
         fi

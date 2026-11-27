@@ -16,9 +16,9 @@
 
 <script language="javascript" type="text/javascript">
 function template_load() {
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var HWType = "<% checkHW(); %>"
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
 	
 	if (mode == 0) //STA mode
 	{
@@ -49,7 +49,7 @@ function template_load() {
 </script>
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
-var g_mode = "<% getParam(1, "network_type"); %>";
+var g_mode = "<% getParamJs("network_type"); %>";
 var updateWPSStatusStopToWait = true;
 var stopUpdateWPSStatus = false;
 var StopWaitEthernetUP = false;
@@ -68,7 +68,7 @@ var displayESSID="";
 var preStatus;
 var ipConfigMethod;
 var doRefresh = false;
-var langset = "<% getParam(1, "Language"); %>";
+var langset = "<% getParamJs("Language"); %>";
 
 function escapeHTML(str) {
 	if (!str) return "";
@@ -618,8 +618,15 @@ function graphProgress(wps_info)
 }
 
 function page_load() {
-	ipConfigMethod = "<% getParam(1, "ip_config_method"); %>"; //0:dhcp, 1: static
-	document.getElementById("NonProc_WPS_DevicePIN").innerHTML = "<% getParam(1, "NonProc_WPS_DevicePIN"); %>";
+	ipConfigMethod = "<% getParamJs("ip_config_method"); %>"; //0:dhcp, 1: static
+	var devPin = "<% getParamJs("NonProc_WPS_DevicePIN"); %>";
+	var pinElem = document.getElementById("NonProc_WPS_DevicePIN");
+	if (pinElem) {
+		if ("textContent" in pinElem)
+			pinElem.textContent = devPin;
+		else
+			pinElem.innerText = devPin;
+	}
 	showField("");
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
 	wpsStatus("<% getWPSStatus(); %>", "wps_status.asp");

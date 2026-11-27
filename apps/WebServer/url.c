@@ -77,29 +77,48 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
 	char_t **pext)
 {
 	char_t		*tok, *cp, *host, *path, *port, *proto, *tag, *query, *ext;
-	char_t		*hostbuf, *portbuf, *buf;
-	int			c, len, ulen;
+	char_t		*hostbuf, *portbuf, *buf, *querybuf;
+	char_t		*rawQMark, *rawHash, *rawQueryEnd;
+	int			c, len, ulen, prefixLen, queryLen;
 
 	a_assert(url);
 	a_assert(pbuf);
 
 	ulen = gstrlen(url);
 /*
- *	We allocate enough to store separate hostname and port number fields.
- *	As there are 3 strings in the one buffer, we need room for 3 null chars.
- *	We allocate MAX_PORT_LEN char_t's for the port number.
+ *	Split raw query/fragment BEFORE decoding the path so %26/%3D/%25 in
+ *	query parameters are not decoded twice when websSetEnv() parses pairs.
  */
-	len = ulen * 2 + MAX_PORT_LEN + 3;
+	rawQMark = gstrchr(url, '?');
+	rawHash = gstrchr(url, '#');
+	if (rawQMark != NULL && (rawHash == NULL || rawQMark < rawHash)) {
+		prefixLen = (int) (rawQMark - url);
+		rawQueryEnd = (rawHash != NULL) ? rawHash : (rawQMark + gstrlen(rawQMark));
+		queryLen = (int) (rawQueryEnd - (rawQMark + 1));
+	} else {
+		prefixLen = (rawHash != NULL) ? (int) (rawHash - url) : ulen;
+		queryLen = 0;
+	}
+/*
+ *	We allocate enough to store decoded path, separate hostname, raw query,
+ *	and port number fields with NUL terminators.
+ */
+	len = prefixLen * 2 + queryLen + MAX_PORT_LEN + 4;
 	if ((buf = balloc(B_L, len * sizeof(char_t))) == NULL) {
 		return -1;
 	}
 	portbuf = &buf[len - MAX_PORT_LEN - 1];
-	hostbuf = &buf[ulen+1];
+	hostbuf = &buf[prefixLen + 1];
+	querybuf = &buf[prefixLen * 2 + 2];
    /*
-   Handle any URL encoding.
+   Handle URL encoding on path component only.
    Otherwise a URL ending in ".as%70", for example, causes trouble.
    */
- 	websDecodeUrl(buf, url, ulen);
+	websDecodeUrl(buf, url, prefixLen);
+	if (queryLen > 0) {
+		memcpy(querybuf, rawQMark + 1, (size_t) queryLen * sizeof(char_t));
+	}
+	querybuf[queryLen] = '\0';
 
 	url = buf;
 
@@ -112,7 +131,7 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
 	path = T("/");
 	proto = T("http");
 	host = T("localhost");
-	query = T("");
+	query = querybuf;
 	ext = htmExt;
 	tag = T("");
 
@@ -138,8 +157,8 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
  */
 			c = *cp;
 			*cp = '\0';
-			gstrncpy(hostbuf, host, ulen);
-			hostbuf[ulen] = '\0';
+			gstrncpy(hostbuf, host, prefixLen);
+			hostbuf[prefixLen] = '\0';
 			gstrncpy(portbuf, port, MAX_PORT_LEN);
 			portbuf[MAX_PORT_LEN] = '\0';
 			*cp = c;
@@ -155,24 +174,8 @@ int websUrlParse(char_t *url, char_t **pbuf, char_t **phost, char_t **ppath,
 	}
 
 /*
- *	Parse the query string
+ *	Query string and fragment identifier were already split prior to path decode.
  */
-	if ((cp = gstrchr(tok, '?')) != NULL) {
-		*cp++ = '\0';
-		query = cp;
-		path = tok;
-		tok = query;
-	} 
-
-/*
- *	Parse the fragment identifier
- */
-	if ((cp = gstrchr(tok, '#')) != NULL) {
-		*cp++ = '\0';
-		if (*query == 0) {
-			path = tok;
-		}
-	}
 
 /*
  *	Only do the following if asked for the extension

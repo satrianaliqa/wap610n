@@ -134,7 +134,8 @@ get_system_time(uuid_time_t *uuid_time)
        UUID UTC base time is October 15, 1582.
        Unix base time is January 1, 1970.
      */
-    *uuid_time = ( tp.tv_sec * 10000000 ) + ( tp.tv_usec * 10 ) +
+    *uuid_time = ( ( uuid_time_t )tp.tv_sec * I64( 10000000 ) ) +
+        ( ( uuid_time_t )tp.tv_usec * I64( 10 ) ) +
         I64( 0x01B21DD213814000 );
 };
 

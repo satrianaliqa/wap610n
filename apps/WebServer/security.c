@@ -53,79 +53,115 @@ static int		debugSecurity = 0;
 
 
 
-static int cached_wls_port = -1;
+typedef struct {
+	unsigned char mac_addr[6];
+	unsigned char port_no;
+	unsigned char is_local;
+	unsigned int ageing_timer_value;
+	unsigned int unused;
+} br_fdb_entry_t;
 
-int getWLSBridgePort()
+int getWLSBridgePort(void)
 {
-	FILE* tmpFile = NULL;
+	FILE *tmpFile = NULL;
 	char buff[256];
-
 	int portNum = 1;
 	int found = 0;
 
-	if (cached_wls_port != -1)
-		return cached_wls_port;
+	/* Zero-fork read of live sysfs bridge port number */
+	tmpFile = fopen("/sys/class/net/wlan0/brport/port_no", "r");
+	if (tmpFile != NULL) {
+		if (fgets(buff, sizeof(buff), tmpFile) != NULL) {
+			char *endp = NULL;
+			long val = strtol(buff, &endp, 0);
+			if (endp != buff && val > 0 && val <= 255) {
+				fclose(tmpFile);
+				return (int)val;
+			}
+		}
+		fclose(tmpFile);
+	}
 
-	system ("brctl show br0 > /tmp/brctl_show");
-	tmpFile = fopen ("/tmp/brctl_show","rt");
-
-	if (tmpFile)
-	{
-		// get all lines from file
-		while (fgets(buff, sizeof(buff), tmpFile))
-		{
-			if (strstr(buff,"bridge name")!= NULL) // skip headers
+	/* Fallback if sysfs brport is unavailable */
+	if (access("/sys/class/net/wlan0", F_OK) != 0) {
+		return -1;
+	}
+	system("brctl show br0 > /tmp/brctl_show");
+	tmpFile = fopen("/tmp/brctl_show", "rt");
+	if (tmpFile != NULL) {
+		while (fgets(buff, sizeof(buff), tmpFile) != NULL) {
+			if (strstr(buff, "bridge name") != NULL) {
 				continue;
-
-			if (strstr(buff,"wlan0")!= NULL)
-			{
+			}
+			if (strstr(buff, "wlan0") != NULL) {
 				found = 1;
 				break;
 			}
-
 			portNum++;
 		}
 		fclose(tmpFile);
 	}
-	if (found == 1) {
-		cached_wls_port = portNum;
-		return portNum;
-	} else
-		return -1;
+	return (found == 1) ? portNum : -1;
 }
 
 int GetBridgPortForMAC(const char* mac)
 {
 	static time_t last_brctl_time = 0;
 	time_t now;
-	FILE* tmpFile = NULL;
+	FILE *tmpFile = NULL;
 	char buff[256];
-
 	char port[20];
 	int portNum = -1;
 	char macaddr[30];
+	unsigned int b[6];
+	unsigned char targetMac[6];
+	br_fdb_entry_t recs[64];
+	size_t nread;
+	size_t i;
 
+	if (mac == NULL || mac[0] == '\0') {
+		return -1;
+	}
+
+	/* Zero-fork binary lookup in live bridge forwarding table */
+	if (sscanf(mac, "%2x:%2x:%2x:%2x:%2x:%2x",
+	           &b[0], &b[1], &b[2], &b[3], &b[4], &b[5]) == 6) {
+		for (i = 0; i < 6; i++) {
+			targetMac[i] = (unsigned char)(b[i] & 0xFFU);
+		}
+		tmpFile = fopen("/sys/class/net/br0/brforward", "rb");
+		if (tmpFile != NULL) {
+			while ((nread = fread(recs, sizeof(br_fdb_entry_t), 64, tmpFile)) > 0) {
+				for (i = 0; i < nread; i++) {
+					if (!recs[i].is_local &&
+					    memcmp(recs[i].mac_addr, targetMac, 6) == 0) {
+						portNum = (int)recs[i].port_no;
+						fclose(tmpFile);
+						return portNum;
+					}
+				}
+			}
+			fclose(tmpFile);
+			return -1;
+		}
+	}
+
+	/* Fallback only if /sys/class/net/br0/brforward cannot be opened */
 	memset(port, 0, sizeof(port));
 	memset(macaddr, 0, sizeof(macaddr));
-
 	time(&now);
-	if (now - last_brctl_time > 5 || last_brctl_time == 0) {
-		system ("brctl showmacs br0 >/tmp/brctl_showmacs");
+	if (now < last_brctl_time || (now - last_brctl_time) > 2 || last_brctl_time == 0) {
+		system("brctl showmacs br0 >/tmp/brctl_showmacs");
 		last_brctl_time = now;
 	}
-	tmpFile = fopen ("/tmp/brctl_showmacs","rt");
-
-	if (tmpFile)
-	{
-		// get all lines from file
-		while (fgets(buff, sizeof(buff), tmpFile))
-		{
-			if (strstr(buff,"port no mac addr")!= NULL) // skip headers
+	tmpFile = fopen("/tmp/brctl_showmacs", "rt");
+	if (tmpFile != NULL) {
+		while (fgets(buff, sizeof(buff), tmpFile) != NULL) {
+			if (strstr(buff, "port no mac addr") != NULL) {
 				continue;
-
+			}
 			if (sscanf(buff, "%19s %29s", port, macaddr) == 2) {
-				if (macaddr[0] != '\0' && strcmp(macaddr, mac) == 0)
-				{
+				if (macaddr[0] != '\0' && strcasecmp(macaddr, mac) == 0) {
 					portNum = atoi(port);
 					break;
 				}
@@ -134,7 +170,6 @@ int GetBridgPortForMAC(const char* mac)
 		fclose(tmpFile);
 	}
 	return portNum;
-
 }
 
 int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
@@ -176,12 +211,25 @@ int IPtoMAC(const char* ip, char* mac, unsigned int mac_len)
 	return 0;
 }
 
+int isMACFromWLS(const char* mac)
+{
+	int port = -1;
+	int wlsPort = -1;
+
+	if (mac == NULL || mac[0] == '\0') {
+		return 0;
+	}
+	port = GetBridgPortForMAC(mac);
+	wlsPort = getWLSBridgePort();
+	if (port > 0 && wlsPort > 0 && port == wlsPort) {
+		return 1;
+	}
+	return 0;
+}
+
 int isIPFromWLS(const char* ip)
 {
 	char mac[256];
-	unsigned int i = 0;
-	int port = -1;
-	int wlsPort = -1;
 
 	if (ip == NULL || ip[0] == '\0') {
 		return 0;
@@ -189,19 +237,11 @@ int isIPFromWLS(const char* ip)
 	memset(mac, 0, sizeof(mac));
 	IPtoMAC(ip, mac, sizeof(mac));
 
-	/* Need to convert mac to lower case */
-	for (i = 0; mac[i] != '\0'; i++) {
-		mac[i] = (char)tolower((unsigned char)mac[i]);
-	}
-
 	if (mac[0] == '\0') {
 		return 0;
 	}
 
-	port = GetBridgPortForMAC(mac);
-	wlsPort = getWLSBridgePort();
-
-	if (port > 0 && wlsPort > 0 && port == wlsPort) {
+	if (isMACFromWLS(mac)) {
 		printf("ip %s (%s) is from WLS\n", ip, mac);
 		return 1;
 	}
@@ -342,7 +382,11 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 	} else {
 		if (password && *password) {
 			char_t * userpass = MTuserPass;
-			if (userpass) {
+			if (MTuserName[0] != '\0' && (userid == NULL || gstrcmp(userid, MTuserName) != 0)) {
+				websStats.access++;
+				websError(wp, 401, T("Access Denied\nWrong Username or Password"));
+				nRet = 1;
+			} else if (userpass) {
 				if (gstrcmp(password, userpass) != 0) {
 					websStats.access++;
 					websError(wp, 401, T("Access Denied\nWrong Password"));
@@ -362,6 +406,7 @@ int websSecurityHandler(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 
 			if (wp->digest == NULL || wp->nonce == NULL || wp->uri == NULL ||
 				wp->realm == NULL || wp->userName == NULL ||
+				(MTuserName[0] != '\0' && gstrcmp(wp->userName, MTuserName) != 0) ||
 				gstrcmp(wp->uri, wp->path) != 0) {
 				websStats.access++;
 				websError(wp, 401, T("Access Denied\nInvalid Digest Auth"));

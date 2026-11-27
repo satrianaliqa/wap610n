@@ -173,7 +173,7 @@ char *get_flash_env(const char *env_name)
 // copy from 2.6.16
 char *get_flash_env(const char *env_name)
 {
-	const int ENV_SIZE = 0x8000;
+	const int ENV_SIZE = 0x10000;
 	unsigned long from = 0x20000;
 	static char env_val[256];
 	u8 *remap;

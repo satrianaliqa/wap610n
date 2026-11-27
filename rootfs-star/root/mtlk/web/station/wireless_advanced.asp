@@ -51,7 +51,7 @@ function template_load() {
 <script language="JavaScript" type="text/javascript">
 
 var RadarDetect = "<% getParam(1, "11hRadarDetect"); %>";
-var AocsRestrictCh = "<% getParam(1, "AocsRestrictCh"); %>";
+var AocsRestrictCh = "<% getParamJs("AocsRestrictCh"); %>";
 var AdvancedCoding = "<% getParam(1, "AdvancedCoding"); %>";
 var HiddenSSID = "<% getParam(1, "HiddenSSID"); %>";
 var ERPProtectionType = "<% getParam(1, "ERPProtectionType"); %>";

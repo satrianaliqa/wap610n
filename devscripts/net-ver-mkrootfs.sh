@@ -81,16 +81,7 @@ if [ -x "apps/WebServer/LINUX/webs" ]; then
 	}
 fi
 
-# 4. Install optional standardized packages from packages/*/
-if [ -d "packages" ]; then
-	for pkg_mk in packages/*/Makefile.pkg; do
-		[ -f "$pkg_mk" ] || continue
-		pkg_dir="$(dirname "$pkg_mk")"
-		echo "Building and installing package: $pkg_dir..."
-		E_TOPDIR="$(pwd)/apps" E_DEST="$(pwd)/${ROOTFS_DIR}" \
-			make -C "$pkg_dir" -f Makefile.pkg COMP STRIP INSTALL || exit 1
-	done
-fi
+# 4. Placeholder (standardized packages installed after permission normalization)
 
 # Load config/WAP610N_VERSION while preserving any caller environment overrides
 load_custom_build_vars() {
@@ -138,8 +129,8 @@ set_conf_kv() {
 	local file="$1" key="$2" val="$3"
 	[ -f "$file" ] || return 0
 	[ -n "$val" ] || return 0
-	awk -v k="$key" -v v="$val" '
-		BEGIN { found = 0 }
+	CONF_KV_VAL="$val" awk -v k="$key" '
+		BEGIN { found = 0; v = ENVIRON["CONF_KV_VAL"] }
 		{
 			line = $0
 			sub(/\r$/, "", line)
@@ -195,6 +186,17 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "DHCPDDNS2" "${CUSTOM_DNS2:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AdminUserName" "${CUSTOM_ADMIN_USER:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AdminPassword" "${CUSTOM_ADMIN_PASS:-}"
+	if [ -n "${CUSTOM_ADMIN_PASS:-}" ] && [ -f "${ROOTFS_DIR}/etc/shadow" ] && command -v openssl >/dev/null 2>&1; then
+		NEW_SHADOW_HASH=$(printf '%s' "${CUSTOM_ADMIN_PASS}" | openssl passwd -1 -stdin 2>/dev/null || openssl passwd -1 "${CUSTOM_ADMIN_PASS}" 2>/dev/null || true)
+		case "$NEW_SHADOW_HASH" in
+			\$1\$*)
+				TMP_SHADOW=$(mktemp)
+				NEW_SHADOW_HASH="$NEW_SHADOW_HASH" awk -F: 'BEGIN { OFS=":" } $1 == "root" { $2 = ENVIRON["NEW_SHADOW_HASH"] } { print }' "${ROOTFS_DIR}/etc/shadow" > "$TMP_SHADOW"
+				install -m 600 "$TMP_SHADOW" "${ROOTFS_DIR}/etc/shadow"
+				rm -f "$TMP_SHADOW"
+				;;
+		esac
+	fi
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "AuthenticationTimeout" "${CUSTOM_AUTH_TIMEOUT:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "SSH_Enabled" "${CUSTOM_SSH_ENABLED:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "Telnet_Enabled" "${CUSTOM_TELNET_ENABLED:-}"
@@ -237,9 +239,9 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	fi
 
 	if command -v genext2fs >/dev/null 2>&1; then
-		genext2fs -U -b 128 -d "${TMP_CFG_DIR}" "${TMP_CFG_IMG}" >/dev/null 2>&1
+		genext2fs -U -b 128 -N 128 -d "${TMP_CFG_DIR}" "${TMP_CFG_IMG}" >/dev/null 2>&1
 	else
-		mke2fs -d "${TMP_CFG_DIR}" -F -b 1024 -m 0 "${TMP_CFG_IMG}" 128 >/dev/null 2>&1
+		mke2fs -d "${TMP_CFG_DIR}" -F -b 1024 -N 128 -m 0 "${TMP_CFG_IMG}" 128 >/dev/null 2>&1
 	fi
 	gzip -n -9 -c "${TMP_CFG_IMG}" > "${ROOTFS_DIR}/root/mtlk/etc/config.img.gz"
 	rm -rf "${TMP_CFG_DIR}" "${TMP_CFG_IMG}"
@@ -267,6 +269,24 @@ for exec_bin in \
 	"${ROOTFS_DIR}/root/mtlk/etc/wlan_logger"; do
 	[ -f "$exec_bin" ] && chmod 755 "$exec_bin"
 done
+for secret_conf in \
+	"${ROOTFS_DIR}/root/mtlk/etc/sys.conf" \
+	"${ROOTFS_DIR}/root/mtlk/saved_configs/sys.conf.default" \
+	"${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" \
+	"${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"; do
+	[ -f "$secret_conf" ] && chmod 600 "$secret_conf"
+done
+
+# 6b. Install optional standardized packages after root/mtlk chmod 644 normalization
+if [ -d "packages" ]; then
+	for pkg_mk in packages/*/Makefile.pkg; do
+		[ -f "$pkg_mk" ] || continue
+		pkg_dir="$(dirname "$pkg_mk")"
+		echo "Building and installing package: $pkg_dir..."
+		E_TOPDIR="$(pwd)/apps" E_DEST="$(pwd)/${ROOTFS_DIR}" \
+			make -C "$pkg_dir" -f Makefile.pkg COMP STRIP INSTALL || exit 1
+	done
+fi
 
 rm -f "${ROOTFS_DIR}/root/mtlk/web/crc"
 rm -f "${ROOTFS_DIR}"/etc/udhcpd/LICENSE "${ROOTFS_DIR}"/etc/udhcpd/README \
@@ -457,11 +477,11 @@ if command -v genext2fs >/dev/null 2>&1; then
 		echo "ERROR: genext2fs failed to generate ext2 ramdisk!"
 		exit 1
 	}
-elif mke2fs -d "${ROOTFS_DIR}" -F -b 1024 -m 0 "${RD}" "${RD_BLOCKS}" >/dev/null 2>&1; then
+elif mke2fs -d "${ROOTFS_DIR}" -F -b 1024 -N 1536 -m 0 "${RD}" "${RD_BLOCKS}" >/dev/null 2>&1; then
 	:
 else
 	dd if=/dev/zero of="${RD}" bs=1k count="${RD_BLOCKS}" >/dev/null 2>&1
-	mke2fs -F -b 1024 -m 0 "${RD}" >/dev/null 2>&1
+	mke2fs -F -b 1024 -N 1536 -m 0 "${RD}" >/dev/null 2>&1
 	MNT_DIR=/tmp/mnt_rd_$$
 	mkdir -p "${MNT_DIR}"
 	if mount -o loop "${RD}" "${MNT_DIR}" 2>/dev/null || sudo mount -o loop "${RD}" "${MNT_DIR}" 2>/dev/null; then

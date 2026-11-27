@@ -36,7 +36,7 @@ SSH_EN=$(get_sys_conf_val SSH_Enabled 1)
 # 1. Start Telnet daemon with root shell FIRST (Port 23) if enabled
 if [ "$TELNET_EN" != "0" ] && ! pidof telnetd >/dev/null 2>&1; then
 	$DIAG_LOG "early boot: starting Telnet daemon on port 23" 2>/dev/null || true
-	telnetd -l /bin/sh &
+	telnetd -l /bin/login &
 fi
 
 # 2. Prepare Dropbear SSH keys and start daemon (Port 22) if enabled
@@ -54,9 +54,10 @@ if [ -x /usr/sbin/dropbear ] && [ -d /tmp ]; then
 				elif [ ! -f "/etc/dropbear/$keyname" ] && [ -x /usr/bin/dropbearkey ]; then
 					/usr/bin/dropbearkey -t ed25519 -f "/etc/dropbear/$keyname" >/dev/null 2>&1 || true
 					if [ -f "/etc/dropbear/$keyname" ] && [ -d /mnt/jffs2/dropbear ]; then
-						cp -f "/etc/dropbear/$keyname" "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
-						chmod 600 "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
-						HOSTKEY_GENERATED=1
+						if cp -f "/etc/dropbear/$keyname" "/mnt/jffs2/dropbear/$keyname" 2>/dev/null; then
+							chmod 600 "/mnt/jffs2/dropbear/$keyname" 2>/dev/null || true
+							HOSTKEY_GENERATED=1
+						fi
 					fi
 				fi
 				[ -f "/etc/dropbear/$keyname" ] && chmod 600 "/etc/dropbear/$keyname" 2>/dev/null || true

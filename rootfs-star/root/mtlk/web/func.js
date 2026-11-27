@@ -262,7 +262,9 @@ function process_page()
 	percent+=renewClock;
 	if (percent >= 100) {
 		percent = 100;
-		location.href = redirectURL;
+		location.href = (typeof urlPath === "string" && urlPath.length > 0 && currentIP)
+			? ("http://" + currentIP + urlPath)
+			: redirectURL;
 	}
 	document.getElementById("progress").style.width = Math.round(percent) + "%";
 	document.getElementById("progressValue").innerHTML = Math.round(percent) + "%";

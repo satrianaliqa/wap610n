@@ -6,10 +6,12 @@
 
 METHOD="GET"
 DATA=""
+HAS_DATA=0
 SILENT=0
 VERBOSE=0
 INCLUDE_HDR=0
 HEAD_ONLY=0
+FOLLOW_REDIRECT=0
 OUTFILE="-"
 USER_AGENT="curl/7.68.0 (wap610n)"
 AUTH=""
@@ -98,7 +100,12 @@ while [ $# -gt 0 ]; do
             ;;
         -d|--data|--data-raw|--data-ascii|--data-binary|--data-urlencode)
             [ $# -lt 2 ] && { echo "curl: option $1 requires an argument" >&2; exit 2; }
-            DATA="$2"
+            if [ "$HAS_DATA" -eq 1 ]; then
+                DATA="${DATA}&$2"
+            else
+                DATA="$2"
+                HAS_DATA=1
+            fi
             [ "$METHOD" = "GET" ] && METHOD="POST"
             shift 2
             ;;
@@ -145,7 +152,11 @@ while [ $# -gt 0 ]; do
             OUT_FILE="__REMOTE__"
             shift
             ;;
-        -k|--insecure|-L|--location)
+        -k|--insecure)
+            shift
+            ;;
+        -L|--location)
+            FOLLOW_REDIRECT=1
             shift
             ;;
         -h|--help)
@@ -166,9 +177,35 @@ if [ -z "$URL" ]; then
     usage
 fi
 
+# Normalize bare host/path URLs by defaulting to http://
+case "$URL" in
+    http://*|https://*)
+        ;;
+    *://*)
+        [ "$SILENT" -eq 0 ] && echo "curl: unsupported protocol in URL '$URL'" >&2
+        exit 1
+        ;;
+    *)
+        URL="http://$URL"
+        ;;
+esac
+
+# Reject HTTPS explicitly
+case "$URL" in
+    https://*)
+        [ "$SILENT" -eq 0 ] && echo "curl: HTTPS is not supported on this firmware (HTTP only)" >&2
+        exit 1
+        ;;
+esac
+
 # Determine remote filename if -O was specified
 if [ "$OUTFILE" = "__REMOTE__" ] || [ "$OUT_FILE" = "__REMOTE__" ]; then
-    fname="${URL%%\?*}"
+    url_no_proto_tmp="${URL#http://}"
+    case "$url_no_proto_tmp" in
+        */*) fname="/${url_no_proto_tmp#*/}" ;;
+        *)   fname="" ;;
+    esac
+    fname="${fname%%\?*}"
     fname="${fname##*/}"
     [ -z "$fname" ] && fname="index.html"
     OUTFILE="$fname"
@@ -176,8 +213,8 @@ if [ "$OUTFILE" = "__REMOTE__" ] || [ "$OUT_FILE" = "__REMOTE__" ]; then
 fi
 
 # Check if we can fast-path standard GET with wget
-if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HEAD_ONLY" -eq 0 ] && \
-   [ -z "$CUSTOM_HEADERS" ] && [ -z "$AUTH" ] && [ -z "$AUTH_USER" ] && \
+if [ "$METHOD" = "GET" ] && [ "$HAS_DATA" -eq 0 ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HEAD_ONLY" -eq 0 ] && \
+   [ "$FOLLOW_REDIRECT" -eq 0 ] && [ -z "$CUSTOM_HEADERS" ] && [ -z "$AUTH" ] && [ -z "$AUTH_USER" ] && \
    { [ "$USER_AGENT" = "curl/7.68.0 (wap610n)" ] || [ "$USER_AGENT" = "curl/7.wap610n-ash" ]; }; then
     FINAL_URL="$URL"
     TARGET_OUT="${OUT_FILE:-$OUTFILE}"
@@ -197,36 +234,6 @@ if [ "$METHOD" = "GET" ] && [ -z "$DATA" ] && [ "$INCLUDE_HDR" -eq 0 ] && [ "$HE
     exit $?
 fi
 
-# Reject HTTPS before falling back to raw HTTP socket wrapper
-case "$URL" in
-    https://*)
-        [ "$SILENT" -eq 0 ] && echo "curl: HTTPS is not supported on this firmware (HTTP only)" >&2
-        exit 1
-        ;;
-esac
-
-# For POST, HEAD, PUT, DELETE, or -i, use raw socket via nc
-url_no_proto="${URL#http://}"
-hostport="${url_no_proto%%/*}"
-if [ "$hostport" = "$url_no_proto" ]; then
-    path="/"
-else
-    path="/${url_no_proto#*/}"
-fi
-
-case "$hostport" in
-    *:*)
-        host="${hostport%:*}"
-        port="${hostport#*:}"
-        ;;
-    *)
-        host="$hostport"
-        port=80
-        ;;
-esac
-
-[ "$VERBOSE" -eq 1 ] && echo "* Connecting to $host port $port..." >&2
-
 # Build Basic Auth header if requested
 AUTH_HDR=""
 if [ -n "$AUTH" ]; then
@@ -234,30 +241,59 @@ if [ -n "$AUTH" ]; then
     AUTH_HDR="Authorization: Basic $b64_str"
 fi
 
-# Default Content-Type for POST/PUT if data present
-if [ -n "$DATA" ] && [ -z "$CONTENT_TYPE" ]; then
-    CONTENT_TYPE="application/x-www-form-urlencoded"
-fi
-
-CLEN_HDR=""
-if [ -n "$DATA" ]; then
-    clen=$(printf "%s" "$DATA" | wc -c | tr -d ' ')
-    CLEN_HDR="Content-Length: $clen"
-fi
-
-CTYPE_HDR=""
-if [ -n "$CONTENT_TYPE" ]; then
-    CTYPE_HDR="Content-Type: $CONTENT_TYPE"
-fi
-
-# Execute HTTP request over netcat
 NC_OPTS=""
 [ -n "$TIMEOUT" ] && NC_OPTS="-w $TIMEOUT"
 
-do_request() {
+RESP_TMP="/tmp/curl_resp.$$"
+trap 'rm -f "$RESP_TMP"' EXIT HUP INT TERM
+
+parse_url() {
+    url_no_proto="${URL#http://}"
+    hostport="${url_no_proto%%/*}"
+    if [ "$hostport" = "$url_no_proto" ]; then
+        path="/"
+    else
+        path="/${url_no_proto#*/}"
+    fi
+    case "$hostport" in
+        *\?*)
+            path="/?${hostport#*\?}"
+            hostport="${hostport%%\?*}"
+            ;;
+    esac
+    case "$hostport" in
+        *:*)
+            host="${hostport%:*}"
+            port="${hostport#*:}"
+            ;;
+        *)
+            host="$hostport"
+            port=80
+            ;;
+    esac
+    if [ -z "$host" ]; then
+        [ "$SILENT" -eq 0 ] && echo "curl: invalid URL '$URL'" >&2
+        exit 3
+    fi
+}
+
+do_request_to_file() {
+    CLEN_HDR=""
+    CTYPE_HDR=""
+    if [ "$HAS_DATA" -eq 1 ]; then
+        if [ -z "$CONTENT_TYPE" ]; then
+            CONTENT_TYPE="application/x-www-form-urlencoded"
+        fi
+        clen=$(printf "%s" "$DATA" | wc -c | tr -d ' ')
+        CLEN_HDR="Content-Length: $clen"
+        CTYPE_HDR="Content-Type: $CONTENT_TYPE"
+    elif [ -n "$CONTENT_TYPE" ]; then
+        CTYPE_HDR="Content-Type: $CONTENT_TYPE"
+    fi
+
     (
         printf "%s %s HTTP/1.0\r\n" "$METHOD" "$path"
-        printf "Host: %s\r\n" "$host"
+        printf "Host: %s\r\n" "$hostport"
         printf "User-Agent: %s\r\n" "$USER_AGENT"
         printf "Accept: */*\r\n"
         printf "Connection: close\r\n"
@@ -270,30 +306,133 @@ do_request() {
             done
         fi
         printf "\r\n"
-        [ -n "$DATA" ] && printf "%s" "$DATA"
-    ) | nc $NC_OPTS "$host" "$port"
+        [ "$HAS_DATA" -eq 1 ] && printf "%s" "$DATA"
+    ) | nc $NC_OPTS "$host" "$port" > "$RESP_TMP"
+    return $?
 }
+
+hop=0
+max_hops=5
+hdr_bytes=0
+while :; do
+    parse_url
+    [ "$VERBOSE" -eq 1 ] && echo "* Connecting to $host port $port..." >&2
+
+    do_request_to_file
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        [ "$SILENT" -eq 0 ] && echo "curl: failed to connect to $host port $port" >&2
+        exit "$rc"
+    fi
+    if [ ! -s "$RESP_TMP" ]; then
+        [ "$SILENT" -eq 0 ] && echo "curl: empty reply from server" >&2
+        exit 52
+    fi
+
+    hdr_info=$(LC_ALL=C awk '
+    NR == 1 {
+        line = $0
+        sub(/\r$/, "", line)
+        split(line, f, /[ \t]+/)
+        code = f[2] + 0
+    }
+    {
+        total += length($0) + 1
+        line = $0
+        sub(/\r$/, "", line)
+        if (line == "") {
+            found = 1
+            exit
+        }
+        if (tolower(line) ~ /^location:[ \t]*/) {
+            loc = line
+            sub(/^[Ll][Oo][Cc][Aa][Tt][Ii][Oo][Nn]:[ \t]*/, "", loc)
+            sub(/[ \t]*$/, "", loc)
+        }
+    }
+    END {
+        if (!found) total = 0
+        printf "%d %d %s\n", total, code, loc
+    }' "$RESP_TMP")
+
+    hdr_bytes="${hdr_info%% *}"
+    rest="${hdr_info#* }"
+    status_code="${rest%% *}"
+    case "$rest" in
+        *" "*) loc="${rest#* }" ;;
+        *)     loc="" ;;
+    esac
+
+    if [ "$FOLLOW_REDIRECT" -eq 1 ] && [ -n "$loc" ] && \
+       { [ "$status_code" -eq 301 ] || [ "$status_code" -eq 302 ] || \
+         [ "$status_code" -eq 303 ] || [ "$status_code" -eq 307 ] || [ "$status_code" -eq 308 ]; }; then
+        if [ "$hop" -ge "$max_hops" ]; then
+            [ "$SILENT" -eq 0 ] && echo "curl: maximum ($max_hops) redirects followed" >&2
+            exit 47
+        fi
+        hop=$((hop + 1))
+        case "$loc" in
+            https://*)
+                [ "$SILENT" -eq 0 ] && echo "curl: HTTPS is not supported on this firmware (HTTP only)" >&2
+                exit 1
+                ;;
+            http://*)
+                URL="$loc"
+                ;;
+            //*)
+                URL="http:$loc"
+                ;;
+            /*)
+                URL="http://${hostport}${loc}"
+                ;;
+            *)
+                base_dir="${path%/*}"
+                [ -z "$base_dir" ] && base_dir=""
+                URL="http://${hostport}${base_dir}/${loc}"
+                ;;
+        esac
+        if [ "$status_code" -eq 301 ] || [ "$status_code" -eq 302 ] || [ "$status_code" -eq 303 ]; then
+            if [ "$METHOD" != "HEAD" ] && [ "$METHOD" != "GET" ]; then
+                METHOD="GET"
+                DATA=""
+                HAS_DATA=0
+            fi
+        fi
+        [ "$VERBOSE" -eq 1 ] && echo "* Redirecting ($status_code) to $URL" >&2
+        continue
+    fi
+    break
+done
 
 CR=$(printf '\r')
 if [ "$HEAD_ONLY" -eq 1 ]; then
     # Print headers only
     if [ "$OUTFILE" = "-" ]; then
-        do_request | sed "/^${CR}*$/q"
+        sed "/^${CR}*$/q" "$RESP_TMP"
     else
-        do_request | sed "/^${CR}*$/q" > "$OUTFILE"
+        sed "/^${CR}*$/q" "$RESP_TMP" > "$OUTFILE"
     fi
 elif [ "$INCLUDE_HDR" -eq 1 ]; then
-    # Print headers + body
+    # Print headers + body verbatim
     if [ "$OUTFILE" = "-" ]; then
-        do_request
+        cat "$RESP_TMP"
     else
-        do_request > "$OUTFILE"
+        cat "$RESP_TMP" > "$OUTFILE"
     fi
 else
-    # Body only
-    if [ "$OUTFILE" = "-" ]; then
-        do_request | sed "1,/^${CR}*$/d"
+    # Body only (binary-safe byte offset past headers)
+    if [ "$hdr_bytes" -gt 0 ]; then
+        start_byte=$((hdr_bytes + 1))
+        if [ "$OUTFILE" = "-" ]; then
+            tail -c +"$start_byte" "$RESP_TMP"
+        else
+            tail -c +"$start_byte" "$RESP_TMP" > "$OUTFILE"
+        fi
     else
-        do_request | sed "1,/^${CR}*$/d" > "$OUTFILE"
+        if [ "$OUTFILE" = "-" ]; then
+            cat "$RESP_TMP"
+        else
+            cat "$RESP_TMP" > "$OUTFILE"
+        fi
     fi
 fi

@@ -23,6 +23,7 @@
 #include "expat.h"
 #include "hnap_interfaces.h"
 #include "hnap_config_metalink.h"
+#include "management.h"
 #include "zlib.h"
 
 #define DEFAULT_FLASH_FILE		"/dev/mtdblock2"
@@ -1385,6 +1386,9 @@ int device_set_password(char *password_new)
 
 	MT_Set_Param(MTSECURITY_USER_PASSWD_VAR_NAME, password_new, MT_SET_FIRST_VALUE);
 	MT_WriteConfFiles(1, argp);
+	if (password_new != NULL && password_new[0] != '\0') {
+		syncRootShadowPassword(password_new);
+	}
 
 	return 1;
 }
@@ -1412,6 +1416,92 @@ int device_set_string_value(char *name, char* value)
 	return 1;
 }
 
+static int hnap_read_conf_val(const char *path, const char *key, char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[256];
+	size_t keyLen;
+	int found = 0;
+
+	if (path == NULL || key == NULL || out == NULL || outSize == 0) {
+		return 0;
+	}
+	keyLen = strlen(key);
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		char *p = line;
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		if (strncmp(p, key, keyLen) == 0) {
+			char *eq = p + keyLen;
+			while (*eq == ' ' || *eq == '\t') {
+				eq++;
+			}
+			if (*eq == '=') {
+				char *val = eq + 1;
+				size_t len;
+				while (*val == ' ' || *val == '\t') {
+					val++;
+				}
+				snprintf(out, outSize, "%s", val);
+				len = strlen(out);
+				while (len > 0 && (out[len - 1] == '\n' || out[len - 1] == '\r' ||
+				                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
+					out[--len] = '\0';
+				}
+				found = 1;
+			}
+		}
+	}
+	fclose(fp);
+	return found;
+}
+
+static void hnap_preserve_custom_sys_conf(void)
+{
+	static const char * const keys[7] = {
+		"SSH_Enabled",
+		"Telnet_Enabled",
+		"WirelessMgmtEnabled",
+		"UPnP_Enabled",
+		"SSHJ_Enabled",
+		"SSHJ_User",
+		"SSHJ_Host"
+	};
+	static const char * const defaults[7] = {
+		"1",
+		"1",
+		"1",
+		"0",
+		"0",
+		"",
+		"wap610n"
+	};
+	char vals[7][64];
+	int i;
+	FILE *fp;
+
+	for (i = 0; i < 7; i++) {
+		if (!hnap_read_conf_val("/tmp/sys.conf", keys[i], vals[i], sizeof(vals[i]))) {
+			snprintf(vals[i], sizeof(vals[i]), "%s", defaults[i]);
+		}
+	}
+	fp = fopen("/mnt/jffs2/sys.conf", "a");
+	if (fp != NULL) {
+		for (i = 0; i < 7; i++) {
+			char existing[64];
+			if (!hnap_read_conf_val("/mnt/jffs2/sys.conf", keys[i], existing, sizeof(existing))) {
+				fprintf(fp, "%s = %s\n", keys[i], vals[i]);
+			}
+		}
+		fclose(fp);
+	}
+}
+
 int hnap_commit_changes(int argc, char **argv, char *confType)
 {
 	char network_type[4];
@@ -1420,6 +1510,7 @@ int hnap_commit_changes(int argc, char **argv, char *confType)
 	MT_WriteConfFiles(argc, argv);
 
 	if(!strcmp(confType, COMMIT_SYS)){
+		hnap_preserve_custom_sys_conf();
 		system("/bin/cp /mnt/jffs2/sys.conf /tmp/sys.conf");
 	}else if(!strcmp(confType, COMMIT_WLAN0)){
 		system("/bin/cp /mnt/jffs2/wlan0.conf /tmp/wlan0.conf");
@@ -1558,15 +1649,24 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 				fp = NULL;
 			}else{
 				printf("Error : Could not open flash image for CRC erase\n");
+				gMTBurnParams.burnState = error_e;
+				gMTBurnParams.precentComplete = -1;
+				unlink("/var/firmware_upgrading");
 				return -1;
 			}
 			
 		}else{
 			printf("Error : Could not read header (read %d bytes out of %d)\n",numRead,(int)sizeof(MT_IMAGE_HEADER));
+			gMTBurnParams.burnState = error_e;
+			gMTBurnParams.precentComplete = -1;
+			unlink("/var/firmware_upgrading");
 			return -1;
 		}
 	}else{
 		printf("Error : Could not open flash image for reading header.\n");
+		gMTBurnParams.burnState = error_e;
+		gMTBurnParams.precentComplete = -1;
+		unlink("/var/firmware_upgrading");
 		return -1;
 	}
 	printf("Completed..\n");
@@ -1599,6 +1699,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 				locWrite += numWrite;
 				numLeft -= numWrite;
 				precentComplete = locWrite*100/dataSize;
+				gMTBurnParams.precentComplete = precentComplete;
 				printf("%d %% completed ..\n", precentComplete);
 				//////////////////////////////////////////////////////////////////////////
 				//////////////////////////////////////////////////////////////////////////
@@ -1681,6 +1782,7 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 							}
 							locVerify++;
 							precentComplete = locVerify*100/dataSize;
+							gMTBurnParams.precentComplete = precentComplete;
 						}
 						numLeft -= numRead;
 					} else {
@@ -1701,12 +1803,14 @@ int hnap_burn_and_verify_image(char_t *data, int dataSize)
 
 	if (verifiedOk != 1){
 		gMTBurnParams.burnState = error_e;
+		gMTBurnParams.precentComplete = -1;
 		precentComplete = -1;
 		printf("Error : Error verifying image at location %d\n", locVerify);
 		printf("Firmware upgrade fail.. Orz..\n");
 		return -1;
 	}else{
 		gMTBurnParams.burnState = done_e;
+		gMTBurnParams.precentComplete = 100;
 		precentComplete = 100;
 		printf("Firmware upgrade full successful.. \\^o^/ \\^o^/ \\^o^/\n");
 	}
@@ -1836,13 +1940,35 @@ int hnap_ap_wbridge_upgrade( webs_t wp, int len, char *msg )
 	printf("\n");*/
 
 	if(hnap_validate_Image(wp->postData, imageLen_after_b64decode)!=-1){
+		FILE *flagFp;
+
 		printf("This is a valid image .. \\^o^/..\n");
+		flagFp = fopen("/var/firmware_upgrading", "w");
+		if (flagFp != NULL) {
+			fputs("1\n", flagFp);
+			fclose(flagFp);
+		}
+		flagFp = fopen("/dev/gpio2", "w");
+		if (flagFp != NULL) {
+			fputs("2\n", flagFp);
+			fclose(flagFp);
+		}
+		system("killall upnpd udhcpc wpa_supplicant >/dev/null 2>&1; "
+			"pkill -f '[m]tlk_upnpd_monitor\\.sh|[m]tlk_pbc_reboot\\.sh|[W]PS_PBC\\.sh' >/dev/null 2>&1; "
+			"cd /root/mtlk/etc && ./mtlk_wps_cmd.tcl stop >/dev/null 2>&1");
+
 		if(hnap_burn_and_verify_image(wp->postData, imageLen_after_b64decode)!=-1){
+			unlink("/var/firmware_upgrading");
 			printf("Firmware upgrade successfully..device will be reboot..\n");
+			system("sleep 3 ; reboot &");
 			return 0;
 		}
+		unlink("/var/firmware_upgrading");
 	}else{
 		printf("This is a invalid image .. Orz .. \n");
+		gMTBurnParams.burnState = error_e;
+		gMTBurnParams.precentComplete = -1;
+		unlink("/var/firmware_upgrading");
 	}
 
 	return -1;
@@ -1896,6 +2022,7 @@ int hnap_get_frimware_version_date(char *Version, char *releaseDate)
 	char yyyy[5]={0}, mm[4]={0}, dd[3]={0};	
 	int i=0;
 	int dateType = 1;
+	int dayNum = 1;
 
 	fptr =  fopen("/root/mtlk/web/fw_version.txt", "r");
 	if(fptr == NULL){
@@ -1951,13 +2078,12 @@ int hnap_get_frimware_version_date(char *Version, char *releaseDate)
 							}
 						}
 						hnap_translate_month_string(mm);
-						if(atoi(dd)>0 && atoi(dd)<10){
-							sprintf(releaseDate, "%s-%s-0%sT00:00:00", yyyy, mm, dd);
-							printf("The firmware release date is %s-%s-0%s\n", yyyy, mm, dd);
-						}else{
-							sprintf(releaseDate, "%s-%s-%sT00:00:00", yyyy, mm, dd);
-							printf("The firmware release date is %s-%s-%s\n", yyyy, mm, dd);
+						dayNum = atoi(dd);
+						if (dayNum < 1 || dayNum > 31) {
+							dayNum = 1;
 						}
+						sprintf(releaseDate, "%s-%s-%02dT00:00:00", yyyy, mm, dayNum);
+						printf("The firmware release date is %s-%s-%02d\n", yyyy, mm, dayNum);
 						
 						fclose(fptr);
 						return 0;

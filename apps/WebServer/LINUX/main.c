@@ -335,6 +335,197 @@ static int safeAspGetBSSID(int eid, webs_t wp, int argc, char_t **argv)
 	return websWrite(wp, T("%s"), macStr);
 }
 
+static int isSafeConfigText(const char *s, size_t maxLen)
+{
+	size_t len = 0;
+
+	if (s == NULL) {
+		return 0;
+	}
+	while (s[len] != '\0') {
+		unsigned char c = (unsigned char)s[len];
+		if (c < 0x20 || c == 0x7f) {
+			return 0;
+		}
+		len++;
+		if (len > maxLen) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int isValidIdentStr(const char *s, size_t minLen, size_t maxLen)
+{
+	size_t len = 0;
+
+	if (s == NULL) {
+		return 0;
+	}
+	while (s[len] != '\0') {
+		unsigned char c = (unsigned char)s[len];
+		if (!((c >= 'A' && c <= 'Z') ||
+		      (c >= 'a' && c <= 'z') ||
+		      (c >= '0' && c <= '9') ||
+		      c == '-' || c == '_')) {
+			return 0;
+		}
+		len++;
+		if (len > maxLen) {
+			return 0;
+		}
+	}
+	return (len >= minLen);
+}
+
+static int isValidHostName(const char *s)
+{
+	size_t len = 0;
+
+	if (s == NULL) {
+		return 0;
+	}
+	while (s[len] != '\0') {
+		unsigned char c = (unsigned char)s[len];
+		if (!((c >= 'A' && c <= 'Z') ||
+		      (c >= 'a' && c <= 'z') ||
+		      (c >= '0' && c <= '9') ||
+		      c == '-')) {
+			return 0;
+		}
+		len++;
+		if (len > 32) {
+			return 0;
+		}
+	}
+	return (len >= 1);
+}
+
+static int isValidIpv4(const char *s)
+{
+	int dots = 0;
+	const char *p;
+
+	if (s == NULL || *s == '\0') {
+		return 0;
+	}
+	p = s;
+	while (*p != '\0') {
+		int val = 0;
+		int digits = 0;
+		while (*p >= '0' && *p <= '9') {
+			val = val * 10 + (*p - '0');
+			digits++;
+			if (digits > 3 || val > 255) {
+				return 0;
+			}
+			p++;
+		}
+		if (digits == 0) {
+			return 0;
+		}
+		if (*p == '.') {
+			dots++;
+			if (dots > 3) {
+				return 0;
+			}
+			p++;
+			if (*p == '\0') {
+				return 0;
+			}
+		} else if (*p != '\0') {
+			return 0;
+		}
+	}
+	return (dots == 3);
+}
+
+static int isValidDigitsRange(const char *s, long minVal, long maxVal)
+{
+	size_t len = 0;
+	long val;
+
+	if (s == NULL || *s == '\0') {
+		return 0;
+	}
+	while (s[len] != '\0') {
+		if (s[len] < '0' || s[len] > '9') {
+			return 0;
+		}
+		len++;
+		if (len > 10) {
+			return 0;
+		}
+	}
+	val = atol(s);
+	return (val >= minVal && val <= maxVal);
+}
+
+static int isValidMacAddr(const char *s)
+{
+	int i;
+
+	if (s == NULL || strlen(s) != 17) {
+		return 0;
+	}
+	for (i = 0; i < 17; i++) {
+		if ((i % 3) == 2) {
+			if (s[i] != ':') {
+				return 0;
+			}
+		} else {
+			char c = s[i];
+			if (!((c >= '0' && c <= '9') ||
+			      (c >= 'a' && c <= 'f') ||
+			      (c >= 'A' && c <= 'F'))) {
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+static int safeAspGetParamJs(int eid, webs_t wp, int argc, char_t **argv)
+{
+	char_t *paramName = NULL;
+	char rawVal[256];
+	char escVal[512];
+	size_t i;
+	size_t j = 0;
+
+	(void)eid;
+	if (ejArgs(argc, argv, T("%s"), &paramName) < 1 ||
+	    paramName == NULL || paramName[0] == '\0') {
+		return websWrite(wp, T(""));
+	}
+	memset(rawVal, 0, sizeof(rawVal));
+	MT_Get_Param(paramName, rawVal, sizeof(rawVal) - 1);
+	rawVal[sizeof(rawVal) - 1] = '\0';
+	for (i = 0; rawVal[i] != '\0' && j + 7 < sizeof(escVal); i++) {
+		unsigned char c = (unsigned char)rawVal[i];
+		if (c == '\\' || c == '"' || c == '\'') {
+			escVal[j++] = '\\';
+			escVal[j++] = (char)c;
+		} else if (c == '\r') {
+			escVal[j++] = '\\';
+			escVal[j++] = 'r';
+		} else if (c == '\n') {
+			escVal[j++] = '\\';
+			escVal[j++] = 'n';
+		} else if (c == '<') {
+			memcpy(&escVal[j], "\\x3c", 4);
+			j += 4;
+		} else if (c == '>') {
+			memcpy(&escVal[j], "\\x3e", 4);
+			j += 4;
+		} else if (c >= 0x20 && c != 0x7f) {
+			escVal[j++] = (char)c;
+		}
+	}
+	escVal[j] = '\0';
+	return websWrite(wp, T("%s"), escVal);
+}
+
 static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 {
 	char ipConfigMethod[16];
@@ -345,7 +536,6 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 	char priDns[32];
 	char secDns[32];
 	char langSelection[16];
-	char cloneMAC[32];
 	char *paramNames[10];
 	int paramCount;
 	pid_t pid;
@@ -371,11 +561,36 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 	safeCopyFormVar(wp, T("priDns"), priDns, sizeof(priDns));
 	safeCopyFormVar(wp, T("secDns"), secDns, sizeof(secDns));
 	safeCopyFormVar(wp, T("langSelection"), langSelection, sizeof(langSelection));
-	safeCopyFormVar(wp, T("cloneMAC"), cloneMAC, sizeof(cloneMAC));
 
-	if (ipConfigMethod[0] == '\0' || hostName[0] == '\0' || lanIP[0] == '\0') {
-		websRedirect(wp, T("/network/sta_network.asp"));
+	if ((strcmp(ipConfigMethod, "0") != 0 && strcmp(ipConfigMethod, "1") != 0) ||
+	    !isValidHostName(hostName)) {
+		websError(wp, 400, T("Invalid network configuration parameter"));
 		return;
+	}
+	if (langSelection[0] != '\0' && !isValidIdentStr(langSelection, 1, 15)) {
+		websError(wp, 400, T("Invalid language selection"));
+		return;
+	}
+	if (strcmp(ipConfigMethod, "1") == 0) {
+		if (!isValidIpv4(lanIP) || !isValidIpv4(lanSubnet)) {
+			websError(wp, 400, T("Invalid static IP or subnet mask"));
+			return;
+		}
+		if ((gateway[0] != '\0' && !isValidIpv4(gateway)) ||
+		    (priDns[0] != '\0' && !isValidIpv4(priDns)) ||
+		    (secDns[0] != '\0' && !isValidIpv4(secDns))) {
+			websError(wp, 400, T("Invalid gateway or DNS address"));
+			return;
+		}
+	} else {
+		if ((lanIP[0] != '\0' && !isValidIpv4(lanIP)) ||
+		    (lanSubnet[0] != '\0' && !isValidIpv4(lanSubnet)) ||
+		    (gateway[0] != '\0' && !isValidIpv4(gateway)) ||
+		    (priDns[0] != '\0' && !isValidIpv4(priDns)) ||
+		    (secDns[0] != '\0' && !isValidIpv4(secDns))) {
+			websError(wp, 400, T("Invalid network address parameter"));
+			return;
+		}
 	}
 
 	saveOldWebPid(getpid(), "sta_network.asp");
@@ -403,8 +618,10 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 	paramNames[paramCount++] = "ip_config_method";
 	MT_Set_Param("HostName", hostName, 1);
 	paramNames[paramCount++] = "HostName";
-	MT_Set_Param("ip_lan", lanIP, 1);
-	paramNames[paramCount++] = "ip_lan";
+	if (lanIP[0] != '\0') {
+		MT_Set_Param("ip_lan", lanIP, 1);
+		paramNames[paramCount++] = "ip_lan";
+	}
 	if (lanSubnet[0] != '\0') {
 		MT_Set_Param("subnet_lan", lanSubnet, 1);
 		paramNames[paramCount++] = "subnet_lan";
@@ -438,10 +655,11 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 			fprintf(hf, "%s\n", hostName);
 			fclose(hf);
 		}
+		doSystem("/bin/hostname -F /etc/hostname >/dev/null 2>&1");
 	}
 
 	if (strcmp(ipConfigMethod, "0") == 0) {
-		doSystem("killall udhcpc >/dev/null 2>&1; /etc/udhcpc/dhcp.tcl startup &");
+		doSystem("killall udhcpd udhcpc >/dev/null 2>&1; /etc/udhcpc/dhcp.tcl startup &");
 	} else {
 		doSystem("killall udhcpc >/dev/null 2>&1");
 		if (lanIP[0] != '\0' && lanSubnet[0] != '\0') {
@@ -542,6 +760,39 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	safeCopyFormVar(wp, T("WPARadiusPort"), wpaRadPort, sizeof(wpaRadPort));
 	safeCopyFormVar(wp, T("WPARadiusKey"), wpaRadKey, sizeof(wpaRadKey));
 	safeCopyFormVar(wp, T("RadiusReKeyInterval"), radRekey, sizeof(radRekey));
+
+	if ((essid[0] != '\0' && !isSafeConfigText(essid, 32)) ||
+	    (bssid[0] != '\0' && !isValidMacAddr(bssid)) ||
+	    (freqBand[0] != '\0' && !isValidDigitsRange(freqBand, 0, 2)) ||
+	    (country[0] != '\0' && !isValidIdentStr(country, 1, 8)) ||
+	    (channel[0] != '\0' && !isValidDigitsRange(channel, 0, 196)) ||
+	    (channelBonding[0] != '\0' && !isValidDigitsRange(channelBonding, 0, 1)) ||
+	    (upperLower[0] != '\0' && !isValidDigitsRange(upperLower, 0, 1)) ||
+	    (secMode[0] != '\0' && !isValidDigitsRange(secMode, 0, 5)) ||
+	    (wpaPSK[0] != '\0' && !isSafeConfigText(wpaPSK, 64)) ||
+	    (wpaRadIP[0] != '\0' && !isValidIpv4(wpaRadIP)) ||
+	    (wpaRadKey[0] != '\0' && !isSafeConfigText(wpaRadKey, 63))) {
+		websError(wp, 400, T("Invalid wireless configuration parameter"));
+		return;
+	}
+	for (i = 0; i < 4; i++) {
+		if (wepKeyRaw[i][0] != '\0' && !isSafeConfigText(wepKeyRaw[i], 32)) {
+			websError(wp, 400, T("Invalid WEP key"));
+			return;
+		}
+	}
+	if ((defaultWEPKey[0] != '\0' && !isValidDigitsRange(defaultWEPKey, 0, 3)) ||
+	    (wepKeyLen[0] != '\0' && !isValidDigitsRange(wepKeyLen, 0, 128)) ||
+	    (wepAuth[0] != '\0' && !isValidDigitsRange(wepAuth, 0, 3)) ||
+	    (wpaPersMode[0] != '\0' && !isValidDigitsRange(wpaPersMode, 0, 4)) ||
+	    (wpaPersEnc[0] != '\0' && !isValidDigitsRange(wpaPersEnc, 0, 4)) ||
+	    (wpaEntMode[0] != '\0' && !isValidDigitsRange(wpaEntMode, 0, 4)) ||
+	    (wpaEntEnc[0] != '\0' && !isValidDigitsRange(wpaEntEnc, 0, 4)) ||
+	    (wpaRadPort[0] != '\0' && !isValidDigitsRange(wpaRadPort, 1, 65535)) ||
+	    (radRekey[0] != '\0' && !isValidDigitsRange(radRekey, 0, 86400))) {
+		websError(wp, 400, T("Invalid wireless numeric parameter"));
+		return;
+	}
 
 	isApMode = (atoi(netType) == 2 || strcmp(nowMode, "apMode") == 0) ? 1 : 0;
 
@@ -696,7 +947,7 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	paramNames[paramCount++] = "forceWlanDisconnect";
 
 	MT_WriteConfFiles(paramCount, paramNames);
-	submitToFlash();
+	doSystem("cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1");
 
 	if (isApMode) {
 		if (country[0] != '\0') {
@@ -749,6 +1000,13 @@ static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
 static void safeFormWirelessTypeSet(webs_t wp, char_t *path, char_t *query)
 {
 	char_t *cfgType = websGetVar(wp, T("wirelessConfigType"), T("manual"));
+
+	(void)path;
+	(void)query;
+	if (cfgType == NULL || (strcmp(cfgType, "manual") != 0 && strcmp(cfgType, "wps") != 0)) {
+		websError(wp, 400, T("Invalid wireless configuration type"));
+		return;
+	}
 	MT_Set_Param("wirelessConfigType", cfgType, 1);
 	websRedirect(wp, T("/wireless/security.asp"));
 }
@@ -768,6 +1026,18 @@ void CatchSIG(int s)
 //Jacky.Yang 11-Feb-2009, for limitation apply process.
 int waitOtherProcess = 0;
 int websMainPid = 0;
+
+static void syncShadowFromSysConf(void)
+{
+	char admPass[128];
+
+	memset(admPass, 0, sizeof(admPass));
+	MT_Get_Param(MTSECURITY_USER_PASSWD_VAR_NAME, admPass, sizeof(admPass) - 1);
+	admPass[sizeof(admPass) - 1] = '\0';
+	if (admPass[0] != '\0') {
+		syncRootShadowPassword(admPass);
+	}
+}
 
 /*********************************** Code *************************************/
 
@@ -845,6 +1115,7 @@ int main(int argc, char** argv)
 		printf("Cannot read parameters. Aborting.\n");
 		return -1;
 	}
+	syncShadowFromSysConf();
 
 	websInitRealm();//Add for WET610N - Ricky Cao on 2008/09/03
 
@@ -896,6 +1167,7 @@ int main(int argc, char** argv)
 			loadConfigFromFile("/mnt/jffs2/wlan0.conf");
 			loadConfigFromFile("/mnt/jffs2/sys.conf");
 			MT_ParseOnLoad();
+			syncShadowFromSysConf();
 			websInitRealm();
 			lang_free();
 			lang_init();
@@ -1054,6 +1326,7 @@ static int initWebs()
 	websAspDefine(T("waitToRedirect"), safeAspWaitToRedirect);
 	websAspDefine(T("getWirelessChannel"), safeAspGetWirelessChannel);
 	websAspDefine(T("getBSSID"), safeAspGetBSSID);
+	websAspDefine(T("getParamJs"), safeAspGetParamJs);
 
 /*
  *	Create the Form handlers for the User Management pages

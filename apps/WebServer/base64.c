@@ -25,8 +25,8 @@
 
 static char_t	map64[] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
 	52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
 	-1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, 
@@ -68,6 +68,9 @@ int websDecode64(char_t *outbuf, char_t *string, int outlen)
 	char_t			*cp, *op;
 	int				c, i, j, shift;
 
+	if (outbuf == NULL || string == NULL || outlen <= 0) {
+		return -1;
+	}
 	op = outbuf;
 	*op = '\0';
 	cp = string;
@@ -93,7 +96,7 @@ int websDecode64(char_t *outbuf, char_t *string, int outlen)
  */
 		--i;
 		if ((op + i) >= &outbuf[outlen]) {
-			gstrcpy(outbuf, T("String too big"));
+			*outbuf = '\0';
 			return -1;
 		}
 		for (j = 0; j < i; j++) {

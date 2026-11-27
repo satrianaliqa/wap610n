@@ -88,6 +88,10 @@ is_alive() {
 	return 1
 }
 
+is_ssh_established() {
+	awk 'NR>1 && $4 == "01" && $3 ~ /:0016$/ { found=1; exit } END { exit !found }' /proc/net/tcp 2>/dev/null
+}
+
 kill_pidfile() {
 	pf="$1"
 	if [ -f "$pf" ]; then
@@ -176,10 +180,10 @@ case "$1" in
 		do_start
 		;;
 	status)
-		if is_alive "$SSH_PID_FILE"; then
+		if is_alive "$SSH_PID_FILE" && is_ssh_established; then
 			echo "running"
 			exit 0
-		elif is_alive "$WATCHDOG_PID_FILE"; then
+		elif is_alive "$SSH_PID_FILE" || is_alive "$WATCHDOG_PID_FILE"; then
 			echo "connecting"
 			exit 0
 		else

@@ -102,9 +102,20 @@ def verify_firmware(file_path):
     return True
 
 if __name__ == '__main__':
+    import glob
     ver = get_configured_version()
-    cand_bootp = os.path.join(FIRMWARE_DIR, 'bootpImage')
-    cand_bin = os.path.join(FIRMWARE_DIR, f'WAP610N_v{ver}.bin')
-    default_target = cand_bootp if os.path.isfile(cand_bootp) else cand_bin
+    ver_clean = ver[1:] if ver.startswith('v') else ver
+    output_dir = os.path.abspath(os.path.join(BASE_DIR, '..', 'output'))
+    candidates = [
+        os.path.join(FIRMWARE_DIR, 'bootpImage'),
+        os.path.join(FIRMWARE_DIR, f'WAP610N_v{ver_clean}.bin'),
+    ]
+    for d in (FIRMWARE_DIR, output_dir):
+        globs = glob.glob(os.path.join(d, f'WAP610N_v{ver_clean}_*.bin')) + glob.glob(os.path.join(d, 'WAP610N_v*.bin'))
+        globs = [p for p in globs if os.path.isfile(p)]
+        globs.sort(key=os.path.getmtime, reverse=True)
+        candidates.extend(globs)
+    candidates.append(os.path.join(output_dir, 'bootpImage'))
+    default_target = next((c for c in candidates if os.path.isfile(c)), candidates[0])
     target = sys.argv[1] if len(sys.argv) > 1 else default_target
     sys.exit(0 if verify_firmware(target) else 1)

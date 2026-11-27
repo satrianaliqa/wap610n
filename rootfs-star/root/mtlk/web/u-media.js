@@ -131,7 +131,7 @@ function checkSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4)
 	//subnet mask 2
 	if (applyValue && subnet1 == 255)
 	{
-		if (applyValue && !(subnet2 == 0 || subnet2 == 128 || subnet2 == 192 || subnet2 == 224 || subnet2 == 240 || subnet2 == 248 || subnet2 == 252 || subnet2 == 255))
+		if (applyValue && !(subnet2 == 0 || subnet2 == 128 || subnet2 == 192 || subnet2 == 224 || subnet2 == 240 || subnet2 == 248 || subnet2 == 252 || subnet2 == 254 || subnet2 == 255))
 				applyValue = false;
 	}
 	else if (applyValue && subnet1 != 255)
@@ -143,7 +143,7 @@ function checkSubnetMask(ip1, ip2, ip3, ip4, subnet1, subnet2, subnet3, subnet4)
 	//subnet mask 3
 	if (applyValue && subnet2 == 255)
 	{
-		if (applyValue && !(subnet3 == 0 || subnet3 == 128 || subnet3 == 192 || subnet3 == 224 || subnet3 == 240 || subnet3 == 248 || subnet3 == 252 || subnet3 == 255))
+		if (applyValue && !(subnet3 == 0 || subnet3 == 128 || subnet3 == 192 || subnet3 == 224 || subnet3 == 240 || subnet3 == 248 || subnet3 == 252 || subnet3 == 254 || subnet3 == 255))
 			applyValue = false;
 	}
 	else if (applyValue && subnet2 != 255)
@@ -207,6 +207,10 @@ function maskRange(subnet, ip, gw)
 		case 252: 	//64
 					subCount = 64;
 					base = 4;
+					break;
+		case 254: 	//128
+					subCount = 128;
+					base = 2;
 					break;
 		case 255:
 					if (ip == gw)
@@ -605,10 +609,10 @@ function checkIpAddr(field, ismask, msg)
 		}
 	}
 	else {
-		if ((!checkRange(field.value, 1, 0, 255)) ||
+		if ((!checkRange(field.value, 1, 1, 223)) || (v[0] == 127) ||
 				(!checkRange(field.value, 2, 0, 255)) ||
 				(!checkRange(field.value, 3, 0, 255)) ||
-				(!checkRange(field.value, 4, 1, 254)))
+				(!checkRange(field.value, 4, 0, 255)))
 		{
 			alert("The " + msg + " is illegal value!");
 			//field.value = field.defaultValue;

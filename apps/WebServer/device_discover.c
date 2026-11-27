@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <netinet/in.h>
 
 #include	"webs.h"
@@ -22,8 +23,11 @@
 #include "hnap_interfaces.h"
 #include "hnap_config_metalink.h"
 
+extern int isIPFromWLS(const char *ip);
+extern int isMACFromWLS(const char *mac);
+
 #define DISCOVER_PORT				58000
-#define MAX_RECEIVE_BUFFER			76800
+#define MAX_RECEIVE_BUFFER			4096
 
 #define MAX_DUMP_PER_LINE			16 //For dump data
 
@@ -421,7 +425,7 @@ char *dd_report_error_owntext( xml_tree tree, xml_element el, char* textToError 
     DD_HANDLER_MEM_CHECK( ret, tree  );
     memset( ret, 0, sizeof( char ) * RET_MSG_SIZE );
     generate_return_msg_header( ret );
-    generate_xml( tree, ret );
+    generate_xml_n( tree, ret, RET_MSG_SIZE );
     deep_free_xml_tree( tree );
 
     return ret;
@@ -490,32 +494,62 @@ send:
 }
 //=====Above functions are for process XML content=====
 
+static int dd_is_wireless_mgmt_blocked(const char *srcIp, const char *srcMac)
+{
+	char wirelessMgmt[16];
+
+	memset(wirelessMgmt, 0, sizeof(wirelessMgmt));
+	MT_Get_Param("WirelessMgmtEnabled", wirelessMgmt, sizeof(wirelessMgmt) - 1);
+	wirelessMgmt[sizeof(wirelessMgmt) - 1] = '\0';
+	if (strcmp(wirelessMgmt, "0") != 0) {
+		return 0;
+	}
+	if (srcIp != NULL && srcIp[0] != '\0' && strcmp(srcIp, "0.0.0.0") != 0) {
+		if (isIPFromWLS(srcIp)) {
+			return 1;
+		}
+	}
+	if (srcMac != NULL && srcMac[0] != '\0') {
+		if (isMACFromWLS(srcMac)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 int dd_send_reply(socket_t *sp, uint16_t rport, char *txPacket, int txPacketLen)
 {
 	int result = 0;
+	int bcast = 1;
 	struct sockaddr_in bc_addr;
-	int bc_addr_len;
-	uint16_t org_port = sp->port;
+	ssize_t sent;
 
+	if (sp == NULL || txPacket == NULL || txPacketLen <= 0) {
+		return -1;
+	}
+
+	memset(&bc_addr, 0, sizeof(bc_addr));
 	bc_addr.sin_family = AF_INET;
 	bc_addr.sin_port = htons(rport);
-	bc_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
-	bzero(bc_addr.sin_zero, 8);
-	bc_addr_len = sizeof(bc_addr);
+	bc_addr.sin_addr.s_addr = htonl(INADDR_BROADCAST);
 
-	system("route add 255.255.255.255 br0");
-	sp->port = rport; //Because Goahead will use listen port for destination, so I need chenge destination port by myself
+	setsockopt(sp->sock, SOL_SOCKET, SO_BROADCAST, (char *)&bcast, sizeof(bcast));
+#ifdef SO_BINDTODEVICE
+	setsockopt(sp->sock, SOL_SOCKET, SO_BINDTODEVICE, "br0", 4);
+#endif
 	dd_print_string("sending %d bytes data ..\n", txPacketLen);
-	if((result = socketWrite(discoverSocket, txPacket, txPacketLen))<0){
-		dd_print_string("socketWrite failure\n");
-	}else{
-		if((result = socketFlush(discoverSocket)) == -1){
-			dd_print_string("socketFlush failure\n");
-		}
+	sent = sendto(sp->sock, txPacket, (size_t)txPacketLen, 0,
+	              (struct sockaddr *)&bc_addr, sizeof(bc_addr));
+	if (sent < 0) {
+		dd_print_string("sendto failure\n");
+		result = -1;
+	} else {
+		result = (int)sent;
 	}
-	sp->port = org_port; //after sent packets, revised sp->port to listen port
-	dd_doSystem("route del 255.255.255.255 br0");
-	
+#ifdef SO_BINDTODEVICE
+	setsockopt(sp->sock, SOL_SOCKET, SO_BINDTODEVICE, "", 0);
+#endif
+
 	return result;
 }
 
@@ -953,8 +987,8 @@ char *dd_capability_discovery(xml_tree request)
     	ret = (char *) malloc( sizeof( char ) * RET_MSG_SIZE );
     	DD_HANDLER_MEM_CHECK( ret, get_dev_s );
     	memset( ret, 0, sizeof( char ) * RET_MSG_SIZE );
-    	generate_return_msg_header( ret );
-    	generate_xml( get_dev_s, ret );
+		generate_return_msg_header( ret );
+		generate_xml_n( get_dev_s, ret, RET_MSG_SIZE );
 		deep_free_xml_tree( get_dev_s );
 
     	return ret;
@@ -1007,7 +1041,8 @@ char *dd_set_ip_settings(xml_tree request)
 	int argc = 4;
 	int isGatewayConfigured=0, OrgIsDhcpClient=0;
 
-    	lanIPConfigureMode = lanIP = netmask = lanGateway = DD_DEFAULT_STRING;
+		lanIPConfigureMode = lanIP = netmask = DD_DEFAULT_STRING;
+		lanGateway = NULL;
     	set_wireless_client_lan_settings = new_xml_tree();
     	DD_HANDLER_MEM_CHECK( set_wireless_client_lan_settings , set_wireless_client_lan_settings );
     	dd_generate_common_header( set_wireless_client_lan_settings, "SetIpSettingsResponse", NOTEXT );
@@ -1066,7 +1101,7 @@ char *dd_set_ip_settings(xml_tree request)
             		netmask = curr_rqst->text;
             		argFlags |= 0x04;
         	}else if (!strcmp( curr_rqst->name, "Gateway" )){
-			if(curr_rqst->text != NULL ){
+			if(curr_rqst->text != NULL && curr_rqst->text[0] != '\0'){
 				isGatewayConfigured=1;
             			lanGateway = curr_rqst->text;
 				dd_print_string("LanGateway=%s\n", lanGateway);
@@ -1121,13 +1156,15 @@ char *dd_set_ip_settings(xml_tree request)
 	hnap_doSystem("killall udhcpc");
 	hnap_doSystem("/root/mtlk/web/post_apply.tcl");
 	if(!strcmp( lanIPConfigureMode, "Static" )){
+		hnap_doSystem("killall udhcpd >/dev/null 2>&1");
 		hnap_doSystem("ifconfig br0 %s netmask %s", lanIP, netmask);
-		hnap_doSystem("route del default");
-		if (strcmp(lanGateway, "0.0.0.0") != 0) {
-			hnap_doSystem("route add default gw %s", lanGateway);
+		hnap_doSystem("route del default >/dev/null 2>&1");
+		if (lanGateway != NULL && lanGateway[0] != '\0' &&
+		    strcmp(lanGateway, "0.0.0.0") != 0 && strcmp(lanGateway, lanIP) != 0) {
+			hnap_doSystem("route add default gw %s dev br0", lanGateway);
 		}
 	}else{
-		hnap_doSystem("/etc/udhcpc/dhcp.tcl startup &");
+		hnap_doSystem("killall udhcpd >/dev/null 2>&1; /etc/udhcpc/dhcp.tcl startup &");
 	}
 
     	set_xml_element_text(curr_el, DD_OK);	
@@ -1139,8 +1176,8 @@ char *dd_set_ip_settings(xml_tree request)
     	ret = (char *) malloc( sizeof( char ) * RET_MSG_SIZE );
     	DD_HANDLER_MEM_CHECK( ret, set_wireless_client_lan_settings );
     	memset( ret, 0, sizeof( char ) * RET_MSG_SIZE );
-    	generate_return_msg_header( ret );
-    	generate_xml( set_wireless_client_lan_settings, ret );
+		generate_return_msg_header( ret );
+		generate_xml_n( set_wireless_client_lan_settings, ret, RET_MSG_SIZE );
 		deep_free_xml_tree( set_wireless_client_lan_settings );
 		
     	return ret;
@@ -1454,6 +1491,11 @@ int dd_process_packet(socket_t	*sp, uint16_t rport, char *data, int dataLen)
 	dd_print_string("dd->content_length: %u\n", ddi->content_length);
 	dd_print_string("dd->supported_action: %u\n", ddi->supported_action);
 
+	if (dd_is_wireless_mgmt_blocked(NULL, (const char *)ddi->sphy)) {
+		dd_print_string("WARNING: Dropping wireless discovery/management packet from %s (WirelessMgmtEnabled=0)\n", ddi->sphy);
+		goto end;
+	}
+
 	//dd_print_string("===== End to parse data header =====\n");
 	//Valid the values in header 
 	//1. Check the action from this request
@@ -1533,6 +1575,9 @@ static void dd_socket_Event(int sid, int mask, int iwp)
 		result = recvfrom(sp->sock, receive_buffer, sizeof(receive_buffer) - 1, 0, (struct sockaddr *)&host_addr, &address_len);
 		if(result>0){
 			receive_buffer[result] = '\0';
+			if (dd_is_wireless_mgmt_blocked(inet_ntoa(host_addr.sin_addr), NULL)) {
+				return;
+			}
 			dd_print_string("Got %d bytes data for device discovery or IP configuration as below..\n", result);
 			dd_print_string("%s", receive_buffer);
 			dd_process_packet(sp, ntohs(host_addr.sin_port), (char *)receive_buffer, result);

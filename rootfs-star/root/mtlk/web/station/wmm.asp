@@ -16,9 +16,9 @@
 
 <script language="javascript" type="text/javascript">
 function template_load() {
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var HWType = "<% checkHW(); %>"
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
 	
 	if (mode == 0) //STA mode
 	{
@@ -50,73 +50,73 @@ function template_load() {
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
 
-var AC_BE_UseAggregation = "<% getParam(1, "AC_BE_UseAggregation"); %>";
-var AC_BE_AcceptAggregation = "<% getParam(1, "AC_BE_AcceptAggregation"); %>";
-var AC_BE_MaxNumOfPackets = "<% getParam(1, "AC_BE_MaxNumOfPackets"); %>";
-var AC_BE_MaxNumOfBytes = "<% getParam(1, "AC_BE_MaxNumOfBytes"); %>";
-var AC_BE_TimeoutInterval = "<% getParam(1, "AC_BE_TimeoutInterval"); %>";
-var AC_BE_MinSizeOfPacketInAggr = "<% getParam(1, "AC_BE_MinSizeOfPacketInAggr"); %>";
-var AC_BE_ADDBATimeout = "<% getParam(1, "AC_BE_ADDBATimeout"); %>";
-var AC_BE_AggregationWindowSize = "<% getParam(1, "AC_BE_AggregationWindowSize"); %>";
-var AC_BE_CWmin = "<% getParam(1, "AC_BE_CWmin"); %>";
-var AC_BE_CWmax = "<% getParam(1, "AC_BE_CWmax"); %>";
-var AC_BE_AIFSN = "<% getParam(1, "AC_BE_AIFSN"); %>";
-var AC_BE_TXOP = "<% getParam(1, "AC_BE_TXOP"); %>";
-var AC_BE_CWmin_AP = "<% getParam(1, "AC_BE_CWmin_AP"); %>";
-var AC_BE_CWmax_AP = "<% getParam(1, "AC_BE_CWmax_AP"); %>";
-var AC_BE_AIFSN_AP = "<% getParam(1, "AC_BE_AIFSN_AP"); %>";
-var AC_BE_TXOP_AP = "<% getParam(1, "AC_BE_TXOP_AP"); %>";
+var AC_BE_UseAggregation = "<% getParamJs("AC_BE_UseAggregation"); %>";
+var AC_BE_AcceptAggregation = "<% getParamJs("AC_BE_AcceptAggregation"); %>";
+var AC_BE_MaxNumOfPackets = "<% getParamJs("AC_BE_MaxNumOfPackets"); %>";
+var AC_BE_MaxNumOfBytes = "<% getParamJs("AC_BE_MaxNumOfBytes"); %>";
+var AC_BE_TimeoutInterval = "<% getParamJs("AC_BE_TimeoutInterval"); %>";
+var AC_BE_MinSizeOfPacketInAggr = "<% getParamJs("AC_BE_MinSizeOfPacketInAggr"); %>";
+var AC_BE_ADDBATimeout = "<% getParamJs("AC_BE_ADDBATimeout"); %>";
+var AC_BE_AggregationWindowSize = "<% getParamJs("AC_BE_AggregationWindowSize"); %>";
+var AC_BE_CWmin = "<% getParamJs("AC_BE_CWmin"); %>";
+var AC_BE_CWmax = "<% getParamJs("AC_BE_CWmax"); %>";
+var AC_BE_AIFSN = "<% getParamJs("AC_BE_AIFSN"); %>";
+var AC_BE_TXOP = "<% getParamJs("AC_BE_TXOP"); %>";
+var AC_BE_CWmin_AP = "<% getParamJs("AC_BE_CWmin_AP"); %>";
+var AC_BE_CWmax_AP = "<% getParamJs("AC_BE_CWmax_AP"); %>";
+var AC_BE_AIFSN_AP = "<% getParamJs("AC_BE_AIFSN_AP"); %>";
+var AC_BE_TXOP_AP = "<% getParamJs("AC_BE_TXOP_AP"); %>";
 	
-var AC_VI_UseAggregation = "<% getParam(1, "AC_VI_UseAggregation"); %>";
-var AC_VI_AcceptAggregation = "<% getParam(1, "AC_VI_AcceptAggregation"); %>";
-var AC_VI_MaxNumOfPackets = "<% getParam(1, "AC_VI_MaxNumOfPackets"); %>";
-var AC_VI_MaxNumOfBytes = "<% getParam(1, "AC_VI_MaxNumOfBytes"); %>";
-var AC_VI_TimeoutInterval = "<% getParam(1, "AC_VI_TimeoutInterval"); %>";
-var AC_VI_MinSizeOfPacketInAggr = "<% getParam(1, "AC_VI_MinSizeOfPacketInAggr"); %>";
-var AC_VI_ADDBATimeout = "<% getParam(1, "AC_VI_ADDBATimeout"); %>";
-var AC_VI_AggregationWindowSize = "<% getParam(1, "AC_VI_AggregationWindowSize"); %>";
-var AC_VI_CWmin = "<% getParam(1, "AC_VI_CWmin"); %>";
-var AC_VI_CWmax = "<% getParam(1, "AC_VI_CWmax"); %>";
-var AC_VI_AIFSN = "<% getParam(1, "AC_VI_AIFSN"); %>";
-var AC_VI_TXOP = "<% getParam(1, "AC_VI_TXOP"); %>";
-var AC_VI_CWmin_AP = "<% getParam(1, "AC_VI_CWmin_AP"); %>";
-var AC_VI_CWmax_AP = "<% getParam(1, "AC_VI_CWmax_AP"); %>";
-var AC_VI_AIFSN_AP = "<% getParam(1, "AC_VI_AIFSN_AP"); %>";
-var AC_VI_TXOP_AP = "<% getParam(1, "AC_VI_TXOP_AP"); %>";
+var AC_VI_UseAggregation = "<% getParamJs("AC_VI_UseAggregation"); %>";
+var AC_VI_AcceptAggregation = "<% getParamJs("AC_VI_AcceptAggregation"); %>";
+var AC_VI_MaxNumOfPackets = "<% getParamJs("AC_VI_MaxNumOfPackets"); %>";
+var AC_VI_MaxNumOfBytes = "<% getParamJs("AC_VI_MaxNumOfBytes"); %>";
+var AC_VI_TimeoutInterval = "<% getParamJs("AC_VI_TimeoutInterval"); %>";
+var AC_VI_MinSizeOfPacketInAggr = "<% getParamJs("AC_VI_MinSizeOfPacketInAggr"); %>";
+var AC_VI_ADDBATimeout = "<% getParamJs("AC_VI_ADDBATimeout"); %>";
+var AC_VI_AggregationWindowSize = "<% getParamJs("AC_VI_AggregationWindowSize"); %>";
+var AC_VI_CWmin = "<% getParamJs("AC_VI_CWmin"); %>";
+var AC_VI_CWmax = "<% getParamJs("AC_VI_CWmax"); %>";
+var AC_VI_AIFSN = "<% getParamJs("AC_VI_AIFSN"); %>";
+var AC_VI_TXOP = "<% getParamJs("AC_VI_TXOP"); %>";
+var AC_VI_CWmin_AP = "<% getParamJs("AC_VI_CWmin_AP"); %>";
+var AC_VI_CWmax_AP = "<% getParamJs("AC_VI_CWmax_AP"); %>";
+var AC_VI_AIFSN_AP = "<% getParamJs("AC_VI_AIFSN_AP"); %>";
+var AC_VI_TXOP_AP = "<% getParamJs("AC_VI_TXOP_AP"); %>";
 	
-var AC_VO_UseAggregation = "<% getParam(1, "AC_VO_UseAggregation"); %>";
-var AC_VO_AcceptAggregation = "<% getParam(1, "AC_VO_AcceptAggregation"); %>";
-var AC_VO_MaxNumOfPackets = "<% getParam(1, "AC_VO_MaxNumOfPackets"); %>";
-var AC_VO_MaxNumOfBytes = "<% getParam(1, "AC_VO_MaxNumOfBytes"); %>";
-var AC_VO_TimeoutInterval = "<% getParam(1, "AC_VO_TimeoutInterval"); %>";
-var AC_VO_MinSizeOfPacketInAggr = "<% getParam(1, "AC_VO_MinSizeOfPacketInAggr"); %>";
-var AC_VO_ADDBATimeout = "<% getParam(1, "AC_VO_ADDBATimeout"); %>";
-var AC_VO_AggregationWindowSize = "<% getParam(1, "AC_VO_AggregationWindowSize"); %>";
-var AC_VO_CWmin = "<% getParam(1, "AC_VO_CWmin"); %>";
-var AC_VO_CWmax = "<% getParam(1, "AC_VO_CWmax"); %>";
-var AC_VO_AIFSN = "<% getParam(1, "AC_VO_AIFSN"); %>";
-var AC_VO_TXOP = "<% getParam(1, "AC_VO_TXOP"); %>";
-var AC_VO_CWmin_AP = "<% getParam(1, "AC_VO_CWmin_AP"); %>";
-var AC_VO_CWmax_AP = "<% getParam(1, "AC_VO_CWmax_AP"); %>";
-var AC_VO_AIFSN_AP = "<% getParam(1, "AC_VO_AIFSN_AP"); %>";
-var AC_VO_TXOP_AP = "<% getParam(1, "AC_VO_TXOP_AP"); %>";
+var AC_VO_UseAggregation = "<% getParamJs("AC_VO_UseAggregation"); %>";
+var AC_VO_AcceptAggregation = "<% getParamJs("AC_VO_AcceptAggregation"); %>";
+var AC_VO_MaxNumOfPackets = "<% getParamJs("AC_VO_MaxNumOfPackets"); %>";
+var AC_VO_MaxNumOfBytes = "<% getParamJs("AC_VO_MaxNumOfBytes"); %>";
+var AC_VO_TimeoutInterval = "<% getParamJs("AC_VO_TimeoutInterval"); %>";
+var AC_VO_MinSizeOfPacketInAggr = "<% getParamJs("AC_VO_MinSizeOfPacketInAggr"); %>";
+var AC_VO_ADDBATimeout = "<% getParamJs("AC_VO_ADDBATimeout"); %>";
+var AC_VO_AggregationWindowSize = "<% getParamJs("AC_VO_AggregationWindowSize"); %>";
+var AC_VO_CWmin = "<% getParamJs("AC_VO_CWmin"); %>";
+var AC_VO_CWmax = "<% getParamJs("AC_VO_CWmax"); %>";
+var AC_VO_AIFSN = "<% getParamJs("AC_VO_AIFSN"); %>";
+var AC_VO_TXOP = "<% getParamJs("AC_VO_TXOP"); %>";
+var AC_VO_CWmin_AP = "<% getParamJs("AC_VO_CWmin_AP"); %>";
+var AC_VO_CWmax_AP = "<% getParamJs("AC_VO_CWmax_AP"); %>";
+var AC_VO_AIFSN_AP = "<% getParamJs("AC_VO_AIFSN_AP"); %>";
+var AC_VO_TXOP_AP = "<% getParamJs("AC_VO_TXOP_AP"); %>";
 
-var AC_BK_UseAggregation = "<% getParam(1, "AC_BK_UseAggregation"); %>";
-var AC_BK_AcceptAggregation = "<% getParam(1, "AC_BK_AcceptAggregation"); %>";
-var AC_BK_MaxNumOfPackets = "<% getParam(1, "AC_BK_MaxNumOfPackets"); %>";
-var AC_BK_MaxNumOfBytes = "<% getParam(1, "AC_BK_MaxNumOfBytes"); %>";
-var AC_BK_TimeoutInterval = "<% getParam(1, "AC_BK_TimeoutInterval"); %>";
-var AC_BK_MinSizeOfPacketInAggr = "<% getParam(1, "AC_BK_MinSizeOfPacketInAggr"); %>";
-var AC_BK_ADDBATimeout = "<% getParam(1, "AC_BK_ADDBATimeout"); %>";
-var AC_BK_AggregationWindowSize = "<% getParam(1, "AC_BK_AggregationWindowSize"); %>";
-var AC_BK_CWmin = "<% getParam(1, "AC_BK_CWmin"); %>";
-var AC_BK_CWmax = "<% getParam(1, "AC_BK_CWmax"); %>";
-var AC_BK_AIFSN = "<% getParam(1, "AC_BK_AIFSN"); %>";
-var AC_BK_TXOP = "<% getParam(1, "AC_BK_TXOP"); %>";
-var AC_BK_CWmin_AP = "<% getParam(1, "AC_BK_CWmin_AP"); %>";
-var AC_BK_CWmax_AP = "<% getParam(1, "AC_BK_CWmax_AP"); %>";
-var AC_BK_AIFSN_AP = "<% getParam(1, "AC_BK_AIFSN_AP"); %>";
-var AC_BK_TXOP_AP = "<% getParam(1, "AC_BK_TXOP_AP"); %>";
+var AC_BK_UseAggregation = "<% getParamJs("AC_BK_UseAggregation"); %>";
+var AC_BK_AcceptAggregation = "<% getParamJs("AC_BK_AcceptAggregation"); %>";
+var AC_BK_MaxNumOfPackets = "<% getParamJs("AC_BK_MaxNumOfPackets"); %>";
+var AC_BK_MaxNumOfBytes = "<% getParamJs("AC_BK_MaxNumOfBytes"); %>";
+var AC_BK_TimeoutInterval = "<% getParamJs("AC_BK_TimeoutInterval"); %>";
+var AC_BK_MinSizeOfPacketInAggr = "<% getParamJs("AC_BK_MinSizeOfPacketInAggr"); %>";
+var AC_BK_ADDBATimeout = "<% getParamJs("AC_BK_ADDBATimeout"); %>";
+var AC_BK_AggregationWindowSize = "<% getParamJs("AC_BK_AggregationWindowSize"); %>";
+var AC_BK_CWmin = "<% getParamJs("AC_BK_CWmin"); %>";
+var AC_BK_CWmax = "<% getParamJs("AC_BK_CWmax"); %>";
+var AC_BK_AIFSN = "<% getParamJs("AC_BK_AIFSN"); %>";
+var AC_BK_TXOP = "<% getParamJs("AC_BK_TXOP"); %>";
+var AC_BK_CWmin_AP = "<% getParamJs("AC_BK_CWmin_AP"); %>";
+var AC_BK_CWmax_AP = "<% getParamJs("AC_BK_CWmax_AP"); %>";
+var AC_BK_AIFSN_AP = "<% getParamJs("AC_BK_AIFSN_AP"); %>";
+var AC_BK_TXOP_AP = "<% getParamJs("AC_BK_TXOP_AP"); %>";
 
 function changeFieldContent(value) {
 	document.getElementById("accessModeStatus").innerHTML = value;
@@ -588,9 +588,9 @@ function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
 	// wpsStatus()
 	
-	var mode = "<% getParam(1, "network_type"); %>";
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
-	var CurrentWMM = "<% getParam(1, "CurrentWMM"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
+	var CurrentWMM = "<% getParamJs("CurrentWMM"); %>";
 	
 	if (document.getElementById("wpsMode"))
 		document.getElementById("wpsMode").href = "/station/wireless_basic.asp";

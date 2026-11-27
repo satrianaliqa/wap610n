@@ -13,7 +13,7 @@ fi
 if [ -z "$CONFIGURED_WPAPSK_KEY" ]; then
 	#june.chen 2010/11/15, for solving WPA key could not accept '=' and blank space. 
 	#The format is NonProc_WPA_Personal_PSK = <WPA Key>, so we just begin substring form index 28 to eliminate prefix "NonProc_WPA_Personal_PSK = "(length 27)
-	CONFIGURED_WPAPSK_KEY=`awk '/^NonProc_WPA_Personal_PSK/ {str = substr($0, 28); sub(/\r/, "", str); print str}' /mnt/jffs2/wlan0.conf`
+	CONFIGURED_WPAPSK_KEY=`awk '/^NonProc_WPA_Personal_PSK[ \t]*=/ { idx = index($0, "="); str = substr($0, idx + 1); sub(/^ /, "", str); sub(/\r$/, "", str); print str }' /mnt/jffs2/wlan0.conf`
 fi
 
 WPA_TOOL=/root/mtlk/etc/wpa_passphrase

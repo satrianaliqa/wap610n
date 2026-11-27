@@ -16,9 +16,9 @@
 
 <script language="javascript" type="text/javascript">
 function template_load() {
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var HWType = "<% checkHW(); %>"
-	var wirelessConfigType = "<% getParam(1, "wirelessConfigType"); %>";
+	var wirelessConfigType = "<% getParamJs("wirelessConfigType"); %>";
 	
 	if (mode == 0) //STA mode
 	{
@@ -50,14 +50,23 @@ function template_load() {
 <!-- InstanceBeginEditable name="Scripts" -->
 <script language="JavaScript" type="text/javascript">
 
+function setSafeText(id, val) {
+	var el = document.getElementById(id);
+	if (!el) return;
+	if ("textContent" in el)
+		el.textContent = val;
+	else
+		el.innerText = val;
+}
+
 function page_load() {
 	fwUpgraceStatus("<% getFWUpgrade(); %>", "<% getCurrectLanIP(); %>");
 	// wpsStatus()
 	
-	var mode = "<% getParam(1, "network_type"); %>";
+	var mode = "<% getParamJs("network_type"); %>";
 	var IPandMask = "<% getCurrectLanIP(); %>";
-	var gateway = "<% getParam(1, "default_gw"); %>";
-	var ethernetMAC = "<% getParam(1, "mac_lan"); %>";
+	var gateway = "<% getParamJs("default_gw"); %>";
+	var ethernetMAC = "<% getParamJs("mac_lan"); %>";
 
 	if (mode == 0) //STA mode
 	{
@@ -67,11 +76,15 @@ function page_load() {
 
 	docTemp = IPandMask;
 	index = docTemp.indexOf(','); //IP
-	document.getElementById("currentIP").innerHTML = docTemp.substr(0, index);
-
-	document.getElementById("subnet").innerHTML = docTemp.substr(index+1);
-	document.getElementById("gateway").innerHTML = gateway;
-	document.getElementById("ethernetMAC").innerHTML = ethernetMAC;
+	if (index >= 0) {
+		setSafeText("currentIP", docTemp.substr(0, index));
+		setSafeText("subnet", docTemp.substr(index + 1));
+	} else {
+		setSafeText("currentIP", docTemp);
+		setSafeText("subnet", "");
+	}
+	setSafeText("gateway", gateway);
+	setSafeText("ethernetMAC", ethernetMAC);
 }
 </script>
 <!-- InstanceEndEditable -->

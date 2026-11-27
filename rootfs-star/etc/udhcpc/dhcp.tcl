@@ -210,6 +210,10 @@ proc get_ip_config {} {
 proc stop_upnpd {} {
 	log "Stopping UPNPD\n"
 	catch {exec killall -SIGINT upnpd}
+	if {[catch {exec pidof upnpd}] == 0} {
+		sleep 1
+		catch {exec killall -9 upnpd}
+	}
 }
 
 ##################################################################
@@ -221,8 +225,11 @@ proc start_upnpd {} {
 		log "UPNPD disabled (UPnP_Enabled != 1)\n"
 		return
 	}
+	if {[catch {exec pidof upnpd}] == 0} {
+		return
+	}
 	log "Starting UPNPD\n"
-	catch {exec upnpd br0 &}
+	catch {exec upnpd br0 </dev/null >/dev/null 2>&1 &}
 }
 
 ##################################################################
@@ -230,8 +237,30 @@ proc start_upnpd {} {
 ##################################################################
 proc restart_upnpd {} {
 	stop_upnpd
-	sleep 1
 	start_upnpd
+}
+
+proc is_valid_ipv4 {ip} {
+	if {![regexp {^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$} $ip -> o1 o2 o3 o4]} {
+		return 0
+	}
+	foreach o [list $o1 $o2 $o3 $o4] {
+		if {[string length $o] > 1 && [string index $o 0] == "0"} {
+			# allow leading zero only if strictly 0; scan decimal safely
+		}
+		scan $o "%d" v
+		if {$v < 0 || $v > 255} {
+			return 0
+		}
+	}
+	return 1
+}
+
+proc is_safe_domain {dom} {
+	if {$dom == "" || [string length $dom] > 64} {
+		return 0
+	}
+	return [regexp {^[A-Za-z0-9._-]+$} $dom]
 }
 
 
@@ -280,22 +309,30 @@ proc call_generic_event_script {} {
 ##################################################################
 proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 	global current_hostname
-	set ifcfg_cmd [list ifconfig $iface $ip_addr]
 
-	if {$brdcast != ""} {
-		lappend ifcfg_cmd "broadcast" $brdcast
+	if {![regexp {^[A-Za-z0-9._-]+$} $iface] || ![is_valid_ipv4 $ip_addr]} {
+		log "config_nic: rejected invalid interface '$iface' or ip '$ip_addr'"
+		return
 	}
-
-	if {$mask != ""} {
-		lappend ifcfg_cmd "netmask" $mask
+	if {$mask != "" && ![is_valid_ipv4 $mask]} {
+		set mask ""
+	}
+	if {$brdcast != "" && ![is_valid_ipv4 $brdcast]} {
+		set brdcast ""
 	}
 
 	log "config_nic ip:$ip_addr mask:$mask host:$host domain:$domain brdcast:$brdcast routing:$routing dns:$dns"
 	catch {exec echo dhcp.tcl: config_nic=>ip:$ip_addr mask:$mask host:$host domain:$domain brdcast:$brdcast routing:$routing dns:$dns > /dev/console}
 
-	stop_upnpd
-	catch {eval exec $ifcfg_cmd}
-	start_upnpd
+	if {$brdcast != "" && $mask != ""} {
+		catch {exec ifconfig $iface $ip_addr broadcast $brdcast netmask $mask}
+	} elseif {$brdcast != ""} {
+		catch {exec ifconfig $iface $ip_addr broadcast $brdcast}
+	} elseif {$mask != ""} {
+		catch {exec ifconfig $iface $ip_addr netmask $mask}
+	} else {
+		catch {exec ifconfig $iface $ip_addr}
+	}
 	#shown current ip address
 	catch {exec echo "Current IP Address is - $ip_addr" > /dev/console}
 
@@ -317,8 +354,8 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 		set routes_count [llength $routing]
 		#log "default route count : $routes_count"	
 		for {set i 0} {$i<$routes_count} {incr i} {
-			set line [lindex $routing $i]
-			if {$line != ""} {
+			set line [string trim [lindex $routing $i]]
+			if {$line != "" && [is_valid_ipv4 $line] && $line != "0.0.0.0"} {
 				log ">> route add default gw $line dev $iface"
 				catch {exec route add default gw $line dev $iface}
 			}
@@ -330,7 +367,7 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 
 	# Update resolver configuration file
 	set R ""
-	if {$domain != ""} {
+	if {[is_safe_domain $domain]} {
 		log "setting domain $domain"
 		set R "domain ${domain}\n"
 	}
@@ -339,8 +376,8 @@ proc config_nic {iface ip_addr mask host domain brdcast routing dns} {
 	set dns_count [llength $dns]
 	#log "DNS count :$dns_count"
 	for {set i 0} {$i<$dns_count} {incr i} {
-		set line [lindex $dns $i]
-		if {$line != " " && $line != ""} {
+		set line [string trim [lindex $dns $i]]
+		if {$line != "" && [is_valid_ipv4 $line] && $line != "0.0.0.0"} {
 			log "Adding dns $line"
 			set R "${R}nameserver ${line}\n"
 		}
@@ -388,14 +425,23 @@ proc wait_for_init_done {} {
 proc auto_ap_turn_off {} {
 
 	wait_for_init_done
-	
+
+	set locked 0
+	if {[catch {exec config_lock.sh [pid]}] == 0} {
+		set locked 1
+	}
 	catch {exec cat /mnt/jffs2/sys.conf | grep -v auto_network_type > /tmp/t_sys.conf}
 	catch {exec echo "auto_network_type = 0" >> /tmp/t_sys.conf}
-	catch {exec mv /tmp/t_sys.conf /mnt/jffs2/sys.conf}
-	catch {exec cp /mnt/jffs2/sys.conf /tmp/sys.conf}
-	
+	catch {exec chmod 600 /tmp/t_sys.conf}
+	catch {exec mv -f /tmp/t_sys.conf /mnt/jffs2/sys.conf}
+	catch {exec cp -pf /mnt/jffs2/sys.conf /tmp/sys.conf}
+	catch {exec chmod 600 /tmp/sys.conf}
+	if {$locked == 1} {
+		catch {exec config_unlock.sh [pid]}
+	}
+
 	catch {exec echo "Turn OFF - AUTO AP MODE" > /dev/console}
-	
+
 	catch {exec config_umount.sh}
 	catch {exec config_mount.sh}
 }

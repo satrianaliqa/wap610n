@@ -54,7 +54,7 @@ proc get_parameter {param_name} {
   global sys_config_file
   set params [file_load $config_file]
   foreach param $params {
-	if {[regexp {(^[^ ]+)[ ]*=[ ]*(.+)} $param dummy pname pval]>0} {
+	if {[regexp {^([^ =]+)[ ]*=[ ]?(.+)$} $param dummy pname pval]>0} {
 		if {[string compare $param_name $pname]==0} {
 			debug "(wlan0.conf) '$param_name=$pval'"
 			return $pval
@@ -64,7 +64,7 @@ proc get_parameter {param_name} {
   
   set params [file_load $sys_config_file]
   foreach param $params {
-	if {[regexp {(^[^ ]+)[ ]*=[ ]*(.+)} $param dummy pname pval]>0} {
+	if {[regexp {^([^ =]+)[ ]*=[ ]?(.+)$} $param dummy pname pval]>0} {
 		if {[string compare $param_name $pname]==0} {
 			debug "(sys.conf) '$param_name=$pval'"
 			return $pval
@@ -83,7 +83,7 @@ if {[info exists ::argv] && [lindex $::argv 0]=="Set_security_only"} {
 	set Set_security_only 1
 }
 source update_security.tcl
-if {$Set_security_only == 1} {
+if {$Set_security_only == 1 || ([info exists ::argv] && [lindex $::argv 0]=="reactivate")} {
 	save_security noSave
 } else {
 	save_security

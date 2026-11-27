@@ -81,6 +81,10 @@ is_pidfile_alive() {
     return 1
 }
 
+is_ssh_established() {
+    awk 'NR>1 && $4 == "01" && $3 ~ /:0016$/ { found=1; exit } END { exit !found }' /proc/net/tcp 2>/dev/null
+}
+
 is_valid_ident() {
     case "$1" in
         ""|*[!A-Za-z0-9_-]*)
@@ -90,6 +94,32 @@ is_valid_ident() {
             return 0
             ;;
     esac
+}
+
+url_decode() {
+    printf '%s' "$1" | awk '
+    BEGIN {
+        for (i = 0; i < 256; i++) hex[sprintf("%02x", i)] = sprintf("%c", i)
+        for (i = 0; i < 256; i++) hex[sprintf("%02X", i)] = sprintf("%c", i)
+    }
+    {
+        gsub(/\+/, " ", $0)
+        out = ""
+        n = length($0)
+        for (i = 1; i <= n; i++) {
+            c = substr($0, i, 1)
+            if (c == "%" && i + 2 <= n) {
+                code = substr($0, i + 1, 2)
+                if (code in hex) {
+                    out = out hex[code]
+                    i += 2
+                    continue
+                }
+            }
+            out = out c
+        }
+        printf "%s", out
+    }'
 }
 
 json_error() {
@@ -129,8 +159,9 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
             pidof dropbear >/dev/null 2>&1 && CURRENT_SSH=1
             CURRENT_TELNET=0
             pidof telnetd >/dev/null 2>&1 && CURRENT_TELNET=1
-            CURRENT_UPNP=0
-            pidof upnpd >/dev/null 2>&1 && CURRENT_UPNP=1
+            CURRENT_UPNP=$(get_conf_val "UPnP_Enabled")
+            [ -z "$CURRENT_UPNP" ] && { pidof upnpd >/dev/null 2>&1 && CURRENT_UPNP=1 || CURRENT_UPNP=0; }
+            [ "$CURRENT_UPNP" != "1" ] && CURRENT_UPNP=0
             SSHJ_EN=$(get_conf_val "SSHJ_Enabled")
             [ -z "$SSHJ_EN" ] && SSHJ_EN=0
             SSHJ_USER=$(get_conf_val "SSHJ_User")
@@ -138,7 +169,7 @@ if [ "$REQUEST_METHOD" = "GET" ]; then
             SSHJ_HOST=$(get_conf_val "SSHJ_Host")
             is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
             SSHJ_RUNNING=0
-            is_pidfile_alive /tmp/sshj_ssh.pid && SSHJ_RUNNING=1
+            is_pidfile_alive /tmp/sshj_ssh.pid && is_ssh_established && SSHJ_RUNNING=1
             SSHJ_WATCHDOG=0
             is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
             echo "Content-Type: application/json"
@@ -173,11 +204,13 @@ case "$QUERY" in
         ;;
 esac
 
-# Initialize from current live daemon / config state so toggling one preserves others
-SSH_VAL=0
-pidof dropbear >/dev/null 2>&1 && SSH_VAL=1
-TELNET_VAL=0
-pidof telnetd >/dev/null 2>&1 && TELNET_VAL=1
+# Initialize from persisted config state (avoid transient boot race on pidof)
+SSH_VAL=$(get_conf_val "SSH_Enabled")
+[ -z "$SSH_VAL" ] && SSH_VAL=1
+[ "$SSH_VAL" != "0" ] && SSH_VAL=1 || SSH_VAL=0
+TELNET_VAL=$(get_conf_val "Telnet_Enabled")
+[ -z "$TELNET_VAL" ] && TELNET_VAL=1
+[ "$TELNET_VAL" != "0" ] && TELNET_VAL=1 || TELNET_VAL=0
 UPNP_VAL=$(get_conf_val "UPnP_Enabled")
 [ -z "$UPNP_VAL" ] && { pidof upnpd >/dev/null 2>&1 && UPNP_VAL=1 || UPNP_VAL=0; }
 SSHJ_VAL=$(get_conf_val "SSHJ_Enabled")
@@ -192,7 +225,7 @@ IFS='&'
 for kv in $QUERY; do
     key="${kv%%=*}"
     val="${kv#*=}"
-    val=$(printf '%s' "$val" | tr -d '\r\n')
+    val=$(url_decode "$val" | tr -d '\r\n')
     case "$key" in
         ssh)
             [ "$val" = "0" ] && SSH_VAL=0
@@ -262,9 +295,21 @@ update_conf() {
     mv -f "$tmp_target" "$target" 2>/dev/null || true
 }
 if [ -d /mnt/jffs2 ]; then
-    touch /mnt/jffs2/sys.conf 2>/dev/null || true
+    if [ ! -s /mnt/jffs2/sys.conf ]; then
+        if [ -s /tmp/sys.conf ]; then
+            cp -af /tmp/sys.conf /mnt/jffs2/sys.conf 2>/dev/null || true
+        elif [ -s /root/mtlk/etc/sys.conf ]; then
+            cp -af /root/mtlk/etc/sys.conf /mnt/jffs2/sys.conf 2>/dev/null || true
+        else
+            touch /mnt/jffs2/sys.conf 2>/dev/null || true
+        fi
+    fi
     update_conf /mnt/jffs2/sys.conf
-    cp -af /mnt/jffs2/sys.conf /tmp/sys.conf 2>/dev/null || true
+    if grep -qE '^[[:space:]]*ip_lan[[:space:]]*=' /mnt/jffs2/sys.conf 2>/dev/null; then
+        cp -af /mnt/jffs2/sys.conf /tmp/sys.conf 2>/dev/null || true
+    elif [ -f /tmp/sys.conf ]; then
+        update_conf /tmp/sys.conf
+    fi
 elif [ -f /tmp/sys.conf ]; then
     update_conf /tmp/sys.conf
 fi
@@ -297,18 +342,22 @@ if [ "$TELNET_VAL" = "0" ]; then
     killall telnetd 2>/dev/null || true
 else
     if ! pidof telnetd >/dev/null 2>&1; then
-        telnetd -l /bin/sh </dev/null >/dev/null 2>&1 &
+        telnetd -l /bin/login </dev/null >/dev/null 2>&1 &
     fi
 fi
 
 if [ "$UPNP_VAL" = "0" ]; then
+    pkill -f '[m]tlk_upnpd_monitor\.sh' 2>/dev/null || true
     killall -SIGINT upnpd 2>/dev/null || true
-    killall mtlk_upnpd_monitor.sh 2>/dev/null || true
+    if pidof upnpd >/dev/null 2>&1; then
+        sleep 1
+        killall -9 upnpd 2>/dev/null || true
+    fi
 else
     if ! pidof upnpd >/dev/null 2>&1 && [ -x /bin/upnpd ]; then
         nice -n 18 /bin/upnpd br0 </dev/null >/dev/null 2>&1 &
     fi
-    if ! pidof mtlk_upnpd_monitor.sh >/dev/null 2>&1 && [ -x /root/mtlk/etc/mtlk_upnpd_monitor.sh ]; then
+    if ! pgrep -f '[m]tlk_upnpd_monitor\.sh' >/dev/null 2>&1 && [ -x /root/mtlk/etc/mtlk_upnpd_monitor.sh ]; then
         ( cd /root/mtlk/etc && nice -n 18 ./mtlk_upnpd_monitor.sh ) </dev/null >/dev/null 2>&1 &
     fi
 fi
@@ -327,7 +376,7 @@ if [ -x /bin/config_save.sh ]; then
 fi
 
 SSHJ_RUNNING=0
-is_pidfile_alive /tmp/sshj_ssh.pid && SSHJ_RUNNING=1
+is_pidfile_alive /tmp/sshj_ssh.pid && is_ssh_established && SSHJ_RUNNING=1
 SSHJ_WATCHDOG=0
 is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
 if [ "$SSHJ_VAL" = "1" ]; then

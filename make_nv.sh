@@ -211,6 +211,14 @@ if [ $MAKE_CLEAN -eq 1 ]; then
 	make -f Makefile.MTLK link clean 2>&1 | tee -a "$LOGFILE"
 	popd > /dev/null
 
+	if [ -f "${WEBSERVER_PATH}/LINUX/Makefile.STAR" ]; then
+		make -C "${WEBSERVER_PATH}/LINUX" -f Makefile.STAR clean 2>&1 | tee -a "$LOGFILE" || true
+	fi
+	for pkg_mk in packages/*/Makefile.pkg; do
+		[ -f "$pkg_mk" ] || continue
+		E_TOPDIR="${ROOTDIR}/apps" make -C "$(dirname "$pkg_mk")" -f Makefile.pkg CLEAN 2>&1 | tee -a "$LOGFILE" || true
+	done
+
 	cd kernel/linux-2.6.16-star
 	export PATH="$(pwd)/../../tools/arm-uclibc-3.4.6/bin/:$PATH"
 	make clean 2>&1 | tee -a "$LOGFILE"

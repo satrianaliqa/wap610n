@@ -41,7 +41,7 @@ then
 fi
 #WPS parameters
 
-ESSID=`cat ${WLAN_CONF} | grep '^NonProc_ESSID' | sed 's#^[^=]*=[ ]*##' | tr -d '\r' | tail -n 1`
+ESSID=`cat ${WLAN_CONF} | grep '^NonProc_ESSID' | sed 's#^[^=]*= ##; s#^[^=]*=##' | tr -d '\r' | tail -n 1`
 if [ ! "$ESSID" ]
 then 
 	ESSID="WPSMetalink"
@@ -109,7 +109,7 @@ then
 	SECURITY_MODE=`awk -F "=" '/^NonProcSecurityMode/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
 	if [ "$SECURITY_MODE" = "$Security_Wpa" ]
 	then		
-		NW_KEY=`cat ${WLAN_CONF} | grep '^NonProc_WPA_Personal_PSK' | sed 's#^[^=]*=[ ]*##' | tr -d '\r' | tail -n 1`
+		NW_KEY=`cat ${WLAN_CONF} | grep '^NonProc_WPA_Personal_PSK' | sed 's#^[^=]*= ##; s#^[^=]*=##' | tr -d '\r' | tail -n 1`
 	elif [ "$SECURITY_MODE" = "$Security_Wep" ]
 	then
 		WepTxKeyIdx=`awk -F "=" '/^WepTxKeyIdx/ {str = $2; gsub(/ /, "", str); sub(/\r/, "", str); print str}' ${WLAN_CONF}`
