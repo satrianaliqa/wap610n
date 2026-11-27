@@ -27,6 +27,7 @@
 #include	<sys/ioctl.h>
 #include	<net/if.h>
 #include	<fcntl.h>
+#include	<sys/stat.h>
 #include	"../mt_validation.h"
 #include	"../mt_task.h"
 #include	"../wireless.h"
@@ -949,21 +950,40 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 	paramNames[paramCount++] = "unconfigured";
 	MT_Set_Param("forceWlanDisconnect", "0", 1);
 	paramNames[paramCount++] = "forceWlanDisconnect";
+	if (country[0] != '\0') {
+		MT_Set_Param("EEPROMCountryValid", "1", 1);
+		paramNames[paramCount++] = "EEPROMCountryValid";
+	}
 
 	MT_WriteConfFiles(paramCount, paramNames);
 	doSystem("cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1");
 
-	if (isApMode) {
-		if (country[0] != '\0') {
-			doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
+	if (country[0] != '\0') {
+		FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/Country", "w");
+		if (pf != NULL) {
+			fprintf(pf, "%s\n", country);
+			fclose(pf);
 		}
+		doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
+	}
+	if (isApMode) {
 		if (freqBand[0] != '\0') {
 			doSystem("/root/mtlk/etc/mtpriv wlan0 FrequencyBand %s >/dev/null 2>&1", freqBand);
 		}
 		if (channelBonding[0] != '\0') {
+			FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/ChannelBonding", "w");
+			if (pf != NULL) {
+				fprintf(pf, "%s\n", channelBonding);
+				fclose(pf);
+			}
 			doSystem("/root/mtlk/etc/mtpriv wlan0 ChannelBonding %s >/dev/null 2>&1", channelBonding);
 		}
 		if (upperLower[0] != '\0') {
+			FILE *pf = fopen("/proc/sys/dev/mtlk/wlan0/UpperLowerChannelBonding", "w");
+			if (pf != NULL) {
+				fprintf(pf, "%s\n", upperLower);
+				fclose(pf);
+			}
 			doSystem("/root/mtlk/etc/mtpriv wlan0 UpperLowerChannelBonding %s >/dev/null 2>&1", upperLower);
 		}
 		if (channel[0] != '\0') {
@@ -1351,6 +1371,75 @@ static int initWebs()
  *	Home page handler
  */
 
+static int syncConfPair(const char *jffsPath, const char *tmpPath,
+	time_t *lastJM, off_t *lastJS, time_t *lastTM, off_t *lastTS)
+{
+	struct stat stJ, stT;
+	int hasJ, hasT;
+	int changed = 0;
+
+	memset(&stJ, 0, sizeof(stJ));
+	memset(&stT, 0, sizeof(stT));
+	hasJ = (stat(jffsPath, &stJ) == 0);
+	hasT = (stat(tmpPath, &stT) == 0);
+
+	if (hasJ && (stJ.st_mtime != *lastJM || stJ.st_size != *lastJS)) {
+		changed = 1;
+	}
+	if (hasT && (stT.st_mtime != *lastTM || stT.st_size != *lastTS)) {
+		changed = 1;
+	}
+	if (!changed) {
+		return 0;
+	}
+
+	if (hasJ && hasT) {
+		if (stT.st_mtime >= stJ.st_mtime) {
+			loadConfigFromFile((char_t *)jffsPath);
+			loadConfigFromFile((char_t *)tmpPath);
+		} else {
+			loadConfigFromFile((char_t *)tmpPath);
+			loadConfigFromFile((char_t *)jffsPath);
+		}
+	} else if (hasJ) {
+		loadConfigFromFile((char_t *)jffsPath);
+	} else if (hasT) {
+		loadConfigFromFile((char_t *)tmpPath);
+	}
+
+	*lastJM = hasJ ? stJ.st_mtime : 0;
+	*lastJS = hasJ ? stJ.st_size : 0;
+	*lastTM = hasT ? stT.st_mtime : 0;
+	*lastTS = hasT ? stT.st_size : 0;
+	return 1;
+}
+
+static void syncConfigFromDiskIfChanged(void)
+{
+	static time_t sysJM = 0, sysTM = 0, wlJM = 0, wlTM = 0;
+	static off_t sysJS = -1, sysTS = -1, wlJS = -1, wlTS = -1;
+	int c1, c2;
+
+	c1 = syncConfPair("/mnt/jffs2/sys.conf", "/tmp/sys.conf", &sysJM, &sysJS, &sysTM, &sysTS);
+	c2 = syncConfPair("/mnt/jffs2/wlan0.conf", "/tmp/wlan0.conf", &wlJM, &wlJS, &wlTM, &wlTS);
+	if (c1 || c2) {
+		MT_ParseOnLoad();
+	}
+}
+
+static void sendUiModeRedirect(webs_t wp, const char *target, const char *mode)
+{
+	wp->flags &= ~WEBS_KEEP_ALIVE;
+	websWrite(wp, T("HTTP/1.0 302 Redirect\r\n"));
+	websWrite(wp, T("Server: %s\r\n"), WEBS_NAME);
+	websWrite(wp, T("Location: %s\r\n"), (char_t *)target);
+	websWrite(wp, T("Set-Cookie: ui=%s; Path=/\r\n"), (char_t *)mode);
+	websWrite(wp, T("Pragma: no-cache\r\n"));
+	websWrite(wp, T("Cache-Control: no-store\r\n"));
+	websWrite(wp, T("Connection: close\r\n\r\n"));
+	websDone(wp, 302);
+}
+
 static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	int arg, char_t *url, char_t *path, char_t *query)
 {
@@ -1381,20 +1470,38 @@ static int websHomePageHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		{ "/status/about.asp", "/index.html#status" }
 	};
 	size_t i;
+	int isClassic = 0;
 
 	(void)urlPrefix;
 	(void)webDir;
 	(void)arg;
 	(void)url;
 
-/*
- *	Redirect root and legacy Linksys ASP pages to the modern SPA UI unless ?classic=1
- */
-	if (path == NULL || *path == '\0' || strcmp(path, "/") == 0) {
-		websRedirect(wp, T("/index.html"));
+	syncConfigFromDiskIfChanged();
+
+	if (query != NULL && strstr(query, "modern=1") != NULL) {
+		sendUiModeRedirect(wp, "/index.html", "modern");
 		return 1;
 	}
 	if (query != NULL && strstr(query, "classic=1") != NULL) {
+		const char *dest = "/network/ap_network.asp";
+		if (path != NULL && *path != '\0' && strcmp(path, "/") != 0 &&
+		    strcmp(path, "/index.html") != 0 && strcmp(path, "/default.asp") != 0 &&
+		    strcmp(path, "/index.asp") != 0) {
+			dest = path;
+		}
+		sendUiModeRedirect(wp, dest, "classic");
+		return 1;
+	}
+	if (wp != NULL && wp->cookie != NULL && strstr(wp->cookie, "ui=classic") != NULL) {
+		isClassic = 1;
+	}
+
+	if (path == NULL || *path == '\0' || strcmp(path, "/") == 0) {
+		websRedirect(wp, isClassic ? T("/network/ap_network.asp") : T("/index.html"));
+		return 1;
+	}
+	if (isClassic) {
 		return 0;
 	}
 	for (i = 0; i < sizeof(legacyMap) / sizeof(legacyMap[0]); i++) {
@@ -1564,14 +1671,220 @@ static size_t jsonAppend(char *buf, size_t bufSize, size_t pos, const char *fmt,
 	return pos + (size_t)n;
 }
 
+#define API_SIOCGIWFREQ  0x8B05
+#define API_SIOCGIWAP    0x8B15
+#define API_SIOCGIWESSID 0x8B1B
+
+struct api_iw_point {
+	void *pointer;
+	unsigned short length;
+	unsigned short flags;
+};
+
+struct api_iw_freq {
+	int m;
+	short e;
+	unsigned char i;
+	unsigned char flags;
+};
+
+struct api_iwreq {
+	char ifr_name[IFNAMSIZ];
+	union {
+		struct api_iw_point essid;
+		struct api_iw_freq freq;
+		struct sockaddr ap_addr;
+		char pad[16];
+	} u;
+};
+
+static int readProcFirstLine(const char *path, char *out, size_t outSize)
+{
+	FILE *fp;
+	char buf[128];
+	char *p;
+	size_t len;
+
+	if (out == NULL || outSize == 0) {
+		return 0;
+	}
+	out[0] = '\0';
+	if (path == NULL) {
+		return 0;
+	}
+	fp = fopen(path, "r");
+	if (fp == NULL) {
+		return 0;
+	}
+	if (fgets(buf, sizeof(buf), fp) != NULL) {
+		p = buf;
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+		snprintf(out, outSize, "%s", p);
+		out[outSize - 1] = '\0';
+		len = strlen(out);
+		while (len > 0 && (out[len - 1] == '\n' || out[len - 1] == '\r' ||
+		                   out[len - 1] == ' ' || out[len - 1] == '\t')) {
+			out[--len] = '\0';
+		}
+	}
+	fclose(fp);
+	return (out[0] != '\0');
+}
+
+static void readLiveDefaultGw(char *out, size_t outSize)
+{
+	FILE *fp;
+	char line[256];
+
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	out[0] = '\0';
+	fp = fopen("/proc/net/route", "r");
+	if (fp == NULL) {
+		return;
+	}
+	if (fgets(line, sizeof(line), fp) != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			char ifn[32];
+			unsigned long dstHex = 1, gwHex = 0;
+			unsigned int flags = 0;
+			if (sscanf(line, "%31s %lx %lx %x", ifn, &dstHex, &gwHex, &flags) == 4) {
+				if (dstHex == 0 && (flags & 1) && gwHex != 0) {
+					struct in_addr ina;
+					ina.s_addr = (in_addr_t)gwHex;
+					snprintf(out, outSize, "%s", inet_ntoa(ina));
+					out[outSize - 1] = '\0';
+					break;
+				}
+			}
+		}
+	}
+	fclose(fp);
+}
+
+static void readLiveResolvDns(char *d1, size_t d1Sz, char *d2, size_t d2Sz)
+{
+	FILE *fp;
+	char line[128];
+
+	if (d1 != NULL && d1Sz > 0) d1[0] = '\0';
+	if (d2 != NULL && d2Sz > 0) d2[0] = '\0';
+	fp = fopen("/tmp/resolv.conf", "r");
+	if (fp == NULL) {
+		fp = fopen("/etc/resolv.conf", "r");
+	}
+	if (fp == NULL) {
+		return;
+	}
+	while (fgets(line, sizeof(line), fp) != NULL) {
+		char ip[32];
+		if (sscanf(line, " nameserver %31s", ip) == 1) {
+			if (d1 != NULL && d1[0] == '\0') {
+				snprintf(d1, d1Sz, "%s", ip);
+				d1[d1Sz - 1] = '\0';
+			} else if (d2 != NULL && d2[0] == '\0' && (d1 == NULL || strcmp(d1, ip) != 0)) {
+				snprintf(d2, d2Sz, "%s", ip);
+				d2[d2Sz - 1] = '\0';
+				break;
+			}
+		}
+	}
+	fclose(fp);
+}
+
+static void readLiveWlanIoctl(char *essidOut, size_t essidSz,
+	char *chOut, size_t chSz, char *bandOut, size_t bandSz,
+	char *bssidOut, size_t bssidSz)
+{
+	int fd;
+	struct api_iwreq wrq;
+	char essidBuf[36];
+
+	if (essidOut != NULL && essidSz > 0) essidOut[0] = '\0';
+	if (chOut != NULL && chSz > 0) chOut[0] = '\0';
+	if (bandOut != NULL && bandSz > 0) bandOut[0] = '\0';
+	if (bssidOut != NULL && bssidSz > 0) bssidOut[0] = '\0';
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		return;
+	}
+
+	if (essidOut != NULL && essidSz > 0) {
+		memset(&wrq, 0, sizeof(wrq));
+		memset(essidBuf, 0, sizeof(essidBuf));
+		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		wrq.u.essid.pointer = essidBuf;
+		wrq.u.essid.length = (unsigned short)(sizeof(essidBuf) - 1);
+		if (ioctl(fd, API_SIOCGIWESSID, &wrq) == 0 && essidBuf[0] != '\0') {
+			size_t len = (wrq.u.essid.length < sizeof(essidBuf)) ? wrq.u.essid.length : (sizeof(essidBuf) - 1);
+			essidBuf[len] = '\0';
+			snprintf(essidOut, essidSz, "%s", essidBuf);
+			essidOut[essidSz - 1] = '\0';
+		}
+	}
+
+	if ((chOut != NULL && chSz > 0) || (bandOut != NULL && bandSz > 0)) {
+		memset(&wrq, 0, sizeof(wrq));
+		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		if (ioctl(fd, API_SIOCGIWFREQ, &wrq) == 0 && wrq.u.freq.m > 0) {
+			long val = (long)wrq.u.freq.m;
+			int exp = (int)wrq.u.freq.e;
+			int ch = 0;
+			int band = -1;
+
+			if (exp == 0 && val >= 1 && val <= 200) {
+				ch = (int)val;
+				band = (ch > 14) ? 0 : 1;
+			} else {
+				while (exp > 6 && val < 10000000L) { val *= 10L; exp--; }
+				while (exp < 6 && val > 0L) { val /= 10L; exp++; }
+				if (val >= 2412L && val <= 2484L) {
+					ch = (val == 2484L) ? 14 : (int)((val - 2407L) / 5L);
+					band = 1;
+				} else if (val >= 5000L && val <= 5900L) {
+					ch = (int)((val - 5000L) / 5L);
+					band = 0;
+				}
+			}
+			if (ch > 0 && chOut != NULL && chSz > 0) {
+				snprintf(chOut, chSz, "%d", ch);
+				chOut[chSz - 1] = '\0';
+			}
+			if (band >= 0 && bandOut != NULL && bandSz > 0) {
+				snprintf(bandOut, bandSz, "%d", band);
+				bandOut[bandSz - 1] = '\0';
+			}
+		}
+	}
+
+	if (bssidOut != NULL && bssidSz > 0) {
+		memset(&wrq, 0, sizeof(wrq));
+		strncpy(wrq.ifr_name, "wlan0", IFNAMSIZ - 1);
+		if (ioctl(fd, API_SIOCGIWAP, &wrq) == 0) {
+			const unsigned char *m = (const unsigned char *)wrq.u.ap_addr.sa_data;
+			if ((m[0] | m[1] | m[2] | m[3] | m[4] | m[5]) != 0) {
+				snprintf(bssidOut, bssidSz, "%02X:%02X:%02X:%02X:%02X:%02X",
+					m[0], m[1], m[2], m[3], m[4], m[5]);
+				bssidOut[bssidSz - 1] = '\0';
+			}
+		}
+	}
+
+	close(fd);
+}
+
 static void readLiveWlanInfo(char *chOut, size_t chSize, char *bssidOut, size_t bssidSize)
 {
-	if (chOut != NULL && chSize > 0) {
-		chOut[0] = '\0';
+	readLiveWlanIoctl(NULL, 0, chOut, chSize, NULL, 0, bssidOut, bssidSize);
+	if (chOut != NULL && chSize > 0 && chOut[0] == '\0') {
 		MT_Get_Param("Channel", chOut, (int)(chSize - 1));
 		chOut[chSize - 1] = '\0';
 	}
-	if (bssidOut != NULL && bssidSize > 0) {
+	if (bssidOut != NULL && bssidSize > 0 && bssidOut[0] == '\0') {
 		getIfaceMac("wlan0", bssidOut, bssidSize);
 		if (bssidOut[0] == '\0') {
 			MT_Get_Param("BSSID", bssidOut, (int)(bssidSize - 1));
@@ -1629,6 +1942,8 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		return 0;
 	}
 
+	syncConfigFromDiskIfChanged();
+
 	if (strcmp(path, "/api/status.json") == 0) {
 		unsigned long uptimeSec = 0;
 		unsigned long memTotal = 0, memFree = 0, buffers = 0, cached = 0;
@@ -1637,20 +1952,31 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		int busy;
 		char hostRaw[64], hostEsc[128], netType[16], netTypeEsc[32], verRaw[96], verEsc[192];
 		char loadStr[64], loadEsc[96];
-		char ipRaw[32], maskRaw[32], macRaw[32], gwRaw[32];
-		char ipEsc[48], maskEsc[48], macEsc[48], gwEsc[48];
+		char ipRaw[32], maskRaw[32], macRaw[32], gwRaw[32], d1Raw[32], d2Raw[32];
+		char ipEsc[48], maskEsc[48], macEsc[48], gwEsc[48], d1Esc[48], d2Esc[48];
 
 		memset(hostRaw, 0, sizeof(hostRaw));
 		memset(netType, 0, sizeof(netType));
 		memset(verRaw, 0, sizeof(verRaw));
 		memset(loadStr, 0, sizeof(loadStr));
 		memset(gwRaw, 0, sizeof(gwRaw));
-		MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
+		if (gethostname(hostRaw, sizeof(hostRaw) - 1) != 0 ||
+		    hostRaw[0] == '\0' || strcmp(hostRaw, "(none)") == 0) {
+			MT_Get_Param("HostName", hostRaw, sizeof(hostRaw) - 1);
+		}
 		MT_Get_Param("network_type", netType, sizeof(netType) - 1);
-		MT_Get_Param("default_gw", gwRaw, sizeof(gwRaw) - 1);
+		readLiveDefaultGw(gwRaw, sizeof(gwRaw));
+		if (gwRaw[0] == '\0') {
+			MT_Get_Param("default_gw", gwRaw, sizeof(gwRaw) - 1);
+		}
+		readLiveResolvDns(d1Raw, sizeof(d1Raw), d2Raw, sizeof(d2Raw));
+		if (d1Raw[0] == '\0') MT_Get_Param("DHCPDDNS1", d1Raw, sizeof(d1Raw) - 1);
+		if (d2Raw[0] == '\0') MT_Get_Param("DHCPDDNS2", d2Raw, sizeof(d2Raw) - 1);
 		jsonEscapeCopy(hostEsc, sizeof(hostEsc), hostRaw);
 		jsonEscapeCopy(netTypeEsc, sizeof(netTypeEsc), netType);
 		jsonEscapeCopy(gwEsc, sizeof(gwEsc), gwRaw);
+		jsonEscapeCopy(d1Esc, sizeof(d1Esc), d1Raw);
+		jsonEscapeCopy(d2Esc, sizeof(d2Esc), d2Raw);
 
 		getIfaceIpv4AndMask("br0", ipRaw, sizeof(ipRaw), maskRaw, sizeof(maskRaw));
 		if (ipRaw[0] == '\0') {
@@ -1734,11 +2060,12 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			"{\"model\":\"WAP610N\",\"hostname\":\"%s\",\"network_type\":\"%s\","
 			"\"version\":\"%s\",\"uptime_sec\":%lu,\"busy\":%d,\"load\":\"%s\","
 			"\"ip\":\"%s\",\"mask\":\"%s\",\"mac\":\"%s\",\"gateway\":\"%s\","
+			"\"dns1\":\"%s\",\"dns2\":\"%s\","
 			"\"mem_kb\":{\"total\":%lu,\"free\":%lu,\"buffers\":%lu,\"cached\":%lu,"
 			"\"commit_limit\":%lu,\"committed_as\":%lu},"
 			"\"tcp\":{\"established\":%d,\"listen\":%d,\"close_wait\":%d}}\n",
 			hostEsc, netTypeEsc, verEsc, uptimeSec, busy, loadEsc,
-			ipEsc, maskEsc, macEsc, gwEsc,
+			ipEsc, maskEsc, macEsc, gwEsc, d1Esc, d2Esc,
 			memTotal, memFree, buffers, cached, commitLimit, committedAs,
 			tcpEstab, tcpListen, tcpCloseWait);
 		body[sizeof(body) - 1] = '\0';
@@ -1801,24 +2128,87 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		size_t idx;
 		size_t total = sizeof(paramMap) / sizeof(paramMap[0]);
 		char esc[256];
+		char cfgChRaw[24], cfgChEsc[48];
 		char chRaw[24], chEsc[48];
 		char bssidRaw[32], bssidEsc[64];
 		char fwDateRaw[96], fwDateEsc[192];
+		char liveEssid[64], liveBand[16], liveCountry[16], liveCountryEsc[32], liveHost[64];
+		char liveD1[32], liveD2[32], liveGw[32], liveIp[32], liveMask[32];
+
+		memset(cfgChRaw, 0, sizeof(cfgChRaw));
+		memset(liveCountry, 0, sizeof(liveCountry));
+		memset(liveHost, 0, sizeof(liveHost));
+		readLiveWlanIoctl(liveEssid, sizeof(liveEssid), chRaw, sizeof(chRaw),
+			liveBand, sizeof(liveBand), bssidRaw, sizeof(bssidRaw));
+		readProcFirstLine("/proc/sys/dev/mtlk/wlan0/Country", liveCountry, sizeof(liveCountry));
+		if (gethostname(liveHost, sizeof(liveHost) - 1) != 0 || strcmp(liveHost, "(none)") == 0) {
+			liveHost[0] = '\0';
+		}
+		getIfaceIpv4AndMask("br0", liveIp, sizeof(liveIp), liveMask, sizeof(liveMask));
+		readLiveDefaultGw(liveGw, sizeof(liveGw));
+		readLiveResolvDns(liveD1, sizeof(liveD1), liveD2, sizeof(liveD2));
 
 		pos = jsonAppend(body, sizeof(body), pos, "{");
 		for (idx = 0; idx < total; idx++) {
-			getParamEsc(paramMap[idx][1], esc, sizeof(esc));
+			char procBuf[128];
+			char procPath[128];
+			const char *k = paramMap[idx][0];
+			const char *p = paramMap[idx][1];
+			getParamEsc(p, esc, sizeof(esc));
+			if (strcmp(k, "country") == 0 && liveCountry[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveCountry);
+			} else if (strcmp(k, "essid") == 0 && liveEssid[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveEssid);
+			} else if (strcmp(k, "frequency_band") == 0 && liveBand[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveBand);
+			} else if (strcmp(k, "hostname") == 0 && liveHost[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveHost);
+			} else if (strcmp(k, "ip_lan") == 0 && liveIp[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveIp);
+			} else if (strcmp(k, "subnet_lan") == 0 && liveMask[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveMask);
+			} else if (strcmp(k, "default_gw") == 0 && liveGw[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveGw);
+			} else if (strcmp(k, "dns1") == 0 && liveD1[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveD1);
+			} else if (strcmp(k, "dns2") == 0 && liveD2[0] != '\0') {
+				jsonEscapeCopy(esc, sizeof(esc), liveD2);
+			} else if (strcmp(k, "channel_bonding") == 0 || strcmp(k, "upper_lower") == 0 ||
+			           strcmp(k, "hidden_ssid") == 0 || strcmp(k, "ap_forwarding") == 0 ||
+			           strcmp(k, "tx_power") == 0 || strcmp(k, "ldpc") == 0 ||
+			           strcmp(k, "erp_prot") == 0 || strcmp(k, "n_prot") == 0 ||
+			           strcmp(k, "obss_prot") == 0 || strcmp(k, "reliable_mcast") == 0 ||
+			           strcmp(k, "radar_detect") == 0 || strcmp(k, "use_11q_map") == 0) {
+				snprintf(procPath, sizeof(procPath), "/proc/sys/dev/mtlk/wlan0/%s", p);
+				if (readProcFirstLine(procPath, procBuf, sizeof(procBuf))) {
+					jsonEscapeCopy(esc, sizeof(esc), procBuf);
+				}
+			}
 			pos = jsonAppend(body, sizeof(body), pos, "%s\"%s\":\"%s\"",
-				(idx == 0) ? "" : ",", paramMap[idx][0], esc);
+				(idx == 0) ? "" : ",", k, esc);
 		}
-		readLiveWlanInfo(chRaw, sizeof(chRaw), bssidRaw, sizeof(bssidRaw));
+		MT_Get_Param("Channel", cfgChRaw, sizeof(cfgChRaw) - 1);
+		if (chRaw[0] == '\0') {
+			snprintf(chRaw, sizeof(chRaw), "%s", cfgChRaw);
+		}
+		if (bssidRaw[0] == '\0') {
+			getIfaceMac("wlan0", bssidRaw, sizeof(bssidRaw));
+			if (bssidRaw[0] == '\0') {
+				MT_Get_Param("BSSID", bssidRaw, sizeof(bssidRaw) - 1);
+			}
+		}
+		if (liveCountry[0] == '\0') {
+			MT_Get_Param("Country", liveCountry, sizeof(liveCountry) - 1);
+		}
+		jsonEscapeCopy(cfgChEsc, sizeof(cfgChEsc), cfgChRaw);
 		jsonEscapeCopy(chEsc, sizeof(chEsc), chRaw);
 		jsonEscapeCopy(bssidEsc, sizeof(bssidEsc), bssidRaw);
+		jsonEscapeCopy(liveCountryEsc, sizeof(liveCountryEsc), liveCountry);
 		readFwDate(fwDateRaw, sizeof(fwDateRaw));
 		jsonEscapeCopy(fwDateEsc, sizeof(fwDateEsc), fwDateRaw);
 		pos = jsonAppend(body, sizeof(body), pos,
-			",\"channel\":\"%s\",\"bssid\":\"%s\",\"fw_date\":\"%s\"}\n",
-			chEsc, bssidEsc, fwDateEsc);
+			",\"channel\":\"%s\",\"live_channel\":\"%s\",\"live_country\":\"%s\",\"bssid\":\"%s\",\"fw_date\":\"%s\"}\n",
+			cfgChEsc, chEsc, liveCountryEsc, bssidEsc, fwDateEsc);
 		body[sizeof(body) - 1] = '\0';
 		sendJsonResponse(wp, 200, body);
 		return 1;
@@ -1958,6 +2348,23 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		MT_Get_Param("FrequencyBand", rfBand, sizeof(rfBand) - 1);
 		if (rfBand[0] == '\0') {
 			MT_Get_Param("RF_Band", rfBand, sizeof(rfBand) - 1);
+		}
+		{
+			char liveEssid[64], liveCh[24], liveBand[16], liveBond[16];
+			readLiveWlanIoctl(liveEssid, sizeof(liveEssid), liveCh, sizeof(liveCh),
+				liveBand, sizeof(liveBand), NULL, 0);
+			if (liveEssid[0] != '\0') {
+				snprintf(essidRaw, sizeof(essidRaw), "%s", liveEssid);
+			}
+			if (liveCh[0] != '\0') {
+				snprintf(channel, sizeof(channel), "%s", liveCh);
+			}
+			if (liveBand[0] != '\0') {
+				snprintf(rfBand, sizeof(rfBand), "%s", liveBand);
+			}
+			if (readProcFirstLine("/proc/sys/dev/mtlk/wlan0/ChannelBonding", liveBond, sizeof(liveBond))) {
+				snprintf(bonding, sizeof(bonding), "%s", liveBond);
+			}
 		}
 		MT_Get_Param("NonProc_WPS_ActivateWPS", wpsMode, sizeof(wpsMode) - 1);
 		if (wpsMode[0] == '\0') {

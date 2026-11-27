@@ -169,7 +169,13 @@ get_conf() {
     file_name="$1"
     key="$2"
     def="$3"
-    for f in "$JFFS/$file_name" "/tmp/$file_name"; do
+    f1="$JFFS/$file_name"
+    f2="/tmp/$file_name"
+    if [ -f "$f2" ] && { [ ! -f "$f1" ] || [ "$f2" -nt "$f1" ]; }; then
+        f1="/tmp/$file_name"
+        f2="$JFFS/$file_name"
+    fi
+    for f in "$f1" "$f2"; do
         if [ -f "$f" ]; then
             val=$(awk -v k="$key" '
                 $0 ~ "^[ \t]*" k "[ \t]*=" {
@@ -254,6 +260,15 @@ trigger_save() {
     fi
 }
 
+read_proc_wlan() {
+    p="/proc/sys/dev/mtlk/wlan0/$1"
+    [ -r "$p" ] || return 1
+    val=$(cat "$p" 2>/dev/null | tr -d '\r\n' | sed 's/^[ \t]*//;s/[ \t]*$//')
+    [ -n "$val" ] || return 1
+    printf '%s' "$val"
+    return 0
+}
+
 set_proc_wlan() {
     p="/proc/sys/dev/mtlk/wlan0/$1"
     if [ -w "$p" ]; then
@@ -317,18 +332,23 @@ emit_state_json() {
     dhcp_run=0
     pidof udhcpd >/dev/null 2>&1 && dhcp_run=1
 
-    acl_mode=$(get_conf wlan0.conf AclMode 0)
-    acl_raw=$(get_conf wlan0.conf ACL "")
+    acl_mode=$(read_proc_wlan AclMode || get_conf wlan0.conf AclMode 0)
+    if [ -r /proc/sys/dev/mtlk/wlan0/ACL ]; then
+        acl_raw=$(tr '\r\n' '  ' < /proc/sys/dev/mtlk/wlan0/ACL 2>/dev/null | sed 's/^[ \t]*//;s/[ \t]*$//')
+    else
+        acl_raw=$(get_conf wlan0.conf ACL "")
+    fi
 
-    rf_maxc=$(get_conf wlan0.conf MaxConnections 16)
-    rf_bcn=$(get_conf wlan0.conf BeaconPeriod 100)
-    rf_dtim=$(get_conf wlan0.conf DTIMPeriod 5)
-    rf_rts=$(get_conf wlan0.conf RTSThreshold 1600)
-    rf_sp=$(get_conf wlan0.conf ShortPreamble 1)
-    rf_ss=$(get_conf wlan0.conf ShortSlotTimeOptionEnabled 1)
-    rf_stbc=$(get_conf wlan0.conf STBC 0)
-    rf_sgi=$(get_conf wlan0.conf ShortCyclicPrefix 0)
-    rf_ska=$(get_conf wlan0.conf StaKeepaliveTimeout 60000)
+    rf_maxc=$(read_proc_wlan MaxConnections || get_conf wlan0.conf MaxConnections 16)
+    rf_bcn=$(read_proc_wlan BeaconPeriod || get_conf wlan0.conf BeaconPeriod 100)
+    rf_dtim=$(read_proc_wlan DTIMPeriod || get_conf wlan0.conf DTIMPeriod 5)
+    rf_rts=$(iwconfig wlan0 2>/dev/null | sed -n 's/.*RTS thr[:=]\([0-9][0-9]*\).*/\1/p' | head -n 1)
+    [ -n "$rf_rts" ] || rf_rts=$(get_conf wlan0.conf RTSThreshold 1600)
+    rf_sp=$(read_proc_wlan ShortPreamble || get_conf wlan0.conf ShortPreamble 1)
+    rf_ss=$(read_proc_wlan ShortSlotTimeOptionEnabled || get_conf wlan0.conf ShortSlotTimeOptionEnabled 1)
+    rf_stbc=$(read_proc_wlan STBC || get_conf wlan0.conf STBC 0)
+    rf_sgi=$(read_proc_wlan ShortCyclicPrefix || get_conf wlan0.conf ShortCyclicPrefix 0)
+    rf_ska=$(read_proc_wlan StaKeepaliveTimeout || get_conf wlan0.conf StaKeepaliveTimeout 60000)
 
     qos_en=$(get_kv_file "$JFFS/qos.conf" ENABLED 0)
     qos_dn=$(get_kv_file "$JFFS/qos.conf" DOWN_KBPS 0)
@@ -345,6 +365,7 @@ emit_state_json() {
     dd_has_pw=0; [ -n "$dd_pw" ] && dd_has_pw=1
     dd_has_tk=0; [ -n "$dd_tk" ] && dd_has_tk=1
     dd_run=0; is_pidfile_alive /tmp/ddns_updater.pid && dd_run=1
+    [ "$dd_run" = "0" ] && ps 2>/dev/null | grep -q '[d]dns_updater\.sh' && dd_run=1
     dd_st=$(cat /tmp/ddns.status 2>/dev/null || echo "")
 
     wd_en=$(get_kv_file "$JFFS/watchdog.conf" ENABLED 0)
@@ -353,10 +374,11 @@ emit_state_json() {
     wd_mf=$(get_kv_file "$JFFS/watchdog.conf" MAX_FAIL 5)
     wd_ac=$(get_kv_file "$JFFS/watchdog.conf" ACTION recover)
     wd_run=0; is_pidfile_alive /tmp/net_watchdog.pid && wd_run=1
+    [ "$wd_run" = "0" ] && ps 2>/dev/null | grep -q '[n]et_watchdog\.sh' && wd_run=1
     wd_log=$(cat /tmp/watchdog.log 2>/dev/null || echo "")
 
-    tz_val=$(head -n 1 "$JFFS/tz.conf" 2>/dev/null | tr -d ' \t\r\n')
-    [ -z "$tz_val" ] && tz_val=$(head -n 1 /etc/TZ 2>/dev/null | tr -d ' \t\r\n')
+    tz_val=$(head -n 1 /etc/TZ 2>/dev/null | tr -d ' \t\r\n')
+    [ -z "$tz_val" ] && tz_val=$(head -n 1 "$JFFS/tz.conf" 2>/dev/null | tr -d ' \t\r\n')
     now_str=$(date '+%Y-%m-%d %H:%M:%S %Z' 2>/dev/null || date 2>/dev/null || echo "")
     ts_log=$(cat /tmp/timesync.log 2>/dev/null || echo "")
     led_night=$(get_kv_file "$JFFS/led.conf" NIGHT_MODE 0)
@@ -390,6 +412,32 @@ emit_state_json() {
     lw_mk=$(get_kv_file /tmp/wan_status.conf WAN_MASK "")
     lw_gw=$(get_kv_file /tmp/wan_status.conf WAN_GW "")
     lw_dn=$(get_kv_file /tmp/wan_status.conf WAN_DNS "")
+    if [ -n "$rt_wif" ]; then
+        if_ip=$(ifconfig "$rt_wif" 2>/dev/null | sed -n 's/.*inet addr:\([0-9.]*\).*/\1/p' | head -n 1)
+        if_mk=$(ifconfig "$rt_wif" 2>/dev/null | sed -n 's/.*Mask:\([0-9.]*\).*/\1/p' | head -n 1)
+        [ -n "$if_ip" ] && lw_ip="$if_ip"
+        [ -n "$if_mk" ] && lw_mk="$if_mk"
+    fi
+    if_gw=$(awk '
+        function h2d(s,  i,c,v,n) {
+            n=0
+            for(i=1;i<=length(s);i++){
+                c=substr(s,i,1)
+                v=index("0123456789abcdefABCDEF",c)-1
+                if(v>=16) v-=6
+                if(v>=0) n=n*16+v
+            }
+            return n
+        }
+        $1!="Iface" && $2=="00000000" && $3!="00000000" {
+            h=$3
+            printf "%d.%d.%d.%d", h2d(substr(h,7,2)), h2d(substr(h,5,2)), h2d(substr(h,3,2)), h2d(substr(h,1,2))
+            exit
+        }' /proc/net/route 2>/dev/null)
+    [ -n "$if_gw" ] && lw_gw="$if_gw"
+    if_dn=$(awk '/^nameserver[ \t]+/{ if(o) o=o", "$2; else o=$2 } END{print o}' /tmp/resolv.conf 2>/dev/null)
+    [ -z "$if_dn" ] && if_dn=$(awk '/^nameserver[ \t]+/{ if(o) o=o", "$2; else o=$2 } END{print o}' /etc/resolv.conf 2>/dev/null)
+    [ -n "$if_dn" ] && lw_dn="$if_dn"
     has_nat=0; [ -x /sbin/mini-nat ] && [ -r /proc/net/ip_conntrack ] && has_nat=1
     ct_cnt=0; [ -r /proc/net/ip_conntrack ] && ct_cnt=$(wc -l < /proc/net/ip_conntrack 2>/dev/null | tr -d ' ')
     [ -n "$ct_cnt" ] || ct_cnt=0

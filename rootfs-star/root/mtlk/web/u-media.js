@@ -690,3 +690,25 @@ function wpsStatus(status, mainPageName)
 			top.location.href = "/station/wps_status.asp";
 	}
 }
+
+(function() {
+	function addModernUiBtn() {
+		if (document.getElementById("modern_ui_btn") || !document.body) {
+			return;
+		}
+		var a = document.createElement("a");
+		a.id = "modern_ui_btn";
+		a.href = "/index.html?modern=1";
+		a.innerHTML = "&#8634; Modern UI";
+		a.style.cssText = "position:fixed;top:6px;right:8px;z-index:9999;background:#0284c7;color:#fff;padding:4px 10px;border-radius:3px;font:bold 11px/1.3 sans-serif;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,0.35);";
+		a.onclick = function() {
+			document.cookie = "ui=modern; path=/";
+		};
+		document.body.appendChild(a);
+	}
+	if (window.addEventListener) {
+		window.addEventListener("load", addModernUiBtn, false);
+	} else if (window.attachEvent) {
+		window.attachEvent("onload", addModernUiBtn);
+	}
+})();

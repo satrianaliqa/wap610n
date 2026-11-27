@@ -31,7 +31,7 @@ details summary{cursor:pointer;font-weight:600;color:#0369a1;padding:2px 0;user-
 .sub{color:#64748b;font-size:11px}.mc{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px}.mc label{border:1px solid #cbd5e1;border-radius:3px;padding:6px 8px;cursor:pointer;display:flex;gap:6px;align-items:flex-start;background:#f8fafc}.mc input{width:auto;margin-top:2px}
 @media(max-width:720px){.b,.g,.mc{grid-template-columns:1fr}nav{display:flex;overflow-x:auto}nav a{border-left:0;border-bottom:2px solid transparent;white-space:nowrap}nav a.on{border-bottom-color:#0284c7}.f{grid-template-columns:1fr}}
 </style></head><body>
-<header class="a"><div><b id="hm">WAP610N</b><small id="hv"></small></div><div class="r"><span class="u" id="hs">LOADING</span><button class="t d s" onclick="doReboot()">Reboot</button></div></header>
+<header class="a"><div><b id="hm">WAP610N</b><small id="hv"></small></div><div class="r"><span class="u" id="hs">LOADING</span><button type="button" class="t s" onclick="syncNow()">Sync</button><button type="button" class="t d s" onclick="doReboot()">Reboot</button></div></header>
 <div class="b"><nav id="nv"></nav><main id="mn"></main></div>
 <div class="o" id="ts"></div>
 <div class="md" id="md" hidden><div class="mb"><h2 id="mt">Working</h2><div class="m" id="ms">Please wait...</div><div class="pr"><i id="mp"></i></div><div class="r" style="justify-content:space-between"><small id="mpct">0%</small><small id="mhint" style="color:#64748b">Do not power off device</small></div><div class="z" id="mact" hidden><button type="button" class="t d s" onclick="cancelModal()">Cancel</button></div></div></div>
@@ -160,10 +160,16 @@ async function refreshAll(syncLists){
     }).catch(()=>{}),
     getJ('/api/config.json').then(d=>{S.cf=d;}).catch(()=>{}),
     getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];}).catch(()=>{}),
-    getJ('/cgi-bin/remote_access.cgi?action=status&_t='+tNow).then(d=>{S.rm=d;}).catch(()=>{}),
+    getJ('/cgi-bin/remote_access.cgi?action=status&_t='+tNow).then(d=>{if(d&&d.status==='success')S.rm=d;}).catch(()=>{}),
     getJ('/cgi-bin/router_ctl.cgi?action=state&_t='+tNow).then(d=>{if(d.status==='success'){S.ex=d;if(syncLists!==false)syncExtArrays();}}).catch(()=>{})
   ]);
   updateHeader();
+}
+
+async function syncNow(){
+  await refreshAll(true);
+  ren();
+  msg('Synced live router state');
 }
 
 function updateHeader(){
@@ -207,16 +213,16 @@ function pStatus(){
     ['IP Mode',(!rt.mode||rt.mode==='bridge')?(cf.ip_config_method==='0'?'DHCP Client':'Static IP'):'Static Router LAN'],
     ['Bridge IPv4',esc(st.ip||cf.ip_lan||'-'),'m'],
     ['Mask / GW',esc((st.mask||cf.subnet_lan||'-')+' / '+(st.gateway||cf.default_gw||'-')),'m'],
-    ['DNS',esc([cf.dns1,cf.dns2].filter(Boolean).join(', ')||'-'),'m'],
+    ['DNS',esc([st.dns1||cf.dns1,st.dns2||cf.dns2].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(', ')||'-'),'m'],
     ['Local MAC',esc(st.mac||cf.mac_lan||'-'),'m'],
     ['eth0 I/O',esc(fmtB(eth.rx_bytes)+' / '+fmtB(eth.tx_bytes)+' ('+fmtR(S.ioRate.erx)+' / '+fmtR(S.ioRate.etx)+')'),'m']
   ],dhcpBtns);
   const wifiCard=kv('Wireless (wlan0)',[
     ['Band',esc(bandStr)],
     ['SSID',esc(wf.essid||cf.essid||'-')],
-    ['Channel',esc(chName(wf.channel||cf.channel)+' ('+(cf.channel_bonding==='1'?'40MHz':'20MHz')+')')],
+    ['Channel / Reg',esc(chName(cf.live_channel||wf.channel||cf.channel)+' ('+(cf.channel_bonding==='1'?'40MHz':'20MHz')+') | '+(cf.live_country||cf.country||'-'))],
     ['Security',esc(secName(cf.security_mode))],
-    ['BSSID / ACL',esc((cf.bssid||'-')+' | '+({'1':'Whitelist','2':'Blacklist'}[ex.acl&&ex.acl.mode]||'ACL Off')),'m'],
+    ['BSSID / ACL',esc((wf.bssid||cf.bssid||'-')+' | '+({'1':'Whitelist','2':'Blacklist'}[ex.acl&&ex.acl.mode]||'ACL Off')),'m'],
     ['wlan0 I/O',esc(fmtB(wlan.rx_bytes)+' / '+fmtB(wlan.tx_bytes)+' ('+fmtR(S.ioRate.wrx)+' / '+fmtR(S.ioRate.wtx)+')'),'m']
   ]);
   const svcCard=kv('Services & Guards',[
@@ -398,17 +404,18 @@ function togSec(){
 }
 function pWireless(){
   const cf=S.cf,ex=S.ex,acl=ex.acl||{},rf=ex.rf||{},isSta=(cf.network_type==='0'),band=(cf.frequency_band==='0'?'0':'1');
-  const countries=[['US','US'],['EU','EU'],['JP','JP'],['CA','CA'],['AU','AU']];
-  if(cf.country&&!countries.some(x=>x[0]===cf.country))countries.push([cf.country,cf.country]);
+  const liveCtry=cf.live_country||cf.country||'US';
+  const countries=[['US','US'],['SG','SG'],['ID','ID'],['EU','EU'],['GB','GB'],['JP','JP'],['CA','CA'],['AU','AU'],['CN','CN'],['TW','TW']];
+  if(liveCtry&&!countries.some(x=>x[0]===liveCtry))countries.push([liveCtry,liveCtry]);
   const chList=(band==='0')?CH5:CH2,ac=(S.wm&&S.wm.ac&&S.wm.ac.AC_BK)||{},wmmCur=(S.wm&&S.wm.current_wmm)?S.wm.current_wmm:'0';
   const aclRows=S.aclList.length?S.aclList.map((m,i)=>`<tr><td class="m">${esc(m)}</td><td><button type="button" class="t d s" onclick="S.aclList.splice(${i},1);ren()">Del</button></td></tr>`).join(''):'<tr><td colspan="2" class="sub">No MAC filter entries.</td></tr>';
   const clOpts=S.cl.map(c=>`<option value="${esc(c.mac)}">${esc(c.mac)} (${esc(c.ip||c.iface)})</option>`).join('');
   return `<div class="p"><h2>Radio &amp; Wireless Security</h2><form id="fwl" onsubmit="saveWireless(event)"><div class="f">
     <label>Frequency Band</label><select name="frequencyBand" id="wband" onchange="fillChannels()">${opt([['1','2.4 GHz (802.11b/g/n)'],['0','5 GHz (802.11a/n)']],band)}</select>
     <label>Network Name (SSID)</label><input name="submit_ESSID" id="wssid" maxlength="32" value="${esc(cf.essid||'linksys')}" required>
-    <label>Channel</label><select name="channel" id="wch" data-cur="${esc(cf.channel||'0')}">${opt(chList,cf.channel||'0')}</select>
+    <label>Channel</label><div class="r"><select name="channel" id="wch" data-cur="${esc(cf.channel||'0')}">${opt(chList,cf.channel||'0')}</select><span class="u">Active: Ch ${esc(cf.live_channel||cf.channel||'Auto')}</span></div>
     <label>Channel Width</label><div class="r"><select name="channelBounding" id="wbw" onchange="fillChannels()">${opt([['0','20 MHz'],['1','40 MHz (20/40)']],cf.channel_bonding||'0')}</select><select name="upperLower" id="wul">${opt([['0','Lower Sideband'],['1','Upper Sideband']],cf.upper_lower||'0')}</select></div>
-    <label>Country Region</label><select name="country">${opt(countries,cf.country||'US')}</select>
+    <label>Country Region</label><div class="r"><select name="country">${opt(countries,liveCtry)}</select><span class="u">Driver: ${esc(cf.live_country||cf.country||'-')}</span></div>
     ${isSta?`<label>Target BSSID</label><input name="BSSID" id="wbssid" placeholder="Optional AA:BB:CC:DD:EE:FF" value="${esc(cf.bssid||'')}">`:''}
     <label>Security Mode</label><select name="securityMode" id="wsec" onchange="togSec()">${opt([['1','Open / Disabled'],['2','WEP'],['3','WPA / WPA2 Personal'],['4','WPA / WPA2 Enterprise']],cf.security_mode||'1')}</select>
     <label class="s-wpa">WPA Version</label><select class="s-wpa" name="WPAPersonalMode">${opt([['2','WPA2-Personal'],['3','WPA/WPA2 Mixed'],['1','WPA-Personal']],cf.wpa_pers_mode||'2')}</select>
@@ -748,7 +755,8 @@ async function loadSysLog(){
 function pSystem(){
   const cf=S.cf,rm=S.rm,ex=S.ex,op=ex.opmode||{},wd=ex.watchdog||{},sys=ex.system||{};
   const sju=rm.sshj_user||'',sjd=rm.sshj_host||'wap610n';
-  const sjState=rm.sshj_running?'<span class="u">Connected</span>':(rm.sshj_watchdog?'<span class="u w">Connecting...</span>':'<span class="u">Stopped</span>');
+  const sjState=rm.sshj_running?'<span class="u">Tunnel: Connected</span>':(rm.sshj_watchdog?'<span class="u w">Tunnel: Connecting</span>':'<span class="u w">Tunnel: Stopped</span>');
+  const rmBadges=`<span class="u${rm.ssh?'':' w'}">SSH:${rm.ssh?'Listening :22':'Stopped'}</span> <span class="u${rm.telnet?'':' w'}">Tel:${rm.telnet?'Listening :23':'Stopped'}</span> ${sjState}`;
   const tzOpts=[['UTC0','UTC (UTC0)'],['WIB-7','WIB Jakarta (UTC+7)'],['WITA-8','WITA (UTC+8)'],['WIT-9','WIT (UTC+9)'],['SGT-8','SGT/HKT (UTC+8)'],['JST-9','JST Tokyo (UTC+9)'],['EST5EDT,M3.2.0,M11.1.0','US Eastern'],['CET-1CEST,M3.5.0,M10.5.0/3','Central Europe']];
   if(sys.tz&&!tzOpts.some(x=>x[0]===sys.tz))tzOpts.push([sys.tz,'Custom ('+sys.tz+')']);
   return `<div class="p"><h2>Administration &amp; Access</h2><form onsubmit="saveAdmin(event)"><div class="f">
@@ -758,7 +766,7 @@ function pSystem(){
     <label>Wireless UI Access</label><label class="c"><input type="checkbox" name="wirelessMgmt"${cf.wireless_mgmt!=='0'?' checked':''}>Allow management over Wi-Fi</label>
   </div><div class="z"><button class="t p">Save Admin Settings</button></div></form></div>
 
-  <div class="p"><h2>Remote Services &amp; SSH-J Tunnel<span>${sjState}</span></h2><form onsubmit="saveRemote(event)"><div class="f">
+  <div class="p"><h2>Remote Services &amp; SSH-J Tunnel<span>${rmBadges}</span></h2><form onsubmit="saveRemote(event)"><div class="f">
     <label>Daemons</label><div class="r"><label class="c"><input type="checkbox" id="rssh"${rm.ssh?' checked':''}>SSH (22)</label><label class="c"><input type="checkbox" id="rtel"${rm.telnet?' checked':''}>Telnet (23)</label><label class="c"><input type="checkbox" id="rupnp"${rm.upnp?' checked':''}>UPnP</label><label class="c"><input type="checkbox" id="rsj"${rm.sshj?' checked':''}>SSH-J Tunnel</label></div>
     <label>SSH-J User / Host</label><div class="r"><input id="rsju" maxlength="48" placeholder="username" value="${esc(sju)}" oninput="updSjCmd()"><input id="rsjd" maxlength="32" placeholder="wap610n" value="${esc(sjd)}" oninput="updSjCmd()"></div>
     <label>SSH-J Command</label><div class="r"><code id="sjcmd">ssh -J ${esc(sju||'<username>')}@ssh-j.com root@${esc(sjd)}</code><button type="button" class="t s" onclick="navigator.clipboard&&navigator.clipboard.writeText($('sjcmd').textContent);msg('Copied')">Copy</button></div>
@@ -896,10 +904,16 @@ $('nv').innerHTML=P.map((m,i)=>`<a href="#${m[2]}" data-i="${i}"${i===T?' class=
 $('nv').onclick=e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();setTab(+a.dataset.i);};
 function setTab(idx){
   T=(idx>=0&&idx<P.length)?idx:0;
-  if(location.hash!=='#'+P[T][2])history.replaceState(null,'','#'+P[T][2]);
+  const tab=P[T][2];
+  if(location.hash!=='#'+tab)history.replaceState(null,'','#'+tab);
   [...$('nv').children].forEach((x,i)=>x.classList.toggle('on',i===T));
   ren();
-  if(P[T][2]==='diagnostics'&&S.logOut.indexOf('Click Refresh')===0)loadSysLog();
+  refreshAll(true).then(()=>{
+    if(P[T][2]===tab){
+      ren();
+      if(tab==='diagnostics'&&S.logOut.indexOf('Click Refresh')===0)loadSysLog();
+    }
+  });
 }
 window.addEventListener('hashchange',()=>setTab(tabFromHash()));
 function ren(){
@@ -910,6 +924,7 @@ function ren(){
   if(tab==='wireless'){fillChannels();togSec();}
   if(tab==='routing')togDdns();
 }
+document.cookie='ui=modern; path=/';
 refreshAll(true).then(()=>{ren();if(P[T][2]==='diagnostics'&&S.logOut.indexOf('Click Refresh')===0)loadSysLog();});
 setInterval(()=>{S.upSec++;const e=$('ut');if(e)e.textContent=ut(S.upSec);},1000);
 setInterval(async()=>{

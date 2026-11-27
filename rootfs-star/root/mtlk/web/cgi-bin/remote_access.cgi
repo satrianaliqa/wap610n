@@ -45,7 +45,16 @@ fi
 
 get_conf_val() {
     key="$1"
-    for conf in /mnt/jffs2/sys.conf /tmp/sys.conf; do
+    if [ -f /tmp/sys.conf ] && [ -f /mnt/jffs2/sys.conf ]; then
+        if [ /tmp/sys.conf -nt /mnt/jffs2/sys.conf ]; then
+            conf_order="/tmp/sys.conf /mnt/jffs2/sys.conf"
+        else
+            conf_order="/mnt/jffs2/sys.conf /tmp/sys.conf"
+        fi
+    else
+        conf_order="/mnt/jffs2/sys.conf /tmp/sys.conf /etc/sys.conf /root/mtlk/etc/sys.conf"
+    fi
+    for conf in $conf_order; do
         if [ -f "$conf" ]; then
             val=$(awk -v k="$key" '
                 $0 ~ "^[ \t]*" k "[ \t]*=" {
@@ -81,8 +90,51 @@ is_pidfile_alive() {
     return 1
 }
 
+is_tcp_listening() {
+    hex_port="$1"
+    awk -v p="$hex_port" 'NR>1 && $4 == "0A" && $2 ~ ":" p "$" { found=1; exit } END { exit !found }' /proc/net/tcp 2>/dev/null
+}
+
 is_ssh_established() {
     awk 'NR>1 && $4 == "01" && $3 ~ /:0016$/ { found=1; exit } END { exit !found }' /proc/net/tcp 2>/dev/null
+}
+
+probe_live_state() {
+    CURRENT_SSH=0
+    if is_tcp_listening 0016 || pidof dropbear >/dev/null 2>&1; then
+        CURRENT_SSH=1
+    fi
+    CURRENT_TELNET=0
+    if is_tcp_listening 0017 || pidof telnetd >/dev/null 2>&1; then
+        CURRENT_TELNET=1
+    fi
+    CURRENT_UPNP=0
+    if pidof upnpd >/dev/null 2>&1; then
+        CURRENT_UPNP=1
+    fi
+    SSHJ_CONF_EN=$(get_conf_val "SSHJ_Enabled")
+    [ -z "$SSHJ_CONF_EN" ] && SSHJ_CONF_EN=0
+    SSHJ_USER=$(get_conf_val "SSHJ_User")
+    is_valid_ident "$SSHJ_USER" || SSHJ_USER=""
+    SSHJ_HOST=$(get_conf_val "SSHJ_Host")
+    is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
+
+    SSHJ_WATCHDOG=0
+    if is_pidfile_alive /tmp/sshj_tunnel.pid || ps 2>/dev/null | grep -q '[s]shj_tunnel\.sh'; then
+        SSHJ_WATCHDOG=1
+    fi
+    SSHJ_PROC=0
+    if is_pidfile_alive /tmp/sshj_ssh.pid || ps 2>/dev/null | grep -qE '[ /](ssh|dbclient) .*ssh-j\.com'; then
+        SSHJ_PROC=1
+    fi
+    SSHJ_RUNNING=0
+    if [ "$SSHJ_PROC" = "1" ] && is_ssh_established; then
+        SSHJ_RUNNING=1
+    fi
+    SSHJ_ACTIVE=0
+    if [ "$SSHJ_CONF_EN" = "1" ] || [ "$SSHJ_RUNNING" = "1" ] || [ "$SSHJ_WATCHDOG" = "1" ] || [ "$SSHJ_PROC" = "1" ]; then
+        SSHJ_ACTIVE=1
+    fi
 }
 
 is_valid_ident() {
@@ -154,29 +206,13 @@ fi
 # CSRF Protection: GET is strictly read-only status query; state-changing actions require POST
 if [ "$REQUEST_METHOD" = "GET" ]; then
     case "$QUERY" in
-        ""|action=status|status)
-            CURRENT_SSH=0
-            pidof dropbear >/dev/null 2>&1 && CURRENT_SSH=1
-            CURRENT_TELNET=0
-            pidof telnetd >/dev/null 2>&1 && CURRENT_TELNET=1
-            CURRENT_UPNP=$(get_conf_val "UPnP_Enabled")
-            [ -z "$CURRENT_UPNP" ] && { pidof upnpd >/dev/null 2>&1 && CURRENT_UPNP=1 || CURRENT_UPNP=0; }
-            [ "$CURRENT_UPNP" != "1" ] && CURRENT_UPNP=0
-            SSHJ_EN=$(get_conf_val "SSHJ_Enabled")
-            [ -z "$SSHJ_EN" ] && SSHJ_EN=0
-            SSHJ_USER=$(get_conf_val "SSHJ_User")
-            is_valid_ident "$SSHJ_USER" || SSHJ_USER=""
-            SSHJ_HOST=$(get_conf_val "SSHJ_Host")
-            is_valid_ident "$SSHJ_HOST" || SSHJ_HOST="wap610n"
-            SSHJ_RUNNING=0
-            is_pidfile_alive /tmp/sshj_ssh.pid && is_ssh_established && SSHJ_RUNNING=1
-            SSHJ_WATCHDOG=0
-            is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
+        ""|action=status|action=status\&*|status|status\&*)
+            probe_live_state
             echo "Content-Type: application/json"
             echo "Pragma: no-cache"
             echo "Cache-Control: no-cache"
             echo ""
-            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"upnp\":$CURRENT_UPNP,\"sshj\":$SSHJ_EN,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
+            echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"upnp\":$CURRENT_UPNP,\"sshj\":$SSHJ_ACTIVE,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
             exit 0
             ;;
         *)
@@ -370,20 +406,15 @@ if [ -x /bin/sshj_tunnel.sh ]; then
     fi
 fi
 
-# Persist changes to physical flash in background without blocking HTTP response
+# Notify GoAhead webs to reload config cache and persist flash in background
+killall -HUP webs 2>/dev/null || true
 if [ -x /bin/config_save.sh ]; then
     /bin/config_save.sh </dev/null >/dev/null 2>&1 &
 fi
 
-SSHJ_RUNNING=0
-is_pidfile_alive /tmp/sshj_ssh.pid && is_ssh_established && SSHJ_RUNNING=1
-SSHJ_WATCHDOG=0
-is_pidfile_alive /tmp/sshj_tunnel.pid && SSHJ_WATCHDOG=1
-if [ "$SSHJ_VAL" = "1" ]; then
-    SSHJ_WATCHDOG=1
-else
-    SSHJ_RUNNING=0
-    SSHJ_WATCHDOG=0
+probe_live_state
+if [ "$SSHJ_VAL" = "1" ] && [ "$SSHJ_ACTIVE" = "0" ]; then
+    SSHJ_ACTIVE=1
 fi
 
 # apps/WebServer/cgi.c:318 already writes "HTTP/1.0 200 OK\r\n"
@@ -391,4 +422,4 @@ echo "Content-Type: application/json"
 echo "Pragma: no-cache"
 echo "Cache-Control: no-cache"
 echo ""
-echo "{\"status\":\"success\",\"ssh\":$SSH_VAL,\"telnet\":$TELNET_VAL,\"upnp\":$UPNP_VAL,\"sshj\":$SSHJ_VAL,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
+echo "{\"status\":\"success\",\"ssh\":$CURRENT_SSH,\"telnet\":$CURRENT_TELNET,\"upnp\":$CURRENT_UPNP,\"sshj\":$SSHJ_ACTIVE,\"sshj_running\":$SSHJ_RUNNING,\"sshj_watchdog\":$SSHJ_WATCHDOG,\"sshj_user\":\"$SSHJ_USER\",\"sshj_host\":\"$SSHJ_HOST\"}"
