@@ -1354,7 +1354,7 @@ static void formUpdateLinkStatus(webs_t wp, char_t *path, char_t *query)
 		&channel, bitRate, sizeof(bitRate), &sig, &linkUp);
 	wlHtmlEscape(essid, escSsid, sizeof(escSsid));
 
-	strcpy(radioBand, (atoi(freqBandCfg) == 1 || channel > 14) ? "5 GHz" : "2.4 GHz");
+	strcpy(radioBand, (channel > 14 || (channel == 0 && atoi(freqBandCfg) == 0)) ? "5 GHz" : "2.4 GHz");
 	strcpy(chanWidth, "20 MHz");
 	strcpy(wideChan, "-");
 
