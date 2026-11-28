@@ -109,8 +109,8 @@ $(NAME): Makefile main.o $(ARCH)
 USE_BLOB_MT_API        ?= 1
 USE_BLOB_MT_TASK       ?= 1
 USE_BLOB_MT_VALIDATION ?= 1
-USE_BLOB_WIRELESS      ?= 1
-USE_BLOB_WPS           ?= 1
+USE_BLOB_WIRELESS      ?= 0
+USE_BLOB_WPS           ?= 0
 USE_BLOB_UTILS         ?= 1
 USE_BLOB_HNAP_IMPL     ?= 1
 
@@ -227,10 +227,10 @@ clean:
 ../device_discover.o: ../device_discover.c ../device_discover.h ../uemf.h
 
 #Jacky.Yang 30-May-2008, Define U-Media API
-# ../wireless.o: ../wireless.c ../wireless.h
+../wireless.o: ../wireless.c ../wireless.h
 # ../utils.o: ../utils.c ../utils.h
 ../management.o: ../management.c ../management.h
-# ../wps.o: ../wps.c ../wps.h
+../wps.o: ../wps.c ../wps.h
 
 main.o:  main.c ../wsIntrn.h ../webs.h ../ej.h ../ejIntrn.h ../uemf.h ../mt_task.h ../hnap_interfaces.h
 

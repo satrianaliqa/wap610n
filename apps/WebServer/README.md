@@ -8,8 +8,9 @@ Daemon HTTP tunggal WAP610N pada port `80` ([`apps/WebServer/`](./)), dikompilas
 
 - **Single Supervisor**: Menghilangkan arsitektur legacy dual-process storm (`webs` port 80 + fallback port 81) dan `vfork()` zombie loop; background apply memakai `fork()` + child `_exit(0)`.
 - **DWARF v2 Header Reconstruction**: Rekonstruksi signature C89 penuh untuk [`mt_api.h`](./mt_api.h), [`mt_task.h`](./mt_task.h), dan [`mt_validation.h`](./mt_validation.h).
-- **Modular 7-`.o` Switches ([`LINUX/Makefile`](./LINUX/Makefile))**:
-  Tujuh object proprietary (`mt_api.o`, `mt_task.o`, `mt_validation.o`, `wireless.o`, `wps.o`, `utils.o`, `hnap_implementation.o`) dikontrol via flag `USE_BLOB_<MOD> ?= 1`. Set ke `0` untuk menukar modul tertentu menjadi kompilasi langsung dari `<mod>.c`.
+- **Modular Blob Switches ([`LINUX/Makefile`](./LINUX/Makefile))**:
+  Lima object proprietary yang tersisa (`mt_api.o`, `mt_task.o`, `mt_validation.o`, `utils.o`, `hnap_implementation.o`) dikontrol via flag `USE_BLOB_<MOD> ?= 1`. Modul [`wireless.c`](./wireless.c) (`USE_BLOB_WIRELESS ?= 0`) dan [`wps.c`](./wps.c) (`USE_BLOB_WPS ?= 0`) kini telah terbuka penuh menjadi kode sumber C89.
+- **Zero-Tcl Security Applier (`init_security.sh`)**: Konfigurasi `hostapd0.conf` / `wpa_supplicant0.conf` dan reload keamanan nirkabel dijalankan langsung via script POSIX shell cepat [`init_security.sh`](../../rootfs-star/root/mtlk/web/init_security.sh), dengan [`init_security.tcl`](../../rootfs-star/root/mtlk/web/init_security.tcl) sebagai shim kompatibilitas.
 
 ---
 

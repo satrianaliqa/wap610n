@@ -135,7 +135,7 @@ then
 		$WPS_CMD_SCRIPT start
 
 		cd $COMBINED_VER_PATH/web
-		./init_security.tcl reactivate >/dev/null
+		./init_security.sh reactivate >/dev/null
 		cd -
 	fi
 

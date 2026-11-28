@@ -817,7 +817,7 @@ case "$P_ACTION" in
                 iwpriv wlan0 sNetworkMode "$net_mode" >/dev/null 2>&1 || true
                 iw_bm="$P_BR_MODE"; [ "$iw_bm" = "4" ] && iw_bm="0"
                 iwpriv wlan0 s_BridgeMode "$iw_bm" >/dev/null 2>&1 || true
-                [ -x /root/mtlk/web/init_security.tcl ] && ( cd /root/mtlk/web && ./init_security.tcl reactivate ) >/dev/null 2>&1 || true
+                [ -x /root/mtlk/web/init_security.sh ] && /root/mtlk/web/init_security.sh reactivate >/dev/null 2>&1 || true
                 /bin/router_apply.sh router >/dev/null 2>&1 || true
             ) </dev/null >/dev/null 2>&1 &
             trigger_save

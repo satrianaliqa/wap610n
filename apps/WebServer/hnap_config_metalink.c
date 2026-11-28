@@ -1290,7 +1290,7 @@ void hnap_active_wlan_basic(int isRadioOn)
 void hnap_active_wlan_security(void)
 {
 	hnap_doSystem("killall hostapd");
-	hnap_doSystem("cd /root/mtlk/web/ ; /root/mtlk/web/init_security.tcl");
+	hnap_doSystem("cd /root/mtlk/web/ ; /root/mtlk/web/init_security.sh");
 	hnap_doSystem("/root/mtlk/etc/hostapd -d /mnt/jffs2/hostapd0.conf >/dev/null 2>/dev/null &");
 }
 
@@ -1313,7 +1313,7 @@ void hnap_active_station_wlan_security(void)
 	if (strchr(paramValue, '\'') == NULL && strchr(paramValue, '`') == NULL && strchr(paramValue, '$') == NULL && strchr(paramValue, ';') == NULL) {
 		hnap_doSystem("/root/mtlk/etc/mtpriv wlan0 Wildcard_ESSID '%s'", paramValue);
 	}
-	hnap_doSystem("cd /root/mtlk/web/; /root/mtlk/web/init_security.tcl reactivate");
+	hnap_doSystem("cd /root/mtlk/web/; /root/mtlk/web/init_security.sh reactivate");
 
 	//Metalink had fixed abnormal wireless link status even detected and it will renew IP properly
 	//so we don't need restart udhcpc to for renew IP - Ricky Cao on Nov. 21 2008

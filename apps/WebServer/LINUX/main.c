@@ -1009,33 +1009,12 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 		}
 		doSystem("/root/mtlk/etc/mtpriv wlan0 Country %s >/dev/null 2>&1", country);
 	}
-	doSystem("cd /root/mtlk/web/ && /root/mtlk/web/init_security.tcl reactivate >/dev/null 2>&1");
+	doSystem("cd /root/mtlk/web/ && /root/mtlk/web/init_security.sh reactivate >/dev/null 2>&1");
 	startWPS_PBC();
 	childFinishAndExit();
 }
 
 /* Safe non-blocking form overrides to eliminate legacy U-Media blocking bugs */
-static void safeFormGetCurrentWPSStatus(webs_t wp, char_t *path, char_t *query)
-{
-	FILE *fp = fopen("/var/WPS_History", "r");
-	char line[64];
-	char statusStr[64] = "-1,-1,0,0,\n";
-
-	if (fp != NULL) {
-		if (fgets(line, sizeof(line), fp) != NULL) {
-			int ts = 0, stat = -1;
-			if (sscanf(line, "%d,%d", &ts, &stat) == 2) {
-				snprintf(statusStr, sizeof(statusStr), "%d,-1,0,0,\n", stat);
-			}
-		}
-		fclose(fp);
-	}
-
-	wp->flags &= ~WEBS_KEEP_ALIVE;
-	websWrite(wp, T("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nConnection: close\r\nPragma: no-cache\r\nCache-Control: no-cache\r\n\r\n%s"), statusStr);
-	websDone(wp, 200);
-}
-
 static void safeFormWirelessTypeSet(webs_t wp, char_t *path, char_t *query)
 {
 	char_t *cfgType = websGetVar(wp, T("wirelessConfigType"), T("manual"));
@@ -1376,7 +1355,6 @@ static int initWebs()
 	formDefineUtils();
 	formDefineWPS();
 	websFormDefine(T("dumpFirmware"), formDumpFirmware);
-	websFormDefine(T("getCurrentWPSStatus"), safeFormGetCurrentWPSStatus);
 	websFormDefine(T("wirelessTypeSet"), safeFormWirelessTypeSet);
 	websFormDefine(T("networkBasic"), safeFormNetworkBasic);
 	websFormDefine(T("wirelessBasic"), safeFormWirelessBasic);
