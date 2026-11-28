@@ -1286,10 +1286,24 @@ static void formUpdateWPSStatus(webs_t wp, char_t *path, char_t *query)
 	websDone(wp, 200);
 }
 
+static void wlWriteLinkStatusRow(webs_t wp, const char *labelTag, const char *valHtml)
+{
+	websWrite(wp, T("<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\">"));
+	wlWriteTrString(wp, labelTag);
+	websWrite(wp, T("</td><td class=\"tdContent\">"));
+	if (valHtml != NULL && valHtml[0] != '\0') {
+		wlWriteTrString(wp, valHtml);
+	}
+	websWrite(wp, T("</td></tr>"));
+}
+
 static void formUpdateLinkStatus(webs_t wp, char_t *path, char_t *query)
 {
 	char secModeStr[16];
 	char wpaModeStr[16];
+	char freqBandCfg[16];
+	char bondingCfg[16];
+	char ulBondingCfg[16];
 	char macStr[32];
 	char essid[128];
 	char escSsid[256];
@@ -1298,21 +1312,30 @@ static void formUpdateLinkStatus(webs_t wp, char_t *path, char_t *query)
 	char radioBand[16];
 	char chanWidth[16];
 	char wideChan[16];
+	char stdChanStr[16];
+	char sigStr[24];
 	char *conBuf;
-	char htmlBuf[2048];
+	char *statBuf;
 	const char *secLabel;
 	int channel = 0;
 	int sig = 0;
 	int linkUp = 0;
+	int haveGConInfo = 0;
 
 	(void)path;
 	(void)query;
 
 	memset(secModeStr, 0, sizeof(secModeStr));
 	memset(wpaModeStr, 0, sizeof(wpaModeStr));
+	memset(freqBandCfg, 0, sizeof(freqBandCfg));
+	memset(bondingCfg, 0, sizeof(bondingCfg));
+	memset(ulBondingCfg, 0, sizeof(ulBondingCfg));
 	memset(macStr, 0, sizeof(macStr));
 	MT_Get_Param(T("NonProcSecurityMode"), secModeStr, sizeof(secModeStr) - 1);
 	MT_Get_Param(T("NonProc_WPA_Personal_Mode"), wpaModeStr, sizeof(wpaModeStr) - 1);
+	MT_Get_Param(T("FrequencyBand"), freqBandCfg, sizeof(freqBandCfg) - 1);
+	MT_Get_Param(T("ChannelBonding"), bondingCfg, sizeof(bondingCfg) - 1);
+	MT_Get_Param(T("UpperLowerChannelBonding"), ulBondingCfg, sizeof(ulBondingCfg) - 1);
 	MT_Get_Param(T("MAC"), macStr, sizeof(macStr) - 1);
 
 	switch (atoi(secModeStr)) {
@@ -1331,7 +1354,7 @@ static void formUpdateLinkStatus(webs_t wp, char_t *path, char_t *query)
 		&channel, bitRate, sizeof(bitRate), &sig, &linkUp);
 	wlHtmlEscape(essid, escSsid, sizeof(escSsid));
 
-	strcpy(radioBand, "2.4 GHz");
+	strcpy(radioBand, (atoi(freqBandCfg) == 1 || channel > 14) ? "5 GHz" : "2.4 GHz");
 	strcpy(chanWidth, "20 MHz");
 	strcpy(wideChan, "-");
 
@@ -1339,54 +1362,99 @@ static void formUpdateLinkStatus(webs_t wp, char_t *path, char_t *query)
 	conBuf = wlReadFileAlloc("/tmp/updateLinkConInfo.txt", NULL);
 	unlink("/tmp/updateLinkConInfo.txt");
 	if (conBuf != NULL) {
-		if (strstr(conBuf, "5.2GHz") != NULL || strstr(conBuf, "5 GHz") != NULL || channel > 14) {
-			strcpy(radioBand, "5 GHz");
-		}
-		if (strstr(conBuf, "40MHz") != NULL || strstr(conBuf, "40 MHz") != NULL) {
-			strcpy(chanWidth, "40 MHz");
-			snprintf(wideChan, sizeof(wideChan), "%d",
-				strstr(conBuf, "Lower") != NULL ? (channel - 2) : (channel + 2));
+		if (strstr(conBuf, "Not supported") == NULL) {
+			haveGConInfo = 1;
+			if (strstr(conBuf, "5.2GHz") != NULL || strstr(conBuf, "5 GHz") != NULL || channel > 14) {
+				strcpy(radioBand, "5 GHz");
+			}
+			if (strstr(conBuf, "40MHz") != NULL || strstr(conBuf, "40 MHz") != NULL) {
+				strcpy(chanWidth, "40 MHz");
+				snprintf(wideChan, sizeof(wideChan), "%d",
+					strstr(conBuf, "Lower") != NULL ? (channel - 2) : (channel + 2));
+			}
 		}
 		free(conBuf);
 	}
+	if (!haveGConInfo && atoi(bondingCfg) == 1) {
+		strcpy(chanWidth, "40 MHz");
+		snprintf(wideChan, sizeof(wideChan), "%d",
+			atoi(ulBondingCfg) == 1 ? (channel - 2) : (channel + 2));
+	}
+
+	if (bitRate[0] == '\0' || sig == 0) {
+		doSystem("/root/mtlk/etc/mtdump wlan0 constatus > /tmp/updateLinkConstat.txt 2>/dev/null");
+		statBuf = wlReadFileAlloc("/tmp/updateLinkConstat.txt", NULL);
+		unlink("/tmp/updateLinkConstat.txt");
+		if (statBuf != NULL) {
+			char *line = statBuf;
+			while (line != NULL && *line != '\0') {
+				char *nextNl = strchr(line, '\n');
+				char *p1 = strchr(line, '|');
+				char *p2 = (p1 != NULL) ? strchr(p1 + 1, '|') : NULL;
+				if (p1 != NULL && p2 != NULL && strstr(line, "RSSI") == NULL && strchr(line, ':') != NULL) {
+					double rateVal;
+					if (sig == 0) {
+						int parsedSig = atoi(p1 + 1);
+						if (parsedSig < 0) {
+							sig = parsedSig;
+						}
+					}
+					if (bitRate[0] == '\0') {
+						rateVal = atof(p2 + 1);
+						if (rateVal > 0.0) {
+							snprintf(bitRate, sizeof(bitRate), "%.1f Mbps", rateVal);
+						}
+					}
+					break;
+				}
+				line = (nextNl != NULL) ? (nextNl + 1) : NULL;
+			}
+			free(statBuf);
+		}
+	}
+
+	snprintf(stdChanStr, sizeof(stdChanStr), "%d", channel);
+	if (sig != 0) {
+		snprintf(sigStr, sizeof(sigStr), "%d dBm", sig);
+	} else {
+		strcpy(sigStr, "N/A dBm");
+	}
+	if (bitRate[0] == '\0') {
+		strcpy(bitRate, "N/A");
+	}
 
 	wlSendPlainHeaders(wp);
+	websWrite(wp, T("<table class=\"mainTableContent\" cellspacing=\"0\">"
+		"<tr><td class=\"subMenuMainContent\" colspan=\"2\">"));
+	wlWriteTrString(wp, "<!--#tr id=\"status.wn.1\" -->Wireless Network<!--#endtr-->");
+	websWrite(wp, T("</td><td colspan=\"2\" class=\"blankContent\"></td></tr>"));
+
 	if (MT_get_station_link_status() == 1 && linkUp) {
-		snprintf(htmlBuf, sizeof(htmlBuf),
-			"<table class=\"mainTableContent\" cellspacing=\"0\">"
-			"<tr><td class=\"subMenuMainContent\" colspan=\"2\"><!--#tr id=\"status.wn.1\" -->Wireless Network<!--#endtr--></td><td colspan=\"2\" class=\"blankContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-1\" -->Link Status:<!--#endtr--></td><td class=\"tdContent\"><!--#tr id=\"w.bws.2-35\" -->Connected<!--#endtr--></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-21\" -->MAC Address:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-3\" -->Network Name (SSID):<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-4\" -->BSSID:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-5\" -->Radio Band:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-6\" -->Channel Width:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-7\" -->Wide Channel:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-8\" -->Standard Channel:<!--#endtr--></td><td class=\"tdContent\">%d</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-9\" -->Bit Rate:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-10\" -->Signal:<!--#endtr--></td><td class=\"tdContent\">%d dBm</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-11\" -->Security:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"blankContent\" colspan=\"2\">&nbsp;</td></tr></table>",
-			macStr, escSsid, bssid, radioBand, chanWidth, wideChan, channel, bitRate, sig, secLabel);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-1\" -->Link Status:<!--#endtr-->", "<!--#tr id=\"w.bws.2-35\" -->Connected<!--#endtr-->");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-21\" -->MAC Address:<!--#endtr-->", macStr);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-3\" -->Network Name (SSID):<!--#endtr-->", escSsid);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-4\" -->BSSID:<!--#endtr-->", bssid);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-5\" -->Radio Band:<!--#endtr-->", radioBand);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-6\" -->Channel Width:<!--#endtr-->", chanWidth);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-7\" -->Wide Channel:<!--#endtr-->", wideChan);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-8\" -->Standard Channel:<!--#endtr-->", stdChanStr);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-9\" -->Bit Rate:<!--#endtr-->", bitRate);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-10\" -->Signal:<!--#endtr-->", sigStr);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-11\" -->Security:<!--#endtr-->", secLabel);
 	} else {
-		snprintf(htmlBuf, sizeof(htmlBuf),
-			"<table class=\"mainTableContent\" cellspacing=\"0\">"
-			"<tr><td class=\"subMenuMainContent\" colspan=\"2\"><!--#tr id=\"status.wn.1\" -->Wireless Network<!--#endtr--></td><td colspan=\"2\" class=\"blankContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-1\" -->Link Status:<!--#endtr--></td><td class=\"tdContent\"><!--#tr id=\"w.bws.2-32\" -->Disconnected<!--#endtr--></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-21\" -->MAC Address:<!--#endtr--></td><td class=\"tdContent\">%s</td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-3\" -->Network Name (SSID):<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-4\" -->BSSID:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-5\" -->Radio Band:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-6\" -->Channel Width:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-7\" -->Wide Channel:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-8\" -->Standard Channel:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-9\" -->Bit Rate:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-10\" -->Signal:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"tdLabel\"><!--#tr id=\"status.wn.1-11\" -->Security:<!--#endtr--></td><td class=\"tdContent\"></td></tr>"
-			"<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"blankContent\" colspan=\"2\">&nbsp;</td></tr></table>",
-			macStr);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-1\" -->Link Status:<!--#endtr-->", "<!--#tr id=\"w.bws.2-32\" -->Disconnected<!--#endtr-->");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-21\" -->MAC Address:<!--#endtr-->", macStr);
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-3\" -->Network Name (SSID):<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-4\" -->BSSID:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-5\" -->Radio Band:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-6\" -->Channel Width:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-7\" -->Wide Channel:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-8\" -->Standard Channel:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-9\" -->Bit Rate:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-10\" -->Signal:<!--#endtr-->", "");
+		wlWriteLinkStatusRow(wp, "<!--#tr id=\"status.wn.1-11\" -->Security:<!--#endtr-->", "");
 	}
-	wlWriteTrString(wp, htmlBuf);
+	websWrite(wp, T("<tr><td class=\"subMenuSubContent\"></td><td class=\"subMenuLeftSide\"></td><td class=\"blankContent\" colspan=\"2\">&nbsp;</td></tr></table>"));
 	websDone(wp, 200);
 }
 
