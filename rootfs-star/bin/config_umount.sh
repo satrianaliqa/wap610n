@@ -11,6 +11,12 @@ CONFIG_GZ=${CONFIG_FILE}.gz
 CONFIG_MNT=/mnt/jffs2
 CONFIG_MAX_SIZE=131072
 DIAG_LOG=/bin/diag_log.sh
+ERR_FLAG=/tmp/config_save.err
+
+save_fail() {
+	printf '%s\n' "$1" > "$ERR_FLAG" 2>/dev/null || true
+	$DIAG_LOG "$1" 2>/dev/null || true
+}
 
 # Obtain config lock to serialize all flash/loopback config operations
 config_lock.sh $$
@@ -38,7 +44,7 @@ trap 'exit 130' 1 2 15
 if [ ! -f "$CONFIG_FILE" ]
 then
 	echo " ($$) config_umount: $CONFIG_FILE does not exist!"
-	$DIAG_LOG "config_umount: configuration image is missing" 2>/dev/null || true
+	save_fail "config_umount: configuration image is missing"
 	exit 1
 fi
 
@@ -49,7 +55,7 @@ if grep -q " $CONFIG_MNT " /proc/mounts 2>/dev/null
 then
 	if [ ! -s "$CONFIG_MNT/wlan0.conf" ] || [ ! -s "$CONFIG_MNT/sys.conf" ]; then
 		echo " ($$) config_umount: critical config missing or empty in $CONFIG_MNT; aborting flash write"
-		$DIAG_LOG "config_umount: missing or empty wlan0.conf/sys.conf; aborting flash write" 2>/dev/null || true
+		save_fail "config_umount: missing or empty wlan0.conf/sys.conf; aborting flash write"
 		exit 1
 	fi
 	SYS_ADDED=0
@@ -91,7 +97,7 @@ then
 		sync
 		if ! mount -o remount,ro "$CONFIG_MNT" 2>/dev/null; then
 			echo " ($$) Failed remounting $CONFIG_MNT read-only before flash save"
-			$DIAG_LOG "config_umount: remount ro failed; aborting flash write" 2>/dev/null || true
+			save_fail "config_umount: remount ro failed; aborting flash write"
 			exit 1
 		fi
 	fi
@@ -103,7 +109,7 @@ rm -f "$CONFIG_GZ" 2>/dev/null
 if ! gzip -c "$CONFIG_FILE" > "$CONFIG_GZ"
 then
 	echo " ($$) Failed compressing configuration filesystem"
-	$DIAG_LOG "config_umount: failed compressing configuration filesystem" 2>/dev/null || true
+	save_fail "config_umount: failed compressing configuration filesystem"
 	logger -t $$ "Failed compressing configuration filesystem"
 	exit 1
 fi
@@ -119,7 +125,7 @@ CONFIG_SIZE=`wc -c < "$CONFIG_GZ"`
 if [ "$CONFIG_SIZE" -gt "$CONFIG_MAX_SIZE" ]
 then
 	echo " ($$) Configuration image is too large: $CONFIG_SIZE bytes (max $CONFIG_MAX_SIZE)"
-	$DIAG_LOG "config_umount: configuration image exceeds flash limit" 2>/dev/null || true
+	save_fail "config_umount: configuration image exceeds 128 KB flash limit ($CONFIG_SIZE B)"
 	logger -t $$ "Configuration image is too large: $CONFIG_SIZE bytes"
 	exit 1
 fi
@@ -127,6 +133,7 @@ fi
 # Skip NOR flash erase/write if /dev/mtdblock4 already contains the exact compressed image
 if simpdiff -s "$CONFIG_GZ" "$CONFIG_BLOCK" >/dev/null 2>&1
 then
+	rm -f "$ERR_FLAG" 2>/dev/null || true
 	echo " ($$) Configuration on flash is already up to date"
 	exit 0
 fi
@@ -135,7 +142,7 @@ echo " ($$) Saving configuration filesystem to flash"
 if ! cp "$CONFIG_GZ" "$CONFIG_BLOCK"
 then
 	echo " ($$) Failed writing configuration filesystem to flash"
-	$DIAG_LOG "config_umount: failed writing configuration filesystem to MTD4" 2>/dev/null || true
+	save_fail "config_umount: failed writing configuration filesystem to MTD4"
 	logger -t $$ "Failed writing configuration filesystem to flash"
 	exit 1
 fi
@@ -150,7 +157,7 @@ do
 	if [ $CP_RETRY_COUNT -gt 5 ]
 	then
 		echo " ($$) Failed copying configuration filesystem to flash!"
-		$DIAG_LOG "config_umount: flash verification failed after retries" 2>/dev/null || true
+		save_fail "config_umount: flash verification failed after retries"
 		logger -t $$ "Failed copying configuration filesystem to flash!"
 		exit 1
 	fi
@@ -158,6 +165,7 @@ do
 	if ! cp "$CONFIG_GZ" "$CONFIG_BLOCK"
 	then
 		echo " ($$) Retry failed writing configuration filesystem to flash"
+		save_fail "config_umount: retry failed writing configuration filesystem to MTD4"
 		logger -t $$ "Retry failed writing configuration filesystem to flash"
 		exit 1
 	fi
@@ -165,5 +173,6 @@ do
 	simpdiff -s "$CONFIG_GZ" "$CONFIG_BLOCK"
 done
 
+rm -f "$ERR_FLAG" 2>/dev/null || true
 echo " ($$) Configuration saved (in $CP_RETRY_COUNT retry attempts)"
 exit 0

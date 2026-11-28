@@ -28,6 +28,7 @@
 #include	<net/if.h>
 #include	<fcntl.h>
 #include	<sys/stat.h>
+#include	<sys/vfs.h>
 #include	<time.h>
 #include	<dirent.h>
 #include	<ctype.h>
@@ -637,8 +638,13 @@ static void safeFormNetworkBasic(webs_t wp, char_t *path, char_t *query)
 	MT_Set_Param("auto_network_type", "0", 1);
 	paramNames[paramCount++] = "auto_network_type";
 
+	doSystem("if [ -x /bin/config_lock.sh ]; then /bin/config_lock.sh %d >/dev/null 2>&1; fi", (int)getpid());
 	MT_WriteConfFiles(paramCount, paramNames);
 	preserveCustomSysConfKeys();
+	doSystem("cp -f /mnt/jffs2/sys.conf /tmp/sys.conf >/dev/null 2>&1; "
+	         "[ -s /mnt/jffs2/wlan0.conf ] && cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1; "
+	         "if [ -x /bin/config_unlock.sh ]; then /bin/config_unlock.sh %d >/dev/null 2>&1; fi",
+	         (int)getpid());
 	submitToFlash();
 
 	{
@@ -942,9 +948,13 @@ static void safeFormWirelessBasic(webs_t wp, char_t *path, char_t *query)
 		paramNames[paramCount++] = "EEPROMCountryValid";
 	}
 
+	doSystem("if [ -x /bin/config_lock.sh ]; then /bin/config_lock.sh %d >/dev/null 2>&1; fi", (int)getpid());
 	MT_WriteConfFiles(paramCount, paramNames);
 	preserveCustomSysConfKeys();
-	doSystem("cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1");
+	doSystem("[ -s /mnt/jffs2/sys.conf ] && cp -f /mnt/jffs2/sys.conf /tmp/sys.conf >/dev/null 2>&1; "
+	         "cp -f /mnt/jffs2/wlan0.conf /tmp/wlan0.conf >/dev/null 2>&1; "
+	         "if [ -x /bin/config_unlock.sh ]; then /bin/config_unlock.sh %d >/dev/null 2>&1; fi",
+	         (int)getpid());
 	submitToFlash();
 
 	if (isApMode) {
@@ -1972,6 +1982,44 @@ static void readKvFromFile(const char *path, const char *key, const char *def,
 	}
 }
 
+static void readKvFromSysConf(const char *key, const char *def, char *out, size_t outSize)
+{
+	struct stat stT, stJ;
+	int hasT, hasJ;
+	const char *order[4];
+	int nOrder = 0;
+	int i;
+
+	if (out == NULL || outSize == 0) {
+		return;
+	}
+	out[0] = '\0';
+	hasT = (stat("/tmp/sys.conf", &stT) == 0);
+	hasJ = (stat("/mnt/jffs2/sys.conf", &stJ) == 0);
+	if (hasT && (!hasJ || stT.st_mtime > stJ.st_mtime)) {
+		order[nOrder++] = "/tmp/sys.conf";
+		if (hasJ) order[nOrder++] = "/mnt/jffs2/sys.conf";
+	} else {
+		if (hasJ) order[nOrder++] = "/mnt/jffs2/sys.conf";
+		if (hasT) order[nOrder++] = "/tmp/sys.conf";
+	}
+	order[nOrder++] = "/etc/sys.conf";
+	order[nOrder++] = "/root/mtlk/etc/sys.conf";
+	for (i = 0; i < nOrder; i++) {
+		char tmp[256];
+		readKvFromFile(order[i], key, "", tmp, sizeof(tmp));
+		if (tmp[0] != '\0') {
+			snprintf(out, outSize, "%s", tmp);
+			out[outSize - 1] = '\0';
+			return;
+		}
+	}
+	if (def != NULL) {
+		snprintf(out, outSize, "%s", def);
+		out[outSize - 1] = '\0';
+	}
+}
+
 static int readFileTrimmed(const char *path, char *out, size_t outSize, int trimAllSpaces)
 {
 	FILE *fp;
@@ -2825,6 +2873,13 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 	if (strcmp(path, "/api/clients.json") == 0) {
 		api_arp_entry_t arpList[64];
 		int arpCount = 0;
+		api_dhcp_lease_t lease;
+		struct {
+			char mac[20];
+			char ip[20];
+			char name[64];
+		} stLeases[32];
+		int stCount = 0;
 		api_br_fdb_t recs[32];
 		size_t nread, i;
 		size_t pos = 0;
@@ -2849,20 +2904,75 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 			fclose(fp);
 		}
 
+		fp = fopen("/tmp/udhcpd.leases", "rb");
+		if (fp != NULL) {
+			while (arpCount < 64 && fread(&lease, sizeof(lease), 1, fp) == 1) {
+				char macBuf[20];
+				struct in_addr ina;
+				int a, found = 0;
+				snprintf(macBuf, sizeof(macBuf), "%02x:%02x:%02x:%02x:%02x:%02x",
+					lease.chaddr[0], lease.chaddr[1], lease.chaddr[2],
+					lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
+				for (a = 0; a < arpCount; a++) {
+					if (strcasecmp(arpList[a].mac, macBuf) == 0) {
+						found = 1;
+						break;
+					}
+				}
+				if (!found && lease.yiaddr != 0) {
+					ina.s_addr = (in_addr_t)lease.yiaddr;
+					snprintf(arpList[arpCount].ip, sizeof(arpList[arpCount].ip), "%s", inet_ntoa(ina));
+					snprintf(arpList[arpCount].mac, sizeof(arpList[arpCount].mac), "%s", macBuf);
+					arpCount++;
+				}
+			}
+			fclose(fp);
+		}
+
+		fp = fopen("/mnt/jffs2/dhcp_static.conf", "r");
+		if (fp != NULL) {
+			while (stCount < 32 && fgets(line, sizeof(line), fp) != NULL) {
+				char *p1, *p2, *p3;
+				size_t len = strlen(line);
+				while (len > 0 && (line[len - 1] == '\n' || line[len - 1] == '\r')) {
+					line[--len] = '\0';
+				}
+				if (line[0] == '\0' || line[0] == '#') {
+					continue;
+				}
+				p1 = line;
+				p2 = strchr(p1, '|');
+				if (p2 == NULL) continue;
+				*p2++ = '\0';
+				p3 = strchr(p2, '|');
+				if (p3 != NULL) {
+					*p3++ = '\0';
+				} else {
+					p3 = "";
+				}
+				snprintf(stLeases[stCount].mac, sizeof(stLeases[stCount].mac), "%s", p1);
+				snprintf(stLeases[stCount].ip, sizeof(stLeases[stCount].ip), "%s", p2);
+				snprintf(stLeases[stCount].name, sizeof(stLeases[stCount].name), "%s", p3);
+				stCount++;
+			}
+			fclose(fp);
+		}
+
 		pos = jsonAppend(body, sizeof(body), pos, "{\"clients\":[");
 		fp = fopen("/sys/class/net/br0/brforward", "rb");
 		if (fp != NULL) {
 			wlsPort = getWLSBridgePort();
 			while ((nread = fread(recs, sizeof(api_br_fdb_t), 32, fp)) > 0) {
 				for (i = 0; i < nread; i++) {
-					char macStr[20];
+					char macStr[20], nameEsc[128];
 					const char *ipStr = "";
+					const char *nameRaw = "";
 					const char *ifaceStr;
 					int a;
 					if (recs[i].is_local) {
 						continue;
 					}
-					if (pos + 96 >= sizeof(body)) {
+					if (pos + 180 >= sizeof(body)) {
 						break;
 					}
 					snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
@@ -2874,13 +2984,21 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 							break;
 						}
 					}
+					for (a = 0; a < stCount; a++) {
+						if (strcasecmp(stLeases[a].mac, macStr) == 0) {
+							if (ipStr[0] == '\0') ipStr = stLeases[a].ip;
+							nameRaw = stLeases[a].name;
+							break;
+						}
+					}
+					jsonEscapeCopy(nameEsc, sizeof(nameEsc), nameRaw);
 					ifaceStr = (wlsPort > 0 && (int)recs[i].port_no == wlsPort) ? "Wi-Fi" : "LAN";
 					pos = jsonAppend(body, sizeof(body), pos,
-						"%s{\"mac\":\"%s\",\"ip\":\"%s\",\"iface\":\"%s\"}",
-						(count == 0) ? "" : ",", macStr, ipStr, ifaceStr);
+						"%s{\"mac\":\"%s\",\"ip\":\"%s\",\"name\":\"%s\",\"iface\":\"%s\"}",
+						(count == 0) ? "" : ",", macStr, ipStr, nameEsc, ifaceStr);
 					count++;
 				}
-				if (pos + 96 >= sizeof(body)) {
+				if (pos + 180 >= sizeof(body)) {
 					break;
 				}
 			}
@@ -3004,7 +3122,11 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		char fwSpi[16], fwPing[16], fwMgmt[16], fwSsh[16], fwMss[16], fwDmz[32];
 		char lwIp[32], lwMk[32], lwGw[32], lwDn[96], liveDn1[32], liveDn2[32];
 		char sshConfEn[16], telConfEn[16], upnpConfEn[16], sshjConfEn[16], sshjUser[64], sshjHost[64];
+		char flashErr[160];
 		char *aclRaw, *wdLog, *sshKeys, *rcLocal;
+		unsigned long jffsTotalKb = 0, jffsUsedKb = 0;
+		int jffsPct = 0;
+		struct statfs sfs;
 		int hasUdhcpd = 0, hasDropbear = 0, hasTelnetd = 0, hasUpnpd = 0;
 		int hasDdns = 0, hasWatchdog = 0, hasSshjWd = 0, hasSshjCli = 0;
 		int listenSsh = 0, listenTel = 0, estabRemSsh = 0;
@@ -3185,15 +3307,25 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		hasNat = (access("/sbin/mini-nat", X_OK) == 0 && access("/proc/net/ip_conntrack", R_OK) == 0) ? 1 : 0;
 		ctCnt = (access("/proc/net/ip_conntrack", R_OK) == 0) ? countFileLines("/proc/net/ip_conntrack") : 0;
 
-		getParamOrDef("SSH_Enabled", "1", sshConfEn, sizeof(sshConfEn));
-		getParamOrDef("Telnet_Enabled", "1", telConfEn, sizeof(telConfEn));
-		getParamOrDef("UPnP_Enabled", "0", upnpConfEn, sizeof(upnpConfEn));
-		getParamOrDef("SSHJ_Enabled", "0", sshjConfEn, sizeof(sshjConfEn));
-		getParamOrDef("SSHJ_User", "", sshjUser, sizeof(sshjUser));
+		if (statfs("/mnt/jffs2", &sfs) == 0 && sfs.f_blocks > 0) {
+			unsigned long bsize = (unsigned long)sfs.f_bsize;
+			jffsTotalKb = (unsigned long)(((unsigned long long)sfs.f_blocks * bsize) / 1024ULL);
+			if (sfs.f_blocks >= sfs.f_bfree) {
+				jffsUsedKb = (unsigned long)(((unsigned long long)(sfs.f_blocks - sfs.f_bfree) * bsize) / 1024ULL);
+			}
+			jffsPct = (int)((jffsTotalKb > 0) ? ((jffsUsedKb * 100UL) / jffsTotalKb) : 0);
+		}
+		readFileTrimmed("/tmp/config_save.err", flashErr, sizeof(flashErr), 1);
+
+		readKvFromSysConf("SSH_Enabled", "1", sshConfEn, sizeof(sshConfEn));
+		readKvFromSysConf("Telnet_Enabled", "1", telConfEn, sizeof(telConfEn));
+		readKvFromSysConf("UPnP_Enabled", "0", upnpConfEn, sizeof(upnpConfEn));
+		readKvFromSysConf("SSHJ_Enabled", "0", sshjConfEn, sizeof(sshjConfEn));
+		readKvFromSysConf("SSHJ_User", "", sshjUser, sizeof(sshjUser));
 		if (!isValidIdentStr(sshjUser, 1, 48)) {
 			sshjUser[0] = '\0';
 		}
-		getParamOrDef("SSHJ_Host", "wap610n", sshjHost, sizeof(sshjHost));
+		readKvFromSysConf("SSHJ_Host", "wap610n", sshjHost, sizeof(sshjHost));
 		if (!isValidIdentStr(sshjHost, 1, 32)) {
 			snprintf(sshjHost, sizeof(sshjHost), "wap610n");
 		}
@@ -3349,7 +3481,10 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		dynAppendJsonStr(&db, tsLog);
 		DYN_LIT(&db, ",\"led_night\":");
 		dynAppendJsonStr(&db, ledNight);
-		dynAppendFmt(&db, ",\"has_vlan_mod\":%d,\"ssh_keys\":", hasVlan);
+		dynAppendFmt(&db, ",\"has_vlan_mod\":%d,\"jffs_used_kb\":%lu,\"jffs_total_kb\":%lu,\"jffs_pct\":%d,\"flash_save_err\":",
+			hasVlan, jffsUsedKb, jffsTotalKb, jffsPct);
+		dynAppendJsonStr(&db, flashErr);
+		DYN_LIT(&db, ",\"ssh_keys\":");
 		dynAppendJsonStr(&db, sshKeys);
 		DYN_LIT(&db, ",\"rc_local\":");
 		dynAppendJsonStr(&db, rcLocal);

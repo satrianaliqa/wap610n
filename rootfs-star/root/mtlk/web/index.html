@@ -205,13 +205,15 @@ function pStatus(){
   const modeStr=rt.mode==='router'?'Wireless Router (NAT)':(rt.mode==='wisp'?'WISP Client Router (NAT)':((cf.network_type==='0'?'Station ':'Access Point ')+'('+bmName+')'));
   const bandStr=cf.frequency_band==='0'?'5 GHz (802.11a/n)':'2.4 GHz (802.11b/g/n)';
   const sjStr=rm.sshj?(rm.sshj_running?'<span class="u">Connected</span>':(rm.sshj_watchdog?'<span class="u w">Connecting</span>':'<span class="u w">Standby</span>')):'Off';
+  const jffsPct=Number(sys.jffs_pct)||0;
+  const jffsStr=sys.jffs_total_kb?(`${sys.jffs_used_kb}/${sys.jffs_total_kb} KB (${jffsPct}%)${sys.flash_save_err?' - ERR':''}`):'-';
   const apCard=kv('Access Point & System',[
     ['Op Mode',esc(modeStr)],
     ['Firmware',esc(cf.fw_date||st.version||'-')],
     ['Hostname',esc(st.hostname||cf.hostname||'-')],
     ['Device Time',esc(sys.now||'-'),'m'],
     ['Uptime','<b id="ut">'+esc(ut(S.upSec))+'</b>'],
-    ['Load / RAM',esc((st.load||'-')+' | '+usedMb),'m']
+    ['Load / RAM / FS',esc((st.load||'-')+' | '+usedMb+' | '+jffsStr),'m']
   ]);
   const dhcpBtns=(!rt.mode||rt.mode==='bridge')&&cf.ip_config_method==='0'?`<div class="r"><button class="t s" onclick="dhcpAct('renew')">Renew</button><button class="t s" onclick="dhcpAct('release')">Release</button><button class="t s" onclick="refreshAll().then(ren)">Refresh</button></div>`:`<button class="t s" onclick="refreshAll().then(ren)">Refresh</button>`;
   const netCard=kv('Network (br0 LAN)',[
@@ -246,8 +248,8 @@ function pStatus(){
     ['WAN DNS',esc(rt.live_wan_dns||[rt.wan_dns1,rt.wan_dns2].filter(Boolean).join(' ')||'-'),'m'],
     ['Conntrack / DMZ',esc((rt.conntrack_count||0)+' sessions | DMZ: '+(rt.dmz_ip||'Off')),'m']
   ],wanBtns):'';
-  const clRows=cl.length?cl.map((c,i)=>`<tr><td>${i+1}</td><td class="m">${esc(c.mac)}</td><td class="m">${esc(c.ip||'-')}</td><td><span class="u${c.iface==='LAN'?' w':''}">${esc(c.iface)}</span></td></tr>`).join(''):`<tr><td colspan="4" class="sub">No external bridge clients recorded yet.</td></tr>`;
-  const clCard=`<div class="p"><h2>Connected Clients (br0)<button class="t s" onclick="getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];ren();msg('Refreshed')})">Refresh</button></h2><table><thead><tr><th>#</th><th>MAC Address</th><th>IPv4 (ARP)</th><th>Interface</th></tr></thead><tbody>${clRows}</tbody></table></div>`;
+  const clRows=cl.length?cl.map((c,i)=>`<tr><td>${i+1}</td><td>${esc(c.name||'-')}</td><td class="m">${esc(c.mac)}</td><td class="m">${esc(c.ip||'-')}</td><td><span class="u${c.iface==='LAN'?' w':''}">${esc(c.iface)}</span></td><td><button type="button" class="t s" onclick="sendWol('${esc(c.mac)}')">WoL</button></td></tr>`).join(''):`<tr><td colspan="6" class="sub">No external bridge clients recorded yet.</td></tr>`;
+  const clCard=`<div class="p"><h2>Connected Clients (br0)<button class="t s" onclick="getJ('/api/clients.json').then(d=>{S.cl=d.clients||[];ren();msg('Refreshed')})">Refresh</button></h2><table><thead><tr><th>#</th><th>Name</th><th>MAC Address</th><th>IPv4</th><th>Iface</th><th></th></tr></thead><tbody>${clRows}</tbody></table></div>`;
   const al=dh.active_leases||[];
   const lsCard=(dh.enabled==='1'||al.length)?`<div class="p"><h2>Active DHCP Leases<small class="sub">${al.length} active</small></h2><table><thead><tr><th>MAC Address</th><th>Assigned IPv4</th><th>Expires In</th></tr></thead><tbody>${al.length?al.map(x=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td class="m">${esc(x.expires)}</td></tr>`).join(''):'<tr><td colspan="3" class="sub">No active dynamic leases.</td></tr>'}</tbody></table></div>`:'';
   return `<div class="g">${apCard}${netCard}${wifiCard}${svcCard}</div>${wanCard}${clCard}${lsCard}`;
@@ -260,6 +262,10 @@ async function dhcpAct(cmd){
 async function wanAct(cmd){
   try{await postCtl({action:'wan_action',cmd});msg('Sent WAN DHCP '+cmd+' signal');setTimeout(()=>refreshAll().then(ren),3000);}
   catch(e){msg(e.message);}
+}
+async function sendWol(mac){
+  try{await postCtl({action:'wol',mac});msg('Sent WoL magic packet to '+mac);}
+  catch(e){msg('WoL failed: '+e.message);}
 }
 
 function pQuick(){
@@ -335,7 +341,7 @@ async function saveQuick(e){
   }catch(err){hideModal();msg('Quick Setup failed: '+err.message);}
 }
 
-function slRowsHtml(){return S.slList.length?S.slList.map((x,i)=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td>${esc(x.host||'-')}</td><td><button type="button" class="t d s" onclick="delSl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No static DHCP reservations.</td></tr>';}
+function slRowsHtml(){return S.slList.length?S.slList.map((x,i)=>`<tr><td class="m">${esc(x.mac)}</td><td class="m">${esc(x.ip)}</td><td>${esc(x.host||'-')}</td><td class="r"><button type="button" class="t s" onclick="sendWol('${esc(x.mac)}')">WoL</button><button type="button" class="t d s" onclick="delSl(${i})">Del</button></td></tr>`).join(''):'<tr><td colspan="4" class="sub">No static DHCP reservations.</td></tr>';}
 function updSlTable(){if($('sl_tb'))$('sl_tb').innerHTML=slRowsHtml();if($('sl_cnt'))$('sl_cnt').textContent=S.slList.length;}
 function pNetwork(){
   const cf=S.cf,ex=S.ex||{},rt=ex.router||{},dh=ex.dhcp||{},al=dh.active_leases||[];
@@ -820,6 +826,8 @@ function pSystem(){
   const rmBadges=`<span class="u${rm.ssh?'':' w'}">SSH:${rm.ssh?'Listening :22':'Stopped'}</span> <span class="u${rm.telnet?'':' w'}">Tel:${rm.telnet?'Listening :23':'Stopped'}</span> ${sjState}`;
   const tzOpts=[['UTC0','UTC (UTC0)'],['WIB-7','WIB Jakarta (UTC+7)'],['WITA-8','WITA (UTC+8)'],['WIT-9','WIT (UTC+9)'],['SGT-8','SGT/HKT (UTC+8)'],['JST-9','JST Tokyo (UTC+9)'],['EST5EDT,M3.2.0,M11.1.0','US Eastern'],['CET-1CEST,M3.5.0,M10.5.0/3','Central Europe']];
   if(sys.tz&&!tzOpts.some(x=>x[0]===sys.tz))tzOpts.push([sys.tz,'Custom ('+sys.tz+')']);
+  const jPct=Number(sys.jffs_pct)||0;
+  const jBadge=sys.flash_save_err?`<span class="u e">Flash Error: ${esc(sys.flash_save_err)}</span>`:(sys.jffs_total_kb?`<span class="u${jPct>=85?' w':''}">ConfigFS: ${sys.jffs_used_kb}/${sys.jffs_total_kb} KB (${jPct}%)</span>`:'');
   return `<div class="p"><h2>Administration &amp; Access</h2><form onsubmit="saveAdmin(event)"><div class="f">
     <label>New Password</label><input type="password" name="p1" maxlength="64" placeholder="Leave blank to keep current">
     <label>Confirm Password</label><input type="password" name="p2" maxlength="64" placeholder="Re-enter new password">
@@ -852,8 +860,8 @@ function pSystem(){
     <form style="margin-top:8px" onsubmit="saveRcLocal(event)"><div class="f"><label>/mnt/jffs2/rc.local</label><textarea id="rclocal" class="m" placeholder="#!/bin/sh">${esc(sys.rc_local||'')}</textarea></div><div class="z"><button class="t p">Save Startup Script</button></div></form>
   </details></div>
 
-  <div class="p"><h2>Backup, NOR Flash &amp; Firmware</h2><div class="f">
-    <label>Config Backup</label><div class="r"><button type="button" class="t" onclick="dlConfig()">Download .conf</button><input type="file" id="cfgf" accept=".conf,.cfg,.bin,.tar.gz,.tgz"><button type="button" class="t" onclick="restoreCfg()">Restore</button></div>
+  <div class="p"><h2>Backup, NOR Flash &amp; Firmware${jBadge}</h2><div class="f">
+    <label>Config Backup</label><div class="r"><button type="button" class="t" onclick="dlConfig()">Download .conf</button><button type="button" class="t" onclick="location.href='/cgi-bin/backup_cfg.cgi'">Full (.tar.gz)</button><input type="file" id="cfgf" accept=".conf,.cfg,.bin"><button type="button" class="t" onclick="restoreCfg()">Restore .conf</button></div>
     <label>NOR Flash Dump</label><div class="r"><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=full'">Full 4MB</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=kernel'">Kernel+RootFS (3.6M)</button><button type="button" class="t" onclick="location.href='/goform/dumpFirmware?type=config'">Cfg (128K)</button></div>
     <label>Firmware Upgrade</label><div class="r"><input type="file" id="fwf"><button type="button" class="t p" onclick="flashFw()">Flash</button></div>
     <label>Maintenance</label><div class="r"><button type="button" class="t d" onclick="doFactory()">Factory Defaults</button><a class="t" href="/network/ap_network.asp?classic=1">Classic UI</a></div>

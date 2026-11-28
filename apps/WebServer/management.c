@@ -436,10 +436,14 @@ void management(webs_t wp, char_t *path, char_t *query)
 				MT_Set_Param("WirelessMgmtEnabled", wirelessMgmt, 1);
 				paramNames[paramCount++] = "WirelessMgmtEnabled";
 			}
+			doSystem("if [ -x /bin/config_lock.sh ]; then /bin/config_lock.sh %d >/dev/null 2>&1; fi", (int)getpid());
 			if (paramCount > 0) {
 				MT_WriteConfFiles(paramCount, paramNames);
 			}
 			preserveCustomSysConf(wirelessMgmt);
+			doSystem("cp -f /mnt/jffs2/sys.conf /tmp/sys.conf >/dev/null 2>&1; "
+			         "if [ -x /bin/config_unlock.sh ]; then /bin/config_unlock.sh %d >/dev/null 2>&1; fi",
+			         (int)getpid());
 			submitToFlash();
 			startWPS_PBC();
 			childFinishAndExit();

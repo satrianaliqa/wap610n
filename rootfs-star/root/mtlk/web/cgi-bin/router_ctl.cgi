@@ -541,7 +541,7 @@ fi
 # Parse POST parameters safely
 P_ACTION="" P_CMD="" P_NET_TYPE="" P_BR_MODE="" P_MAC_CLONE="" P_LOOP="" P_REBOOT=""
 P_ENABLED="" P_START="" P_END="" P_SUBNET="" P_LEASE="" P_DOMAIN="" P_DNS1="" P_DNS2=""
-P_STATIC_LEASES="" P_MODE="" P_MACS="" P_MAX_CONN="" P_BEACON="" P_DTIM="" P_RTS=""
+P_STATIC_LEASES="" P_MODE="" P_MAC="" P_MACS="" P_MAX_CONN="" P_BEACON="" P_DTIM="" P_RTS=""
 P_SHORT_PRE="" P_SHORT_SLOT="" P_STBC="" P_SHORT_GI="" P_STA_KA=""
 P_ROUTES="" P_VLANS="" P_DOWN="" P_UP="" P_PROVIDER="" P_HOSTNAME="" P_USERNAME=""
 P_PASSWORD="" P_TOKEN="" P_CUSTOM_URL="" P_INTERVAL="" P_TEST_NOW=""
@@ -576,6 +576,7 @@ for kv in $QUERY; do
         dns2) P_DNS2="$sl" ;;
         static_leases) P_STATIC_LEASES="$dv" ;;
         mode) P_MODE="$sl" ;;
+        mac) P_MAC="$sl" ;;
         macs) P_MACS="$dv" ;;
         max_conn) P_MAX_CONN="$sl" ;;
         beacon) P_BEACON="$sl" ;;
@@ -1352,6 +1353,14 @@ EOF
         fi
         unlock_cfg
         trigger_save
+        json_header
+        echo '{"status":"success"}'
+        ;;
+
+    wol)
+        is_mac "$P_MAC" || json_error "Invalid target MAC address"
+        [ -x /usr/bin/ether-wake ] || json_error "ether-wake applet unavailable"
+        /usr/bin/ether-wake -i br0 -b "$P_MAC" >/dev/null 2>&1 || json_error "Failed sending Wake-on-LAN packet"
         json_header
         echo '{"status":"success"}'
         ;;
