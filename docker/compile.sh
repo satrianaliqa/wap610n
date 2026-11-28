@@ -50,7 +50,7 @@ echo "=========================================================="
 BUILD_GIT_SHA="${BUILD_GIT_SHA:-$(git -C "$ROOT_DIR" rev-parse --short=7 HEAD 2>/dev/null || echo local)}"
 BUILD_GIT_BRANCH="${BUILD_GIT_BRANCH:-$(git -C "$ROOT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo local)}"
 
-EXTRA_ENV_ARGS=(-e "BUILD_GIT_SHA=${BUILD_GIT_SHA}" -e "BUILD_GIT_BRANCH=${BUILD_GIT_BRANCH}")
+EXTRA_ENV_ARGS=(-e "BUILD_GIT_SHA=${BUILD_GIT_SHA}" -e "BUILD_GIT_BRANCH=${BUILD_GIT_BRANCH}" -e "GITHUB_RUN_NUMBER=${GITHUB_RUN_NUMBER:-}")
 for ev in FIRMWARE_VERSION MAJOR MINOR PATCH BUILD; do
     if [ -n "${!ev:-}" ]; then
         EXTRA_ENV_ARGS+=(-e "${ev}=${!ev}")

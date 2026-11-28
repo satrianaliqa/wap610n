@@ -47,7 +47,19 @@ fi
 FIRMWARE_MAJOR="${MAJOR:-2}"
 FIRMWARE_MINOR="${MINOR:-0}"
 FIRMWARE_PATCH="${PATCH:-00}"
-BUILD="${BUILD:-0}"
+
+# Resolve BUILD: explicit numeric env -> CI GITHUB_RUN_NUMBER -> local git commit count -> 0
+if [ -n "${ENV_BUILD}" ] && [ "${ENV_BUILD}" != "auto" ]; then
+	BUILD="${ENV_BUILD}"
+elif [ -z "${BUILD:-}" ] || [ "${BUILD}" = "auto" ] || [ "${BUILD}" = "0" ]; then
+	if [ -n "${GITHUB_RUN_NUMBER:-}" ]; then
+		BUILD="${GITHUB_RUN_NUMBER}"
+	elif command -v git >/dev/null 2>&1; then
+		BUILD=$(git -c safe.directory='*' -C "${ROOTDIR}" rev-list --count HEAD 2>/dev/null || true)
+	fi
+fi
+BUILD=$(printf '%s' "${BUILD:-0}" | tr -cd '0-9')
+[ -n "${BUILD}" ] || BUILD="0"
 
 # Resolve Git commit SHA (7-char short) and branch for OpenWrt-style build identity
 GIT_SHA="${BUILD_GIT_SHA:-}"
@@ -65,7 +77,7 @@ GIT_BRANCH=$(printf '%s' "${GIT_BRANCH:-local}" | tr '/' '-' | tr -cd 'A-Za-z0-9
 [ -n "${GIT_BRANCH}" ] || GIT_BRANCH="local"
 
 VER_STR="${FIRMWARE_VERSION} (${GIT_BRANCH} / git-${GIT_SHA} build ${BUILD})"
-VER_FILENAME="${ProjectName}_v${FIRMWARE_VERSION}_${GIT_SHA}.bin"
+VER_FILENAME="${ProjectName}_v${FIRMWARE_VERSION}_b${BUILD}_${GIT_SHA}.bin"
 echo "Current version: ${VER_STR}"
 
 # Write generated build state into output/.config_${MODENAME} (never into config/)

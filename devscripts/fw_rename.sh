@@ -7,6 +7,7 @@ VER_FILE=${ROOTDIR}/config/${MODENAME}_VERSION
 [ -f "${VER_FILE}" ] || VER_FILE=${ROOTDIR}/config/WAP610N_VERSION
 [ -f "${ENV_CONF}" ] && . "${ENV_CONF}"
 [ -f "${VER_FILE}" ] && [ -z "${FIRMWARE_VERSION:-}" ] && . "${VER_FILE}"
+[ "${BUILD:-}" = "auto" ] && BUILD=""
 
-BIN_TAG="${FIRMWARE_FILENAME:-${ProjectName:-$MODENAME}_v${FIRMWARE_VERSION:-2.0.00}_${BUILD_GIT_SHA:-local}.bin}"
+BIN_TAG="${FIRMWARE_FILENAME:-${ProjectName:-$MODENAME}_v${FIRMWARE_VERSION:-2.0.00}_b${FIRMWARE_BUILD:-${BUILD:-0}}_${BUILD_GIT_SHA:-local}.bin}"
 cp -p -v "${ROOTDIR}/output/bootpImage" "${ROOTDIR}/output/${BIN_TAG}"

@@ -38,5 +38,5 @@ Skrip otomatisasi build di `devscripts/` bersama orchestrator root [`make_nv.sh`
 - `validate-build-prerequisites.sh` — Pre-flight check seluruh direktori, `vendor/mtlk/`, `rootfs-star/`, `config/`, dan container runtime.
 - `net-ver-select-star.sh` — Selector BSP yang melewati `make clean` kernel jika `.config` tidak berubah.
 - `net-ver-mkrootfs.sh` — Pembuat `ramdisk_2.6.16.img.lzma` deterministik & rootless (men-sync `rootfs-star/` incremental sambil mengecualikan binari hasil compile, serta menerapkan `FIRMWARE_VERSION` & `CUSTOM_*`).
-- `count_version.sh` & `fw_rename.sh` — Pembaca `config/WAP610N_VERSION` (dengan dukungan env override), generator metadata build di `output/.config_WAP610N`, dan penamaan output `WAP610N_v<FIRMWARE_VERSION>.bin`.
+- `count_version.sh` & `fw_rename.sh` — Pembaca `config/WAP610N_VERSION` (dengan resolusi `BUILD` otomatis dari `GITHUB_RUN_NUMBER` / jumlah commit Git dan dukungan env override), generator metadata build di `output/.config_WAP610N`, dan penamaan output `WAP610N_v<FIRMWARE_VERSION>_b<BUILD>_<SHA>.bin`.
 - `disassemble.sh` & `panic-parse.sh` — Alat bantu disassembly kernel & analisis alamat kernel panic terhadap `System.map`.

@@ -6,7 +6,7 @@ Direktori pusat konfigurasi versi firmware, default partisi konfigurasi (`mtdblo
 
 ## 1. File di Direktori Ini
 
-- **`WAP610N_VERSION`** — Satu-satunya konfigurasi terpadu (*single source of truth*) untuk versi firmware (`FIRMWARE_VERSION` & `BUILD`, dengan `MAJOR`/`MINOR`/`PATCH` diturunkan otomatis) sekaligus seluruh variabel kustomisasi build (`CUSTOM_VENDOR_NAME`, `CUSTOM_MODEL_NAME`, `CUSTOM_HOSTNAME`, `CUSTOM_LAN_IP`, `CUSTOM_ADMIN_USER`, `CUSTOM_ADMIN_PASS`, `CUSTOM_SSH_ENABLED`, `CUSTOM_TELNET_ENABLED`, `CUSTOM_WIFI_SSID`, `CUSTOM_WIFI_BAND`, `CUSTOM_WIFI_SEC_MODE`, `CUSTOM_WIFI_WPA_PSK`, `CUSTOM_WPS_ENABLED`). Metadata hasil generate saat build otomatis ditulis ke `output/.config_WAP610N`. Semua variabel dapat di-override langsung via environment CLI saat build:
+- **`WAP610N_VERSION`** — Satu-satunya konfigurasi terpadu (*single source of truth*) untuk versi firmware (`FIRMWARE_VERSION` & `BUILD`, dengan `MAJOR`/`MINOR`/`PATCH` diturunkan otomatis; `BUILD="auto"` otomatis memakai nomor run GitHub Actions CI `GITHUB_RUN_NUMBER` atau jumlah commit Git saat build lokal) sekaligus seluruh variabel kustomisasi build (`CUSTOM_VENDOR_NAME`, `CUSTOM_MODEL_NAME`, `CUSTOM_HOSTNAME`, `CUSTOM_LAN_IP`, `CUSTOM_ADMIN_USER`, `CUSTOM_ADMIN_PASS`, `CUSTOM_SSH_ENABLED`, `CUSTOM_TELNET_ENABLED`, `CUSTOM_WIFI_SSID`, `CUSTOM_WIFI_BAND`, `CUSTOM_WIFI_SEC_MODE`, `CUSTOM_WIFI_WPA_PSK`, `CUSTOM_WPS_ENABLED`). Metadata hasil generate saat build otomatis ditulis ke `output/.config_WAP610N`. Semua variabel dapat di-override langsung via environment CLI saat build:
   ```bash
   FIRMWARE_VERSION="1.0.06" CUSTOM_WIFI_SSID="MyAP" CUSTOM_ADMIN_PASS="secret" ./docker/compile.sh WAP610N
   ```

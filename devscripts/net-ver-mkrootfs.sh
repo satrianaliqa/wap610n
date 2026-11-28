@@ -102,7 +102,20 @@ load_custom_build_vars() {
 	if [ -z "${FIRMWARE_VERSION:-}" ]; then
 		FIRMWARE_VERSION="${MAJOR:-2}.${MINOR:-0}.${PATCH:-00}"
 	fi
-	BUILD="${BUILD:-0}"
+	if [ -z "${BUILD:-}" ] || [ "${BUILD}" = "auto" ] || [ "${BUILD}" = "0" ]; then
+		if [ -f "output/.config_WAP610N" ]; then
+			BUILD=$(grep '^FIRMWARE_BUILD=' "output/.config_WAP610N" 2>/dev/null | head -n 1 | cut -d'=' -f2 | tr -cd '0-9')
+		fi
+		if { [ -z "${BUILD:-}" ] || [ "${BUILD}" = "0" ]; } && [ -n "${GITHUB_RUN_NUMBER:-}" ]; then
+			BUILD="${GITHUB_RUN_NUMBER}"
+		fi
+		if { [ -z "${BUILD:-}" ] || [ "${BUILD}" = "0" ]; } && command -v git >/dev/null 2>&1; then
+			BUILD=$(git -c safe.directory='*' rev-list --count HEAD 2>/dev/null || true)
+		fi
+	fi
+	BUILD=$(printf '%s' "${BUILD:-0}" | tr -cd '0-9')
+	[ -n "${BUILD}" ] || BUILD="0"
+	export BUILD
 
 	# Resolve Git commit SHA & branch (env -> output/.config_WAP610N -> git -> local)
 	if [ -z "${BUILD_GIT_SHA:-}" ] && [ -f "output/.config_WAP610N" ]; then
@@ -160,7 +173,7 @@ set_conf_kv() {
 load_custom_build_vars
 
 # Create /etc/version with full OpenWrt-style build identity
-echo "WAP610N v${FIRMWARE_VERSION} (${BUILD_GIT_BRANCH} / git-${BUILD_GIT_SHA}) - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > "${ROOTFS_DIR}/etc/version"
+echo "WAP610N v${FIRMWARE_VERSION} (${BUILD_GIT_BRANCH} / git-${BUILD_GIT_SHA} build ${BUILD}) - $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > "${ROOTFS_DIR}/etc/version"
 
 # 5. Auto-generate mtdblock4 factory default config.img.gz from plain-text config/mtdblock4-defaults/
 if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-defaults/wlan0.conf" ]; then
@@ -171,7 +184,7 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	install -m 600 "config/mtdblock4-defaults/wlan0.conf" "${TMP_CFG_DIR}/wlan0.conf"
 
 	# Apply custom build variables & firmware version to staged default configs
-	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA})"
+	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA} build ${BUILD})"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
 	set_conf_kv "${TMP_CFG_DIR}/sys.conf" "HostName" "${CUSTOM_HOSTNAME:-}"
@@ -226,7 +239,7 @@ if [ -f "config/mtdblock4-defaults/sys.conf" ] && [ -f "config/mtdblock4-default
 	cp -af "${TMP_CFG_DIR}/wlan0.conf" "${ROOTFS_DIR}/root/mtlk/saved_configs/default_ap_WAP610N.conf"
 
 	if [ -f "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" ]; then
-		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA})"
+		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "FirmwareVersion" "v${FIRMWARE_VERSION} (git-${BUILD_GIT_SHA} build ${BUILD})"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "VendorName" "${CUSTOM_VENDOR_NAME:-}"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "ModelName" "${CUSTOM_MODEL_NAME:-}"
 		set_conf_kv "${ROOTFS_DIR}/root/mtlk/saved_configs/default_admin.conf" "DeviceName" "${CUSTOM_HOSTNAME:-}"
@@ -328,7 +341,7 @@ if [ -d "${ROOTFS_DIR}/root/mtlk/web" ]; then
 	CURR_BRANCH="${BUILD_GIT_BRANCH:-local}"
 	cat << EOF > "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt"
 ProjectName="WAP610N"
-FIRMWARE_VERSION="${CURR_VER} (git-${CURR_SHA})"
+FIRMWARE_VERSION="${CURR_VER} (git-${CURR_SHA} build ${CURR_BUILD})"
 ProjectFirmwareVersionDate="${CURR_VER} (${CURR_BRANCH} / git-${CURR_SHA} build ${CURR_BUILD}), $(date '+%b %d, %Y')"
 EOF
 	cp -af "${ROOTFS_DIR}/root/mtlk/web/fw_version.txt" "${ROOTFS_DIR}/root/mtlk/etc/fw_version.txt" 2>/dev/null || true

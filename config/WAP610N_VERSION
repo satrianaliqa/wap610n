@@ -5,9 +5,10 @@
 # ==============================================================================
 
 # --- Firmware Version (Single Source of Truth) ---
-# Edit FIRMWARE_VERSION (and optional BUILD) here; MAJOR/MINOR/PATCH are derived automatically.
+# Edit FIRMWARE_VERSION here; MAJOR/MINOR/PATCH are derived automatically.
+# Set BUILD="auto" to use GitHub Actions run number in CI (or git commit count locally).
 FIRMWARE_VERSION="2.0.00"
-BUILD="0"
+BUILD="auto"
 
 # --- Device Identity ---
 CUSTOM_VENDOR_NAME="Cisco-Linksys, LLC"
