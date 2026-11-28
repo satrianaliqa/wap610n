@@ -176,7 +176,7 @@ static char *wlReadFileAlloc(const char *path, size_t *outLen)
 	return buf;
 }
 
-static void wlCopyTrim(const char *src, size_t maxSrc, char *dst, size_t dstSz)
+static void wlCopyRange(const char *src, size_t maxSrc, char *dst, size_t dstSz, int trimTrailing)
 {
 	size_t n = 0;
 
@@ -193,9 +193,16 @@ static void wlCopyTrim(const char *src, size_t maxSrc, char *dst, size_t dstSz)
 		n++;
 	}
 	dst[n] = '\0';
-	while (n > 0 && (dst[n - 1] == ' ' || dst[n - 1] == '\t')) {
-		dst[--n] = '\0';
+	if (trimTrailing) {
+		while (n > 0 && (dst[n - 1] == ' ' || dst[n - 1] == '\t')) {
+			dst[--n] = '\0';
+		}
 	}
+}
+
+static void wlCopyTrim(const char *src, size_t maxSrc, char *dst, size_t dstSz)
+{
+	wlCopyRange(src, maxSrc, dst, dstSz, 1);
 }
 
 static void wlHtmlEscape(const char *in, char *out, size_t outSz)
@@ -413,7 +420,7 @@ static int wlParseScanList(wlScanEntry_t *entries, int maxEntries)
 				p++;
 				q = strchr(p, '"');
 				if (q != NULL) {
-					wlCopyTrim(p, (size_t)(q - p), e->essid, sizeof(e->essid));
+					wlCopyRange(p, (size_t)(q - p), e->essid, sizeof(e->essid), 0);
 				}
 			} else {
 				nl = strchr(p, '\n');
@@ -1180,7 +1187,7 @@ static void wlReadIwconfigLink(char *essid, size_t essidSz, char *bssid, size_t 
 			p++;
 			q = strchr(p, '"');
 			if (q != NULL) {
-				wlCopyTrim(p, (size_t)(q - p), essid, essidSz);
+				wlCopyRange(p, (size_t)(q - p), essid, essidSz, 0);
 			}
 		}
 	}

@@ -193,8 +193,13 @@ get_conf() {
                 $0 ~ "^[ \t]*" k "[ \t]*=" {
                     idx = index($0, "=")
                     v = substr($0, idx + 1)
-                    sub(/^[ \t]+/, "", v)
-                    sub(/[ \t\r]+$/, "", v)
+                    sub(/^[ ]?/, "", v)
+                    if (k != "NonProc_ESSID" && k != "Wildcard_ESSID" && k != "NonProc_WPA_Personal_PSK") {
+                        sub(/^[ \t]+/, "", v)
+                        sub(/[ \t\r]+$/, "", v)
+                    } else {
+                        sub(/\r$/, "", v)
+                    }
                     print v
                 }
             ' "$f" 2>/dev/null | tail -n 1)

@@ -319,7 +319,7 @@ async function saveQuick(e){
   const nt=(qm==='router'||qm==='ap')?'2':'0',bm=(isNat||qm==='ap')?'4':qm.split('_')[1];
   const ipm=isNat?'1':f.ip_config_method.value,ip=f.ip.value.trim(),sub=f.subnet.value.trim(),gw=isNat?ip:f.gw.value.trim();
   const wp=isNat?f.wan_proto.value:'dhcp',wip=f.wan_ip.value.trim(),wmk=f.wan_mask.value.trim(),wgw=f.wan_gw.value.trim();
-  const ssid=f.essid.value.trim(),sec=f.sec_mode.value,psk=f.psk.value;
+  const ssid=f.essid.value,sec=f.sec_mode.value,psk=f.psk.value;
   if(!ssid||ssid.length>32)return msg('SSID must be 1-32 chars');
   if(/["`$\\]/.test(ssid))return msg('SSID cannot contain ", `, $, or \\ in Quick Setup');
   if(sec==='3'&&(psk.length<8||psk.length>64))return msg('Passphrase must be 8-64 chars');
@@ -609,7 +609,7 @@ async function runSurvey(){
       const eEl=doc.getElementById('ESSID_'+i),bEl=doc.getElementById('BSSID_'+i),cEl=doc.getElementById('channel_'+i),tEl=doc.getElementById('encryType_'+i);
       if(!eEl&&!bEl)continue;
       const tr=eEl?eEl.closest('tr'):null,tds=tr?tr.querySelectorAll('td'):[],sig=tds.length>=5?tds[tds.length-2].textContent.trim():'';
-      list.push({ssid:(eEl?eEl.textContent:'').trim(),bssid:bEl?bEl.value.trim():'',ch:cEl?cEl.value.trim():'',sig:sig||'-',enc:tEl?tEl.value.trim():'Disabled'});
+      list.push({ssid:(eEl?eEl.textContent.replace(/[\r\n]/g,''):''),bssid:bEl?bEl.value.trim():'',ch:cEl?cEl.value.trim():'',sig:sig||'-',enc:tEl?tEl.value.trim():'Disabled'});
     }
     S.aps=list;S.selAp=list.length?0:-1;ren();msg(`Found ${list.length} networks`);
   }catch(err){msg('Survey failed: '+err.message);}
@@ -620,7 +620,7 @@ function prepConnect(){
 }
 function connectAp(e){
   e.preventDefault();const f=e.target,a=S.conAp;if(!a)return;
-  const params={nowMode:'stationMode',activeMode:'connectToAP',BSSID:a.bssid,ESSID:f.essid.value.trim(),rebootNeed:a.ssid?'0':'1'};
+  const params={nowMode:'stationMode',activeMode:'connectToAP',BSSID:a.bssid,ESSID:f.essid.value,rebootNeed:a.ssid?'0':'1'};
   if(a.enc==='Disabled'||a.enc==='Open'){params.securityMode='1';params.WPAPersonalMode='';}
   else if(a.enc==='WEP'){
     const kl=f.wepLen.value,k0=f.wepKey.value.trim().replace(/^0[xX]/,'');
