@@ -1842,6 +1842,8 @@ static void dynAppendRaw(api_dynbuf_t *db, const char *s, size_t n)
 	db->data[db->len] = '\0';
 }
 
+#define DYN_LIT(db, lit) dynAppendRaw((db), (lit), sizeof(lit) - 1)
+
 static void dynAppendFmt(api_dynbuf_t *db, const char *fmt, ...)
 {
 	va_list ap;
@@ -3203,162 +3205,162 @@ static int websApiHandler(webs_t wp, char_t *urlPrefix, char_t *webDir,
 		sshjRun = (sshjProc && estabRemSsh) ? 1 : 0;
 		sshjAct = (strcmp(sshjConfEn, "1") == 0 || sshjRun || sshjWd || sshjProc) ? 1 : 0;
 
-		dynAppendRaw(&db, "{\"status\":\"success\",\"opmode\":{\"network_type\":", 44);
+		DYN_LIT(&db, "{\"status\":\"success\",\"opmode\":{\"network_type\":");
 		dynAppendJsonStr(&db, netType);
-		dynAppendRaw(&db, ",\"bridge_mode\":", 15);
+		DYN_LIT(&db, ",\"bridge_mode\":");
 		dynAppendJsonStr(&db, brMode);
-		dynAppendRaw(&db, ",\"loop_breaking\":", 17);
+		DYN_LIT(&db, ",\"loop_breaking\":");
 		dynAppendJsonStr(&db, loopBr);
-		dynAppendRaw(&db, ",\"mac_cloning_addr\":", 20);
+		DYN_LIT(&db, ",\"mac_cloning_addr\":");
 		dynAppendJsonStr(&db, macClone);
 
-		dynAppendRaw(&db, "},\"dhcp\":{\"enabled\":", 20);
+		DYN_LIT(&db, "},\"dhcp\":{\"enabled\":");
 		dynAppendJsonStr(&db, dhEn);
-		dynAppendRaw(&db, ",\"start\":", 9);
+		DYN_LIT(&db, ",\"start\":");
 		dynAppendJsonStr(&db, dhSt);
-		dynAppendRaw(&db, ",\"end\":", 7);
+		DYN_LIT(&db, ",\"end\":");
 		dynAppendJsonStr(&db, dhEnd);
-		dynAppendRaw(&db, ",\"subnet\":", 10);
+		DYN_LIT(&db, ",\"subnet\":");
 		dynAppendJsonStr(&db, dhSub);
-		dynAppendRaw(&db, ",\"lease_time\":", 14);
+		DYN_LIT(&db, ",\"lease_time\":");
 		dynAppendJsonStr(&db, dhLt);
-		dynAppendRaw(&db, ",\"domain\":", 10);
+		DYN_LIT(&db, ",\"domain\":");
 		dynAppendJsonStr(&db, dhDom);
-		dynAppendRaw(&db, ",\"dns1\":", 8);
+		DYN_LIT(&db, ",\"dns1\":");
 		dynAppendJsonStr(&db, dhD1);
-		dynAppendRaw(&db, ",\"dns2\":", 8);
+		DYN_LIT(&db, ",\"dns2\":");
 		dynAppendJsonStr(&db, dhD2);
 		dynAppendFmt(&db, ",\"running\":%d,\"static_leases\":", hasUdhcpd);
 		appendJsonLinesFile(&db, "/mnt/jffs2/dhcp_static.conf");
-		dynAppendRaw(&db, ",\"active_leases\":", 17);
+		DYN_LIT(&db, ",\"active_leases\":");
 		appendActiveLeasesJson(&db);
 
-		dynAppendRaw(&db, "},\"acl\":{\"mode\":", 16);
+		DYN_LIT(&db, "},\"acl\":{\"mode\":");
 		dynAppendJsonStr(&db, aclMode);
-		dynAppendRaw(&db, ",\"raw\":", 7);
+		DYN_LIT(&db, ",\"raw\":");
 		dynAppendJsonStr(&db, aclRaw);
 
-		dynAppendRaw(&db, "},\"rf\":{\"max_conn\":", 19);
+		DYN_LIT(&db, "},\"rf\":{\"max_conn\":");
 		dynAppendJsonStr(&db, rfMaxC);
-		dynAppendRaw(&db, ",\"beacon\":", 10);
+		DYN_LIT(&db, ",\"beacon\":");
 		dynAppendJsonStr(&db, rfBcn);
-		dynAppendRaw(&db, ",\"dtim\":", 8);
+		DYN_LIT(&db, ",\"dtim\":");
 		dynAppendJsonStr(&db, rfDtim);
-		dynAppendRaw(&db, ",\"rts\":", 7);
+		DYN_LIT(&db, ",\"rts\":");
 		dynAppendJsonStr(&db, rfRts);
-		dynAppendRaw(&db, ",\"short_preamble\":", 18);
+		DYN_LIT(&db, ",\"short_preamble\":");
 		dynAppendJsonStr(&db, rfSp);
-		dynAppendRaw(&db, ",\"short_slot\":", 14);
+		DYN_LIT(&db, ",\"short_slot\":");
 		dynAppendJsonStr(&db, rfSs);
-		dynAppendRaw(&db, ",\"stbc\":", 8);
+		DYN_LIT(&db, ",\"stbc\":");
 		dynAppendJsonStr(&db, rfStbc);
-		dynAppendRaw(&db, ",\"short_gi\":", 12);
+		DYN_LIT(&db, ",\"short_gi\":");
 		dynAppendJsonStr(&db, rfSgi);
-		dynAppendRaw(&db, ",\"sta_ka_to\":", 13);
+		DYN_LIT(&db, ",\"sta_ka_to\":");
 		dynAppendJsonStr(&db, rfSka);
 
-		dynAppendRaw(&db, "},\"routes\":", 11);
+		DYN_LIT(&db, "},\"routes\":");
 		appendJsonLinesFile(&db, "/mnt/jffs2/routes.conf");
-		dynAppendRaw(&db, ",\"vlans\":", 9);
+		DYN_LIT(&db, ",\"vlans\":");
 		appendJsonLinesFile(&db, "/mnt/jffs2/vlan.conf");
 
-		dynAppendRaw(&db, ",\"router\":{\"mode\":", 18);
+		DYN_LIT(&db, ",\"router\":{\"mode\":");
 		dynAppendJsonStr(&db, rtMode);
-		dynAppendRaw(&db, ",\"wan_proto\":", 13);
+		DYN_LIT(&db, ",\"wan_proto\":");
 		dynAppendJsonStr(&db, rtProto);
-		dynAppendRaw(&db, ",\"wan_if\":", 10);
+		DYN_LIT(&db, ",\"wan_if\":");
 		dynAppendJsonStr(&db, rtWif);
-		dynAppendRaw(&db, ",\"wan_ip\":", 10);
+		DYN_LIT(&db, ",\"wan_ip\":");
 		dynAppendJsonStr(&db, rtWip);
-		dynAppendRaw(&db, ",\"wan_mask\":", 12);
+		DYN_LIT(&db, ",\"wan_mask\":");
 		dynAppendJsonStr(&db, rtWmk);
-		dynAppendRaw(&db, ",\"wan_gw\":", 10);
+		DYN_LIT(&db, ",\"wan_gw\":");
 		dynAppendJsonStr(&db, rtWgw);
-		dynAppendRaw(&db, ",\"wan_dns1\":", 12);
+		DYN_LIT(&db, ",\"wan_dns1\":");
 		dynAppendJsonStr(&db, rtWd1);
-		dynAppendRaw(&db, ",\"wan_dns2\":", 12);
+		DYN_LIT(&db, ",\"wan_dns2\":");
 		dynAppendJsonStr(&db, rtWd2);
-		dynAppendRaw(&db, ",\"wan_mtu\":", 11);
+		DYN_LIT(&db, ",\"wan_mtu\":");
 		dynAppendJsonStr(&db, rtWmtu);
-		dynAppendRaw(&db, ",\"spi\":", 7);
+		DYN_LIT(&db, ",\"spi\":");
 		dynAppendJsonStr(&db, fwSpi);
-		dynAppendRaw(&db, ",\"wan_ping\":", 12);
+		DYN_LIT(&db, ",\"wan_ping\":");
 		dynAppendJsonStr(&db, fwPing);
-		dynAppendRaw(&db, ",\"wan_mgmt\":", 12);
+		DYN_LIT(&db, ",\"wan_mgmt\":");
 		dynAppendJsonStr(&db, fwMgmt);
-		dynAppendRaw(&db, ",\"wan_ssh\":", 11);
+		DYN_LIT(&db, ",\"wan_ssh\":");
 		dynAppendJsonStr(&db, fwSsh);
-		dynAppendRaw(&db, ",\"tcpmss\":", 10);
+		DYN_LIT(&db, ",\"tcpmss\":");
 		dynAppendJsonStr(&db, fwMss);
-		dynAppendRaw(&db, ",\"dmz_ip\":", 10);
+		DYN_LIT(&db, ",\"dmz_ip\":");
 		dynAppendJsonStr(&db, fwDmz);
-		dynAppendRaw(&db, ",\"live_wan_ip\":", 15);
+		DYN_LIT(&db, ",\"live_wan_ip\":");
 		dynAppendJsonStr(&db, lwIp);
-		dynAppendRaw(&db, ",\"live_wan_mask\":", 17);
+		DYN_LIT(&db, ",\"live_wan_mask\":");
 		dynAppendJsonStr(&db, lwMk);
-		dynAppendRaw(&db, ",\"live_wan_gw\":", 15);
+		DYN_LIT(&db, ",\"live_wan_gw\":");
 		dynAppendJsonStr(&db, lwGw);
-		dynAppendRaw(&db, ",\"live_wan_dns\":", 16);
+		DYN_LIT(&db, ",\"live_wan_dns\":");
 		dynAppendJsonStr(&db, lwDn);
 		dynAppendFmt(&db, ",\"has_nat\":%d,\"conntrack_count\":%d,\"portfwd\":", hasNat, ctCnt);
 		appendJsonLinesFile(&db, "/mnt/jffs2/portfwd.conf");
 
-		dynAppendRaw(&db, "},\"qos\":{\"enabled\":", 19);
+		DYN_LIT(&db, "},\"qos\":{\"enabled\":");
 		dynAppendJsonStr(&db, qosEn);
-		dynAppendRaw(&db, ",\"down_kbps\":", 13);
+		DYN_LIT(&db, ",\"down_kbps\":");
 		dynAppendJsonStr(&db, qosDn);
-		dynAppendRaw(&db, ",\"up_kbps\":", 11);
+		DYN_LIT(&db, ",\"up_kbps\":");
 		dynAppendJsonStr(&db, qosUp);
 
-		dynAppendRaw(&db, "},\"ddns\":{\"enabled\":", 20);
+		DYN_LIT(&db, "},\"ddns\":{\"enabled\":");
 		dynAppendJsonStr(&db, ddEn);
-		dynAppendRaw(&db, ",\"provider\":", 12);
+		DYN_LIT(&db, ",\"provider\":");
 		dynAppendJsonStr(&db, ddPv);
-		dynAppendRaw(&db, ",\"hostname\":", 12);
+		DYN_LIT(&db, ",\"hostname\":");
 		dynAppendJsonStr(&db, ddHn);
-		dynAppendRaw(&db, ",\"username\":", 12);
+		DYN_LIT(&db, ",\"username\":");
 		dynAppendJsonStr(&db, ddUn);
 		dynAppendFmt(&db, ",\"has_pass\":%d,\"has_token\":%d,\"custom_url\":",
 			(ddPw[0] != '\0') ? 1 : 0, (ddTk[0] != '\0') ? 1 : 0);
 		dynAppendJsonStr(&db, ddCu);
-		dynAppendRaw(&db, ",\"interval\":", 12);
+		DYN_LIT(&db, ",\"interval\":");
 		dynAppendJsonStr(&db, ddIv);
 		dynAppendFmt(&db, ",\"running\":%d,\"status\":", ddRunning);
 		dynAppendJsonStr(&db, ddSt);
 
-		dynAppendRaw(&db, "},\"watchdog\":{\"enabled\":", 24);
+		DYN_LIT(&db, "},\"watchdog\":{\"enabled\":");
 		dynAppendJsonStr(&db, wdEn);
-		dynAppendRaw(&db, ",\"target\":", 10);
+		DYN_LIT(&db, ",\"target\":");
 		dynAppendJsonStr(&db, wdTg);
-		dynAppendRaw(&db, ",\"interval\":", 12);
+		DYN_LIT(&db, ",\"interval\":");
 		dynAppendJsonStr(&db, wdIv);
-		dynAppendRaw(&db, ",\"max_fail\":", 12);
+		DYN_LIT(&db, ",\"max_fail\":");
 		dynAppendJsonStr(&db, wdMf);
-		dynAppendRaw(&db, ",\"action\":", 10);
+		DYN_LIT(&db, ",\"action\":");
 		dynAppendJsonStr(&db, wdAc);
 		dynAppendFmt(&db, ",\"running\":%d,\"log\":", wdRunning);
 		dynAppendJsonStr(&db, wdLog);
 
-		dynAppendRaw(&db, "},\"system\":{\"tz\":", 17);
+		DYN_LIT(&db, "},\"system\":{\"tz\":");
 		dynAppendJsonStr(&db, tzVal);
-		dynAppendRaw(&db, ",\"now\":", 7);
+		DYN_LIT(&db, ",\"now\":");
 		dynAppendJsonStr(&db, nowStr);
-		dynAppendRaw(&db, ",\"timesync_log\":", 16);
+		DYN_LIT(&db, ",\"timesync_log\":");
 		dynAppendJsonStr(&db, tsLog);
-		dynAppendRaw(&db, ",\"led_night\":", 13);
+		DYN_LIT(&db, ",\"led_night\":");
 		dynAppendJsonStr(&db, ledNight);
 		dynAppendFmt(&db, ",\"has_vlan_mod\":%d,\"ssh_keys\":", hasVlan);
 		dynAppendJsonStr(&db, sshKeys);
-		dynAppendRaw(&db, ",\"rc_local\":", 12);
+		DYN_LIT(&db, ",\"rc_local\":");
 		dynAppendJsonStr(&db, rcLocal);
 
 		dynAppendFmt(&db, "},\"remote\":{\"ssh\":%d,\"telnet\":%d,\"upnp\":%d,"
 			"\"sshj\":%d,\"sshj_running\":%d,\"sshj_watchdog\":%d,\"sshj_user\":",
 			curSsh, curTel, curUpnp, sshjAct, sshjRun, sshjWd);
 		dynAppendJsonStr(&db, sshjUser);
-		dynAppendRaw(&db, ",\"sshj_host\":", 13);
+		DYN_LIT(&db, ",\"sshj_host\":");
 		dynAppendJsonStr(&db, sshjHost);
-		dynAppendRaw(&db, "}}\n", 3);
+		DYN_LIT(&db, "}}\n");
 
 		free(aclRaw);
 		free(wdLog);
